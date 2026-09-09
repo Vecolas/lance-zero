@@ -293,6 +293,64 @@ export interface DailyPlan {
   blocks: PlanBlock[]
 }
 
+// -------------------------------------------------- retenção verificada
+
+/**
+ * Resposta à pergunta que fecha o ciclo do produto: depois de treinar, a
+ * habilidade VOLTOU A FALHAR numa partida nova?
+ *
+ * O tipo mora aqui, e não em `planning/retencao`, porque duas camadas o
+ * consomem (o planner, através da maestria, e a UI de progresso) e nenhuma
+ * delas deve depender do módulo que o calcula.
+ *
+ * A DECISÃO QUE ESTE TIPO CARREGA: **não é booleano.** "Não voltou a falhar" e
+ * "não há partida nenhuma para olhar" são coisas diferentes, e colapsar as duas
+ * num `false`/`true` é exatamente o desenho em que o app parabeniza o aluno por
+ * nada — o erro mais fácil de cometer aqui, porque ausência de erro se parece
+ * com sucesso em qualquer contagem.
+ *
+ * São quatro estados, não três, e o quarto é deliberado:
+ *
+ * - `sem-evidencia` — o aluno não jogou NENHUMA partida analisada depois do
+ *   treino. Não há o que afirmar em nenhuma direção.
+ * - `evidencia-insuficiente` — jogou, e não falhou, mas em menos partidas do
+ *   que o mínimo para afirmar melhora. É separado de `sem-evidencia` porque a
+ *   mensagem honesta é outra: "jogue mais" e "ainda não jogou" pedem ações
+ *   diferentes do aluno, e fundir os dois apagaria essa diferença.
+ * - `voltou-a-falhar` — a habilidade errou de novo em partida jogada depois do
+ *   treino.
+ * - `nao-reincidiu` — jogou o bastante e não errou.
+ */
+export type VereditoDeRetencao =
+  'sem-evidencia' | 'evidencia-insuficiente' | 'voltou-a-falhar' | 'nao-reincidiu'
+
+/**
+ * Verificação de retenção de UMA habilidade, com os números que a sustentam.
+ *
+ * Os contadores acompanham o veredito de propósito: um veredito sozinho não é
+ * explicável depois, e a tela precisa poder dizer "em 3 partidas analisadas
+ * desde o treino, nenhuma falhou" em vez de só "melhorou".
+ */
+export interface RetencaoDeHabilidade {
+  skillId: SkillId
+  veredito: VereditoDeRetencao
+  /** Instante (ISO 8601) a partir do qual a verificação passou a olhar. */
+  treinadaEm: string
+  /**
+   * Partidas ANALISADAS jogadas depois de `treinadaEm`. É o denominador.
+   *
+   * Partida importada e não analisada NÃO entra: ninguém olhou aquele jogo, e
+   * contá-la seria transformar silêncio em aprovação.
+   */
+  partidasVerificadas: number
+  /** Dessas, quantas trouxeram pelo menos um erro atribuído à habilidade. */
+  partidasComFalha: number
+  /** Lances errados atribuídos à habilidade nessas partidas. */
+  falhas: number
+  /** `playedAt` da partida mais recente em que a habilidade falhou, ou `null`. */
+  ultimaFalhaEm: string | null
+}
+
 // --------------------------------------------------------------- persistência
 
 export interface GameQuery {

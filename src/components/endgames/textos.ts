@@ -21,6 +21,7 @@
  */
 
 import type { EstadoDoObjetivo, MotivoDeObjetivo, ObjetivoFinal } from '@/domain/endgames'
+import type { HistoricoDaPosicao } from '@/domain/endgames/persistencia'
 import type { PromotionPiece } from '@/lib/chess'
 import type { FonteDaResposta } from './resposta-do-adversario'
 
@@ -126,6 +127,89 @@ export const APRESENTACAO_POR_FONTE: Record<FonteDaResposta, ApresentacaoDaFonte
       'A tablebase não respondeu e a sua linha saiu do roteiro, então o adversário está jogando um lance legal escolhido por ordem alfabética. Cumprir o objetivo assim não prova que você o cumpriria contra defesa perfeita.',
     perfeita: false,
   },
+}
+
+/**
+ * Os estados em que a GRAVAÇÃO da tentativa pode estar.
+ *
+ * É a FONTE que o portão varre: estado novo aqui sem apresentação não compila,
+ * e apresentação sem estado correspondente reprova no teste.
+ *
+ * Existe porque gravar pode falhar — IndexedDB bloqueado em aba anônima, ou
+ * permissão negada — e o aluno tem de SABER que não foi gravado. Uma tela que
+ * some com o aviso e finge que gravou é pior que uma tela sem o recurso.
+ */
+export const ESTADOS_DA_GRAVACAO = [
+  'gravando',
+  'gravada',
+  'na-revisao',
+  'sem-armazenamento',
+  'falhou',
+] as const
+
+export type EstadoDaGravacao = (typeof ESTADOS_DA_GRAVACAO)[number]
+
+export interface ApresentacaoDaGravacao extends ApresentacaoDoEstado {
+  /** O que aquele estado significa para o aluno, em uma frase. */
+  explicacao: string
+}
+
+export const APRESENTACAO_DA_GRAVACAO: Record<EstadoDaGravacao, ApresentacaoDaGravacao> = {
+  gravando: {
+    tom: 'neutro',
+    icone: '·',
+    rotulo: 'Gravando',
+    explicacao: 'Registrando esta tentativa no armazenamento local deste navegador.',
+  },
+  gravada: {
+    tom: 'ok',
+    icone: '✓',
+    rotulo: 'Tentativa gravada',
+    explicacao: 'Ela entrou no seu histórico e moveu o modelo da habilidade que esta lição treina.',
+  },
+  'na-revisao': {
+    tom: 'ok',
+    icone: '✓',
+    rotulo: 'Tentativa gravada',
+    explicacao:
+      'Esta posição entrou na sua revisão espaçada: ela já está vencida e aparece no treino de hoje.',
+  },
+  'sem-armazenamento': {
+    tom: 'ruim',
+    icone: '!',
+    rotulo: 'Nada foi gravado',
+    explicacao:
+      'O armazenamento local deste navegador está indisponível — em aba anônima ou com permissão negada isso é esperado. Você pode treinar a posição, mas ela não entra no seu histórico.',
+  },
+  falhou: {
+    tom: 'ruim',
+    icone: '✕',
+    rotulo: 'Não consegui gravar',
+    explicacao: 'A tentativa terminou, mas não entrou no seu histórico.',
+  },
+}
+
+/**
+ * O histórico de uma posição, como a lista de lições o mostra.
+ *
+ * `null` quando não há tentativa gravada: silêncio é a informação certa aí.
+ * Escrever "nunca tentada" em onze posições transformaria a lista num painel de
+ * cobrança, e o CLAUDE.md proíbe esse tom.
+ *
+ * O número de tentativas entra junto do rótulo de propósito: "Resolvida" na
+ * sétima tentativa não é a mesma coisa que "Resolvida" na primeira, e esconder
+ * isso deixaria o aluno com uma leitura melhor do que a realidade.
+ */
+export function descreverHistorico(
+  historico: HistoricoDaPosicao | undefined,
+): ApresentacaoDoEstado | null {
+  if (historico === undefined || historico.tentativas === 0) {
+    return null
+  }
+  const contagem = historico.tentativas === 1 ? '1 tentativa' : `${historico.tentativas} tentativas`
+  return historico.cumpriu
+    ? { tom: 'ok', icone: '✓', rotulo: `Resolvida · ${contagem}` }
+    : { tom: 'neutro', icone: '·', rotulo: `Tentada, ainda não cumprida · ${contagem}` }
 }
 
 /**

@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { adaptarEngine } from '@/components/games/engine-adapter'
+import { EvaluationBar } from '@/components/ui/EvaluationBar'
+import { MoveQualityBadge } from '@/components/ui/MoveQualityBadge'
+import { moveQualityFromSeverity } from '@/lib/design/move-quality'
 import {
   analyzeGame,
   AnalysisAbortedError,
@@ -13,18 +16,22 @@ import {
   SEVERITY_LABEL,
   type GameAnalysis,
 } from '@/domain/games'
-import type { CriticalMoment, Game, MoveSeverity } from '@/domain/types'
+import type { CriticalMoment, Game } from '@/domain/types'
 import { useEngine } from '@/lib/engine/use-engine'
 import styles from './EngineReview.module.css'
 
-const CLASSE_POR_SEVERIDADE: Record<MoveSeverity, string> = {
-  'erro-grave': styles.grave,
-  erro: styles.erro,
-  imprecisao: styles.imprecisao,
-  ok: styles.ok,
-}
-
 type Fase = 'ocioso' | 'analisando' | 'pronto' | 'erro'
+
+/**
+ * De quem é a vez no FEN guardado em `fenBefore`.
+ *
+ * `PositionAnalysis.scoreCp` vem na perspectiva de quem joga, como a engine
+ * reporta. A barra exige que essa perspectiva seja declarada; ler o campo do
+ * FEN é a única fonte confiável dela aqui.
+ */
+function ladoQueJoga(fen: string): 'brancas' | 'pretas' {
+  return fen.split(' ')[1] === 'b' ? 'pretas' : 'brancas'
+}
 
 export interface EngineReviewProps {
   game: Game
@@ -195,6 +202,13 @@ export function EngineReview({
           ) : null}
 
           {momentosOrdenados.length > 0 ? (
+            <p className={styles.rodape}>
+              A barra mostra a avaliação da posição pela engine, em peões. Não é a sua chance de
+              vencer a partida.
+            </p>
+          ) : null}
+
+          {momentosOrdenados.length > 0 ? (
             <ul className={styles.lista}>
               {momentosOrdenados.map((momento) => {
                 const viu = percebidos.has(momento.ply)
@@ -212,11 +226,13 @@ export function EngineReview({
                     >
                       <span className={styles.lance}>#{momento.ply}</span>
                       <span>
-                        <span
-                          className={`${styles.selo} ${CLASSE_POR_SEVERIDADE[momento.severity]}`}
-                        >
-                          {SEVERITY_LABEL[momento.severity]}
-                        </span>{' '}
+                        {/* O texto do selo continua vindo de SEVERITY_LABEL, do
+                            domínio: a cor e o símbolo são visuais, o nome do
+                            estado é vocabulário do produto e mora num lugar só. */}
+                        <MoveQualityBadge
+                          quality={moveQualityFromSeverity(momento.severity)}
+                          label={SEVERITY_LABEL[momento.severity]}
+                        />{' '}
                         <span className={`${styles.selo} ${viu ? styles.viu : styles.passou}`}>
                           {viu ? '✓ você marcou' : '· passou batido'}
                         </span>
@@ -236,6 +252,16 @@ export function EngineReview({
                         </p>
                       ) : null}
                     </button>
+                    {/* Fora do botão de propósito: a barra tem estrutura
+                        própria e não é conteúdo clicável do momento. */}
+                    {analise ? (
+                      <EvaluationBar
+                        titulo="Avaliação da posição antes do seu lance"
+                        scoreCp={analise.scoreCp}
+                        mateIn={analise.mateIn}
+                        perspectiva={ladoQueJoga(analise.fenBefore)}
+                      />
+                    ) : null}
                   </li>
                 )
               })}

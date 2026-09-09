@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { SkillCard } from '@/components/progress/SkillCard'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { getSkill } from '@/domain/skills/catalog'
 import type { PuzzleAttempt, SkillMastery } from '@/domain/types'
+import { readSkill } from '@/lib/design/skill-card'
 import styles from './ProgressView.module.css'
 
 function percentual(valor: number): string {
@@ -11,6 +13,15 @@ function percentual(valor: number): string {
 }
 
 /** Ordena por domínio, com desempate estável pelo id da habilidade. */
+/**
+ * Domínio como texto, pela MESMA regra do card: abaixo do mínimo de tentativas
+ * não há número, e sim um traço.
+ */
+function textoDeDominio(m: SkillMastery): string {
+  const leitura = readSkill({ mastery: m.mastery, attempts: m.attempts })
+  return leitura.percentual === null ? '—' : `${leitura.percentual}%`
+}
+
 function porMastery(a: SkillMastery, b: SkillMastery): number {
   return b.mastery - a.mastery || a.skillId.localeCompare(b.skillId)
 }
@@ -81,9 +92,13 @@ export function ProgressView() {
           </h2>
           <ul className={styles.list}>
             {fortes.map((m) => (
-              <li key={m.skillId} className={styles.item}>
-                <span className={styles.itemLabel}>{getSkill(m.skillId).label}</span>
-                <span className={styles.itemValue}>{percentual(m.mastery)}</span>
+              <li key={m.skillId}>
+                <SkillCard
+                  id={`forte-${m.skillId}`}
+                  nome={getSkill(m.skillId).label}
+                  mastery={m.mastery}
+                  attempts={m.attempts}
+                />
               </li>
             ))}
           </ul>
@@ -95,9 +110,13 @@ export function ProgressView() {
           </h2>
           <ul className={styles.list}>
             {prioridades.map((m) => (
-              <li key={m.skillId} className={styles.item}>
-                <span className={styles.itemLabel}>{getSkill(m.skillId).label}</span>
-                <span className={styles.itemValue}>{percentual(m.mastery)}</span>
+              <li key={m.skillId}>
+                <SkillCard
+                  id={`prioridade-${m.skillId}`}
+                  nome={getSkill(m.skillId).label}
+                  mastery={m.mastery}
+                  attempts={m.attempts}
+                />
               </li>
             ))}
           </ul>
@@ -127,14 +146,15 @@ export function ProgressView() {
               {ordenadas.map((m) => (
                 <tr key={m.skillId}>
                   <th scope="row">{getSkill(m.skillId).label}</th>
-                  <td className={styles.num}>
-                    {percentual(m.mastery)}
-                    <span
-                      className={styles.bar}
-                      style={{ width: `${Math.max(2, Math.round(m.mastery * 100))}%` }}
-                      aria-hidden="true"
-                    />
-                  </td>
+                  {/*
+                    A barra saiu daqui: o card de habilidade já a desenha, e
+                    duas barras para o mesmo número são duas tabelas de cor para
+                    a mesma coisa. O NÚMERO passa por `readSkill` para que a
+                    regra de "amostra pequena não vira percentual" tenha um dono
+                    só — antes a tabela mostrava um número onde o card mostra um
+                    traço, e as duas afirmações conviviam na mesma tela.
+                  */}
+                  <td className={styles.num}>{textoDeDominio(m)}</td>
                   <td className={styles.num}>{m.attempts}</td>
                   <td className={styles.num}>{percentual(m.recentAccuracy)}</td>
                   <td className={styles.num}>{percentual(m.retentionAccuracy)}</td>

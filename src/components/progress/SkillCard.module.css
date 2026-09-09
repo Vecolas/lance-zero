@@ -1,0 +1,84 @@
+/* Card: raio de 12 px, valor do guia. Fundo da barra em `--surface-sunken`,
+   que no tema claro é o Background Secondary pedido pela seção 33. */
+.card {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card);
+}
+
+.topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.nome {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.icone {
+  flex: none;
+}
+
+.medida {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.trilho {
+  flex: 1;
+  height: 0.625rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.preenchida {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+}
+
+/* Indeterminada: listras estáticas, sem animação. O card não deve sugerir que
+   está carregando — ele está dizendo que não há amostra. */
+.indeterminada {
+  height: 100%;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--surface-sunken) 0 5px,
+    var(--border-strong) 5px 10px
+  );
+}
+
+.numero {
+  min-width: 2.75rem;
+  text-align: right;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.nota {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
