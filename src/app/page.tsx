@@ -32,7 +32,7 @@ function BoardPreview() {
   })
 
   return (
-    <div className={styles.boardPreview} role="img" aria-label="Tabuleiro no tema LanceZero Paper">
+    <div className={styles.boardPreview} role="img" aria-label="Tabuleiro no tema LanceZero Claro">
       {squares.map((isLight, i) => (
         <div key={i} className={isLight ? styles.light : styles.dark} />
       ))}
@@ -44,7 +44,9 @@ export default function LandingPage() {
   return (
     <>
       <section className={styles.hero}>
-        <h1 className={styles.tagline}>Treine o que perde suas partidas.</h1>
+        <h1 className={styles.tagline}>
+          Treine o que <span className={styles.taglineAccent}>perde suas partidas</span>.
+        </h1>
         <p className={styles.subtitle}>
           LanceZero não é mais uma caixa de ferramentas de xadrez. Ele lê as suas derrotas, descobre
           o padrão que se repete e monta o treino de amanhã em cima disso.

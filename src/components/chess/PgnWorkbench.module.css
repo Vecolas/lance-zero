@@ -1,6 +1,7 @@
 .panel {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
   background: var(--surface-raised);
   padding: var(--space-4);
   margin-bottom: var(--space-5);
@@ -60,8 +61,8 @@
 
 .primary {
   border: 1px solid transparent;
-  background: var(--accent);
-  color: var(--accent-contrast);
+  background: var(--accent-strong);
+  color: var(--on-accent);
 }
 
 .ghost {
@@ -80,7 +81,7 @@
   border: 1px solid var(--accent);
   border-left-width: 3px;
   border-radius: var(--radius-md);
-  color: var(--accent-quiet);
+  color: var(--link);
   font-size: 0.9rem;
 }
 

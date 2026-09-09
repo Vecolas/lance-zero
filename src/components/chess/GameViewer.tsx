@@ -16,7 +16,7 @@ import {
   type PromotionPiece,
   type SquareName,
 } from '@/lib/chess'
-import type { BoardThemeName } from '@/lib/design/board'
+import { DEFAULT_BOARD_THEME, type BoardThemeName } from '@/lib/design/board'
 import styles from './GameViewer.module.css'
 
 const OUTCOME_LABEL: Record<string, string> = {
@@ -57,7 +57,7 @@ function findKingSquare(fen: string, color: PieceColor): SquareName | null {
 export function GameViewer({
   game,
   onGameChange,
-  theme = 'paper',
+  theme = DEFAULT_BOARD_THEME,
   modified = false,
   onRestore,
 }: GameViewerProps) {
@@ -67,13 +67,16 @@ export function GameViewer({
   const [rejected, setRejected] = useState(false)
   const regionRef = useRef<HTMLDivElement>(null)
 
+  // Ao carregar outra partida, volta ao começo da nova linha. Ajuste durante a
+  // renderização, e não em efeito: evita a renderização em cascata.
   const gameKey = `${game.startFen}|${game.headers.Event ?? ''}|${game.headers.Date ?? ''}`
-  // Ao carregar outra partida, volta ao começo da nova linha.
-  useEffect(() => {
+  const [loadedKey, setLoadedKey] = useState(gameKey)
+  if (loadedKey !== gameKey) {
+    setLoadedKey(gameKey)
     setPly(0)
     setSelected(null)
     setRejected(false)
-  }, [gameKey])
+  }
 
   const fen = fenAtPly(game, ply)
   const status = useMemo(() => positionStatus(fen), [fen])

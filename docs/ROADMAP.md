@@ -3,22 +3,22 @@
 Uma fase por vez. Nenhuma fase começa sem instrução explícita. Cada fase vira uma
 issue no GitHub com critérios de aceite verificáveis.
 
-| Fase | Título                                   | Estado                   |
-| ---- | ---------------------------------------- | ------------------------ |
-| 0    | Fundação do repositório                  | ✅ concluída             |
-| 1    | Domínio do xadrez e tabuleiro            | pendente                 |
-| 2    | Stockfish no Web Worker                  | pendente                 |
-| 3    | Puzzles                                  | pendente                 |
-| 4    | Persistência local + FSRS                | pendente                 |
-| 5    | Skill graph + daily planner              | pendente                 |
-| 6    | Importação e análise de partidas         | pendente                 |
-| 7    | "Meus erros" e explicador determinístico | pendente                 |
-| 8    | Finais                                   | pendente                 |
-| 9    | Aberturas                                | pendente                 |
-| 10   | Diagnóstico e conteúdo                   | pendente                 |
-| 11   | PWA, qualidade e beta                    | pendente                 |
-| 12   | Sync opcional                            | depois de validar o loop |
-| 13   | Maia / sparring humanoide                | opcional, AGPL-3.0       |
+| Fase | Título                                   | Estado                                           |
+| ---- | ---------------------------------------- | ------------------------------------------------ |
+| 0    | Fundação do repositório                  | ✅ concluída                                     |
+| 1    | Domínio do xadrez e tabuleiro            | ✅ concluída                                     |
+| 2    | Stockfish no Web Worker                  | ✅ concluída (contrato com engine real pendente) |
+| 3    | Puzzles                                  | pendente                                         |
+| 4    | Persistência local + FSRS                | domínio pronto, UI pendente                      |
+| 5    | Skill graph + daily planner              | domínio pronto, UI pendente                      |
+| 6    | Importação e análise de partidas         | pendente                                         |
+| 7    | "Meus erros" e explicador determinístico | pendente                                         |
+| 8    | Finais                                   | pendente                                         |
+| 9    | Aberturas                                | pendente                                         |
+| 10   | Diagnóstico e conteúdo                   | pendente                                         |
+| 11   | PWA, qualidade e beta                    | pendente                                         |
+| 12   | Sync opcional                            | depois de validar o loop                         |
+| 13   | Maia / sparring humanoide                | opcional, AGPL-3.0                               |
 
 ## Backlog priorizado
 

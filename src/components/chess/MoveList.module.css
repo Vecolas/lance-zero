@@ -51,11 +51,11 @@
 }
 
 .current {
-  background: var(--accent);
-  color: var(--accent-contrast);
+  background: var(--accent-strong);
+  color: var(--on-accent);
   font-weight: 700;
 }
 
 .current:hover {
-  background: var(--accent);
+  background: var(--accent-strong);
 }

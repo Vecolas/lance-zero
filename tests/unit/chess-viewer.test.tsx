@@ -18,9 +18,7 @@ const partida = parsePgn(matePastor)
 
 describe('MoveList', () => {
   it('mostra estado vazio quando não há lances', () => {
-    render(
-      <MoveList game={{ ...partida, plies: [] }} currentPly={0} onSelectPly={() => {}} />,
-    )
+    render(<MoveList game={{ ...partida, plies: [] }} currentPly={0} onSelectPly={() => {}} />)
     expect(screen.getByText(/Nenhum lance ainda/)).toBeInTheDocument()
   })
 

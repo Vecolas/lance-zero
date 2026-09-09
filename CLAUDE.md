@@ -113,24 +113,78 @@ Tone:
 
 ### Tokens
 
-```css
---ink-950: #101318;
---ink-800: #20252c;
---paper-50: #f6f1e8;
---paper-200: #e5ded2;
---signal-500: #ff6b4a;
---sage-500: #7fa68a;
---slate-500: #68707d;
+> **A fonte de verdade visual é `identidade-visual/LanceZero_Guia_Identidade_Visual.md`.**
+> Ver ADR-0007. O bloco de cores quentes que estava aqui (papel/tinta/coral) foi
+> substituído. Não reintroduzir.
 
---board-paper-light: #e8e0d3;
---board-paper-dark: #778276;
---board-graphite-light: #c9c9c2;
---board-graphite-dark: #555f64;
+Paleta da marca:
+
+```css
+--bg-primary: #f7f9fb;
+--bg-pure: #ffffff;
+--bg-secondary: #eef3f7;
+
+--navy-950: #071521;
+--navy-900: #0b1d2c;
+--navy-800: #112b40;
+--slate-600: #596b78;
+--slate-400: #91a0aa;
+
+--zero-blue: #00a9d6;
+--zero-cyan: #20c9e8;
+--zero-deep: #087da7;
+--zero-soft: #d9f4fa;
+
+--success: #18a572;
+--attention: #e5a82b;
+--error: #d9534f;
+--info: #3a8dde;
 ```
 
-Do not mimic Lichess green branding or Chess.com visual language.
+Tabuleiro (independente do tema da interface):
 
-Use color + icon/text for status. Never rely on red/green alone.
+```css
+--board-light: #edf3f6;
+--board-dark: #afc6d1;
+--board-contrast-light: #e8eef2;
+--board-contrast-dark: #8fabb9;
+--board-last-move: #c8edf5;
+--board-selected: #7fd7e8;
+```
+
+Modo escuro — nunca preto absoluto:
+
+```css
+--dark-background: #07131c;
+--dark-surface: #0c1c28;
+--dark-card: #102331;
+--dark-border: #1d3443;
+--dark-text: #f1f5f7;
+--dark-text-muted: #a2b2bc;
+```
+
+Regras que valem para qualquer tela nova:
+
+- os tokens vivem em `src/lib/design/tokens.ts` e `src/app/tokens.css`, espelhados;
+  um teste falha se divergirem;
+- **texto sobre fundo claro usa as variantes `-text`**, não as cores cruas: as
+  cores semânticas do guia reprovam em WCAG AA como texto. No modo escuro as
+  cores originais passam e são usadas direto;
+- o botão primário usa `--accent-strong` (Zero Deep no claro, Zero Cyan no
+  escuro), porque branco sobre Zero Blue fica em 2.75:1;
+- o gradiente da marca é para logo e hero. Não em todos os botões, cards, inputs
+  ou bordas;
+- toda tela deve funcionar em modo claro **e** escuro. A preferência tem três
+  estados: sistema (padrão), claro e escuro;
+- o tabuleiro não muda com o tema da interface;
+- raios: 6 px pequenos, 8 px botões e inputs, 12 px cards, 16 px cards grandes e
+  modais;
+- wordmark: "Lance" em navy, "Zero" no azul da marca. Nunca "Lance Zero",
+  "lancezero", "LANCEZERO" ou "lanceZero".
+
+Não imitar o verde do Lichess nem a linguagem visual do Chess.com.
+
+Status nunca depende só de cor: sempre cor + ícone + texto.
 
 ---
 

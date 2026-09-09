@@ -1,42 +1,94 @@
 /*
  * Tokens da marca LanceZero.
  * Espelha `src/lib/design/tokens.ts` — o teste de tokens falha se divergirem.
+ * Base: identidade-visual/LanceZero_Guia_Identidade_Visual.md
  */
 :root {
-  /* Paleta bruta */
-  --ink-950: #101318;
-  --ink-800: #20252c;
-  --paper-50: #f6f1e8;
-  --paper-200: #e5ded2;
-  --signal-500: #ff6b4a;
-  --sage-500: #7fa68a;
-  --slate-500: #68707d;
+  /* Fundos claros */
+  --bg-primary: #f7f9fb;
+  --bg-pure: #ffffff;
+  --bg-secondary: #eef3f7;
 
-  /* Tabuleiro — LanceZero Paper e LanceZero Graphite */
-  --board-paper-light: #e8e0d3;
-  --board-paper-dark: #778276;
-  --board-graphite-light: #c9c9c2;
-  --board-graphite-dark: #555f64;
+  /* Navy e slate */
+  --navy-950: #071521;
+  --navy-900: #0b1d2c;
+  --navy-800: #112b40;
+  --slate-600: #596b78;
+  --slate-400: #91a0aa;
 
-  /* Papéis semânticos (tema claro) */
-  --surface: var(--paper-50);
-  --surface-raised: #fffdf9;
-  --surface-sunken: var(--paper-200);
-  --border: #d6cec0;
-  --border-strong: #b9b0a0;
-  --text: var(--ink-950);
-  --text-muted: #4d545e;
-  --accent: var(--signal-500);
-  --accent-contrast: #ffffff;
-  --accent-quiet: #a8341a;
-  --positive: #3f6b51;
+  /* Destaque */
+  --zero-blue: #00a9d6;
+  --zero-cyan: #20c9e8;
+  --zero-deep: #087da7;
+  --zero-soft: #d9f4fa;
 
-  /* Escala tipográfica e espaçamento */
+  /* Semânticas (preenchimento, ícone, borda) */
+  --success: #18a572;
+  --attention: #e5a82b;
+  --error: #d9534f;
+  --info: #3a8dde;
+
+  /* Variantes de TEXTO sobre fundo claro, ajustadas para WCAG AA */
+  --accent-text: #007999;
+  --success-text: #138159;
+  --attention-text: #916a1b;
+  --error-text: #c04946;
+  --info-text: #3075b9;
+  --muted-text: #68727a;
+
+  /* Modo escuro — nunca preto absoluto */
+  --dark-background: #07131c;
+  --dark-surface: #0c1c28;
+  --dark-card: #102331;
+  --dark-border: #1d3443;
+  --dark-text: #f1f5f7;
+  --dark-text-muted: #a2b2bc;
+
+  /* Tabuleiro */
+  --board-light: #edf3f6;
+  --board-dark: #afc6d1;
+  --board-contrast-light: #e8eef2;
+  --board-contrast-dark: #8fabb9;
+  --board-last-move: #c8edf5;
+  --board-selected: #7fd7e8;
+
+  /* Barra de avaliação */
+  --eval-white: #f4f6f8;
+  --eval-black: #102331;
+
+  /* Gradiente da marca — logo e destaques altos, nunca em tudo */
+  --brand-gradient: linear-gradient(135deg, #087da7 0%, #00a9d6 45%, #20c9e8 100%);
+
+  /* Papéis semânticos — tema claro */
+  --surface: var(--bg-primary);
+  --surface-raised: var(--bg-pure);
+  --surface-sunken: var(--bg-secondary);
+  --border: #e3e9ed;
+  --border-strong: #d9e2e8;
+  --text: var(--navy-950);
+  --text-strong: var(--navy-900);
+  --text-muted: var(--slate-600);
+  --text-faint: var(--muted-text);
+  --accent: var(--zero-blue);
+  --accent-hover: var(--zero-deep);
+  --accent-soft: var(--zero-soft);
+  --on-accent: #ffffff;
+  --accent-strong: var(--zero-deep);
+  --link: var(--accent-text);
+  --positive: var(--success-text);
+  --warning: var(--attention-text);
+  --danger: var(--error-text);
+  --note: var(--info-text);
+  --shadow-card: 0 1px 2px rgba(7, 21, 33, 0.03), 0 6px 18px rgba(7, 21, 33, 0.05);
+  --shadow-modal: 0 20px 50px rgba(7, 21, 33, 0.14);
+
+  /* Tipografia */
   --font-sans:
     var(--font-inter, ui-sans-serif), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
     sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
+  /* Espaçamento */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -46,27 +98,66 @@
   --space-7: 3rem;
   --space-8: 4rem;
 
-  --radius-sm: 4px;
+  /* Border radius do guia */
+  --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 14px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
   --focus-ring: 3px;
-  --content-max: 68rem;
+  --content-max: 72rem;
   --bottom-nav-height: 4rem;
 }
 
+/* Papéis semânticos — tema escuro. Definidos uma vez e reusados nos dois
+   seletores abaixo para que a preferência do sistema e o botão de tema não
+   possam divergir. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --surface: var(--ink-950);
-    --surface-raised: var(--ink-800);
-    --surface-sunken: #0a0c10;
-    --border: #2e343d;
-    --border-strong: #454d58;
-    --text: var(--paper-50);
-    --text-muted: #a7aeb8;
-    --accent: var(--signal-500);
-    --accent-contrast: #1a0d08;
-    --accent-quiet: #ff8f75;
-    --positive: var(--sage-500);
+  :root:not([data-theme='light']) {
+    --surface: var(--dark-background);
+    --surface-raised: var(--dark-card);
+    --surface-sunken: var(--dark-surface);
+    --border: var(--dark-border);
+    --border-strong: #2a4457;
+    --text: var(--dark-text);
+    --text-strong: #ffffff;
+    --text-muted: var(--dark-text-muted);
+    --text-faint: var(--slate-400);
+    --accent: var(--zero-cyan);
+    --accent-hover: var(--zero-blue);
+    --accent-soft: rgba(32, 201, 232, 0.16);
+    --on-accent: var(--navy-950);
+    --accent-strong: var(--zero-cyan);
+    --link: var(--zero-cyan);
+    --positive: var(--success);
+    --warning: var(--attention);
+    --danger: var(--error);
+    --note: var(--info);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.3);
+    --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.5);
   }
+}
+
+:root[data-theme='dark'] {
+  --surface: var(--dark-background);
+  --surface-raised: var(--dark-card);
+  --surface-sunken: var(--dark-surface);
+  --border: var(--dark-border);
+  --border-strong: #2a4457;
+  --text: var(--dark-text);
+  --text-strong: #ffffff;
+  --text-muted: var(--dark-text-muted);
+  --text-faint: var(--slate-400);
+  --accent: var(--zero-cyan);
+  --accent-hover: var(--zero-blue);
+  --accent-soft: rgba(32, 201, 232, 0.16);
+  --on-accent: var(--navy-950);
+  --accent-strong: var(--zero-cyan);
+  --link: var(--zero-cyan);
+  --positive: var(--success);
+  --warning: var(--attention);
+  --danger: var(--error);
+  --note: var(--info);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.3);
+  --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.5);
 }

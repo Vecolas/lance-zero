@@ -33,16 +33,10 @@ export interface LegalMove {
   isCheckmate: boolean
 }
 
-export type MoveInput =
-  | string
-  | { from: SquareName; to: SquareName; promotion?: PromotionPiece }
+export type MoveInput = string | { from: SquareName; to: SquareName; promotion?: PromotionPiece }
 
 export type GameOutcome =
-  | 'em-andamento'
-  | 'mate'
-  | 'afogamento'
-  | 'material-insuficiente'
-  | 'empate'
+  'em-andamento' | 'mate' | 'afogamento' | 'material-insuficiente' | 'empate'
 
 export interface PositionStatus {
   turn: PieceColor

@@ -45,7 +45,7 @@ p {
 }
 
 a {
-  color: var(--accent-quiet);
+  color: var(--link);
   text-underline-offset: 0.2em;
 }
 
@@ -84,7 +84,7 @@ kbd,
   z-index: 100;
   padding: var(--space-2) var(--space-4);
   background: var(--accent);
-  color: var(--accent-contrast);
+  color: var(--on-accent);
   border-radius: var(--radius-md);
   transform: translateY(-200%);
 }

@@ -19,6 +19,12 @@ Público inicial: **800–1600**, com onboarding e currículo padrão calibrados
 
 O núcleo do produto funciona **sem API de IA paga e sem API de xadrez paga**.
 
+## Identidade visual
+
+A fonte de verdade é `identidade-visual/LanceZero_Guia_Identidade_Visual.md`
+(ver ADR-0007). Modo claro e escuro são requisito, não enfeite: a preferência
+tem três estados — sistema (padrão), claro e escuro.
+
 ## Princípios inegociáveis
 
 1. **Plano do dia primeiro.** A home de quem já usa é "Treino de hoje", não um menu.
@@ -73,6 +79,23 @@ Ver [`ROADMAP.md`](./ROADMAP.md). Uma fase por vez, sem começar a próxima sem 
 
 ## Estado atual
 
-**Fase 0 concluída.** Fundação do repositório: stack, tokens, shell navegável,
-rotas com estados vazios honestos, lint/typecheck/testes e CI. Nenhuma
-funcionalidade de xadrez ainda — nem tabuleiro, nem engine.
+**Fases 0, 1 e 2 concluídas. Fases 4 e 5 com o domínio pronto e a UI pendente.**
+
+O que já funciona:
+
+- shell navegável com modo claro e escuro (sistema, claro ou escuro), tokens do
+  guia de identidade visual e verificação automática de contraste WCAG AA;
+- tabuleiro em `/games`: carrega PGN ou FEN, navega lance a lance por botão,
+  teclado ou lista textual, gira, e aceita apenas lances legais;
+- engine Stockfish 18 em Web Worker atrás de `EngineProvider`, com fila
+  serializada, descarte de resposta obsoleta, cancelamento e restart por timeout
+  — ainda sem tela que a use;
+- persistência em IndexedDB atrás de `TrainingRepository`, agendamento FSRS e
+  backup JSON — ainda sem tela que os use;
+- modelo de habilidades e `buildDailyPlan` determinístico — ainda sem dashboard.
+
+O que **não** existe ainda: puzzles, importação de partidas, análise de erro,
+finais, aberturas, diagnóstico e as telas de treino.
+
+Dívida registrada: o teste de contrato da engine roda contra um worker falso; a
+versão com o Stockfish real precisa rodar em Playwright.

@@ -78,9 +78,9 @@ function describe(move: VerboseMove, fenAfter: string): LegalMove {
 /** Todos os lances legais da posição, ou apenas os da casa informada. */
 export function legalMoves(fen: string, from?: SquareName): LegalMove[] {
   const chess = load(fen)
-  const verbose = (
-    from ? chess.moves({ square: from as never, verbose: true }) : chess.moves({ verbose: true })
-  ) as unknown as VerboseMove[]
+  const verbose = (from
+    ? chess.moves({ square: from as never, verbose: true })
+    : chess.moves({ verbose: true })) as unknown as VerboseMove[]
 
   return verbose.map((move) => {
     const probe = new Chess(fen)

@@ -60,11 +60,7 @@ export interface SkillMastery {
 // -------------------------------------------------------------- revisão FSRS
 
 export type ReviewCardKind =
-  | 'posicao-exata'
-  | 'erro-de-partida'
-  | 'final'
-  | 'conceito'
-  | 'repertorio'
+  'posicao-exata' | 'erro-de-partida' | 'final' | 'conceito' | 'repertorio'
 
 /** Escala do FSRS. Traduzida para PT-BR na UI, nunca no armazenamento. */
 export type ReviewRating = 'again' | 'hard' | 'good' | 'easy'
@@ -171,7 +167,7 @@ export interface UserProfile {
   lichessUsername?: string
   chesscomUsername?: string
   preferences: {
-    boardTheme: 'paper' | 'graphite'
+    boardTheme: 'claro' | 'contraste'
     reducedMotion: boolean
   }
 }
@@ -179,12 +175,7 @@ export interface UserProfile {
 // ------------------------------------------------------------------- planner
 
 export type PlanBlockKind =
-  | 'revisao'
-  | 'erro-de-partida'
-  | 'tatica'
-  | 'calculo'
-  | 'final'
-  | 'abertura'
+  'revisao' | 'erro-de-partida' | 'tatica' | 'calculo' | 'final' | 'abertura'
 
 export interface PlanBlock {
   id: string

@@ -1,7 +1,12 @@
 'use client'
 
 import { Chessboard } from 'react-chessboard'
-import { boardHighlights, boardThemes, type BoardThemeName } from '@/lib/design/board'
+import {
+  boardHighlights,
+  boardThemes,
+  DEFAULT_BOARD_THEME,
+  type BoardThemeName,
+} from '@/lib/design/board'
 import type { PieceColor, PromotionPiece, SquareName } from '@/lib/chess'
 import styles from './ChessBoardView.module.css'
 
@@ -26,7 +31,7 @@ export interface ChessBoardViewProps {
 export function ChessBoardView({
   fen,
   orientation,
-  theme = 'paper',
+  theme = DEFAULT_BOARD_THEME,
   lastMove = [],
   selected = null,
   targets = [],

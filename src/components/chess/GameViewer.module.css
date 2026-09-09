@@ -73,7 +73,7 @@
 
 .badgeAlert {
   border-color: var(--accent);
-  color: var(--accent-quiet);
+  color: var(--link);
   font-weight: 600;
 }
 

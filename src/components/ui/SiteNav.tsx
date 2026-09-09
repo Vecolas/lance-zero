@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Logo } from '@/components/ui/Logo'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { mainNav, mobilePrimaryNav, type NavItem } from '@/lib/navigation'
 import styles from './SiteNav.module.css'
 
@@ -33,12 +34,16 @@ export function SiteHeader() {
         <Link href="/" className={styles.brand}>
           <Logo />
           <span className={styles.brandName}>
-            <strong>Lance</strong>Zero
+            <span className={styles.brandLance}>Lance</span>
+            <span className={styles.brandZero}>Zero</span>
           </span>
         </Link>
         <nav className={styles.desktopNav} aria-label="Navegação principal">
           {mainNav.map((item) => navLink(item, pathname, styles.link, styles.linkActive))}
         </nav>
+        <div className={styles.tools}>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )
