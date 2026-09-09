@@ -33,6 +33,19 @@ export const MASTERY_CONFIG = {
   alphaRecente: 0.3,
   /** Peso da amostra nova na média móvel de retenção (eventos de revisão). */
   alphaRetencao: 0.35,
+  /**
+   * Fatia da RETENÇÃO que vem de partida real, quando as duas origens existem.
+   *
+   * A retenção tem duas origens que NÃO se somam num campo só (ver
+   * `masteryComRetencaoDePartida`): `retentionAccuracy` guarda a revisão
+   * espaçada, e a retenção de partida chega derivada, por parâmetro. Aqui elas
+   * se encontram — no cálculo, não no armazenamento.
+   *
+   * HEURÍSTICA DE PRODUTO nunca calibrada. 0,5 é o empate declarado: não há
+   * dado neste projeto que diga que acertar numa revisão vale mais ou menos que
+   * não errar numa partida. Escolher um lado sem dado seria fingir precisão.
+   */
+  pesoRetencaoDePartidaNaRetencao: 0.5,
   /** Quanto uma dica reduz o crédito da amostra daquele acerto. */
   penalidadeDicaNaAmostra: 0.4,
   /** Quanto acertar fora da primeira tentativa reduz o crédito da amostra. */
@@ -57,7 +70,16 @@ export const MASTERY_CONFIG = {
   passoMedianaMs: 400,
 } as const
 
-export type MasteryConfig = typeof MASTERY_CONFIG
+/**
+ * Tipo dos pesos, com os valores ALARGADOS para `number`.
+ *
+ * `typeof MASTERY_CONFIG` congelaria cada peso no literal que ele tem hoje
+ * (`0.5`, `0.35`, …) e nenhum chamador conseguiria passar um valor diferente —
+ * o parâmetro `config` existiria sem poder ser usado, e o número estaria de
+ * fato cravado no código apesar de morar numa constante. As chaves continuam
+ * derivadas da constante: acrescentar um peso lá não exige tocar aqui.
+ */
+export type MasteryConfig = Record<keyof typeof MASTERY_CONFIG, number>
 
 function clamp01(value: number): number {
   if (Number.isNaN(value)) return 0
@@ -112,15 +134,54 @@ function proximaMediana(atual: number, amostraMs: number, config: MasteryConfig)
 }
 
 /**
+ * Componente de RETENÇÃO da maestria, com as duas origens.
+ *
+ * A DECISÃO: **campos separados, combinados na leitura.** `retentionAccuracy`
+ * continua sendo só revisão espaçada — nada aqui escreve nele. A retenção
+ * medida em PARTIDA chega por parâmetro, derivada na hora de
+ * `RetencaoDeHabilidade`, e nunca vira um segundo acumulador persistido.
+ *
+ * Por que não somar as duas no mesmo número: um EWMA alimentado por duas
+ * origens fica impossível de explicar depois. Diante de `retentionAccuracy =
+ * 0,62` ninguém consegue dizer se o aluno vai bem nas revisões, bem nas
+ * partidas, ou mediano nas duas — e a diferença entre esses três casos é
+ * exatamente o que o produto promete saber responder. Separado, cada número
+ * continua tendo uma pergunta só.
+ *
+ * Sem NENHUMA das duas origens, o componente cai de volta para o acerto recente
+ * em vez de punir o usuário por algo que ele ainda não teve chance de fazer.
+ */
+function componenteDeRetencao(
+  estado: SkillMastery,
+  retencaoDePartida: number | null,
+  config: MasteryConfig,
+): number {
+  const daRevisao = estado.retentionAccuracy > 0 ? clamp01(estado.retentionAccuracy) : null
+  const daPartida = retencaoDePartida === null ? null : clamp01(retencaoDePartida)
+
+  if (daRevisao !== null && daPartida !== null) {
+    const peso = config.pesoRetencaoDePartidaNaRetencao
+    return (1 - peso) * daRevisao + peso * daPartida
+  }
+  if (daRevisao !== null) return daRevisao
+  if (daPartida !== null) return daPartida
+  return clamp01(estado.recentAccuracy)
+}
+
+/**
  * Combina os sinais em uma maestria 0..1.
  *
- * Sem dado de retenção (nenhuma revisão registrada) ou sem dado de partida
- * real, o componente correspondente cai de volta para o acerto recente em vez
- * de punir o usuário por algo que ele ainda não teve chance de fazer.
+ * `retencaoDePartida` é `null` por padrão: sem verificação de retenção, o
+ * cálculo é exatamente o que sempre foi. Quem tem a verificação passa o número
+ * e recebe uma maestria DERIVADA — ver `masteryComRetencaoDePartida`.
  */
-function calcularMastery(estado: SkillMastery, config: MasteryConfig): number {
+function calcularMastery(
+  estado: SkillMastery,
+  config: MasteryConfig,
+  retencaoDePartida: number | null = null,
+): number {
   const recente = clamp01(estado.recentAccuracy)
-  const retencao = estado.retentionAccuracy > 0 ? clamp01(estado.retentionAccuracy) : recente
+  const retencao = componenteDeRetencao(estado, retencaoDePartida, config)
   const partida =
     estado.realGameOccurrences > 0
       ? clamp01(1 - estado.realGameErrors / estado.realGameOccurrences)
@@ -198,4 +259,29 @@ export function updateMastery(
   proximo.confidence = calcularConfianca(proximo, config)
 
   return proximo
+}
+
+/**
+ * Maestria recalculada com a retenção medida em PARTIDA REAL embutida.
+ *
+ * DERIVADA E LIDA NA HORA. Nada aqui é persistido, e é isso que torna o efeito
+ * **temporário e reversível**: a verificação é recalculada das análises a cada
+ * leitura, então basta a habilidade falhar de novo — ou um card novo reiniciar
+ * a janela — para o ajuste desaparecer sozinho, sem ninguém precisar desfazer
+ * nada. Um bônus gravado no disco seria permanente até alguém lembrar dele.
+ *
+ * `acuracia === null` significa que não há base para afirmar nada, e aí o
+ * estado volta INTACTO — o mesmo objeto, não uma cópia. Habilidade sem
+ * evidência não pode ganhar nem perder prioridade por causa de uma verificação
+ * que não verificou nada.
+ *
+ * `retentionAccuracy` NÃO é tocado de propósito. Ver `componenteDeRetencao`.
+ */
+export function masteryComRetencaoDePartida(
+  estado: SkillMastery,
+  acuracia: number | null,
+  config: MasteryConfig = MASTERY_CONFIG,
+): SkillMastery {
+  if (acuracia === null) return estado
+  return { ...estado, mastery: calcularMastery(estado, config, acuracia) }
 }

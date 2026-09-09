@@ -10,6 +10,11 @@ import {
   inicioDaJanela,
 } from '@/domain/planning/erros-recentes'
 import { buildDailyPlan, type RecentGameError } from '@/domain/planning/planner'
+import {
+  instantesDeTreinoPorHabilidade,
+  verificarRetencaoDeTreinos,
+} from '@/domain/planning/retencao'
+import { aplicarRetencaoDePartida } from '@/domain/skills/retencao-de-partida'
 import { BUDGET_OPTIONS } from '@/domain/profile'
 import type { DailyPlan, PlanBlockKind, ReviewCard, SkillMastery } from '@/domain/types'
 import styles from './DailyPlanView.module.css'
@@ -64,10 +69,14 @@ export function DailyPlanView() {
         // então uma partida importada com offset não é cortada aqui e aceita
         // lá. Trocar isto por um recorte próprio ressuscita a issue #53.
         const desde = inicioDaJanela(agora).toISOString()
-        const [mastery, dueCards, partidas] = await Promise.all([
+        const [mastery, dueCards, partidas, todosOsCards] = await Promise.all([
           repo.getSkillMastery(),
           repo.getDueCards(agora),
           repo.listGames({ since: desde, limit: ERROS_RECENTES_CONFIG.maxPartidasVarridas }),
+          // Todos os cards, não só os vencidos: quem decide quando a habilidade
+          // "virou treino" é a data de CRIAÇÃO do card, e um card já revisado
+          // não está vencido hoje mas continua marcando o início da janela.
+          repo.listReviewCards(),
         ])
         // As análises são lidas por partida (é o que o repositório oferece),
         // então isto é N leituras — COM TETO: `listGames` já veio limitado por
@@ -82,7 +91,26 @@ export function DailyPlanView() {
           indexarPartidas(partidas),
           { agora },
         )
-        if (!cancelado) setDados({ mastery, dueCards, recentGameErrors })
+        // O ciclo fecha aqui: o erro virou treino, e agora perguntamos se a
+        // habilidade VOLTOU A FALHAR depois disso. A maestria ajustada é uma
+        // VISÃO — nada é gravado —, então o efeito se desfaz sozinho quando o
+        // veredito muda, sem bônus guardado esperando alguém desfazer.
+        //
+        // LIMITE DECLARADO: a verificação só enxerga as partidas carregadas
+        // acima, que são as da janela de recência e no máximo
+        // `maxPartidasVarridas`. Uma habilidade treinada há mais tempo que essa
+        // janela é julgada com menos partidas do que existem — o viés é para
+        // MENOS evidência (`sem-evidencia` / `evidencia-insuficiente`), nunca
+        // para afirmar melhora que não houve.
+        const retencoes = verificarRetencaoDeTreinos(
+          instantesDeTreinoPorHabilidade(todosOsCards),
+          analisesPorPartida.flat(),
+          indexarPartidas(partidas),
+          { agora },
+        )
+        const masteryComRetencao = aplicarRetencaoDePartida(mastery, retencoes)
+
+        if (!cancelado) setDados({ mastery: masteryComRetencao, dueCards, recentGameErrors })
       } catch (e) {
         if (!cancelado) {
           setFalha(e instanceof Error ? e.message : 'Não consegui ler seus dados locais.')
