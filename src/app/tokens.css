@@ -1,0 +1,72 @@
+/*
+ * Tokens da marca LanceZero.
+ * Espelha `src/lib/design/tokens.ts` — o teste de tokens falha se divergirem.
+ */
+:root {
+  /* Paleta bruta */
+  --ink-950: #101318;
+  --ink-800: #20252c;
+  --paper-50: #f6f1e8;
+  --paper-200: #e5ded2;
+  --signal-500: #ff6b4a;
+  --sage-500: #7fa68a;
+  --slate-500: #68707d;
+
+  /* Tabuleiro — LanceZero Paper e LanceZero Graphite */
+  --board-paper-light: #e8e0d3;
+  --board-paper-dark: #778276;
+  --board-graphite-light: #c9c9c2;
+  --board-graphite-dark: #555f64;
+
+  /* Papéis semânticos (tema claro) */
+  --surface: var(--paper-50);
+  --surface-raised: #fffdf9;
+  --surface-sunken: var(--paper-200);
+  --border: #d6cec0;
+  --border-strong: #b9b0a0;
+  --text: var(--ink-950);
+  --text-muted: #4d545e;
+  --accent: var(--signal-500);
+  --accent-contrast: #ffffff;
+  --accent-quiet: #a8341a;
+  --positive: #3f6b51;
+
+  /* Escala tipográfica e espaçamento */
+  --font-sans:
+    var(--font-inter, ui-sans-serif), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  --focus-ring: 3px;
+  --content-max: 68rem;
+  --bottom-nav-height: 4rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: var(--ink-950);
+    --surface-raised: var(--ink-800);
+    --surface-sunken: #0a0c10;
+    --border: #2e343d;
+    --border-strong: #454d58;
+    --text: var(--paper-50);
+    --text-muted: #a7aeb8;
+    --accent: var(--signal-500);
+    --accent-contrast: #1a0d08;
+    --accent-quiet: #ff8f75;
+    --positive: var(--sage-500);
+  }
+}

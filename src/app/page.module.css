@@ -1,0 +1,136 @@
+.hero {
+  padding: var(--space-6) 0 var(--space-7);
+}
+
+.tagline {
+  font-size: clamp(2rem, 1.3rem + 3vw, 3.25rem);
+  letter-spacing: -0.03em;
+  margin-bottom: var(--space-4);
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: var(--text-muted);
+  max-width: 54ch;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.cta,
+.ctaGhost {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cta {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: 1px solid transparent;
+}
+
+.cta:hover {
+  color: var(--accent-contrast);
+  filter: brightness(0.95);
+}
+
+.ctaGhost {
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.ctaGhost:hover {
+  background: var(--surface-sunken);
+  color: var(--text);
+}
+
+.loop {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+  margin: 0 0 var(--space-7);
+  padding: 0;
+  list-style: none;
+  counter-reset: loop;
+}
+
+@media (min-width: 45rem) {
+  .loop {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 64rem) {
+  .loop {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.loopItem {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: var(--space-4);
+}
+
+.loopStep {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.loopTitle {
+  font-size: 1rem;
+  margin-bottom: var(--space-2);
+}
+
+.loopItem p {
+  margin: 0;
+  font-size: 0.925rem;
+  color: var(--text-muted);
+}
+
+.principles {
+  margin: 0 0 var(--space-7);
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+}
+
+.principles li + li {
+  margin-top: var(--space-2);
+}
+
+.boardPreview {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: min(20rem, 100%);
+  aspect-ratio: 1;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.light {
+  background: var(--board-paper-light);
+}
+
+.dark {
+  background: var(--board-paper-dark);
+}
+
+.section {
+  margin-bottom: var(--space-7);
+}
