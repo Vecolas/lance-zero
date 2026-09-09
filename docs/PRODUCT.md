@@ -79,23 +79,32 @@ Ver [`ROADMAP.md`](./ROADMAP.md). Uma fase por vez, sem começar a próxima sem 
 
 ## Estado atual
 
-**Fases 0, 1 e 2 concluídas. Fases 4 e 5 com o domínio pronto e a UI pendente.**
+**Fases 0 a 5 concluídas. Fases 6 e 7 com o domínio pronto e a costura pendente.**
 
-O que já funciona:
+O ciclo central já fecha de ponta a ponta e tem teste e2e provando:
 
-- shell navegável com modo claro e escuro (sistema, claro ou escuro), tokens do
-  guia de identidade visual e verificação automática de contraste WCAG AA;
-- tabuleiro em `/games`: carrega PGN ou FEN, navega lance a lance por botão,
-  teclado ou lista textual, gira, e aceita apenas lances legais;
-- engine Stockfish 18 em Web Worker atrás de `EngineProvider`, com fila
-  serializada, descarte de resposta obsoleta, cancelamento e restart por timeout
-  — ainda sem tela que a use;
-- persistência em IndexedDB atrás de `TrainingRepository`, agendamento FSRS e
-  backup JSON — ainda sem tela que os use;
-- modelo de habilidades e `buildDailyPlan` determinístico — ainda sem dashboard.
+> errar um puzzle → virar card de revisão → reaparecer em `/train` na hora certa
 
-O que **não** existe ainda: puzzles, importação de partidas, análise de erro,
-finais, aberturas, diagnóstico e as telas de treino.
+O que funciona hoje:
 
-Dívida registrada: o teste de contrato da engine roda contra um worker falso; a
-versão com o Stockfish real precisa rodar em Playwright.
+- `/dashboard` monta o treino do dia, com o motivo de cada bloco e orçamento respeitado;
+- `/puzzles` treina táticas sem revelar o tema antes da resposta, com dicas em três
+  níveis e a explicação só depois;
+- `/train` roda as revisões espaçadas com FSRS e move o modelo de habilidades;
+- `/games` carrega PGN ou FEN e navega lance a lance;
+- `/progress` mostra forças, prioridades e retenção — e admite quando não há o que medir;
+- `/settings` exporta e importa backup JSON;
+- modo claro e escuro em todas as telas.
+
+Prontos no domínio, ainda sem tela: engine Stockfish, importadores de Lichess e
+Chess.com, severidade de lance, momentos críticos e detectores de erro.
+
+O que **não** existe: finais, aberturas, diagnóstico e a revisão de partida com engine.
+
+### Dívidas registradas
+
+- o contrato da engine roda contra worker falso; falta o teste com Stockfish real;
+- o conjunto de puzzles é um punhado gerado e verificado por nós, não o dump do Lichess;
+- puzzle com solução alternativa igualmente vencedora ainda é marcado como erro;
+- a Fase 6 existe como peças soltas: falta o pipeline varredura → análise → severidade
+  → detectores → explicação.

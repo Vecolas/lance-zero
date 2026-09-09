@@ -57,6 +57,26 @@ export const runtimeDependencies: DependencyLicense[] = [
     url: 'https://github.com/open-spaced-repetition/ts-fsrs',
   },
   {
+    name: 'Lichess puzzle database',
+    license: 'CC0-1.0',
+    reason:
+      'Base de puzzles táticos. O dump não é distribuído aqui: o pipeline de ingestão o consome e gera um recorte curado.',
+    url: 'https://database.lichess.org/#puzzles',
+  },
+  {
+    name: 'API de partidas do Lichess',
+    license: 'Termos da API Lichess',
+    reason:
+      'Importação das suas partidas. Uma requisição por vez e espera de um minuto inteiro após HTTP 429.',
+    url: 'https://lichess.org/api',
+  },
+  {
+    name: 'Chess.com Published-Data API',
+    license: 'Termos de uso Chess.com',
+    reason: 'Importação das suas partidas, apenas pela API pública de leitura. Nunca por scraping.',
+    url: 'https://www.chess.com/news/view/published-data-api',
+  },
+  {
     name: 'TypeScript',
     version: '5.9.3',
     license: 'Apache-2.0',
@@ -105,12 +125,6 @@ export const runtimeDependencies: DependencyLicense[] = [
 ]
 
 export const plannedDependencies: DependencyLicense[] = [
-  {
-    name: 'Lichess puzzle database',
-    license: 'CC0-1.0',
-    reason: 'Base de puzzles táticos. Fase 3.',
-    url: 'https://database.lichess.org/#puzzles',
-  },
   {
     name: 'chess-openings (Lichess)',
     license: 'CC0-1.0',
