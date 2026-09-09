@@ -75,7 +75,21 @@ na sua branch, com fronteira de arquivo escrita
   confiança devolve `unknown`, e a taxa de `unknown` é medida, não escondida.
 - **WDL do Stockfish nunca é rotulado como chance humana de vitória.**
 
-### 5. Dependência nova
+### 5. Artefatos gerados
+
+`src/domain/puzzles/temas-suportados.json` é **gerado**, não escrito à mão. A
+autoridade é `src/domain/puzzles/themes.ts`; o JSON existe só porque um `.mjs`
+não importa `.ts` sem etapa de build.
+
+```bash
+pnpm gerar:temas   # depois de mexer no mapa de temas
+```
+
+Um portão compara os dois e reprova se divergirem — em qualquer direção, tema
+faltando ou sobrando. Editar o JSON à mão é criar a segunda fonte da mesma
+verdade, que é o que ele existe para impedir.
+
+### 6. Dependência nova
 
 `docs/LICENSES.md` **e** `src/lib/legal/licenses.ts`, com pacote, versão,
 licença, motivo e URL. Sem isso a Definition of Done não fecha.
@@ -83,7 +97,7 @@ licença, motivo e URL. Sem isso a Definition of Done não fecha.
 Artefato GPL fica isolado em `public/engine/stockfish/`, sem modificação, com
 `COPYING.txt` e `SOURCE.txt` (ADR-0005).
 
-### 6. Decisão cara de reverter vira ADR
+### 7. Decisão cara de reverter vira ADR
 
 `docs/adr/`, registrando **o custo** e não só o benefício, e o que **não** muda.
 Há um teste que exige que todo ADR do disco esteja no índice — ele existe porque
