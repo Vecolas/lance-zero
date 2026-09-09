@@ -1,20 +1,19 @@
 import type { Metadata } from 'next'
-import { PlaceholderScreen } from '@/components/ui/PlaceholderScreen'
+import { EndgamesWorkbench } from '@/components/endgames/EndgamesWorkbench'
 
 export const metadata: Metadata = { title: 'Finais' }
 
 export default function EndgamesPage() {
   return (
-    <PlaceholderScreen
-      title="Finais"
-      phase={8}
-      lead="Currículo curto de finais, com defesa perfeita quando a tablebase cobrir a posição."
-      planned={[
-        'Mates básicos, oposição, casas-chave, regra do quadrado, peão passado',
-        'Adapter de tablebase Syzygy com cache e degradação graciosa',
-        'Posições treináveis com objetivo verificável',
-        'Lições completáveis offline depois de cacheadas',
-      ]}
-    />
+    <>
+      <h1>Finais</h1>
+      <p>
+        Final não se decora, se calcula. Cada posição tem um objetivo que o app sabe julgar sozinho:
+        você joga, e a tela diz se cumpriu, se ainda dá ou se já era. Quando a tablebase cobre a
+        posição, o adversário joga a defesa perfeita — e quando ela não responde, a tela diz isso em
+        vez de fingir.
+      </p>
+      <EndgamesWorkbench />
+    </>
   )
 }
