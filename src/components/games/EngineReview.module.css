@@ -141,22 +141,9 @@
   white-space: nowrap;
 }
 
-.grave {
-  color: var(--danger);
-}
-
-.erro {
-  color: var(--warning);
-}
-
-.imprecisao {
-  color: var(--note);
-}
-
-.ok {
-  color: var(--positive);
-}
-
+/* As cores por severidade saíram daqui: quem pinta a classificação de lance é
+   o MoveQualityBadge, a partir do catálogo em src/lib/design/move-quality.ts.
+   Duas tabelas de cor para a mesma coisa acabariam divergindo. */
 .viu {
   color: var(--positive);
 }

@@ -1,0 +1,66 @@
+/* As cores da barra são as do guia (`--eval-white` / `--eval-black`) e NÃO
+   trocam com o tema da interface: a barra fala do tabuleiro, e o tabuleiro
+   também não troca. A borda usa o papel semântico para continuar visível nos
+   dois temas. */
+.bloco {
+  margin: var(--space-2) 0;
+}
+
+.titulo {
+  margin: 0 0 var(--space-1);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.trilho {
+  position: relative;
+  flex: 1;
+  min-width: 6rem;
+  height: 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--eval-black);
+  overflow: hidden;
+}
+
+/* Sem avaliação: o trilho fica listrado para não se ler como "equilibrado". */
+.semDado {
+  background: repeating-linear-gradient(135deg, var(--eval-black) 0 4px, var(--eval-white) 4px 8px);
+  opacity: 0.45;
+}
+
+.semDado .brancas,
+.semDado .divisor {
+  display: none;
+}
+
+.brancas {
+  height: 100%;
+  background: var(--eval-white);
+}
+
+.divisor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--zero-blue);
+}
+
+.numero {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 3.5rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}

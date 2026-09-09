@@ -1,0 +1,55 @@
+/* Card: raio de 12 px, o valor do guia. O destaque é uma barra lateral de
+   4 px em `currentColor` — discreto, como o guia pede, e sem gradiente da
+   marca, que é reservado para logo e hero. */
+.faixa {
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-left: 4px solid currentColor;
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  animation: entrar 160ms ease-out;
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.icone {
+  flex: none;
+}
+
+.estado {
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+}
+
+/* Texto corrido volta à cor de leitura: a cor do estado fica no cabeçalho. */
+.mensagem {
+  margin: var(--space-2) 0 0;
+  color: var(--text);
+  font-size: 0.9375rem;
+  max-width: 62ch;
+}
+
+.extra {
+  margin-top: var(--space-3);
+  color: var(--text);
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faixa {
+    animation: none;
+  }
+}

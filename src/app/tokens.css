@@ -74,7 +74,10 @@
   --accent-soft: var(--zero-soft);
   --on-accent: #ffffff;
   --accent-strong: var(--zero-deep);
-  --link: var(--accent-text);
+  /* Azul da marca em versão legível como TEXTO. `--link` nasce daqui para não
+     existirem duas verdades para o mesmo azul. */
+  --accent-readable: var(--accent-text);
+  --link: var(--accent-readable);
   --positive: var(--success-text);
   --warning: var(--attention-text);
   --danger: var(--error-text);
@@ -128,7 +131,8 @@
     --accent-soft: rgba(32, 201, 232, 0.16);
     --on-accent: var(--navy-950);
     --accent-strong: var(--zero-cyan);
-    --link: var(--zero-cyan);
+    --accent-readable: var(--zero-cyan);
+    --link: var(--accent-readable);
     --positive: var(--success);
     --warning: var(--attention);
     --danger: var(--error);
@@ -153,7 +157,8 @@
   --accent-soft: rgba(32, 201, 232, 0.16);
   --on-accent: var(--navy-950);
   --accent-strong: var(--zero-cyan);
-  --link: var(--zero-cyan);
+  --accent-readable: var(--zero-cyan);
+  --link: var(--accent-readable);
   --positive: var(--success);
   --warning: var(--attention);
   --danger: var(--error);
