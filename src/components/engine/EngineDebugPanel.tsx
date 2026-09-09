@@ -15,6 +15,7 @@
 import { useState } from 'react'
 import { useEngine, type EngineStatus } from '@/lib/engine/use-engine'
 import type { EngineAnalysis, EngineLine } from '@/lib/engine/types'
+import { normalizeScoreToWhite, normalizeWdlToWhite } from '@/lib/engine/uci'
 import styles from './EngineDebugPanel.module.css'
 
 /** Posição inicial: ponto de partida seguro para um teste manual rápido. */
@@ -216,6 +217,23 @@ export function EngineDebugPanel() {
                   data-multipv={linha.multiPv}
                   data-score-cp={linha.scoreCp === null ? '' : String(linha.scoreCp)}
                   data-mate={linha.mateIn === null ? '' : String(linha.mateIn)}
+                  /* O mesmo score na perspectiva das brancas. Fica exposto aqui
+                     porque é o que permite provar, contra a engine de verdade,
+                     que a convenção de perspectiva assumida pelo código bate com
+                     a que o UCI usa — ver tests/e2e/engine.spec.ts. */
+                  data-score-brancas={
+                    linha.scoreCp === null || !analise
+                      ? ''
+                      : String(normalizeScoreToWhite(linha.scoreCp, analise.turn))
+                  }
+                  data-wdl-brancas={
+                    linha.wdl && analise
+                      ? (() => {
+                          const w = normalizeWdlToWhite(linha.wdl, analise.turn)
+                          return `${w.win},${w.draw},${w.loss}`
+                        })()
+                      : ''
+                  }
                   data-melhor-lance={linha.pv[0] ?? ''}
                 >
                   <span className={styles.indice}>#{linha.multiPv}</span>
