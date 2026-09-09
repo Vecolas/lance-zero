@@ -61,6 +61,7 @@ function montarAnalises(plies = 40): PositionAnalysis[] {
       severity: classifySeverity(perda),
       skillIds: [],
       explanationCode: 'unknown',
+      precisao: 'aprofundada',
     }
   })
 }

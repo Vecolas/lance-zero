@@ -90,6 +90,7 @@ interface ChamadaDaEngine {
   fen: string
   nodes: number
   multiPv: number
+  showWdl: boolean
 }
 
 interface FakeEngineOptions {
@@ -120,7 +121,12 @@ class FakeEngine implements EngineProvider {
   }
 
   async analyzePosition(fen: string, options: AnalysisOptions): Promise<EngineAnalysis> {
-    this.chamadas.push({ fen, nodes: options.nodes ?? 0, multiPv: options.multiPv ?? 1 })
+    this.chamadas.push({
+      fen,
+      nodes: options.nodes ?? 0,
+      multiPv: options.multiPv ?? 1,
+      showWdl: options.showWdl === true,
+    })
     this.options.aoAnalisar?.(this.chamadas.length, fen)
     await Promise.resolve()
 
@@ -140,7 +146,18 @@ class FakeEngine implements EngineProvider {
       bestMoveUci: melhor,
       ponderUci: null,
       lines: melhor
-        ? [{ multiPv: 1, scoreCp: cp, mateIn: null, pv: [melhor], depth: 12, nodes: 0 }]
+        ? [
+            {
+              multiPv: 1,
+              scoreCp: cp,
+              mateIn: null,
+              pv: [melhor],
+              depth: 12,
+              nodes: 0,
+              // A engine só reporta WDL quando pedimos, como a de verdade.
+              ...(options.showWdl === true ? { wdl: { win: 600, draw: 300, loss: 100 } } : {}),
+            },
+          ]
         : [],
       elapsedMs: 1,
     }
@@ -408,5 +425,93 @@ describe('progresso e determinismo', () => {
 
     expect(segunda).toEqual(primeira)
     expect(JSON.stringify(segunda)).toBe(JSON.stringify(primeira))
+  })
+})
+
+describe('precisão declarada e WDL', () => {
+  it('lance que ficou só na varredura é marcado como raso', async () => {
+    const partida = parsePgn(PGN)
+    // Perda ínfima em todos: nenhum candidato, logo nenhum aprofundamento.
+    const engine = new FakeEngine({ roteiro: montarRoteiro(partida, 'b', () => 0.5) })
+
+    const { analises, resumo } = await analisar(engine)
+
+    expect(resumo.pliesAprofundados).toBe(0)
+    expect(analises.length).toBeGreaterThan(0)
+    for (const a of analises) {
+      expect(a.precisao, `ply ${a.ply}`).toBe('rasa')
+    }
+  })
+
+  it('lance aprofundado é marcado como aprofundado', async () => {
+    const partida = parsePgn(PGN)
+    const engine = new FakeEngine({ roteiro: montarRoteiro(partida, 'b', perdaEscolhida) })
+
+    const { analises, resumo } = await analisar(engine)
+
+    const aprofundadas = analises.filter((a) => a.precisao === 'aprofundada')
+    expect(aprofundadas.length).toBe(resumo.pliesAprofundados)
+    expect(aprofundadas.length).toBeGreaterThan(0)
+  })
+
+  // Sem isto, a tela apresentaria número de varredura rasa como diagnóstico —
+  // que é exatamente a falsa precisão que o produto proíbe.
+  it('a precisão declarada bate com o orçamento que o lance realmente recebeu', async () => {
+    const partida = parsePgn(PGN)
+    const engine = new FakeEngine({ roteiro: montarRoteiro(partida, 'b', perdaEscolhida) })
+
+    const { analises } = await analisar(engine)
+
+    const fensAprofundados = new Set(
+      engine.chamadas
+        .filter((c) => c.nodes === PIPELINE_CONFIG.aprofundamentoNodes)
+        .map((c) => c.fen),
+    )
+    for (const a of analises) {
+      const esperado = fensAprofundados.has(a.fenBefore) ? 'aprofundada' : 'rasa'
+      expect(a.precisao, `ply ${a.ply} (${a.fenBefore})`).toBe(esperado)
+    }
+  })
+
+  it('WDL só é pedido no aprofundamento, nunca na varredura', async () => {
+    const partida = parsePgn(PGN)
+    const engine = new FakeEngine({ roteiro: montarRoteiro(partida, 'b', perdaEscolhida) })
+
+    await analisar(engine)
+
+    const rasas = engine.chamadas.filter((c) => c.nodes === PIPELINE_CONFIG.varreduraNodes)
+    const profundas = engine.chamadas.filter((c) => c.nodes === PIPELINE_CONFIG.aprofundamentoNodes)
+    expect(rasas.length).toBeGreaterThan(0)
+    expect(profundas.length).toBeGreaterThan(0)
+    expect(rasas.every((c) => c.showWdl === false)).toBe(true)
+    expect(profundas.every((c) => c.showWdl === true)).toBe(true)
+  })
+
+  it('análise rasa não inventa WDL', async () => {
+    const partida = parsePgn(PGN)
+    const engine = new FakeEngine({ roteiro: montarRoteiro(partida, 'b', () => 0.5) })
+
+    const { analises } = await analisar(engine)
+
+    for (const a of analises) {
+      expect(a.wdlBefore, `ply ${a.ply}`).toBeUndefined()
+      expect(a.wdlAfter, `ply ${a.ply}`).toBeUndefined()
+    }
+  })
+
+  it('análise aprofundada guarda WDL somando mil, na perspectiva das brancas', async () => {
+    const partida = parsePgn(PGN)
+    const engine = new FakeEngine({ roteiro: montarRoteiro(partida, 'b', perdaEscolhida) })
+
+    const { analises } = await analisar(engine)
+    const aprofundada = analises.find((a) => a.precisao === 'aprofundada')
+
+    expect(aprofundada?.wdlBefore).toBeDefined()
+    const { win, draw, loss } = aprofundada!.wdlBefore!
+    expect(win + draw + loss).toBe(1000)
+    // O usuário joga de pretas neste PGN: a engine reporta na perspectiva de
+    // quem joga, e guardamos sempre em brancas. Como o roteiro devolve sempre
+    // 600/300/100, a normalização tem de ter invertido em algum dos lados.
+    expect(win === 600 && loss === 100).toBe(false)
   })
 })

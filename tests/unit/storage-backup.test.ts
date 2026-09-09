@@ -105,6 +105,7 @@ async function repositorioPovoado(): Promise<MemoryTrainingRepository> {
       severity: 'erro-grave',
       skillIds: ['tactics.back-rank'],
       explanationCode: 'mate-perdido',
+      precisao: 'aprofundada',
     },
   ])
   await repo.saveReviewCard(cardRevisado())

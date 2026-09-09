@@ -70,6 +70,7 @@ function analise(overrides: Partial<PositionAnalysis> = {}): PositionAnalysis {
     severity: 'imprecisao',
     skillIds: ['opening.center'],
     explanationCode: 'unknown',
+    precisao: 'aprofundada',
     ...overrides,
   }
 }

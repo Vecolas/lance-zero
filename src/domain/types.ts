@@ -209,6 +209,43 @@ export interface PositionAnalysis {
   skillIds: SkillId[]
   /** Código do detector determinístico, ou `unknown`. */
   explanationCode: string
+  /**
+   * Quanto orçamento de engine este lance recebeu.
+   *
+   * O pipeline faz duas passagens: varredura rasa em todos os lances do
+   * usuário e aprofundamento só nos candidatos. Sem este campo, `analises[]`
+   * mistura números de precisão diferente e nada na tela distingue os dois — um
+   * número raso apresentado como diagnóstico é falsa precisão.
+   *
+   * É obrigatório de propósito: quem produz uma análise tem de declarar quanto
+   * ela vale. Campo opcional com default útil faria todo dado antigo alegar
+   * profundidade que não teve.
+   */
+  precisao: AnalysisPrecision
+  /**
+   * WDL do Stockfish antes e depois do lance, quando a engine reportou.
+   *
+   * ATENÇÃO: é calibrado por AUTO-JOGO da engine. Serve para comparar
+   * severidade internamente e NUNCA é apresentado como "sua chance humana de
+   * vitória". Essa é regra do produto, não preferência de nomenclatura.
+   */
+  wdlBefore?: EngineWdlSnapshot
+  wdlAfter?: EngineWdlSnapshot
+}
+
+/** Quanto orçamento de engine uma análise recebeu. */
+export type AnalysisPrecision = 'rasa' | 'aprofundada'
+
+/**
+ * Distribuição vitória/empate/derrota reportada pela engine, em milésimos.
+ *
+ * Sempre na perspectiva das brancas, para duas análises poderem ser comparadas
+ * sem que alguém precise lembrar de quem era a vez.
+ */
+export interface EngineWdlSnapshot {
+  win: number
+  draw: number
+  loss: number
 }
 
 // -------------------------------------------------------------------- perfil
