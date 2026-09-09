@@ -294,9 +294,7 @@ describe('leitura de ambiente', () => {
   const AMBIENTE_OK: EnvSource = {
     NEXT_PUBLIC_SUPABASE_URL: 'https://projeto.supabase.co',
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'pk_publica',
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_clerk',
     SUPABASE_SECRET_KEY: 'sb_secret',
-    CLERK_SECRET_KEY: 'clerk_secret',
   }
 
   it('lê a configuração válida', () => {
@@ -331,7 +329,7 @@ describe('leitura de ambiente', () => {
   it('derruba a configuração quando um segredo aparece com prefixo público', () => {
     const expostas: EnvSource[] = [
       { ...AMBIENTE_OK, NEXT_PUBLIC_SUPABASE_SECRET_KEY: 'sb_secret' },
-      { ...AMBIENTE_OK, NEXT_PUBLIC_CLERK_SECRET_KEY: 'clerk_secret' },
+      { ...AMBIENTE_OK, NEXT_PUBLIC_SUPABASE_SECRET_KEY: 'sb_secret' },
       { ...AMBIENTE_OK, NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: 'sb_service' },
       { ...AMBIENTE_OK, NEXT_PUBLIC_DB_PASSWORD: 'senha' },
     ]

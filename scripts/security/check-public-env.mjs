@@ -15,11 +15,10 @@ const PALAVRAS_DE_SEGREDO = [
   'PRIVATE',
   'PASSWORD',
   'TOKEN',
-  'CLERK_SECRET',
   'API_KEY',
 ]
-/** Chaves publicaveis de propósito, apesar do nome parecer sensível. */
-const PERMITIDAS = new Set(['NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_URL'])
+/** Chaves publicáveis de propósito, apesar do nome parecer sensível. */
+const PERMITIDAS = new Set(['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL'])
 
 function* arquivos(dir) {
   let entradas
@@ -38,10 +37,25 @@ function* arquivos(dir) {
   }
 }
 
+/**
+ * Remove comentários antes de varrer.
+ *
+ * Sem isto, o verificador acusa a própria documentação da regra: os arquivos
+ * que explicam "nunca use NEXT_PUBLIC_ em segredo" precisam citar exemplos
+ * proibidos no texto. Ferramenta que dispara em falso positivo é ferramenta que
+ * as pessoas aprendem a ignorar — e aí ela deixa de proteger no dia que importa.
+ */
+function semComentarios(texto, arquivo) {
+  if (/\.ya?ml$/.test(arquivo)) {
+    return texto.replace(/(^|\s)#[^\r\n]*/g, ' ')
+  }
+  return texto.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\r\n]*/g, ' ')
+}
+
 const problemas = []
 for (const raiz of RAIZES) {
   for (const arquivo of arquivos(raiz)) {
-    const texto = readFileSync(arquivo, 'utf8')
+    const texto = semComentarios(readFileSync(arquivo, 'utf8'), arquivo)
     for (const achado of texto.matchAll(/NEXT_PUBLIC_[A-Z0-9_]+/g)) {
       const nome = achado[0]
       if (PERMITIDAS.has(nome)) continue

@@ -55,9 +55,10 @@ import {
 } from '@/server/validation'
 
 /**
- * Sessão autenticada, como o adaptador do Clerk entrega.
+ * Sessão autenticada, como o Supabase Auth entrega (ADR-0009).
  *
- * `userId` é o `sub` do Clerk (seção 6). `token` é o JWT usado para o cliente
+ * `userId` é o `sub` do token do Supabase Auth, o mesmo que `auth.uid()` devolve
+ * dentro do Postgres (seção 6). `token` é o JWT usado para o cliente
  * do Supabase agir como o usuário — é ele que a RLS lê. Nenhum dos dois pode
  * ser construído pelo navegador.
  */

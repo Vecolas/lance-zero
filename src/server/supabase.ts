@@ -45,7 +45,7 @@ export interface SupabaseAdminConnection {
 
 /**
  * Sem sessão de navegador, sem refresh automático, sem ler token da URL.
- * Este servidor é stateless: quem guarda sessão é o Clerk.
+ * Este servidor é stateless: quem guarda sessão é o Supabase Auth.
  */
 const BASE_AUTH_OPTIONS = {
   persistSession: false,
@@ -79,7 +79,7 @@ export function createAnonClient(config: SupabaseConnection = publicConnection()
 }
 
 /**
- * Cliente do usuário: publishable key + JWT do Clerk.
+ * Cliente do usuário: publishable key + JWT do Supabase Auth.
  *
  * Toda consulta roda sujeita à RLS, com a identidade que o Postgres lê do
  * próprio token. É o cliente do caminho de requisição normal — o único que a
@@ -120,7 +120,7 @@ export function createUserClient(
  * - marcada como Sensitive Environment Variable na Vercel.
  *
  * Uso permitido: operação administrativa deliberada e revisada — processar
- * webhook do Clerk, executar exclusão de conta, tarefa de manutenção. NUNCA em
+ * executar exclusão de conta, rodar tarefa de manutenção. NUNCA em
  * caminho de requisição comum: se uma página ou Server Action de usuário
  * precisou deste cliente, a resposta certa quase sempre é corrigir a policy de
  * RLS, e não contorná-la.

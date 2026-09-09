@@ -40,14 +40,13 @@ export class EnvConfigError extends Error {
 }
 
 /**
- * Variáveis realmente públicas (seção 41). Estas PODEM ir para o navegador:
- * a publishable key do Supabase só funciona sujeita a RLS, e a do Clerk é
- * projetada para ser pública.
+ * Variáveis realmente públicas (seção 41). Estas PODEM ir para o navegador: a
+ * publishable key do Supabase só funciona sujeita a RLS, e é para isso que a
+ * RLS existe. Sem ela, esta chave seria uma porta aberta.
  */
 const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
 })
 
 /**
@@ -56,7 +55,6 @@ const publicEnvSchema = z.object({
  */
 const secretEnvSchema = z.object({
   SUPABASE_SECRET_KEY: z.string().min(1),
-  CLERK_SECRET_KEY: z.string().min(1),
 })
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>
