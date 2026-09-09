@@ -11,6 +11,14 @@ import { hashString, normalizePgn } from './hash'
 
 const RESULTS: ReadonlySet<string> = new Set(['1-0', '0-1', '1/2-1/2', '*'])
 
+import {
+  assertQuantidadeDePartidas,
+  assertTextoDentroDoLimite,
+  PGN_LIMITS,
+  verificarPartida,
+  type PgnLimits,
+} from './pgn-limits'
+
 export interface PgnImportOptions {
   /**
    * Nome do usuário nos cabeçalhos `White`/`Black`, sem diferenciar
@@ -21,6 +29,8 @@ export interface PgnImportOptions {
   userColor?: Game['userColor']
   /** Relógio injetado, em milissegundos. */
   now?: () => number
+  /** Tetos de entrada. Trocar só em teste. */
+  limits?: PgnLimits
 }
 
 /** Uma partida do lote que não pôde ser lida. */
@@ -119,12 +129,21 @@ export function importPgnTextDetailed(
   options: PgnImportOptions = {},
 ): PgnImportOutcome {
   const now = options.now ?? (() => Date.now())
+  const limits = options.limits ?? PGN_LIMITS
   const games: Game[] = []
   const issues: PgnImportIssue[] = []
 
-  splitPgnGames(text).forEach((chunk, position) => {
+  // PGN é entrada não confiável: o teto do lote é verificado antes de qualquer
+  // parsing, senão o próprio ato de dividir o texto já custa caro.
+  assertTextoDentroDoLimite(text, limits)
+  const chunks = splitPgnGames(text)
+  assertQuantidadeDePartidas(chunks.length, limits)
+
+  chunks.forEach((chunk, position) => {
     const index = position + 1
     try {
+      const excedeu = verificarPartida(chunk, limits)
+      if (excedeu) throw excedeu
       const parsed = parsePgn(chunk)
       const headers = parsed.headers
       const importedAtMs = now()

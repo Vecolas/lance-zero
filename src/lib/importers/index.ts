@@ -1,6 +1,7 @@
 export * from './http'
 export * from './hash'
 export * from './dedupe'
+export * from './pgn-limits'
 export * from './pgn-import'
 export { LICHESS_CONFIG, LichessImporter, parseNdjson } from './lichess'
 export type { LichessImporterOptions } from './lichess'

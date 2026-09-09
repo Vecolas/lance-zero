@@ -77,6 +77,27 @@ export const runtimeDependencies: DependencyLicense[] = [
     url: 'https://www.chess.com/news/view/published-data-api',
   },
   {
+    name: 'Zod',
+    version: '4.5.4',
+    license: 'MIT',
+    reason: 'Validação de entrada em tempo de execução, contra mass assignment.',
+    url: 'https://github.com/colinhacks/zod',
+  },
+  {
+    name: 'supabase-js',
+    version: '2.116.0',
+    license: 'MIT',
+    reason: 'Cliente do Supabase. A autorização é feita pelo Postgres, via RLS.',
+    url: 'https://github.com/supabase/supabase-js',
+  },
+  {
+    name: 'server-only',
+    version: '0.0.1',
+    license: 'MIT',
+    reason: 'Faz o build falhar se um módulo de servidor for importado no cliente.',
+    url: 'https://www.npmjs.com/package/server-only',
+  },
+  {
     name: 'TypeScript',
     version: '5.9.3',
     license: 'Apache-2.0',

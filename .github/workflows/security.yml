@@ -1,0 +1,81 @@
+name: Segurança
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Vulnerabilidade nova aparece sem ninguém tocar no código.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seguranca-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  segredos:
+    name: Segredos no histórico
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependencias:
+    name: Vulnerabilidades em dependências
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit
+        # Alta e crítica reprovam. Moderada aparece no log sem travar o merge.
+        run: pnpm audit --audit-level high
+
+      - name: OSV Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@v2
+        with:
+          scan-args: |-
+            --lockfile=./pnpm-lock.yaml
+
+  politica:
+    name: Regras do ADR-0008
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Nenhum segredo com prefixo NEXT_PUBLIC_
+        run: node scripts/security/check-public-env.mjs
+
+      - name: RLS nunca desabilitada
+        run: node scripts/security/check-rls.mjs
+
+      - name: Testes de segurança
+        run: pnpm exec vitest run tests/unit/security-*.test.ts

@@ -9,6 +9,7 @@ import {
   importPgnTextDetailed,
   LichessImporter,
 } from '@/lib/importers'
+import { PgnLimitError } from '@/lib/importers/pgn-limits'
 import styles from './GameImportPanel.module.css'
 
 type Fonte = 'pgn' | 'lichess' | 'chesscom'
@@ -98,6 +99,11 @@ export function GameImportPanel({ onImported }: { onImported: () => void }) {
         }
       }
     } catch (e) {
+      // Limite de entrada já vem com mensagem escrita para o usuário.
+      if (e instanceof PgnLimitError) {
+        setFeedback({ tipo: 'bad', texto: e.message })
+        return
+      }
       setFeedback({
         tipo: 'bad',
         texto:
