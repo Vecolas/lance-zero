@@ -1,20 +1,18 @@
 import type { Metadata } from 'next'
-import { PlaceholderScreen } from '@/components/ui/PlaceholderScreen'
+import { ForcingDrill } from '@/components/calculate/ForcingDrill'
 
 export const metadata: Metadata = { title: 'Cálculo' }
 
 export default function CalculatePage() {
   return (
-    <PlaceholderScreen
-      title="Cálculo"
-      phase={4}
-      lead="Treino de visualização e candidatos, separado de reconhecimento de padrões."
-      planned={[
-        'Rotina xeques, capturas e ameaças',
-        'Listar candidatos antes de calcular',
-        'Prever a melhor resposta do adversário',
-        'Posições cegas curtas com aumento gradual de profundidade',
-      ]}
-    />
+    <>
+      <h1>Cálculo</h1>
+      <p>
+        Reconhecer padrões e calcular são coisas diferentes, e é por isso que este treino é separado
+        dos puzzles. Aqui não existe um lance certo a adivinhar: existe a rotina de olhar tudo que é
+        forçante antes de escolher.
+      </p>
+      <ForcingDrill />
+    </>
   )
 }
