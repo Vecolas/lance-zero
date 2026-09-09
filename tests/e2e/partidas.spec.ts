@@ -136,7 +136,14 @@ test('digitar no campo tira o arquivo do caminho, sem surpresa silenciosa', asyn
   await expect(page.getByText(/lote\.pgn pronto para importar/)).toBeHidden()
 
   await page.getByRole('button', { name: 'Importar' }).click()
-  await expect(page.getByText(/Nenhuma partida/)).toBeVisible()
+
+  // Escopo no painel: a lista vazia tambem diz "Nenhuma partida", e o texto solto
+  // casaria com ela mesmo que o arquivo tivesse sido usado em silencio.
+  const painel = page.getByRole('region', { name: 'Importar partidas' })
+  await expect(painel.getByText(/Nenhuma partida leg/)).toBeVisible()
+
+  // Controle: se o arquivo tivesse vencido, estas duas partidas estariam na lista.
+  await expect(page.getByRole('link', { name: /Alice . Bruno/ })).toHaveCount(0)
 })
 
 test('as anotações do passe 1 ficam visíveis ao lado do veredito da engine', async ({ page }) => {
