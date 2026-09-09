@@ -3,18 +3,10 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
-import {
-  ERROS_RECENTES_CONFIG,
-  errosRecentesDeAnalises,
-  indexarPartidas,
-  inicioDaJanela,
-} from '@/domain/planning/erros-recentes'
+import { ERROS_RECENTES_CONFIG } from '@/domain/planning/erros-recentes'
 import { buildDailyPlan, type RecentGameError } from '@/domain/planning/planner'
-import {
-  instantesDeTreinoPorHabilidade,
-  verificarRetencaoDeTreinos,
-} from '@/domain/planning/retencao'
 import { aplicarRetencaoDePartida } from '@/domain/skills/retencao-de-partida'
+import { carregarSinaisDePartida } from '@/lib/training/sinais-de-partida'
 import { BUDGET_OPTIONS } from '@/domain/profile'
 import type { DailyPlan, PlanBlockKind, ReviewCard, SkillMastery } from '@/domain/types'
 import styles from './DailyPlanView.module.css'
@@ -62,53 +54,21 @@ export function DailyPlanView() {
       if (!repo) return
       try {
         const agora = new Date()
-        // Só partidas dentro da janela de recência interessam ao planner, e o
-        // repositório já sabe filtrar por data: pedir tudo e descartar depois
-        // custaria leitura à toa. A MESMA borda que o domínio usa — `since` é
-        // comparado por instante do outro lado (ver `@/lib/storage/query`),
-        // então uma partida importada com offset não é cortada aqui e aceita
-        // lá. Trocar isto por um recorte próprio ressuscita a issue #53.
-        const desde = inicioDaJanela(agora).toISOString()
-        const [mastery, dueCards, partidas, todosOsCards] = await Promise.all([
+        // As duas leituras de partida moram num lugar só: a tela de progresso
+        // usa a MESMA função. Duplicar a sequência aqui criaria duas janelas de
+        // recência e duas bordas de data, divergindo sem nada acusar.
+        const [mastery, dueCards, sinais] = await Promise.all([
           repo.getSkillMastery(),
           repo.getDueCards(agora),
-          repo.listGames({ since: desde, limit: ERROS_RECENTES_CONFIG.maxPartidasVarridas }),
-          // Todos os cards, não só os vencidos: quem decide quando a habilidade
-          // "virou treino" é a data de CRIAÇÃO do card, e um card já revisado
-          // não está vencido hoje mas continua marcando o início da janela.
-          repo.listReviewCards(),
+          carregarSinaisDePartida(repo, { agora }),
         ])
-        // As análises são lidas por partida (é o que o repositório oferece),
-        // então isto é N leituras — COM TETO: `listGames` já veio limitado por
-        // `maxPartidasVarridas`, e as partidas vêm da mais recente para a mais
-        // antiga. Sem esse teto, quem importou mil partidas pagaria mil
-        // leituras para abrir o "Treino de hoje".
-        const analisesPorPartida = await Promise.all(
-          partidas.map((partida) => repo.listPositionAnalyses(partida.id)),
-        )
-        const recentGameErrors: RecentGameError[] = errosRecentesDeAnalises(
-          analisesPorPartida.flat(),
-          indexarPartidas(partidas),
-          { agora },
-        )
+
         // O ciclo fecha aqui: o erro virou treino, e agora perguntamos se a
         // habilidade VOLTOU A FALHAR depois disso. A maestria ajustada é uma
         // VISÃO — nada é gravado —, então o efeito se desfaz sozinho quando o
         // veredito muda, sem bônus guardado esperando alguém desfazer.
-        //
-        // LIMITE DECLARADO: a verificação só enxerga as partidas carregadas
-        // acima, que são as da janela de recência e no máximo
-        // `maxPartidasVarridas`. Uma habilidade treinada há mais tempo que essa
-        // janela é julgada com menos partidas do que existem — o viés é para
-        // MENOS evidência (`sem-evidencia` / `evidencia-insuficiente`), nunca
-        // para afirmar melhora que não houve.
-        const retencoes = verificarRetencaoDeTreinos(
-          instantesDeTreinoPorHabilidade(todosOsCards),
-          analisesPorPartida.flat(),
-          indexarPartidas(partidas),
-          { agora },
-        )
-        const masteryComRetencao = aplicarRetencaoDePartida(mastery, retencoes)
+        const masteryComRetencao = aplicarRetencaoDePartida(mastery, sinais.retencoes)
+        const recentGameErrors: RecentGameError[] = sinais.recentGameErrors
 
         if (!cancelado) setDados({ mastery: masteryComRetencao, dueCards, recentGameErrors })
       } catch (e) {

@@ -44,6 +44,7 @@ vi.mock('@/components/providers/RepositoryProvider', () => ({
 }))
 
 const { DailyPlanView } = await import('@/components/training/DailyPlanView')
+const { ProgressView } = await import('@/components/training/ProgressView')
 
 /**
  * Três habilidades da mesma área, com papéis distintos:
@@ -256,5 +257,37 @@ describe('a verificação de retenção chega ao plano do dia', () => {
     const texto = titulos().join(' | ')
     expect(texto).toContain(getSkill(RIVAL).label)
     expect(texto).not.toContain(getSkill(TREINADA).label)
+  })
+})
+
+describe('o veredito de retenção chega à tela de progresso', () => {
+  /**
+   * O segundo lugar onde a retenção pode virar código morto. O plano do dia usa
+   * o veredito para ORDENAR; a tela de progresso é onde o aluno LÊ o que
+   * aconteceu. Se ela parar de mostrar, o cálculo continua certo e o aluno
+   * nunca fica sabendo se o treino funcionou — que é a metade da promessa do
+   * produto que esta issue existe para entregar.
+   */
+  async function renderizarProgresso(repo: MemoryTrainingRepository): Promise<void> {
+    contexto.valor = { status: 'pronto', repo, profile: perfil, erro: null, revision: 0 }
+    render(<ProgressView />)
+    await waitFor(() => expect(screen.queryByText('Abrindo seus dados locais…')).toBeNull())
+  }
+
+  it('mostra o veredito com a ressalva, e não como domínio do padrão', async () => {
+    await renderizarProgresso(await montarRepo(true))
+
+    const secao = await screen.findByRole('region', { name: 'Depois do treino' })
+    expect(secao).toBeInTheDocument()
+    expect(secao.textContent ?? '').toContain(getSkill(TREINADA).label)
+    // A ressalva é o ponto: sem ela o aluno lê "não reincidiu" como "dominei".
+    expect(secao.textContent ?? '').toContain('não quer dizer')
+  })
+
+  it('CONTROLE: sem treino registrado, a seção não aparece', async () => {
+    // Sem esta metade, uma tela que mostrasse a seção sempre — inclusive vazia,
+    // ou com habilidade que nunca virou treino — passaria no teste acima.
+    await renderizarProgresso(await montarRepo(false))
+    expect(screen.queryByRole('region', { name: 'Depois do treino' })).toBeNull()
   })
 })
