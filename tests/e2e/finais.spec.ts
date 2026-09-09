@@ -177,3 +177,83 @@ test('com tablebase, o adversário é apresentado como defesa perfeita', async (
   await expect(page.getByText(/Objetivo cumprido/)).toBeVisible()
   await expect(page.getByText(/não vieram da tablebase/)).toBeHidden()
 })
+
+/**
+ * A partir daqui: PERSISTÊNCIA.
+ *
+ * O que só estes testes provam é o que nenhum teste unitário alcança: que o
+ * caminho tela → repositório → IndexedDB de VERDADE existe. Os testes de unidade
+ * gravam num repositório de memória; se o esquema do banco, o provider ou a
+ * fronteira do cliente quebrarem, eles continuam verdes.
+ *
+ * O recarregar da página é o coração disto. Uma tela que guardasse a tentativa
+ * só em estado de React passaria em tudo que não recarrega — e o aluno perderia
+ * o histórico ao fechar a aba, que é exatamente o defeito que a issue #58
+ * descreve.
+ */
+
+test('a tentativa resolvida sobrevive ao recarregar a página', async ({ page }) => {
+  await semTablebase(page)
+  await abrirPosicao(page, MATE_EM_1)
+
+  await jogar(page, 'b1b8')
+  await expect(page.getByText(/Objetivo cumprido/)).toBeVisible()
+  // A tela DIZ que gravou. Enquanto não gravava, ela dizia o contrário — e a
+  // afirmação errada na tela é pior que a ausência do recurso.
+  await expect(page.getByText(/Tentativa gravada/)).toBeVisible()
+
+  await page.getByRole('button', { name: /Voltar às lições/ }).click()
+  await expect(page.getByText(/Resolvida · 1 tentativa/)).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByText(/Resolvida · 1 tentativa/)).toBeVisible()
+})
+
+test('a tentativa que falhou também fica gravada, e não vira "resolvida"', async ({ page }) => {
+  await semTablebase(page)
+  await abrirPosicao(page, MATE_EM_1)
+
+  // Lance legal que desperdiça o único lance do objetivo.
+  await jogar(page, 'b1b2')
+  await expect(page.getByText(/Objetivo não cumprido/)).toBeVisible()
+  await expect(page.getByText(/Tentativa gravada/)).toBeVisible()
+
+  await page.getByRole('button', { name: /Voltar às lições/ }).click()
+  await page.reload()
+
+  await expect(page.getByText(/Tentada, ainda não cumprida · 1 tentativa/)).toBeVisible()
+  await expect(page.getByText(/Resolvida/)).toBeHidden()
+})
+
+test('a posição que o aluno não cumpriu aparece no treino de hoje', async ({ page }) => {
+  await semTablebase(page)
+  await abrirPosicao(page, MATE_EM_1)
+
+  await jogar(page, 'b1b2')
+  await expect(page.getByText(/já está vencida e aparece no treino de hoje/)).toBeVisible()
+
+  await page.goto('/train')
+
+  // O card de final entrou na fila de revisão vencida, com o enunciado da
+  // posição como pergunta.
+  await expect(page.getByText(/Jogue o primeiro lance da técnica/)).toBeVisible()
+  await expect(page.getByText(/O rei preto já está no canto/)).toBeVisible()
+
+  // E o plano do dia CONTA essa revisão: é o "Treino de hoje" da issue, não só
+  // a fila de /train.
+  await page.goto('/dashboard')
+  await expect(page.getByRole('heading', { name: 'Revisões vencidas' })).toBeVisible()
+  await expect(page.getByText(/1 revisão vencida esperando/)).toBeVisible()
+})
+
+test('cumprir sem dica não enche a fila de revisão', async ({ page }) => {
+  await semTablebase(page)
+  await abrirPosicao(page, MATE_EM_1)
+
+  await jogar(page, 'b1b8')
+  await expect(page.getByText(/Tentativa gravada/)).toBeVisible()
+  await expect(page.getByText(/aparece no treino de hoje/)).toBeHidden()
+
+  await page.goto('/train')
+  await expect(page.getByText(/Nada vencido agora/)).toBeVisible()
+})

@@ -79,6 +79,36 @@
   color: var(--text-muted);
 }
 
+/* Histórico da posição: nunca só cor — o ícone e o texto vêm de `textos.ts`. */
+.historico {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.ok {
+  color: var(--positive);
+}
+
+.neutro {
+  color: var(--text-muted);
+}
+
+/* Existe porque `TomDoEstado` tem três valores: tom sem classe viraria
+   `class="undefined"` no dia em que o histórico ganhar um estado ruim. */
+.ruim {
+  color: var(--danger);
+}
+
+.avisoDeHistorico {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
 .vazio {
   padding: var(--space-5);
   border: 1px solid var(--border);

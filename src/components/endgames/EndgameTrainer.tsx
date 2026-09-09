@@ -23,9 +23,18 @@
  *    exigida pelo CLAUDE.md. Os dois caminhos entram pela MESMA função, para
  *    não existir um lance que só um deles aceita.
  *
- * PONTO CEGO DECLARADO: nada aqui é persistido. Tentativa de final não vira
- * card FSRS nem move o modelo de maestria — isso depende do repositório e é
- * issue de outra frente. Enquanto não entrar, fechar a aba apaga a sessão.
+ * 5. GRAVA UMA VEZ POR TENTATIVA, e o guarda disso é `gravada`, não o fluxo.
+ *    A tentativa termina por três caminhos (lance do aluno, resposta do
+ *    adversário, desistência) e a tela re-renderiza várias vezes depois; um
+ *    `useEffect` sem trava gravaria de novo a cada render e o modelo de maestria
+ *    inflaria em SILÊNCIO — nenhuma tela, log ou erro apontaria a causa. A trava
+ *    é uma `ref` casada com a GERAÇÃO da tentativa: recomeçar a posição vira uma
+ *    geração nova e pode gravar de novo, porque aí é outra tentativa de verdade.
+ *
+ * 6. GRAVAR PODE FALHAR, E ISSO SE DIZ. IndexedDB some em aba anônima e com
+ *    permissão negada. Quando some, o aluno termina a posição do mesmo jeito e
+ *    lê que nada foi gravado. Tela que engole a falha promete um histórico que
+ *    não existe.
  */
 
 import Link from 'next/link'
@@ -38,6 +47,7 @@ import {
   type PosicaoDeFinal,
   type ResultadoObjetivo,
 } from '@/domain/endgames'
+import { gravarTentativaDeFinal } from '@/domain/endgames/persistencia'
 import { normalizeUci, parseUci } from '@/domain/puzzles/parser'
 import { applyMove, positionStatus, type PromotionPiece, type SquareName } from '@/lib/chess'
 import { LichessTablebaseProvider } from '@/lib/tablebase'
@@ -48,11 +58,13 @@ import {
   type RespostaDoAdversario,
 } from './resposta-do-adversario'
 import {
+  APRESENTACAO_DA_GRAVACAO,
   APRESENTACAO_POR_ESTADO,
   APRESENTACAO_POR_FONTE,
   descreverObjetivo,
   FRASE_POR_MOTIVO,
   ressalvaDaDefesa,
+  type EstadoDaGravacao,
 } from './textos'
 import styles from './EndgameTrainer.module.css'
 
@@ -94,18 +106,25 @@ export interface EndgameTrainerProps {
 }
 
 export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps) {
-  const { profile } = useRepository()
+  const { profile, repo, refresh, status: statusDoArmazenamento } = useRepository()
   const [tentativa, setTentativa] = useState<Tentativa>(() => tentativaInicial(posicao))
   const [fase, setFase] = useState<Fase>('jogando')
   const [dicasReveladas, setDicasReveladas] = useState(0)
   const [erroDeLance, setErroDeLance] = useState<string | null>(null)
   const [falhaDoSistema, setFalhaDoSistema] = useState<string | null>(null)
   const [lanceDigitado, setLanceDigitado] = useState('')
+  const [recomecos, setRecomecos] = useState(0)
+  const [inicio, setInicio] = useState(() => Date.now())
+  const [gravacao, setGravacao] = useState<EstadoDaGravacao | null>(null)
+  const [detalheDaFalha, setDetalheDaFalha] = useState<string | null>(null)
 
   /**
    * Marca a geração da tentativa. Resposta do adversário que chega depois de um
    * recomeço (ou da saída da tela) é descartada: sem isso, uma consulta lenta
    * aplicaria um lance numa posição que não existe mais.
+   *
+   * A geração é também a IDENTIDADE da tentativa para a gravação: é ela que
+   * separa "a tela renderizou de novo" de "o aluno tentou de novo".
    */
   const geracao = useRef(0)
   useEffect(() => {
@@ -113,6 +132,9 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
       geracao.current += 1
     }
   }, [])
+
+  /** Geração já gravada. Ver decisão 5 do cabeçalho. */
+  const gravada = useRef<number | null>(null)
 
   // Um provider por instância da tela: cache de tablebase por sessão de estudo,
   // e nenhum estado global disfarçado de constante de módulo.
@@ -129,6 +151,10 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
     setErroDeLance(null)
     setFalhaDoSistema(null)
     setLanceDigitado('')
+    setRecomecos((n) => n + 1)
+    setInicio(Date.now())
+    setGravacao(null)
+    setDetalheDaFalha(null)
   }, [posicao])
 
   const responder = useCallback(
@@ -240,6 +266,100 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
   const status = positionStatus(tentativa.fen)
   const fonteAtual = tentativa.ultimaResposta?.fonte ?? null
   const totalDeDicas = posicao.dicas.length
+  const lancesDoAluno = tentativa.lancesDoAluno
+
+  /**
+   * Grava a tentativa encerrada — uma vez por geração.
+   *
+   * Está num efeito, e não nos três lugares que encerram a tentativa, porque
+   * senão existiriam três gravações para manter em sincronia e a quarta forma de
+   * encerrar (a que alguém escrever amanhã) nasceria sem gravação nenhuma.
+   *
+   * `falhaDoSistema` NÃO grava: quando o adversário fica sem resposta legal, a
+   * tentativa acabou por defeito nosso. Registrá-la como não cumprida baixaria a
+   * maestria do aluno por um bug do app.
+   *
+   * O veredito gravado é `estadoVisivel`, o MESMO que a tela mostra. Recalcular
+   * "cumpriu" aqui abriria a porta para a tela dizer uma coisa e o histórico
+   * guardar outra.
+   */
+  useEffect(() => {
+    if (!encerrada || falhaDoSistema !== null) {
+      return
+    }
+    /**
+     * Sem repositório ainda NÃO é falha: o provider pode estar abrindo o banco.
+     * A geração não é consumida aqui de propósito — assim a gravação acontece
+     * quando o repositório chegar. Quando ele não chega, quem avisa o aluno é
+     * `gravacaoVisivel`, derivado do estado do provider e não de um estado
+     * paralelo que alguém teria de lembrar de atualizar.
+     */
+    if (!repo) {
+      return
+    }
+    if (gravada.current === geracao.current) {
+      return
+    }
+    gravada.current = geracao.current
+
+    const concluida = {
+      cumpriu: estadoVisivel === 'cumprido',
+      dicasUsadas: dicasReveladas,
+      recomecos,
+      lancesDoAluno,
+      thinkTimeMs: Date.now() - inicio,
+    }
+
+    void (async () => {
+      // O "gravando" pertence à escrita, não ao render: por isso ele entra aqui
+      // dentro, junto do que ele descreve.
+      setGravacao('gravando')
+      try {
+        const feito = await gravarTentativaDeFinal(
+          repo,
+          { licao, posicao, tentativa: concluida },
+          { agora: new Date() },
+        )
+        setGravacao(feito.cardCriado || feito.cardAtualizado ? 'na-revisao' : 'gravada')
+        // A lista de lições relê o histórico; sem isto ela ficaria no estado anterior.
+        refresh()
+      } catch (e) {
+        setGravacao('falhou')
+        setDetalheDaFalha(e instanceof Error ? e.message : null)
+      }
+    })()
+  }, [
+    dicasReveladas,
+    encerrada,
+    estadoVisivel,
+    falhaDoSistema,
+    inicio,
+    lancesDoAluno,
+    licao,
+    posicao,
+    recomecos,
+    refresh,
+    repo,
+  ])
+
+  /**
+   * O que a tela diz sobre a gravação.
+   *
+   * "Nada foi gravado" é DERIVADO do provider ter desistido de abrir o banco —
+   * não é um estado guardado aqui. Guardá-lo criaria a segunda fonte da mesma
+   * verdade, e a cópia ficaria dizendo "gravado" no dia em que o armazenamento
+   * caísse depois.
+   */
+  const gravacaoVisivel = (() => {
+    if (!encerrada || falhaDoSistema !== null) {
+      return null
+    }
+    if (repo === null) {
+      // Enquanto o provider ainda tenta abrir o banco não há o que afirmar.
+      return statusDoArmazenamento === 'erro' ? APRESENTACAO_DA_GRAVACAO['sem-armazenamento'] : null
+    }
+    return gravacao === null ? null : APRESENTACAO_DA_GRAVACAO[gravacao]
+  })()
 
   return (
     <div className={styles.layout}>
@@ -377,6 +497,25 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
           </button>
         </div>
 
+        {/* `role="status"` porque o resultado da gravação chega DEPOIS da ação:
+            sem região viva, quem usa leitor de tela nunca saberia se gravou. */}
+        {encerrada && gravacaoVisivel !== null ? (
+          <div className={`${styles.fonte} ${styles[gravacaoVisivel.tom]}`} role="status">
+            <p className={styles.fonteTitulo}>
+              <span aria-hidden="true">{gravacaoVisivel.icone}</span> {gravacaoVisivel.rotulo}
+            </p>
+            <p className={styles.fonteTexto}>
+              {gravacaoVisivel.explicacao}
+              {detalheDaFalha === null ? null : ` (${detalheDaFalha})`}
+            </p>
+            {gravacao === 'na-revisao' ? (
+              <p className={styles.fonteTexto}>
+                <Link href="/train">Ver no treino de hoje</Link>
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         {encerrada ? (
           <section className={styles.bloco} aria-labelledby="linha-titulo">
             <h3 id="linha-titulo" className={styles.blocoTitulo}>
@@ -403,11 +542,6 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
             </ol>
             <p className={styles.meta}>
               A linha modelo é um exemplo resolvido, não a única forma de cumprir o objetivo.
-            </p>
-            <p className={styles.meta}>
-              Esta tentativa ainda não vira revisão espaçada: os cards de final entram quando a
-              persistência de finais chegar. Até lá, <Link href="/train">/train</Link> só mostra o
-              que veio de puzzles e partidas.
             </p>
           </section>
         ) : null}
