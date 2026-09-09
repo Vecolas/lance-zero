@@ -35,6 +35,8 @@
  *     --max-total <n>          Teto do artefato. Padrão 300000
  *     --source-date <ISO>      Data do dump baixado. Padrão: hoje
  *     --limit <n>              Só lê as N primeiras linhas. Para teste.
+ *     --temas <arquivo.json>   Mapa tema→habilidade. Padrão: o artefato gerado.
+ *                              Existe para o portão poder exercitar a recusa.
  *     --pretty                 JSON indentado
  *     --quiet                  Sem progresso no stderr
  *
@@ -51,16 +53,25 @@
  *   A AUTORIDADE é o domínio, e o teste
  *   `tests/unit/puzzles-parser.test.ts` roda este script sobre o fixture e
  *   compara o resultado com o do domínio, justamente para pegar divergência.
+ * - O mapa tema→habilidade NÃO é espelhado aqui: ele é LIDO de
+ *   `src/domain/puzzles/temas-suportados.json`, artefato derivado de
+ *   `src/domain/puzzles/themes.ts` por `scripts/puzzles/gerar-temas.mjs`.
+ *   Ter uma cópia do mapa neste arquivo já foi o desenho anterior, e o defeito
+ *   dele era silencioso: um tema novo acrescentado só no domínio fazia o
+ *   pipeline descartar aqueles puzzles sem erro nenhum. Se o JSON estiver
+ *   ausente ou vazio, este script MORRE em vez de filtrar tudo fora.
  * - Mesma entrada + mesmas opções = mesma saída. A amostragem por bucket usa
  *   um hash do PuzzleId, não `Math.random`, e não depende da ordem do arquivo.
  */
 
 import { createHash } from 'node:crypto'
-import { createReadStream } from 'node:fs'
+import { createReadStream, readFileSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { createInterface } from 'node:readline'
+import { fileURLToPath } from 'node:url'
 import { Chess } from 'chess.js'
+import { CONFIGURACAO as CONFIGURACAO_TEMAS } from './gerar-temas.mjs'
 
 // ---------------------------------------------------------------------------
 // Configuração. Heurísticas de produto, a calibrar com dados reais de uso.
@@ -88,35 +99,73 @@ const FAIXAS_DE_RATING = [
 ]
 
 /**
- * ESPELHO de `src/domain/puzzles/themes.ts`. Tema sem correspondência é
- * IGNORADO — nunca chutado. Ao mexer aqui, mexa lá também e rode
- * `pnpm exec vitest run tests/unit/puzzles-parser.test.ts`.
+ * Caminho e comando vêm do próprio gerador: se eles ficassem escritos aqui
+ * também, seriam a segunda fonte da mesma verdade — e mudar o caminho lá
+ * deixaria este script apontando para um arquivo que não existe mais.
  */
-const TEMA_PARA_SKILLS = {
-  fork: ['tactics.fork'],
-  hangingPiece: ['tactics.hanging-piece'],
-  pin: ['tactics.pin'],
-  skewer: ['tactics.skewer'],
-  discoveredAttack: ['tactics.discovered-attack'],
-  doubleCheck: ['tactics.discovered-attack'],
-  deflection: ['tactics.deflection'],
-  capturingDefender: ['tactics.removal-of-defender'],
-  backRankMate: ['tactics.back-rank'],
-  mate: ['tactics.mating-net'],
-  mateIn1: ['tactics.mating-net'],
-  mateIn2: ['tactics.mating-net'],
-  mateIn3: ['tactics.mating-net'],
-  mateIn4: ['tactics.mating-net'],
-  mateIn5: ['tactics.mating-net'],
-  smotheredMate: ['tactics.mating-net'],
-  anastasiaMate: ['tactics.mating-net'],
-  arabianMate: ['tactics.mating-net'],
-  bodenMate: ['tactics.mating-net'],
-  doubleBishopMate: ['tactics.mating-net'],
-  dovetailMate: ['tactics.mating-net'],
-  hookMate: ['tactics.mating-net'],
-  killBoxMate: ['tactics.mating-net'],
-  vukovicMate: ['tactics.mating-net'],
+const CAMINHO_TEMAS = fileURLToPath(
+  new URL(`../../${CONFIGURACAO_TEMAS.saidaRelativa}`, import.meta.url),
+)
+const COMANDO_GERADOR = CONFIGURACAO_TEMAS.comando
+
+/**
+ * Lê o mapa tema→habilidade do artefato gerado.
+ *
+ * Toda condição inválida é FATAL, e nenhuma delas devolve mapa vazio: um mapa
+ * vazio faria o pipeline recusar todo puzzle por "sem tema suportado" e
+ * terminar com sucesso escrevendo um artefato zerado. Falha barulhenta custa
+ * uma tarde; essa passaria semanas.
+ */
+function carregarTemaParaSkills(caminho) {
+  let bruto
+  try {
+    bruto = readFileSync(caminho, 'utf8')
+  } catch (causa) {
+    throw new Error(
+      `Não consegui ler ${caminho}. Rode: ${COMANDO_GERADOR} — ${
+        causa instanceof Error ? causa.message : String(causa)
+      }`,
+    )
+  }
+
+  let artefato
+  try {
+    artefato = JSON.parse(bruto)
+  } catch (causa) {
+    throw new Error(
+      `${caminho} não é JSON válido. Rode: ${COMANDO_GERADOR} — ${
+        causa instanceof Error ? causa.message : String(causa)
+      }`,
+    )
+  }
+
+  const temas = artefato === null || typeof artefato !== 'object' ? undefined : artefato.temas
+  if (typeof temas !== 'object' || temas === null || Array.isArray(temas)) {
+    throw new Error(`${caminho} não tem o objeto "temas". Rode: ${COMANDO_GERADOR}`)
+  }
+
+  const chaves = Object.keys(temas)
+  if (chaves.length === 0) {
+    throw new Error(
+      `${caminho} não tem nenhum tema: o pipeline filtraria TODOS os puzzles. ` +
+        `Rode: ${COMANDO_GERADOR}`,
+    )
+  }
+
+  for (const chave of chaves) {
+    const skills = temas[chave]
+    const valida =
+      Array.isArray(skills) &&
+      skills.length > 0 &&
+      skills.every((skill) => typeof skill === 'string' && skill !== '')
+    if (!valida) {
+      throw new Error(
+        `${caminho}: o tema "${chave}" não tem uma lista de habilidades. Rode: ${COMANDO_GERADOR}`,
+      )
+    }
+  }
+
+  return temas
 }
 
 const COLUNAS = 10
@@ -126,10 +175,10 @@ const UCI = /^[a-h][1-8][a-h][1-8][nbrq]?$/
 // Espelho mínimo do domínio
 // ---------------------------------------------------------------------------
 
-function skillIdsForThemes(themes) {
+function skillIdsForThemes(themes, temaParaSkills) {
   const resultado = []
   for (const tema of themes) {
-    const skills = TEMA_PARA_SKILLS[tema]
+    const skills = temaParaSkills[tema]
     if (skills === undefined) continue
     for (const skill of skills) if (!resultado.includes(skill)) resultado.push(skill)
   }
@@ -164,8 +213,13 @@ function aplicar(fen, uci) {
   return chess.fen()
 }
 
-/** Espelho de `parsePuzzleCsvLine`. Devolve `{ puzzle }` ou `{ erro }`. */
-function parseLinha(linha) {
+/**
+ * Espelho de `parsePuzzleCsvLine`. Devolve `{ puzzle }` ou `{ erro }`.
+ *
+ * O mapa entra por PARÂMETRO: assim ele é sempre o que `main` carregou nesta
+ * execução, e não uma cópia congelada em variável de módulo.
+ */
+function parseLinha(linha, temaParaSkills) {
   const conteudo = linha.replace(/\r$/, '').trim()
   if (conteudo === '') return { erro: 'linha vazia' }
 
@@ -212,7 +266,7 @@ function parseLinha(linha) {
       popularity: numeroOuNull(colunas[5]),
       nbPlays: numeroOuNull(colunas[6]),
       themes,
-      skillIds: skillIdsForThemes(themes),
+      skillIds: skillIdsForThemes(themes, temaParaSkills),
       gameUrl: (colunas[8] ?? '').trim() || null,
       openingTags: (colunas[9] ?? '').trim().split(/\s+/).filter(Boolean),
     },
@@ -304,6 +358,7 @@ function lerArgumentos(argv) {
     entrada: null,
     sourceDate: null,
     limit: null,
+    temas: CAMINHO_TEMAS,
     pretty: false,
     quiet: false,
   }
@@ -338,6 +393,11 @@ function lerArgumentos(argv) {
       opcoes.sourceDate = argv[i]
       continue
     }
+    if (arg === '--temas') {
+      i += 1
+      opcoes.temas = argv[i]
+      continue
+    }
     if (numericas[arg] !== undefined) {
       i += 1
       const valor = Number(argv[i])
@@ -368,6 +428,7 @@ build-dataset — filtra e estratifica o dump de puzzles do Lichess (CC0).
   --max-total <n>        teto do artefato (padrão ${PADROES.maxTotal})
   --source-date <ISO>    data em que o dump foi baixado
   --limit <n>            lê só as N primeiras linhas (teste)
+  --temas <arquivo>      mapa tema→habilidade (padrão ${CONFIGURACAO_TEMAS.saidaRelativa})
   --pretty               JSON indentado
   --quiet                sem progresso
 
@@ -410,6 +471,11 @@ async function main() {
     if (!opcoes.quiet) process.stderr.write(`${texto}\n`)
   }
 
+  // Carrega ANTES de abrir o dump: se o mapa estiver inutilizável, morrer aqui
+  // custa um segundo; morrer depois custa a leitura inteira de alguns GB.
+  const temaParaSkills = carregarTemaParaSkills(resolve(process.cwd(), opcoes.temas))
+  log(`${Object.keys(temaParaSkills).length} temas suportados`)
+
   log(`Lendo ${entrada}`)
   const fonte = await sha256(entrada)
   log(`sha256 ${fonte.sha256} (${fonte.bytes} bytes)`)
@@ -445,7 +511,7 @@ async function main() {
     if (opcoes.limit !== null && contagens.linhasLidas >= opcoes.limit) break
     contagens.linhasLidas += 1
 
-    const resultado = parseLinha(linha)
+    const resultado = parseLinha(linha, temaParaSkills)
     if (resultado.erro !== undefined) {
       contagens.linhasInvalidas += 1
       if (amostraDeErros.length < 50) amostraDeErros.push(resultado.erro)

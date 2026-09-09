@@ -1,0 +1,31 @@
+{
+  "_aviso": "ARTEFATO GERADO — não edite à mão. Edite a fonte e rode o comando abaixo.",
+  "fonte": "src/domain/puzzles/themes.ts",
+  "comando": "node scripts/puzzles/gerar-temas.mjs",
+  "temas": {
+    "fork": ["tactics.fork"],
+    "hangingPiece": ["tactics.hanging-piece"],
+    "pin": ["tactics.pin"],
+    "skewer": ["tactics.skewer"],
+    "discoveredAttack": ["tactics.discovered-attack"],
+    "doubleCheck": ["tactics.discovered-attack"],
+    "deflection": ["tactics.deflection"],
+    "capturingDefender": ["tactics.removal-of-defender"],
+    "backRankMate": ["tactics.back-rank"],
+    "mate": ["tactics.mating-net"],
+    "mateIn1": ["tactics.mating-net"],
+    "mateIn2": ["tactics.mating-net"],
+    "mateIn3": ["tactics.mating-net"],
+    "mateIn4": ["tactics.mating-net"],
+    "mateIn5": ["tactics.mating-net"],
+    "smotheredMate": ["tactics.mating-net"],
+    "anastasiaMate": ["tactics.mating-net"],
+    "arabianMate": ["tactics.mating-net"],
+    "bodenMate": ["tactics.mating-net"],
+    "doubleBishopMate": ["tactics.mating-net"],
+    "dovetailMate": ["tactics.mating-net"],
+    "hookMate": ["tactics.mating-net"],
+    "killBoxMate": ["tactics.mating-net"],
+    "vukovicMate": ["tactics.mating-net"]
+  }
+}
