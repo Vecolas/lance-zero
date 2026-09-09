@@ -32,7 +32,7 @@ test('pula para um lance pela lista textual e gira o tabuleiro', async ({ page }
 
 test('recusa um FEN inválido sem quebrar a tela', async ({ page }) => {
   await page.goto('/games')
-  await page.getByLabel('FEN').fill('isto não é um fen')
+  await page.getByLabel('FEN para visualizar').fill('isto não é um fen')
   await page.getByRole('button', { name: 'Carregar FEN' }).click()
   await expect(page.getByText('FEN inválido')).toBeVisible()
   await expect(page.getByText('Lance 0 de 0')).toBeVisible()

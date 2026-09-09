@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { PgnWorkbench } from '@/components/chess/PgnWorkbench'
+import { GamesWorkbench } from '@/components/games/GamesWorkbench'
 
 export const metadata: Metadata = { title: 'Partidas' }
 
@@ -8,14 +8,10 @@ export default function GamesPage() {
     <>
       <h1>Partidas</h1>
       <p>
-        Carregue um PGN ou uma posição e percorra a partida lance a lance. Você também pode jogar a
-        partir de qualquer posição — só lances legais são aceitos.
+        Importe suas partidas e revise você primeiro. A engine só entra depois que você disser onde
+        acha que a partida mudou — inverter essa ordem transforma revisão em leitura passiva.
       </p>
-      <p>
-        A importação automática do Lichess e do Chess.com, a revisão humana antes da engine e a
-        detecção de momentos críticos chegam na Fase 6.
-      </p>
-      <PgnWorkbench />
+      <GamesWorkbench />
     </>
   )
 }

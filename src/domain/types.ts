@@ -173,6 +173,23 @@ export interface Game {
   userColor: 'w' | 'b'
   result: '1-0' | '0-1' | '1/2-1/2' | '*'
   importedAt: string
+  /**
+   * O que o usuário marcou ANTES de ver a engine.
+   *
+   * Fica na própria partida em vez de uma coleção separada porque só existe no
+   * contexto dela, e porque o passe humano precisa sobreviver ao passe da
+   * engine sem risco de ficar órfão.
+   */
+  humanReview?: HumanReview
+}
+
+/** Passe 1 da revisão: o que o jogador achou, sem nenhuma avaliação na tela. */
+export interface HumanReview {
+  /** Plies que o usuário marcou como "aqui a partida mudou". */
+  markedPlies: number[]
+  /** Anotações livres do usuário. */
+  notes: string
+  reviewedAt: string
 }
 
 export type MoveSeverity = 'ok' | 'imprecisao' | 'erro' | 'erro-grave'

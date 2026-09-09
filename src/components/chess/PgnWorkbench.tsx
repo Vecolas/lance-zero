@@ -60,7 +60,7 @@ export function PgnWorkbench() {
         <summary className={styles.summary}>Carregar uma posição ou uma partida</summary>
 
         <label className={styles.field}>
-          <span className={styles.label}>PGN</span>
+          <span className={styles.label}>PGN para visualizar</span>
           <textarea
             className={styles.textarea}
             value={pgnText}
@@ -86,7 +86,7 @@ export function PgnWorkbench() {
         </div>
 
         <label className={styles.field}>
-          <span className={styles.label}>FEN</span>
+          <span className={styles.label}>FEN para visualizar</span>
           <input
             className={styles.input}
             value={fenText}
