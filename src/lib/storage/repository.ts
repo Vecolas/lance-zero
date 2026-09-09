@@ -69,7 +69,7 @@ export class NotFoundError extends StorageError {
   readonly key: string
 
   constructor(entity: string, key: string) {
-    super('nao-encontrado', `Nao encontrado: ${entity} "${key}".`)
+    super('nao-encontrado', `Não encontrado: ${entity} "${key}".`)
     this.name = 'NotFoundError'
     this.entity = entity
     this.key = key
@@ -85,7 +85,7 @@ export class UnsupportedBackupVersionError extends StorageError {
   constructor(foundVersion: unknown, expectedVersion: number) {
     super(
       'versao-nao-suportada',
-      `Versao de backup nao suportada: ${String(foundVersion)}. Esperada: ${expectedVersion}.`,
+      `Versão de backup não suportada: ${String(foundVersion)}. Esta versão do LanceZero lê a ${expectedVersion}.`,
     )
     this.name = 'UnsupportedBackupVersionError'
     this.foundVersion = foundVersion

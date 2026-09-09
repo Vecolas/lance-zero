@@ -125,7 +125,7 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
 type UnknownRecord = Record<string, unknown>
 
 function invalid(message: string): StorageError {
-  return new StorageError('formato-invalido', `Backup invalido: ${message}`)
+  return new StorageError('formato-invalido', `Backup inválido: ${message}`)
 }
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -302,7 +302,7 @@ export function parseBackup(text: string): BackupFile {
   try {
     raw = JSON.parse(text)
   } catch (error) {
-    throw new StorageError('formato-invalido', 'Backup invalido: nao e um JSON valido.', {
+    throw new StorageError('formato-invalido', 'Backup inválido: não é um JSON válido.', {
       cause: error,
     })
   }

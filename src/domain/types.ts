@@ -101,7 +101,46 @@ export interface ReviewLog {
   elapsedMs: number
 }
 
+export type Side = 'w' | 'b'
+
 // ------------------------------------------------------------------- puzzles
+
+/**
+ * Puzzle no formato do dump do Lichess (CC0).
+ *
+ * ATENÇÃO à semântica do dataset: `fen` é a posição ANTES do lance
+ * preparatório, e `moves[0]` é esse lance. O jogador resolve a partir de
+ * `moves[1]`. Ver `toSolvable` e o teste de regressão.
+ */
+export interface Puzzle {
+  id: string
+  fen: string
+  /** Lances em UCI. O primeiro é o lance preparatório do adversário. */
+  moves: string[]
+  rating: number
+  ratingDeviation?: number
+  popularity?: number
+  nbPlays?: number
+  /** Temas crus do Lichess, como vêm no dump. */
+  themes: string[]
+  /** Temas mapeados para a nossa taxonomia. Pode ser vazio. */
+  skillIds: SkillId[]
+  gameUrl?: string
+  openingTags?: string[]
+}
+
+/** Puzzle pronto para treinar: o lance preparatório já foi aplicado. */
+export interface SolvablePuzzle {
+  puzzle: Puzzle
+  /** Posição em que o jogador começa a resolver. */
+  startFen: string
+  /** Lado que resolve o puzzle. */
+  playerColor: Side
+  /** Lance preparatório do adversário, já aplicado em `startFen`. */
+  setupMoveUci: string
+  /** Solução a partir do segundo lance do dataset. */
+  solutionUci: string[]
+}
 
 export interface PuzzleAttempt {
   id: string
@@ -220,4 +259,64 @@ export interface TrainingRepository {
   saveReviewLog(log: ReviewLog): Promise<void>
   getSkillMastery(): Promise<SkillMastery[]>
   saveSkillMastery(mastery: SkillMastery[]): Promise<void>
+}
+
+// ----------------------------------------------------------------- importação
+
+export interface ImportQuery {
+  /** ISO date; só partidas jogadas a partir daí. */
+  since?: string
+  max?: number
+  cursor?: string
+}
+
+export interface GamePage {
+  games: Game[]
+  cursor?: string
+  hasMore: boolean
+}
+
+export interface GameImportProvider {
+  readonly source: GameSource
+  listGames(identity: string, query?: ImportQuery): Promise<GamePage>
+}
+
+export interface ImportResult {
+  importadas: number
+  duplicadas: number
+  ignoradas: number
+}
+
+// ------------------------------------------------- análise e explicação de erro
+
+/**
+ * Explicação determinística de um erro.
+ *
+ * A ordem das quatro partes é a do PEDAGOGY.md e não é negociável: primeiro o
+ * que aconteceu, depois o sinal que estava visível, depois o hábito de
+ * pensamento, e só então o treino gerado.
+ */
+export interface MistakeExplanation {
+  /** Código do detector. `unknown` quando a confiança é baixa. */
+  code: string
+  /** 0..1. Abaixo do limiar do detector, o código vira `unknown`. */
+  confidence: number
+  oQueAconteceu: string
+  sinalVisivel: string
+  habitoQuePreveniria: string
+  treinoGerado: string
+}
+
+/** Momento crítico de uma partida, já classificado e explicado. */
+export interface CriticalMoment {
+  gameId: string
+  ply: number
+  fenBefore: string
+  userMoveUci: string
+  bestMoveUci: string
+  /** Perda de pontuação esperada, em pontos percentuais. */
+  expectedScoreLossPp: number
+  severity: MoveSeverity
+  skillIds: SkillId[]
+  explanation: MistakeExplanation | null
 }

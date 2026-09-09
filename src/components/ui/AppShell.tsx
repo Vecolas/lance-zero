@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { RepositoryProvider } from '@/components/providers/RepositoryProvider'
 import { SiteBottomNav, SiteHeader } from '@/components/ui/SiteNav'
 import styles from './AppShell.module.css'
 
@@ -11,7 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <SiteHeader />
       <main id="conteudo" className={styles.main}>
-        {children}
+        <RepositoryProvider>{children}</RepositoryProvider>
       </main>
       <footer className={styles.footer}>
         <div className={styles.footerInner}>

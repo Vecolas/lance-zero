@@ -134,7 +134,10 @@ export class IndexedDbTrainingRepository implements BackupRepository {
     const factory = this.factory
     if (!factory) {
       return Promise.reject(
-        new StorageError('indexeddb-indisponivel', 'IndexedDB nao esta disponivel neste ambiente.'),
+        new StorageError(
+          'indexeddb-indisponivel',
+          'O IndexedDB não está disponível neste navegador.',
+        ),
       )
     }
     this.connection = new Promise<IDBDatabase>((resolve, reject) => {
@@ -153,7 +156,7 @@ export class IndexedDbTrainingRepository implements BackupRepository {
       }
       request.onerror = () =>
         reject(
-          new StorageError('falha-na-transacao', 'Nao foi possivel abrir o banco local.', {
+          new StorageError('falha-na-transacao', 'Não consegui abrir o banco local.', {
             cause: request.error,
           }),
         )
@@ -166,7 +169,7 @@ export class IndexedDbTrainingRepository implements BackupRepository {
         )
     }).catch((error: unknown) => {
       this.connection = null
-      throw toStorageError(error, 'Nao foi possivel abrir o banco local.')
+      throw toStorageError(error, 'Não consegui abrir o banco local.')
     })
     return this.connection
   }
@@ -359,7 +362,10 @@ export function deleteDatabase(
 ): Promise<void> {
   if (!factory) {
     return Promise.reject(
-      new StorageError('indexeddb-indisponivel', 'IndexedDB nao esta disponivel neste ambiente.'),
+      new StorageError(
+        'indexeddb-indisponivel',
+        'O IndexedDB não está disponível neste navegador.',
+      ),
     )
   }
   return new Promise<void>((resolve, reject) => {
@@ -367,7 +373,7 @@ export function deleteDatabase(
     request.onsuccess = () => resolve()
     request.onerror = () =>
       reject(
-        new StorageError('falha-na-transacao', 'Nao foi possivel apagar o banco local.', {
+        new StorageError('falha-na-transacao', 'Não consegui apagar o banco local.', {
           cause: request.error,
         }),
       )
