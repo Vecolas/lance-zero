@@ -30,6 +30,7 @@ página pública `/licenses` (`src/lib/legal/licenses.ts`).
 | `fake-indexeddb`                                  | 6.2.5                     | Apache-2.0              | IndexedDB em memória nos testes de repositório                                                                    | https://github.com/dumbmatter/fakeIndexedDB              |
 | Lichess puzzle database                           | dump de 2026              | CC0-1.0                 | Base de puzzles. Consumida pelo pipeline `scripts/puzzles/build-dataset.mjs`; o dump NÃO é versionado aqui        | https://database.lichess.org/#puzzles                    |
 | Lichess API (partidas)                            | —                         | Termos da API Lichess   | Importação de partidas do usuário, via `src/lib/importers/lichess.ts`                                             | https://lichess.org/api                                  |
+| API de tablebase da Lichess                       | —                         | Termos da API Lichess   | Defesa perfeita em finais de até 7 peças, via `src/lib/tablebase/provider.ts`. Serviço em `tablebase.lichess.ovh` | https://lichess.org/api                                  |
 | Chess.com Published-Data API                      | —                         | Termos de uso Chess.com | Importação de partidas do usuário, via `src/lib/importers/chesscom.ts`                                            | https://www.chess.com/news/view/published-data-api       |
 | `zod`                                             | 4.5.4                     | MIT                     | Validação de entrada em tempo de execução                                                                         | https://github.com/colinhacks/zod                        |
 | `@supabase/supabase-js`                           | 2.116.0                   | MIT                     | Cliente do Supabase; a autorização fica no Postgres, via RLS                                                      | https://github.com/supabase/supabase-js                  |
@@ -43,7 +44,6 @@ página pública `/licenses` (`src/lib/legal/licenses.ts`).
 | ---------------------------- | --------------------- | ------------------------ | ---- | --------------------------------------------- |
 | `lichess-org/chess-openings` | CC0-1.0               | Nomes e códigos ECO      | 9    | https://github.com/lichess-org/chess-openings |
 | Lichess Opening Explorer API | Termos da API Lichess | Estatísticas de abertura | 9    | https://lichess.org/api                       |
-| Lichess Tablebase API        | Termos da API Lichess | Finais perfeitos         | 8    | https://lichess.org/api                       |
 
 ## Stockfish e GPL-3.0 — a restrição que molda a arquitetura
 

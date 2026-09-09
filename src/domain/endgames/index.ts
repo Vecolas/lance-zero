@@ -1,0 +1,5 @@
+export * from './objetivo'
+export * from './legalidade'
+export * from './licao'
+export * from './linha-modelo'
+export * from './mate-forcado'

@@ -344,6 +344,9 @@ calculation.opponent-best-response
 endgame.basic-mates
 endgame.king-pawn-opposition
 endgame.key-squares
+endgame.rule-of-square
+endgame.passed-pawn
+endgame.rook-endgames
 opening.development
 opening.center
 opening.king-safety

@@ -53,7 +53,12 @@ describe('catálogo de habilidades', () => {
       'calculation.candidate-moves',
       'calculation.opponent-best-response',
     ])
-    expect(skillsByArea('endgame')).toHaveLength(3)
+    // Deriva da FONTE em vez de cravar um número: o `toHaveLength(3)` que
+    // estava aqui reprovava o código certo assim que a taxonomia crescia, e a
+    // regra que ele queria afirmar é "o helper devolve a área inteira".
+    const finaisEsperados = SKILL_IDS.filter((id) => id.startsWith('endgame.'))
+    expect(finaisEsperados.length).toBeGreaterThan(0)
+    expect(skillsByArea('endgame').map((skill) => skill.id)).toEqual(finaisEsperados)
   })
 })
 

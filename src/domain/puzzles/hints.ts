@@ -57,6 +57,12 @@ const CATEGORIA_POR_SKILL: Readonly<Record<SkillId, string>> = {
   'endgame.basic-mates': 'Empurre o rei adversário para a borda com as suas peças pesadas.',
   'endgame.king-pawn-opposition': 'A posição dos reis decide. Pense em quem fica com a oposição.',
   'endgame.key-squares': 'O peão sozinho não decide. Pense nas casas que o seu rei precisa ocupar.',
+  'endgame.rule-of-square':
+    'Antes de mover, pergunte se o rei alcança o peão. Dá para saber sem contar casa por casa.',
+  'endgame.passed-pawn':
+    'Um dos peões pode virar passado. Às vezes o caminho passa por entregar outro.',
+  'endgame.rook-endgames':
+    'Onde está a sua torre em relação ao peão? A resposta costuma decidir o final.',
   'opening.development': 'Olhe para as peças que ainda não entraram no jogo.',
   'opening.center': 'Olhe para o centro antes de olhar para as laterais.',
   'opening.king-safety': 'Olhe para a segurança do rei antes de partir para o ataque.',

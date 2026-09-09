@@ -71,6 +71,13 @@ export const runtimeDependencies: DependencyLicense[] = [
     url: 'https://lichess.org/api',
   },
   {
+    name: 'API de tablebase da Lichess',
+    license: 'Termos da API Lichess',
+    reason:
+      'Defesa perfeita em finais de até 7 peças. Cache por FEN e degradação graciosa: tablebase fora do ar não quebra a lição.',
+    url: 'https://lichess.org/api',
+  },
+  {
     name: 'Chess.com Published-Data API',
     license: 'Termos de uso Chess.com',
     reason: 'Importação das suas partidas, apenas pela API pública de leitura. Nunca por scraping.',
