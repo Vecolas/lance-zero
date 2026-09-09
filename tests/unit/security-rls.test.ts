@@ -10,7 +10,14 @@
  * que o PR fique vermelho.
  *
  * Os arquivos sao descobertos varrendo supabase/**, nao por lista fixa:
- * migration nova entra na cobertura sozinha.
+ * migration nova entra na cobertura sozinha. A varredura e recursiva e feita
+ * com readdirSync para nao precisar de dependencia nova so para casar `**`.
+ *
+ * Autenticacao e Supabase Auth (alternativa B da secao 4 do plano). A ponte
+ * antiga de JWT de terceiro, `auth.jwt()->>'sub'`, nao pode sobrar em lugar
+ * nenhum: a identidade agora e `auth.uid()`, uuid nativo. Um arquivo que ainda
+ * use a forma antiga compila, aplica e falha em silencio comparando texto com
+ * uuid — por isso o resquicio e testado, nao apenas a forma nova.
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -178,6 +185,8 @@ type Tabela = {
   arquivo: string
   nome: string
   temUserId: boolean
+  /** Corpo do `create table`, normalizado, para checar tipo e referencia. */
+  normalizado: string
 }
 
 type Policy = {
@@ -241,6 +250,7 @@ for (const statement of statements) {
     arquivo: statement.arquivo,
     nome: normalizarNomeDeTabela(criacao[1]),
     temUserId: /\buser_id\b/.test(statement.normalizado),
+    normalizado: statement.normalizado,
   })
 }
 
@@ -314,18 +324,61 @@ describe('migrations do Supabase', () => {
     expect(statements.length).toBeGreaterThan(0)
   })
 
-  it('cobre as migrations esperadas de perfil, RLS e storage', () => {
+  it('cobre as migrations esperadas de perfil, RLS, storage e sincronizacao', () => {
     const nomes = [...conteudoBruto.keys()].map((caminho) => caminho.replaceAll('\\', '/'))
 
     expect(nomes).toContain('supabase/migrations/0001_perfil.sql')
     expect(nomes).toContain('supabase/migrations/0002_rls.sql')
     expect(nomes).toContain('supabase/migrations/0003_storage_avatar.sql')
+    expect(nomes).toContain('supabase/migrations/0004_sync.sql')
   })
 
   it('cria pelo menos uma tabela com user_id', () => {
     expect(tabelasComUserId.map((tabela) => tabela.nome)).toEqual(
-      expect.arrayContaining(['profiles', 'user_settings', 'linked_chess_accounts']),
+      expect.arrayContaining(['profiles', 'user_settings', 'linked_chess_accounts', 'user_state']),
     )
+  })
+})
+
+describe('identidade vem do Supabase Auth', () => {
+  it('nenhum arquivo ainda usa a ponte de JWT do provedor anterior', () => {
+    // Resquicio da arquitetura Clerk. Se sobrar, o SQL aplica sem erro e a
+    // policy passa a comparar texto com uuid — falha silenciosa, o pior caso.
+    const culpados: string[] = []
+
+    for (const [arquivo, bruto] of conteudoBruto) {
+      // Texto bruto de proposito: nem comentado isso pode ficar, porque
+      // comentario vira codigo com uma tecla.
+      if (/auth\.jwt\s*\(/i.test(bruto)) {
+        culpados.push(arquivo)
+      }
+    }
+
+    expect(culpados).toEqual([])
+  })
+
+  it('toda coluna user_id e uuid e referencia auth.users', () => {
+    // Sem a FK, um user_id pode apontar para conta inexistente e a linha
+    // sobrevive a exclusao do usuario. Com ela, o cascade limpa tudo junto.
+    const soltas = tabelasComUserId
+      .filter(
+        (tabela) =>
+          !/\buser_id uuid\b[^,]*\breferences auth\.users ?\( ?id ?\)/.test(tabela.normalizado),
+      )
+      .map((tabela) => `${tabela.nome} (${tabela.arquivo})`)
+
+    expect(soltas).toEqual([])
+  })
+
+  it('a exclusao do usuario propaga para as tabelas com user_id', () => {
+    const semCascade = tabelasComUserId
+      .filter(
+        (tabela) =>
+          !/\breferences auth\.users ?\( ?id ?\) on delete cascade/.test(tabela.normalizado),
+      )
+      .map((tabela) => `${tabela.nome} (${tabela.arquivo})`)
+
+    expect(semCascade).toEqual([])
   })
 })
 
@@ -401,12 +454,33 @@ describe('policies', () => {
     expect(permissivas).toEqual([])
   })
 
-  it('toda policy compara com auth.jwt(), nunca com identificador do cliente', () => {
-    const semJwt = policies
-      .filter((policy) => !policy.normalizado.includes("auth.jwt()->>'sub'"))
+  it('toda policy compara com auth.uid(), nunca com identificador do cliente', () => {
+    const semUid = policies
+      .filter((policy) => !policy.normalizado.includes('auth.uid()'))
       .map((policy) => `${policy.tabela}.${policy.nome} (${policy.arquivo})`)
 
-    expect(semJwt).toEqual([])
+    expect(semUid).toEqual([])
+  })
+
+  it('nenhuma policy usa auth.jwt(), que era a ponte do provedor anterior', () => {
+    const antigas = policies
+      .filter((policy) => policy.normalizado.includes('auth.jwt('))
+      .map((policy) => `${policy.tabela}.${policy.nome} (${policy.arquivo})`)
+
+    expect(antigas).toEqual([])
+  })
+
+  it('policy de tabela com user_id casa a coluna com o dono da sessao', () => {
+    // Nao basta mencionar auth.uid() em algum lugar da expressao: a linha
+    // alcancada precisa ser a do dono.
+    const nomesComUserId = new Set(tabelasComUserId.map((tabela) => tabela.nome))
+
+    const frouxas = policies
+      .filter((policy) => nomesComUserId.has(policy.tabela))
+      .filter((policy) => !policy.normalizado.includes('user_id = (select auth.uid())'))
+      .map((policy) => `${policy.tabela}.${policy.nome} (${policy.arquivo})`)
+
+    expect(frouxas).toEqual([])
   })
 
   it('nenhuma policy le a identidade de current_setting ou de parametro solto', () => {
@@ -587,6 +661,42 @@ describe('regras de schema do plano', () => {
         expect(semComentarios, `${arquivo} menciona ${proibido}`).not.toContain(proibido)
       }
     }
+  })
+})
+
+describe('user_state — sincronizacao entre aparelhos', () => {
+  const sync = tabelas.find((tabela) => tabela.nome === 'user_state')
+
+  it('existe a tabela de sincronizacao', () => {
+    expect(sync).toBeDefined()
+  })
+
+  it('tem teto de tamanho do payload', () => {
+    // 500 MB de banco no plano gratuito e recurso finito. Sem teto, um cliente
+    // com bug enche o banco de todo mundo e a falha aparece para quem nao errou.
+    expect(sync?.normalizado ?? '').toContain('pg_column_size(payload)')
+
+    const temLimite = /pg_column_size\(payload\) <= \d+/.test(sync?.normalizado ?? '')
+
+    expect(temLimite).toBe(true)
+  })
+
+  it('guarda um documento por usuario, com user_id como chave primaria', () => {
+    // Sem id de linha proprio nao existe identificador para trocar na URL: a
+    // chave primaria e a policy dizem a mesma coisa.
+    expect(sync?.normalizado ?? '').toContain('user_id uuid primary key')
+  })
+
+  it('guarda a versao do schema junto do payload', () => {
+    // Cliente antigo precisa poder recusar um documento futuro em vez de
+    // adivinhar o formato.
+    expect(sync?.normalizado ?? '').toContain('schema_version integer not null')
+  })
+
+  it('registra o momento da ultima escrita para a UI avisar do conflito', () => {
+    // Ultima escrita vence e decisao de produto; updated_at e o que permite
+    // avisar antes de sobrescrever.
+    expect(sync?.normalizado ?? '').toContain('updated_at timestamptz not null')
   })
 })
 

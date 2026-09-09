@@ -1,0 +1,322 @@
+# LanceZero — backup do banco Supabase
+#
+# POR QUE ESTE ARQUIVO EXISTE
+# A seção 116 do plano de segurança exige backup e manda "preferir plano de
+# banco com backup automático" (Supabase Pro). O produto não tem capital, então
+# roda no plano gratuito, que NÃO faz backup automático. A operação passa a ser
+# nossa: este workflow é o backup.
+#
+# No dia em que houver Supabase Pro, os backups gerenciados substituem este
+# workflow e ele sai. Enquanto isso, é ele ou nada.
+#
+# O QUE ESTE WORKFLOW SE COMPROMETE A GARANTIR
+#   1. o dump é cifrado antes de sair do runner (AES256, GnuPG simétrico);
+#   2. a passphrase nunca aparece em linha de comando, log ou lista de
+#      processos — entra por stdin com --passphrase-fd 0;
+#   3. o dump NUNCA é commitado no repositório: dado de usuário dentro do Git é
+#      permanente e irreversível, e reescrever histórico não desfaz clones;
+#   4. dump vazio, truncado ou incompleto REPROVA o job. Backup que falha em
+#      silêncio é pior do que não ter backup, porque dá falsa segurança;
+#   5. o arquivo cifrado é decifrado de volta e conferido por hash ainda dentro
+#      do job. Backup que não abre não é backup (seção 117 do plano).
+#
+# COMO RESTAURAR: docs/OPERACAO.md.
+
+name: Backup do banco
+
+on:
+  schedule:
+    # Domingo, 05:00 UTC (02:00 em Brasília).
+    # A janela de perda de dados aceitável é o intervalo entre dois backups:
+    # quando houver usuário real, aumentar a frequência.
+    - cron: '0 5 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Dois dumps simultâneos só competem por conexão no plano gratuito.
+  group: backup-banco
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    name: Dump cifrado do Postgres
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Tamanho mínimo aceitável do dump em texto, em bytes. Só o DDL dos
+      # schemas public + auth + storage já passa disso com folga. Dump menor
+      # que isto é sintoma de dump parcial, banco errado ou permissão faltando.
+      TAMANHO_MINIMO_BYTES: '20480'
+
+    steps:
+      - name: Conferir se os secrets existem
+        id: segredos
+        env:
+          URL_BANCO: ${{ secrets.SUPABASE_DB_URL }}
+          SENHA_BACKUP: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+
+          faltando=''
+          [ -n "${URL_BANCO:-}" ] || faltando="${faltando} SUPABASE_DB_URL"
+          [ -n "${SENHA_BACKUP:-}" ] || faltando="${faltando} BACKUP_PASSPHRASE"
+
+          if [ -n "${faltando}" ]; then
+            # Ainda não existe projeto Supabase provisionado. Isso é esperado e
+            # não é motivo para reprovar o CI inteiro.
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "faltando=${faltando# }" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - name: Instalar cliente PostgreSQL 17
+        if: steps.segredos.outputs.ok == 'true'
+        run: |
+          set -euo pipefail
+          # O pg_dump que vem no runner costuma ser mais antigo que o servidor
+          # do Supabase, e pg_dump se recusa a dumpar servidor mais novo que
+          # ele. Por isso instalamos o cliente do repositório oficial do
+          # PostgreSQL. Se o Supabase subir para a 18, trocar o número aqui.
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          pg_dump --version
+
+      - name: Gerar, validar e cifrar o dump
+        id: dump
+        if: steps.segredos.outputs.ok == 'true'
+        env:
+          URL_BANCO: ${{ secrets.SUPABASE_DB_URL }}
+          SENHA_BACKUP: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          # Nunca ligar 'set -x' aqui: o log do Actions é legível por quem tem
+          # acesso de leitura ao repositório.
+
+          umask 077
+          trabalho="${RUNNER_TEMP}/backup"
+          mkdir -p "${trabalho}"
+
+          carimbo="$(date -u '+%Y-%m-%dT%H-%M-%SZ')"
+          claro="${trabalho}/lancezero-${carimbo}.sql"
+          cifrado="${claro}.gpg"
+
+          # -------------------------------------------------------------
+          # 1. Conexão por variáveis PG*, não por argumento de linha de comando
+          # -------------------------------------------------------------
+          # pg_dump "postgresql://user:senha@host/db" colocaria a senha no argv
+          # do processo, visível a qualquer outro processo do runner. Quebramos
+          # a URI e passamos tudo por ambiente, que é privado ao processo.
+          # A senha sai percent-decoded: esse valor derivado NÃO é mascarado
+          # automaticamente pelo GitHub, então mascaramos à mão logo abaixo.
+          conexao="$(python3 - <<'PY'
+          import os
+          import shlex
+          from urllib.parse import parse_qs, unquote, urlsplit
+
+          url = urlsplit(os.environ['URL_BANCO'])
+          if url.scheme not in ('postgres', 'postgresql'):
+              raise SystemExit('SUPABASE_DB_URL nao e uma URI postgres://')
+          if not url.hostname:
+              raise SystemExit('SUPABASE_DB_URL sem host')
+
+          parametros = parse_qs(url.query)
+          campos = {
+              'PGHOST': url.hostname,
+              'PGPORT': str(url.port or 5432),
+              'PGUSER': unquote(url.username or 'postgres'),
+              'PGPASSWORD': unquote(url.password or ''),
+              'PGDATABASE': (url.path or '').lstrip('/') or 'postgres',
+              # Supabase exige TLS. Nunca rebaixar para 'disable'.
+              'PGSSLMODE': parametros.get('sslmode', ['require'])[0],
+              'PGCONNECT_TIMEOUT': '30',
+          }
+          for chave, valor in campos.items():
+              print('export {}={}'.format(chave, shlex.quote(valor)))
+          PY
+          )"
+          eval "${conexao}"
+          unset conexao
+          echo "::add-mask::${PGPASSWORD}"
+
+          echo "Alvo: ${PGUSER}@${PGHOST}:${PGPORT}/${PGDATABASE} (sslmode=${PGSSLMODE})"
+
+          # -------------------------------------------------------------
+          # 2. Dump
+          # -------------------------------------------------------------
+          # Formato texto de propósito: às 3 da manhã dá para abrir, ler e
+          # grepar o arquivo. A compressão vem do gpg logo em seguida.
+          #
+          # Schemas:
+          #   public  — dados do produto (profiles, user_settings, ...)
+          #   auth    — usuários do Supabase Auth. Sem ele, restaurar devolve
+          #             linhas órfãs cujo dono não existe mais, e nenhuma
+          #             policy baseada em auth.uid() volta a casar.
+          #   storage — metadados dos objetos (avatares). Os binários em si
+          #             vivem no Storage e têm backup próprio (docs/OPERACAO.md).
+          #
+          # Privilégios NÃO são omitidos: os grants explícitos são parte da
+          # postura de segurança (seção 19 do plano) e precisam voltar junto.
+          pg_dump \
+            --format=plain \
+            --schema=public \
+            --schema=auth \
+            --schema=storage \
+            --quote-all-identifiers \
+            --file="${claro}"
+
+          # -------------------------------------------------------------
+          # 3. Validação — é aqui que o backup silenciosamente ruim morre
+          # -------------------------------------------------------------
+          if [ ! -s "${claro}" ]; then
+            echo "::error::Dump vazio. Backup abortado."
+            exit 1
+          fi
+
+          tamanho="$(stat -c '%s' "${claro}")"
+          echo "Tamanho do dump: ${tamanho} bytes"
+          if [ "${tamanho}" -lt "${TAMANHO_MINIMO_BYTES}" ]; then
+            echo "::error::Dump com ${tamanho} bytes, abaixo do mínimo de ${TAMANHO_MINIMO_BYTES}. Provável dump parcial, banco errado ou permissão faltando."
+            exit 1
+          fi
+
+          # pg_dump só escreve esta linha depois de terminar. Sem ela, o dump
+          # foi interrompido no meio — e um dump truncado parece perfeitamente
+          # válido para quem olha só o tamanho do arquivo.
+          if ! tail -n 20 "${claro}" | grep -q 'PostgreSQL database dump complete'; then
+            echo "::error::Dump sem o marcador de conclusão do pg_dump. Arquivo truncado."
+            exit 1
+          fi
+
+          # Confere que os três schemas realmente vieram.
+          for schema in public auth storage; do
+            if ! grep -q "SCHEMA \"${schema}\"\|\"${schema}\"\." "${claro}"; then
+              echo "::error::Nenhum objeto do schema ${schema} no dump."
+              exit 1
+            fi
+          done
+
+          hash_claro="$(sha256sum "${claro}" | cut -d' ' -f1)"
+          echo "sha256 do dump em claro: ${hash_claro}"
+
+          # -------------------------------------------------------------
+          # 4. Cifragem
+          # -------------------------------------------------------------
+          # --passphrase-fd 0 lê a senha do stdin. Usar --passphrase na linha de
+          # comando colocaria a senha no log do Actions e no `ps` do runner.
+          # --batch impede qualquer prompt interativo (o job travaria até o
+          # timeout sem dizer por quê).
+          printf '%s' "${SENHA_BACKUP}" | gpg \
+            --batch \
+            --yes \
+            --quiet \
+            --symmetric \
+            --cipher-algo AES256 \
+            --digest-algo SHA512 \
+            --s2k-mode 3 \
+            --s2k-count 65011712 \
+            --passphrase-fd 0 \
+            --output "${cifrado}" \
+            "${claro}"
+
+          if [ ! -s "${cifrado}" ]; then
+            echo "::error::Arquivo cifrado vazio."
+            exit 1
+          fi
+
+          # -------------------------------------------------------------
+          # 5. Prova de que o backup abre
+          # -------------------------------------------------------------
+          # "Backup nunca testado não deve ser considerado recuperação
+          # garantida" (seção 117). Aqui provamos, a cada execução, que o par
+          # arquivo + passphrase devolve exatamente o dump original.
+          # `|| true` só para o `set -e`/`pipefail` não matar o passo antes da
+          # comparação abaixo: um gpg que falha vira hash vazio, que não casa,
+          # e o erro que aparece é o nosso, não uma linha crua do gpg.
+          hash_volta="$(printf '%s' "${SENHA_BACKUP}" \
+            | gpg --batch --quiet --decrypt --passphrase-fd 0 "${cifrado}" \
+            | sha256sum | cut -d' ' -f1)" || true
+
+          if [ "${hash_volta:-}" != "${hash_claro}" ]; then
+            echo "::error::O arquivo cifrado não volta ao dump original. Backup inutilizável."
+            exit 1
+          fi
+          echo "Round-trip de decifragem conferido."
+
+          # -------------------------------------------------------------
+          # 6. Só o cifrado sobrevive
+          # -------------------------------------------------------------
+          shred --remove --zero "${claro}" 2>/dev/null || rm -f "${claro}"
+
+          {
+            echo "arquivo=$(basename "${cifrado}")"
+            echo "caminho=${cifrado}"
+            echo "bytes_claro=${tamanho}"
+            echo "sha256_claro=${hash_claro}"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo '### Backup do banco'
+            echo ''
+            echo "- arquivo: \`$(basename "${cifrado}")\`"
+            echo "- dump em claro: ${tamanho} bytes"
+            echo "- sha256 do dump em claro: \`${hash_claro}\`"
+            echo '- round-trip de decifragem: conferido'
+            echo ''
+            echo 'Restauração: `docs/OPERACAO.md`.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar o artefato cifrado
+        if: steps.segredos.outputs.ok == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.dump.outputs.caminho }}
+          # 90 dias é o teto do plano gratuito do GitHub. Para reter mais tempo,
+          # baixar o .gpg e guardar fora (ver docs/OPERACAO.md).
+          retention-days: 90
+          if-no-files-found: error
+          # O conteúdo já está cifrado, e portanto incompressível. Zipar de novo
+          # só gastaria CPU.
+          compression-level: 0
+
+      - name: Secrets ausentes — o que configurar
+        if: steps.segredos.outputs.ok != 'true'
+        env:
+          FALTANDO: ${{ steps.segredos.outputs.faltando }}
+        run: |
+          set -euo pipefail
+          echo "::warning::Backup não executado. Secrets ausentes:${FALTANDO:+ }${FALTANDO}"
+          cat <<'TEXTO'
+
+          O backup não rodou porque faltam secrets do repositório. Isso é
+          esperado enquanto não existir projeto Supabase provisionado — não é
+          falha do CI, e por isso este job termina em verde.
+
+          Para ligar o backup, em
+          Settings -> Secrets and variables -> Actions -> New repository secret:
+
+            SUPABASE_DB_URL
+              URI de conexão do Postgres do projeto Supabase.
+              Supabase -> Project Settings -> Database -> Connection string.
+              Usar o SESSION POOLER (porta 5432), não o transaction pooler:
+              runners do GitHub são IPv4 e a conexão direta do Supabase é IPv6.
+              Formato: postgresql://postgres.<ref>:<senha>@<host>:5432/postgres
+
+            BACKUP_PASSPHRASE
+              Frase longa e aleatória, gerada por gerenciador de senhas.
+              Guardar FORA do GitHub. Sem ela o backup não abre, e ninguém —
+              nem o GitHub, nem a Anthropic, nem o Supabase — recupera.
+
+          Passo a passo completo: docs/OPERACAO.md
+          TEXTO

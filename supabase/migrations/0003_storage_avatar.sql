@@ -6,7 +6,10 @@
 --
 --     <user_id>/<randomUUID>.webp
 --
--- O caminho e derivado do user_id da sessao e de um UUID gerado no servidor.
+-- Com Supabase Auth o <user_id> e o uuid de auth.users, entao o caminho inteiro
+-- passa a ser dois uuids: <uuid do dono>/<uuid do arquivo>.webp.
+--
+-- O caminho e derivado do auth.uid() da sessao e de um UUID gerado no servidor.
 -- O nome de arquivo enviado pelo usuario NUNCA e usado (secao 58): ele e
 -- entrada hostil, com path traversal, extensao dupla e unicode enganoso.
 -- A policy abaixo transforma essa convencao em regra do banco: mesmo que o
@@ -23,6 +26,10 @@
 -- usuario nao entra: SVG executa script e viraria XSS armazenado.
 -- Este limite e a ultima linha, nao a primeira: MIME, magic bytes, dimensoes e
 -- reencode com strip de EXIF acontecem no servidor antes do upload (secao 57).
+--
+-- Ha tambem um motivo de custo: o plano gratuito do Supabase da 1 GB de
+-- storage. Um teto por arquivo e o que impede alguns usuarios de consumirem a
+-- cota inteira.
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
@@ -44,14 +51,15 @@ set
 --
 -- storage.objects ja vem com RLS habilitada no Supabase. As policies abaixo
 -- valem so para o bucket 'avatars' e comparam a primeira pasta do caminho com
--- o sub do Clerk.
+-- auth.uid(). O `::text` existe porque storage.foldername devolve text[]: o
+-- cast e do lado da identidade, nunca do lado do caminho vindo do usuario.
 --
 -- array_length(...) = 1 impede subpastas: o caminho tem exatamente
 -- <prefixo>/<arquivo>, entao ninguem esconde estrutura dentro do proprio
 -- prefixo nem sai dele.
 --
--- O regex fecha o resto: o nome precisa ser um UUID seguido de .webp. Nome
--- vindo do upload nao passa por essa forma.
+-- O regex fecha o resto: prefixo e nome precisam ser UUIDs, e o arquivo termina
+-- em .webp. Nome vindo do upload nao passa por essa forma.
 
 drop policy if exists "avatares_select_own" on storage.objects;
 create policy "avatares_select_own"
@@ -61,7 +69,7 @@ to authenticated
 using (
   bucket_id = 'avatars'
   and array_length(storage.foldername(name), 1) = 1
-  and (storage.foldername(name))[1] = (select auth.jwt()->>'sub')
+  and (storage.foldername(name))[1] = (select auth.uid())::text
 );
 
 drop policy if exists "avatares_insert_own" on storage.objects;
@@ -72,8 +80,8 @@ to authenticated
 with check (
   bucket_id = 'avatars'
   and array_length(storage.foldername(name), 1) = 1
-  and (storage.foldername(name))[1] = (select auth.jwt()->>'sub')
-  and name ~ '^[A-Za-z0-9_-]{6,128}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\.webp$'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+  and name ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\.webp$'
 );
 
 drop policy if exists "avatares_update_own" on storage.objects;
@@ -84,13 +92,13 @@ to authenticated
 using (
   bucket_id = 'avatars'
   and array_length(storage.foldername(name), 1) = 1
-  and (storage.foldername(name))[1] = (select auth.jwt()->>'sub')
+  and (storage.foldername(name))[1] = (select auth.uid())::text
 )
 with check (
   bucket_id = 'avatars'
   and array_length(storage.foldername(name), 1) = 1
-  and (storage.foldername(name))[1] = (select auth.jwt()->>'sub')
-  and name ~ '^[A-Za-z0-9_-]{6,128}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\.webp$'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+  and name ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\.webp$'
 );
 
 -- ---------------------------------------------------------------------------
