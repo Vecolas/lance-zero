@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { EngineReview } from '@/components/games/EngineReview'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import type { Game } from '@/domain/types'
 import {
@@ -245,11 +246,20 @@ export function HumanReview({ gameId }: Props) {
         </div>
       </div>
 
-      <p className={styles.pendente}>
-        <strong>Passe 2 — engine.</strong> A varredura com o Stockfish e a lista de momentos
-        críticos entram assim que o pipeline de análise estiver ligado. Ele só vai rodar depois que
-        você salvar a sua leitura, nunca antes.
-      </p>
+      {game.humanReview ? (
+        <EngineReview
+          game={game}
+          markedPlies={game.humanReview.markedPlies}
+          plyAtual={ply}
+          onIrParaPly={setPly}
+        />
+      ) : (
+        <p className={styles.pendente}>
+          <strong>Passe 2 — engine.</strong> Salve a sua leitura primeiro. A engine só entra depois
+          — ver a avaliação antes de pensar transforma revisão em leitura passiva, que é exatamente
+          o que este app existe para evitar.
+        </p>
+      )}
     </>
   )
 }

@@ -64,3 +64,44 @@ test('marcar lances e anotar sobrevive ao recarregamento', async ({ page }) => {
   await page.goto('/games')
   await expect(page.getByRole('link', { name: /Alice × Bruno/ })).toContainText('Revisada')
 })
+
+test('o passe 2 só aparece depois de a leitura humana ser salva', async ({ page }) => {
+  await importar(page)
+  await page.getByRole('link', { name: /Alice × Bruno/ }).click()
+
+  // Antes de salvar: nada de engine, e a tela explica por quê.
+  await expect(page.getByText(/Salve a sua leitura primeiro/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Analisar com a engine' })).toBeHidden()
+
+  await page.getByRole('button', { name: 'Salvar minha análise' }).click()
+  await expect(page.getByText(/^Salvo:/)).toBeVisible()
+
+  await expect(page.getByRole('heading', { name: /Passe 2/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Analisar com a engine' })).toBeVisible()
+})
+
+test('a engine analisa a partida e cruza com o que o usuário marcou', async ({ page }) => {
+  test.setTimeout(240_000)
+  await importar(page)
+  await page.getByRole('link', { name: /Alice × Bruno/ }).click()
+
+  // Marca um lance de propósito, para o cruzamento ter o que comparar.
+  await page.getByRole('button', { name: 'Qh5' }).click()
+  await page.getByRole('button', { name: 'Marcar este lance' }).click()
+  await page.getByRole('button', { name: 'Salvar minha análise' }).click()
+  await expect(page.getByText(/^Salvo:/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Analisar com a engine' }).click()
+
+  // Barra de progresso durante, veredito depois.
+  await expect(page.getByRole('progressbar')).toBeVisible({ timeout: 60_000 })
+  // Escopado ao bloco do passe 2: o tabuleiro tem um role="status" próprio, e a
+  // confirmação de "Salvo" é outro.
+  const passe2 = page.getByRole('region', { name: /Passe 2/ })
+  await expect(passe2.getByRole('status')).toContainText(/momento|marcou|percebeu|não encontrou/i, {
+    timeout: 180_000,
+  })
+
+  // O rodapé é honesto sobre quanto da análise foi profunda.
+  await expect(page.getByText(/receberam análise profunda/)).toBeVisible()
+})
