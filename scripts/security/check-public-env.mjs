@@ -9,14 +9,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const RAIZES = ['src', 'scripts', '.github']
-const PALAVRAS_DE_SEGREDO = [
-  'SECRET',
-  'SERVICE_ROLE',
-  'PRIVATE',
-  'PASSWORD',
-  'TOKEN',
-  'API_KEY',
-]
+const PALAVRAS_DE_SEGREDO = ['SECRET', 'SERVICE_ROLE', 'PRIVATE', 'PASSWORD', 'TOKEN', 'API_KEY']
 /** Chaves publicáveis de propósito, apesar do nome parecer sensível. */
 const PERMITIDAS = new Set(['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL'])
 
