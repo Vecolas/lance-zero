@@ -3,6 +3,12 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import {
+  ERROS_RECENTES_CONFIG,
+  errosRecentesDeAnalises,
+  indexarPartidas,
+  inicioDaJanela,
+} from '@/domain/planning/erros-recentes'
 import { buildDailyPlan, type RecentGameError } from '@/domain/planning/planner'
 import { BUDGET_OPTIONS } from '@/domain/profile'
 import type { DailyPlan, PlanBlockKind, ReviewCard, SkillMastery } from '@/domain/types'
@@ -51,16 +57,28 @@ export function DailyPlanView() {
       if (!repo) return
       try {
         const agora = new Date()
-        const [mastery, dueCards, analises] = await Promise.all([
+        // Só partidas dentro da janela de recência interessam ao planner, e o
+        // repositório já sabe filtrar por data: pedir tudo e descartar depois
+        // custaria leitura à toa. A MESMA borda que o domínio usa.
+        const desde = inicioDaJanela(agora).toISOString()
+        const [mastery, dueCards, partidas] = await Promise.all([
           repo.getSkillMastery(),
           repo.getDueCards(agora),
-          repo.listGames({ limit: 20 }),
+          repo.listGames({ since: desde, limit: ERROS_RECENTES_CONFIG.maxPartidasVarridas }),
         ])
-        // Erros recentes de partida entram no planner na Fase 6, quando a
-        // análise passar a gravar PositionAnalysis. Até lá a lista é vazia —
-        // e o plano cai no currículo rotativo, que é o comportamento correto.
-        const recentGameErrors: RecentGameError[] = []
-        void analises
+        // As análises são lidas por partida (é o que o repositório oferece),
+        // então isto é N leituras — COM TETO: `listGames` já veio limitado por
+        // `maxPartidasVarridas`, e as partidas vêm da mais recente para a mais
+        // antiga. Sem esse teto, quem importou mil partidas pagaria mil
+        // leituras para abrir o "Treino de hoje".
+        const analisesPorPartida = await Promise.all(
+          partidas.map((partida) => repo.listPositionAnalyses(partida.id)),
+        )
+        const recentGameErrors: RecentGameError[] = errosRecentesDeAnalises(
+          analisesPorPartida.flat(),
+          indexarPartidas(partidas),
+          { agora },
+        )
         if (!cancelado) setDados({ mastery, dueCards, recentGameErrors })
       } catch (e) {
         if (!cancelado) {
@@ -169,8 +187,9 @@ export function DailyPlanView() {
       </Link>
 
       <p className={styles.note}>
-        O plano é montado a partir das suas habilidades e das revisões vencidas. Enquanto você não
-        importar partidas, ele usa o currículo rotativo para quem está por volta de 1100.
+        O plano é montado a partir das suas habilidades, das revisões vencidas e dos erros das
+        partidas que você analisou nos últimos {ERROS_RECENTES_CONFIG.janelaDias} dias. Enquanto
+        você não importar partidas, ele usa o currículo rotativo para quem está por volta de 1100.
       </p>
     </>
   )
