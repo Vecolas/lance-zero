@@ -44,3 +44,6 @@ next-env.d.ts
 coverage/
 test-results/
 playwright-report/
+
+# credenciais da CLI da Vercel, escopadas a este repo (nunca versionar)
+.vercel-auth/
