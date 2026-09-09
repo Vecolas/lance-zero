@@ -1,0 +1,266 @@
+/*
+ * Estilo da bancada do pipeline.
+ *
+ * Segue os mesmos tokens do resto do app de propósito: ferramenta interna que
+ * inventa a própria aparência deixa de ser um lugar onde alguém percebe uma
+ * regressão visual. Nenhum estado é comunicado só por cor — o texto vem junto.
+ */
+
+.painel {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card);
+}
+
+.titulo {
+  margin: 0 0 var(--space-2);
+  font-size: 1.0625rem;
+}
+
+.subtitulo {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.9375rem;
+}
+
+.texto {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.textoPequeno {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.exemplos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.campoCurto {
+  flex: 0 1 12rem;
+}
+
+.rotulo {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.entrada,
+.area {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.area {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.entrada:focus-visible,
+.area:focus-visible {
+  outline: var(--focus-ring) solid var(--accent);
+  outline-offset: 2px;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.primario,
+.secundario {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.primario {
+  border: 1px solid transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.primario:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.secundario {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.secundario:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.primario:disabled,
+.secundario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.progresso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.barra {
+  flex: 1 1 12rem;
+  height: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.barraPreenchida {
+  height: 100%;
+  background: var(--accent-strong);
+}
+
+/* Barra que anda sem transição: a medição não pode competir com a animação. */
+@media (prefers-reduced-motion: reduce) {
+  .barraPreenchida {
+    transition: none;
+  }
+}
+
+.erro {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-md);
+  color: var(--danger);
+  font-size: 0.9375rem;
+}
+
+.resultado {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+}
+
+.vazio {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.valor {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.linhas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Severidade em texto dentro de uma moldura: nunca só cor. */
+.selo {
+  padding: 0.125rem var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-strong);
+}
+
+@media (max-width: 30rem) {
+  .campoCurto {
+    flex: 1 1 100%;
+  }
+}

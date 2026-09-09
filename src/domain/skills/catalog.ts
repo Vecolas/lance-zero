@@ -1,7 +1,7 @@
 /**
  * Catálogo das habilidades treináveis.
  *
- * Taxonomia deliberadamente pequena: 19 habilidades cobrindo tática, cálculo,
+ * Taxonomia deliberadamente pequena: 22 habilidades cobrindo tática, cálculo,
  * finais e aberturas. Só cresce quando telemetria real mostrar necessidade.
  *
  * `baseDifficulty` e `pedagogicalValue` são heurísticas de produto para um
@@ -151,6 +151,30 @@ export const SKILL_CATALOG: readonly SkillDefinition[] = [
     label: 'Casas-chave',
     description: 'Reconhecer as casas que decidem a promoção do peão e disputá-las a tempo.',
     baseDifficulty: 3,
+    pedagogicalValue: 3,
+  },
+  {
+    id: 'endgame.rule-of-square',
+    area: 'endgame',
+    label: 'Regra do quadrado',
+    description: 'Saber de olho se o rei alcança o peão passado, sem contar casa por casa.',
+    baseDifficulty: 2,
+    pedagogicalValue: 4,
+  },
+  {
+    id: 'endgame.passed-pawn',
+    area: 'endgame',
+    label: 'Peão passado',
+    description: 'Criar e conduzir o peão que ninguém para, e frear o do adversário a tempo.',
+    baseDifficulty: 3,
+    pedagogicalValue: 4,
+  },
+  {
+    id: 'endgame.rook-endgames',
+    area: 'endgame',
+    label: 'Finais de torre',
+    description: 'Os poucos padrões que decidem o final mais comum: torre atrás do peão e a ponte.',
+    baseDifficulty: 4,
     pedagogicalValue: 3,
   },
   {
