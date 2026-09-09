@@ -20,6 +20,8 @@ The core product must work without a paid AI API or paid chess API.
 
 Read these before implementing any feature:
 
+0. `docs/CONVENCOES.md` — **regras de processo. Branch própria, nunca `main`.
+   Verde local antes de PR. Trabalho com mais de uma decisão vira issue.**
 1. `docs/PRODUCT.md` — product behavior and roadmap.
 2. `docs/PEDAGOGY.md` — learning rules.
 3. `docs/LICENSES.md` — dependency/data obligations.
