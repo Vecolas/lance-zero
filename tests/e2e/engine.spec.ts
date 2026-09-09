@@ -76,6 +76,8 @@ async function lerLinhas(page: Page): Promise<
     scoreCp: number | null
     mateIn: number | null
     primeiroLance: string
+    scoreBrancas: number | null
+    wdlBrancas: string
   }[]
 > {
   return page.getByTestId('engine-linha').evaluateAll((nodes) =>
@@ -88,6 +90,9 @@ async function lerLinhas(page: Page): Promise<
         scoreCp: cp === '' ? null : Number(cp),
         mateIn: mate === '' ? null : Number(mate),
         primeiroLance: el.dataset.melhorLance ?? '',
+        scoreBrancas:
+          (el.dataset.scoreBrancas ?? '') === '' ? null : Number(el.dataset.scoreBrancas),
+        wdlBrancas: el.dataset.wdlBrancas ?? '',
       }
     }),
   )
@@ -271,4 +276,84 @@ test('a interface não congela durante uma busca pesada', async ({ page }) => {
   // Cancelar não é falha: nada de mensagem de erro e nada exibido.
   await expect(page.getByTestId('engine-erro')).toHaveCount(0)
   await expect(page.getByTestId('engine-vazio')).toBeVisible()
+})
+
+/**
+ * A convenção de perspectiva do UCI, provada contra a engine de verdade.
+ *
+ * Todo o resto do projeto assume que a engine reporta o score na perspectiva de
+ * QUEM JOGA, e converte com `normalizeScoreToWhite`. Essa suposição nunca tinha
+ * sido verificada: as suítes usam duble, e um duble confirma o que nós
+ * escrevemos nele.
+ *
+ * Se a convenção estivesse invertida, o app diria ao jogador que o lance bom
+ * dele foi ruim, criaria card de revisão indevido — e todos os testes
+ * continuariam verdes. É o falso verde mais caro que este projeto poderia ter.
+ *
+ * As duas posições são espelho exato: mesma vantagem material, cores trocadas,
+ * mesmo número de lances legais.
+ */
+/**
+ * Analisa e devolve a primeira linha, esperando ela existir.
+ *
+ * `analisar` só garante que a engine ficou pronta; as linhas chegam logo depois.
+ * Ler antes disso devolve array vazio e o teste falha por "undefined", que
+ * esconde a causa real.
+ */
+async function primeiraLinha(page: Page, fen: string) {
+  await configurar(page, { fen, nos: '400000' })
+  await analisar(page)
+  await expect(page.getByTestId('engine-linha').first()).toBeVisible({ timeout: ESPERA_ENGINE })
+  const [linha] = await lerLinhas(page)
+  return linha
+}
+
+const VANTAGEM_BRANCAS = '4k3/8/8/8/8/8/8/3QK3 w - - 0 1'
+const VANTAGEM_PRETAS = '3qk3/8/8/8/8/8/8/4K3 b - - 0 1'
+
+/** Dama a mais é vantagem enorme; qualquer piso baixo aqui seria frouxo. */
+const VANTAGEM_MINIMA_CP = 300
+
+test('a engine reporta o score na perspectiva de quem joga', async ({ page }) => {
+  await page.goto('/debug/engine')
+
+  const brancas = await primeiraLinha(page, VANTAGEM_BRANCAS)
+  const pretas = await primeiraLinha(page, VANTAGEM_PRETAS)
+
+  // O ponto do teste: nas DUAS posições quem joga está ganhando, então o score
+  // cru tem de ser positivo nas duas. Se a engine reportasse sempre do lado das
+  // brancas, o segundo caso viria negativo.
+  const cru = (linha: typeof brancas): number => linha.scoreCp ?? (linha.mateIn ?? 0) * 10_000
+  expect(cru(brancas), 'brancas com dama a mais, brancas jogam').toBeGreaterThan(VANTAGEM_MINIMA_CP)
+  expect(cru(pretas), 'pretas com dama a mais, pretas jogam').toBeGreaterThan(VANTAGEM_MINIMA_CP)
+})
+
+test('normalizeScoreToWhite inverte o lado certo', async ({ page }) => {
+  await page.goto('/debug/engine')
+
+  const brancas = await primeiraLinha(page, VANTAGEM_BRANCAS)
+  const pretas = await primeiraLinha(page, VANTAGEM_PRETAS)
+
+  // Depois de normalizar, o sinal passa a falar sempre das brancas: positivo
+  // quando as brancas estão melhor, negativo quando estão piores.
+  if (brancas.scoreCp !== null) {
+    expect(brancas.scoreBrancas, 'vantagem das brancas continua positiva').toBeGreaterThan(0)
+  }
+  if (pretas.scoreCp !== null) {
+    expect(pretas.scoreBrancas, 'vantagem das pretas vira negativa').toBeLessThan(0)
+    expect(pretas.scoreBrancas).toBe(-(pretas.scoreCp as number))
+  }
+})
+
+test('normalizeWdlToWhite troca vitória por derrota quando as pretas jogam', async ({ page }) => {
+  await page.goto('/debug/engine')
+
+  // O painel já pede WDL em toda análise; não há controle para ligar.
+  const linha = await primeiraLinha(page, VANTAGEM_PRETAS)
+  test.skip(linha.wdlBrancas === '', 'esta build não reportou WDL')
+
+  const [win, draw, loss] = linha.wdlBrancas.split(',').map(Number)
+  expect(win + draw + loss).toBe(1000)
+  // Pretas estão ganhando: na perspectiva das brancas isso é DERROTA provável.
+  expect(loss, 'derrota das brancas domina o WDL normalizado').toBeGreaterThan(win)
 })
