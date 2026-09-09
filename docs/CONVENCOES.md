@@ -1,141 +1,90 @@
 # CONVENÇÕES — como se trabalha neste repositório
 
-Regras de processo. Elas existem porque cada uma já foi quebrada aqui e custou
-retrabalho ou deixou a `main` vermelha.
+As regras gerais de engenharia **não moram aqui**. Elas moram na skill
+`disciplina-de-engenharia` (`~/.claude/skills/disciplina-de-engenharia/`), que é
+a fonte de verdade para: portões, falso verde, onde mora um número, nomes e
+comentários, ponto cego declarado, duas fontes para a mesma verdade, git, issue
+como unidade de trabalho e o que uma entrega precisa declarar.
+
+Duplicar aquilo aqui criaria duas fontes para a mesma verdade — que é
+exatamente o que a seção 7 da skill proíbe. Este arquivo guarda **só o que é
+específico do LanceZero**.
+
+Leitura obrigatória antes de implementar:
+
+| Onde                                       | O quê                                                                 |
+| ------------------------------------------ | --------------------------------------------------------------------- |
+| `SKILL.md`, seção 14                       | ramo, commit, PR                                                      |
+| `references/processo-e-entrega.md`         | issue, bloqueio nomeado, entrega que declara o que não foi verificado |
+| `references/o-verificador-tambem-mente.md` | o falso verde na camada das ferramentas                               |
+| `references/portoes-e-reguas.md`           | portão que morde dos dois lados                                       |
 
 ---
 
-## 1. Nunca commitar na `main`
+## O que é específico deste projeto
 
-Todo trabalho acontece em branch própria.
+### 1. Ramo e PR
 
 ```bash
 git checkout -b <tipo>/<assunto-curto>
 ```
 
-Tipos: `feat`, `correcao`, `docs`, `seguranca`, `refactor`, `teste`, `infra`.
+Tipos em uso: `feat`, `correcao`, `docs`, `seguranca`, `refactor`, `teste`,
+`infra`.
 
-A `main` recebe código por Pull Request, nunca por push direto.
+**Proteção de branch não está ativa** — exige GitHub Pro em repositório privado
+(issue #37). Ou seja, a regra "nunca commitar na `main`" depende de disciplina,
+não de trava. O histórico deste repositório mostra o que acontece sem ela.
 
-**Por que:** commit direto na `main` publica um erro antes de qualquer revisão, e
-foi assim que este repositório acumulou CI vermelho por dois commits seguidos.
-
----
-
-## 2. Verde local antes de abrir PR
+### 2. Verde local antes de abrir PR
 
 ```bash
-pnpm check          # formato, lint, tipos e testes
-pnpm test:e2e       # end-to-end em dev
+pnpm check           # formato, lint, tipos e testes
+pnpm test:e2e        # end-to-end em dev
 ```
 
-E, quando o PR mexe em CSP, headers, engine ou build:
+E, se o PR mexe em CSP, headers, engine ou build:
 
 ```bash
-pnpm test:e2e:prod  # a política de produção é mais estrita que a de dev
+pnpm test:e2e:prod   # a política de produção é MAIS ESTRITA que a de dev
 pnpm security:check
 ```
 
-**Nunca abra PR contando que "o CI descobre".** As duas quebras que já
-aconteceram aqui teriam sido pegas por `pnpm check` local:
+`test:e2e:prod` não é zelo: a CSP de desenvolvimento libera `unsafe-eval` e
+websocket para o runtime do Next. Uma violação exclusiva de produção passa
+batida em `next dev`.
 
-- um arquivo escrito à mão e não formatado pelo Prettier;
-- uma referência de action do GitHub que não existia.
-
----
-
-## 3. Dividir em issues quando o trabalho tem mais de uma decisão
-
-Abra issue antes de codar quando:
-
-- a mudança envolve mais de uma decisão que alguém poderia questionar depois;
-- há dependência externa (credencial, conta, serviço) que bloqueia parte do
-  trabalho;
-- o trabalho não cabe numa revisão de uma sentada;
-- existe dívida conhecida que ficará para depois.
-
-Uma issue precisa dizer:
-
-1. **Objetivo** — uma frase sobre o que passa a ser possível.
-2. **Entregas** — checklist.
-3. **Critério de aceite** — como saber que acabou.
-4. **Fora de escopo** — o que explicitamente não entra, para não invadir a
-   próxima fase.
-5. **Bloqueios** — o que depende de outra pessoa, com nome.
-
-Dívida descoberta no meio do caminho vira issue **no mesmo dia**. Dívida que só
-existe na cabeça de quem escreveu não existe.
-
----
-
-## 4. Uma fase por vez
+### 3. Uma fase por vez
 
 O `CLAUDE.md` manda: nunca implementar mais de uma fase numerada sem instrução
-explícita. Isso continua valendo. Trabalho paralelo é permitido apenas entre
-partes **sem dependência entre si**, e cada uma na sua branch.
+explícita. Trabalho paralelo só entre partes sem dependência entre si, cada uma
+na sua branch, com fronteira de arquivo escrita
+(`references/processo-e-entrega.md`).
 
----
+### 4. Regras que não se afrouxam, específicas daqui
 
-## 5. Não afrouxar verificação para ficar verde
+- **RLS nunca é desabilitada**, nem "temporariamente". Tabela com `user_id` sem
+  RLS é release blocker (ADR-0008).
+- **Nunca confiar em identificador vindo do frontend.** A identidade sai da
+  sessão verificada.
+- **Nunca `select('*')`** devolvendo linha ao navegador: a saída passa por DTO.
+- **Segredo nunca com prefixo `NEXT_PUBLIC_`** — vai para o bundle. O CI recusa.
+- **O núcleo funciona sem conta.** Se uma funcionalidade do núcleo passar a
+  exigir conta, o ADR-0009 foi violado.
+- **Motivo inventado é pior que `unknown`.** Detector abaixo do limiar de
+  confiança devolve `unknown`, e a taxa de `unknown` é medida, não escondida.
+- **WDL do Stockfish nunca é rotulado como chance humana de vitória.**
 
-Proibido, sem exceção:
-
-- desabilitar RLS, nem "temporariamente";
-- apagar ou pular um teste que ficou vermelho, em vez de entender por quê;
-- baixar o nível do `pnpm audit` para esconder vulnerabilidade;
-- adicionar `eslint-disable` sem comentário dizendo o motivo;
-- trocar asserção por `toBeTruthy()` para o teste parar de reclamar.
-
-Se uma verificação está atrapalhando, **ou ela está errada e conserta-se a
-verificação, ou ela está certa e conserta-se o código.** Um verificador que
-dispara em falso positivo é pior que nenhum: as pessoas aprendem a ignorá-lo.
-
----
-
-## 6. Decisão cara de reverter vira ADR
-
-Escolha de biblioteca com implicação de licença, fronteira de camada, formato de
-dado persistido, dependência externa: tudo isso vira ADR em `docs/adr/`.
-
-O ADR precisa registrar **o custo da decisão**, não só o benefício. E o índice
-`docs/adr/README.md` precisa listar o ADR novo — há um teste que garante isso.
-
-Se implementação e documentação divergirem, para-se a feature afetada e
-documenta-se a divergência. Não se inventa comportamento de produto.
-
----
-
-## 7. Toda dependência nova é registrada
+### 5. Dependência nova
 
 `docs/LICENSES.md` **e** `src/lib/legal/licenses.ts`, com pacote, versão,
-licença, motivo de uso e URL. Sem isso a Definition of Done não fecha.
+licença, motivo e URL. Sem isso a Definition of Done não fecha.
 
----
+Artefato GPL fica isolado em `public/engine/stockfish/`, sem modificação, com
+`COPYING.txt` e `SOURCE.txt` (ADR-0005).
 
-## 8. Honestidade sobre o que não foi verificado
+### 6. Decisão cara de reverter vira ADR
 
-Ao terminar um trabalho, diga o que **não** foi provado. Exemplos reais deste
-repositório:
-
-- "o contrato da engine roda contra worker falso, não contra o Stockfish real";
-- "a política de CSP de produção nunca passou por um navegador";
-- "os orçamentos de nós são chute, nunca foram medidos".
-
-Cada uma dessas frases virou issue e duas viraram bug encontrado. **Relatar o
-limite é parte da entrega**, não confissão de fracasso.
-
----
-
-## 9. Mensagem de commit explica o porquê
-
-O diff já mostra o quê. A mensagem serve para o _porquê_, para a decisão que foi
-tomada, e para o que ficou de fora.
-
----
-
-## 10. Segredo nunca entra no Git
-
-Nada de chave em código, em teste ou em log. `.env.local` é ignorado;
-`.env.example` documenta os nomes com valores em branco.
-
-Segredo com prefixo `NEXT_PUBLIC_` é segredo público — o CI recusa.
+`docs/adr/`, registrando **o custo** e não só o benefício, e o que **não** muda.
+Há um teste que exige que todo ADR do disco esteja no índice — ele existe porque
+dois ADRs já ficaram de fora sem ninguém notar.
