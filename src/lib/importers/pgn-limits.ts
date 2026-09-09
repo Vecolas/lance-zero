@@ -57,7 +57,6 @@ export class PgnLimitError extends Error {
  * Deixamos passar tab, LF e CR. O resto é sinal de arquivo binário renomeado ou
  * de tentativa de confundir quem for exibir o texto depois.
  */
-// eslint-disable-next-line no-control-regex
 const CONTROLE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/
 
 export function assertTextoDentroDoLimite(texto: string, limits: PgnLimits = PGN_LIMITS): void {

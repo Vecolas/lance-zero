@@ -57,9 +57,11 @@ for (const arquivo of arquivos) {
 // Toda tabela com user_id precisa aparecer num enable row level security.
 const semComentarios = sqlCompleto.replace(/--[^\n]*/g, '')
 const comRls = new Set(
-  [...semComentarios.matchAll(/alter\s+table\s+(?:public\.)?(\w+)\s+enable\s+row\s+level\s+security/gi)].map(
-    (m) => m[1].toLowerCase(),
-  ),
+  [
+    ...semComentarios.matchAll(
+      /alter\s+table\s+(?:public\.)?(\w+)\s+enable\s+row\s+level\s+security/gi,
+    ),
+  ].map((m) => m[1].toLowerCase()),
 )
 
 for (const criacao of semComentarios.matchAll(
