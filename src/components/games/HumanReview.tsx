@@ -250,6 +250,7 @@ export function HumanReview({ gameId }: Props) {
         <EngineReview
           game={game}
           markedPlies={game.humanReview.markedPlies}
+          notas={game.humanReview.notes}
           plyAtual={ply}
           onIrParaPly={setPly}
         />

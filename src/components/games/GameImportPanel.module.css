@@ -113,3 +113,12 @@
   border-left-color: var(--danger);
   color: var(--danger);
 }
+
+.fileInput {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-2);
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
