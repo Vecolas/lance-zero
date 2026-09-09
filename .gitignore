@@ -50,3 +50,10 @@ playwright-report/
 
 # O exemplo NÃO tem segredo e precisa ser versionado.
 !.env.example
+
+# Skills de agente instaladas por `npx skills add`.
+# O que garante reprodutibilidade é o skills-lock.json (com hash do conteúdo),
+# não o conteúdo vendorizado — e .claude/skills são symlinks, que o Windows e o
+# git tratam mal.
+.agents/
+.claude/skills/
