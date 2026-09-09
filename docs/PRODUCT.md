@@ -91,20 +91,24 @@ O que funciona hoje:
 - `/puzzles` treina táticas sem revelar o tema antes da resposta, com dicas em três
   níveis e a explicação só depois;
 - `/train` roda as revisões espaçadas com FSRS e move o modelo de habilidades;
-- `/games` carrega PGN ou FEN e navega lance a lance;
+- `/games` importa partidas por PGN, Lichess ou Chess.com, sem duplicar, e
+  `/games/[id]` é o passe humano da revisão: nenhuma avaliação na tela, o usuário
+  marca onde acha que a partida mudou e escreve o porquê;
+- `/calculate` treina a rotina de xeques e capturas, com conferência exata;
 - `/progress` mostra forças, prioridades e retenção — e admite quando não há o que medir;
 - `/settings` exporta e importa backup JSON;
 - modo claro e escuro em todas as telas.
 
-Prontos no domínio, ainda sem tela: engine Stockfish, importadores de Lichess e
-Chess.com, severidade de lance, momentos críticos e detectores de erro.
+Prontos no domínio, ainda sem tela: engine Stockfish e o pipeline de análise
+(varredura rasa → aprofundamento → severidade → detectores → explicação).
 
-O que **não** existe: finais, aberturas, diagnóstico e a revisão de partida com engine.
+O que **não** existe: finais, aberturas, diagnóstico e o passe 2 da revisão de
+partida, que liga o pipeline à tela.
 
 ### Dívidas registradas
 
 - o contrato da engine roda contra worker falso; falta o teste com Stockfish real;
 - o conjunto de puzzles é um punhado gerado e verificado por nós, não o dump do Lichess;
 - puzzle com solução alternativa igualmente vencedora ainda é marcado como erro;
-- a Fase 6 existe como peças soltas: falta o pipeline varredura → análise → severidade
-  → detectores → explicação.
+- o passe 2 da revisão de partida ainda não está ligado à tela;
+- puzzle com solução alternativa igualmente vencedora ainda é marcado como erro.
