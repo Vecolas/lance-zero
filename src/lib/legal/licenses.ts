@@ -28,8 +28,29 @@ export const runtimeDependencies: DependencyLicense[] = [
     url: 'https://github.com/facebook/react',
   },
   {
+    name: 'chess.js',
+    version: '1.4.0',
+    license: 'BSD-2-Clause',
+    reason: 'Regras, geração de lances legais, FEN e PGN.',
+    url: 'https://github.com/jhlywa/chess.js',
+  },
+  {
+    name: 'react-chessboard',
+    version: '5.12.1',
+    license: 'MIT',
+    reason: 'Componente de tabuleiro. Escolhido no lugar do Chessground para não herdar GPL.',
+    url: 'https://github.com/Clariity/react-chessboard',
+  },
+  {
+    name: 'ts-fsrs',
+    version: '5.4.2',
+    license: 'MIT',
+    reason: 'Agendamento de revisão espaçada.',
+    url: 'https://github.com/open-spaced-repetition/ts-fsrs',
+  },
+  {
     name: 'TypeScript',
-    version: '5.9.4',
+    version: '5.9.3',
     license: 'Apache-2.0',
     reason: 'Tipagem estática do domínio e da UI.',
     url: 'https://github.com/microsoft/TypeScript',
@@ -40,6 +61,13 @@ export const runtimeDependencies: DependencyLicense[] = [
     license: 'MIT',
     reason: 'Testes unitários e de componente.',
     url: 'https://github.com/vitest-dev/vitest',
+  },
+  {
+    name: 'Playwright',
+    version: '1.63.0',
+    license: 'Apache-2.0',
+    reason: 'Testes end-to-end em desktop e mobile.',
+    url: 'https://github.com/microsoft/playwright',
   },
   {
     name: 'Testing Library',
@@ -70,29 +98,10 @@ export const runtimeDependencies: DependencyLicense[] = [
 
 export const plannedDependencies: DependencyLicense[] = [
   {
-    name: 'chess.js',
-    license: 'BSD-2-Clause',
-    reason: 'Regras, geração de lances legais, FEN e PGN. Fase 1.',
-    url: 'https://github.com/jhlywa/chess.js',
-  },
-  {
-    name: 'react-chessboard',
-    license: 'MIT',
-    reason:
-      'Componente de tabuleiro. Escolhido no lugar do Chessground para não herdar GPL. Fase 1.',
-    url: 'https://github.com/Clariity/react-chessboard',
-  },
-  {
     name: 'Stockfish 18 (stockfish.js)',
     license: 'GPL-3.0',
     reason: 'Engine de análise em WebAssembly, isolada em public/engine/stockfish/. Fase 2.',
     url: 'https://github.com/nmrugg/stockfish.js',
-  },
-  {
-    name: 'ts-fsrs',
-    license: 'MIT',
-    reason: 'Agendamento de revisão espaçada. Fase 4.',
-    url: 'https://github.com/open-spaced-repetition/ts-fsrs',
   },
   {
     name: 'Lichess puzzle database',
@@ -105,11 +114,5 @@ export const plannedDependencies: DependencyLicense[] = [
     license: 'CC0-1.0',
     reason: 'Nomes e códigos ECO de aberturas. Fase 9.',
     url: 'https://github.com/lichess-org/chess-openings',
-  },
-  {
-    name: 'Playwright',
-    license: 'Apache-2.0',
-    reason: 'Testes end-to-end. Fase 1.',
-    url: 'https://github.com/microsoft/playwright',
   },
 ]

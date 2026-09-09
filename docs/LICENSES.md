@@ -4,34 +4,36 @@ Regra do projeto: **nenhuma dependência entra sem uma linha aqui**, com pacote,
 versão, licença, motivo de uso e URL de origem. A mesma informação alimenta a
 página pública `/licenses` (`src/lib/legal/licenses.ts`).
 
-## Em uso (Fase 0)
+## Em uso (Fases 0 e 1)
 
-| Pacote                                            | Versão | Licença     | Motivo                                      | Fonte                                                    |
-| ------------------------------------------------- | ------ | ----------- | ------------------------------------------- | -------------------------------------------------------- |
-| `next`                                            | 16.3.4 | MIT         | Framework, roteamento, build                | https://github.com/vercel/next.js                        |
-| `react`                                           | 19.2.8 | MIT         | UI                                          | https://github.com/facebook/react                        |
-| `react-dom`                                       | 19.2.8 | MIT         | UI                                          | https://github.com/facebook/react                        |
-| `typescript`                                      | 5.9.3  | Apache-2.0  | Tipagem estática                            | https://github.com/microsoft/TypeScript                  |
-| `eslint`                                          | 9.39.5 | MIT         | Análise estática                            | https://github.com/eslint/eslint                         |
-| `eslint-config-next`                              | 16.3.4 | MIT         | Regras Next/React/a11y                      | https://github.com/vercel/next.js                        |
-| `prettier`                                        | 3.9.6  | MIT         | Formatação                                  | https://github.com/prettier/prettier                     |
-| `vitest`                                          | 5.0.0  | MIT         | Testes unitários                            | https://github.com/vitest-dev/vitest                     |
-| `@vitejs/plugin-react`                            | 6.1.1  | MIT         | Transform JSX nos testes                    | https://github.com/vitejs/vite-plugin-react              |
-| `jsdom`                                           | 30.0.1 | MIT         | Ambiente DOM nos testes                     | https://github.com/jsdom/jsdom                           |
-| `@testing-library/react`                          | 16.3.3 | MIT         | Testes de componente por papel acessível    | https://github.com/testing-library/react-testing-library |
-| `@testing-library/jest-dom`                       | 7.0.1  | MIT         | Matchers de DOM                             | https://github.com/testing-library/jest-dom              |
-| `@types/node`, `@types/react`, `@types/react-dom` | —      | MIT         | Tipos                                       | https://github.com/DefinitelyTyped/DefinitelyTyped       |
-| Inter (via `next/font/google`)                    | —      | SIL OFL 1.1 | Tipografia de interface, servida localmente | https://github.com/rsms/inter                            |
+| Pacote                                            | Versão | Licença      | Motivo                                                           | Fonte                                                    |
+| ------------------------------------------------- | ------ | ------------ | ---------------------------------------------------------------- | -------------------------------------------------------- |
+| `next`                                            | 16.3.4 | MIT          | Framework, roteamento, build                                     | https://github.com/vercel/next.js                        |
+| `react`                                           | 19.2.8 | MIT          | UI                                                               | https://github.com/facebook/react                        |
+| `react-dom`                                       | 19.2.8 | MIT          | UI                                                               | https://github.com/facebook/react                        |
+| `typescript`                                      | 5.9.3  | Apache-2.0   | Tipagem estática                                                 | https://github.com/microsoft/TypeScript                  |
+| `eslint`                                          | 9.39.5 | MIT          | Análise estática                                                 | https://github.com/eslint/eslint                         |
+| `eslint-config-next`                              | 16.3.4 | MIT          | Regras Next/React/a11y                                           | https://github.com/vercel/next.js                        |
+| `prettier`                                        | 3.9.6  | MIT          | Formatação                                                       | https://github.com/prettier/prettier                     |
+| `vitest`                                          | 5.0.0  | MIT          | Testes unitários                                                 | https://github.com/vitest-dev/vitest                     |
+| `@vitejs/plugin-react`                            | 6.1.1  | MIT          | Transform JSX nos testes                                         | https://github.com/vitejs/vite-plugin-react              |
+| `jsdom`                                           | 30.0.1 | MIT          | Ambiente DOM nos testes                                          | https://github.com/jsdom/jsdom                           |
+| `@testing-library/react`                          | 16.3.3 | MIT          | Testes de componente por papel acessível                         | https://github.com/testing-library/react-testing-library |
+| `@testing-library/jest-dom`                       | 7.0.1  | MIT          | Matchers de DOM                                                  | https://github.com/testing-library/jest-dom              |
+| `@types/node`, `@types/react`, `@types/react-dom` | —      | MIT          | Tipos                                                            | https://github.com/DefinitelyTyped/DefinitelyTyped       |
+| `chess.js`                                        | 1.4.0  | BSD-2-Clause | Regras, lances legais, FEN e PGN                                 | https://github.com/jhlywa/chess.js                       |
+| `react-chessboard`                                | 5.12.1 | MIT          | Tabuleiro; escolhido no lugar do Chessground para não herdar GPL | https://github.com/Clariity/react-chessboard             |
+| `ts-fsrs`                                         | 5.4.2  | MIT          | Revisão espaçada                                                 | https://github.com/open-spaced-repetition/ts-fsrs        |
+| `@playwright/test`                                | 1.63.0 | Apache-2.0   | Testes end-to-end em desktop e mobile                            | https://github.com/microsoft/playwright                  |
+| `@testing-library/user-event`                     | 14.6.7 | MIT          | Interação de usuário nos testes de componente                    | https://github.com/testing-library/user-event            |
+| `fake-indexeddb`                                  | 6.2.5  | Apache-2.0   | IndexedDB em memória nos testes de repositório                   | https://github.com/dumbmatter/fakeIndexedDB              |
+| Inter (via `next/font/google`)                    | —      | SIL OFL 1.1  | Tipografia de interface, servida localmente                      | https://github.com/rsms/inter                            |
 
 ## Previstos (entram junto com a fase que os exige)
 
 | Pacote / dado                 | Licença                 | Motivo                   | Fase | Fonte                                              |
 | ----------------------------- | ----------------------- | ------------------------ | ---- | -------------------------------------------------- |
-| `chess.js`                    | BSD-2-Clause            | Regras, FEN, PGN         | 1    | https://github.com/jhlywa/chess.js                 |
-| `react-chessboard`            | MIT                     | Componente de tabuleiro  | 1    | https://github.com/Clariity/react-chessboard       |
-| `@playwright/test`            | Apache-2.0              | E2E                      | 1    | https://github.com/microsoft/playwright            |
 | `stockfish.js` (Stockfish 18) | **GPL-3.0**             | Engine WASM              | 2    | https://github.com/nmrugg/stockfish.js             |
-| `ts-fsrs`                     | MIT                     | Revisão espaçada         | 4    | https://github.com/open-spaced-repetition/ts-fsrs  |
 | Lichess puzzle database       | CC0-1.0                 | Puzzles táticos          | 3    | https://database.lichess.org/#puzzles              |
 | `lichess-org/chess-openings`  | CC0-1.0                 | Nomes e códigos ECO      | 9    | https://github.com/lichess-org/chess-openings      |
 | Lichess Opening Explorer API  | Termos da API Lichess   | Estatísticas de abertura | 9    | https://lichess.org/api                            |

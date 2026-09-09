@@ -736,3 +736,13 @@ When starting from an empty repository, use this instruction:
 > Read `CLAUDE.md` and the full LanceZero product specification. Implement **Phase 0 only**. Bootstrap the project with the approved stack, create the folder/documentation skeleton, implement the LanceZero design tokens and a responsive application shell with placeholder routes, configure lint/typecheck/Vitest, add a minimal CI workflow, and create the initial license inventory. Do not install Stockfish or chess-specific runtime packages until the phase that needs them unless required to validate the bootstrap. At the end, run all checks and report changed files, commands run, decisions made and any blocker. Do not proceed to Phase 1.
 
 After reviewing Phase 0, explicitly tell Claude Code to proceed to Phase 1, and so on.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
