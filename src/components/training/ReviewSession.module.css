@@ -1,0 +1,126 @@
+.layout {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 60rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card);
+}
+
+.counter {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.prompt {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.ok {
+  color: var(--positive);
+}
+
+.bad {
+  color: var(--danger);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.ratings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.rating {
+  flex: 1 1 5rem;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rating:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.ratingGood {
+  background: var(--accent-strong);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+
+.ratingGood:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.ghost {
+  align-self: flex-start;
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.state {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+
+.error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.skills {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+}

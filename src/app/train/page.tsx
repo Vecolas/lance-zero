@@ -1,20 +1,17 @@
 import type { Metadata } from 'next'
-import { PlaceholderScreen } from '@/components/ui/PlaceholderScreen'
+import { ReviewSession } from '@/components/training/ReviewSession'
 
 export const metadata: Metadata = { title: 'Treinar' }
 
 export default function TrainPage() {
   return (
-    <PlaceholderScreen
-      title="Treinar"
-      phase={5}
-      lead="A sessão em si: um exercício por vez, sem menu, sem escolha paralisante."
-      planned={[
-        'Execução do plano do dia bloco a bloco',
-        'Mistura de puzzles, cálculo e revisões FSRS',
-        'Dicas graduais e explicação só depois da resposta',
-        'Registro de tentativa alimentando o modelo de habilidades',
-      ]}
-    />
+    <>
+      <h1>Treinar</h1>
+      <p>
+        A sessão começa pelas revisões vencidas, porque o que você já errou uma vez vale mais que
+        conteúdo novo. Táticas e cálculo entram aqui quando a Fase 3 chegar.
+      </p>
+      <ReviewSession />
+    </>
   )
 }

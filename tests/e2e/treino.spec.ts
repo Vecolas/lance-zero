@@ -38,3 +38,10 @@ test('o progresso admite que ainda não há o que medir', async ({ page }) => {
   await page.goto('/progress')
   await expect(page.getByText(/Ainda não há o que medir/)).toBeVisible()
 })
+
+test('a tela de treino admite quando não há revisão vencida', async ({ page }) => {
+  await page.goto('/train')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Treinar')
+  await expect(page.getByText(/Nada vencido agora/)).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Voltar ao treino de hoje' })).toBeVisible()
+})
