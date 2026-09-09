@@ -474,6 +474,7 @@ export async function analyzeGame(input: AnalyzeGameInput): Promise<GameAnalysis
   const momentos: CriticalMoment[] = ordenarPorPly(
     selectCriticalMoments(aprofundados, {
       userColor,
+      playedAt: game.playedAt,
       explanations: explicacoes,
       config: config.critical,
     }),
