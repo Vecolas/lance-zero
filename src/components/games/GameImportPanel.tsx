@@ -29,6 +29,15 @@ export function GameImportPanel({ onImported }: { onImported: () => void }) {
   const { repo, profile, saveProfile } = useRepository()
   const [fonte, setFonte] = useState<Fonte>('pgn')
   const [pgn, setPgn] = useState('')
+  /**
+   * Arquivo escolhido, quando houver.
+   *
+   * Fica separado do campo de texto de propósito: um PGN de exportação tem
+   * centenas de partidas e megabytes, e jogar isso dentro de um `<textarea>`
+   * trava a digitação. O campo mostra que o arquivo está pronto, sem carregá-lo
+   * na interface.
+   */
+  const [arquivo, setArquivo] = useState<{ nome: string; texto: string } | null>(null)
   const [usuario, setUsuario] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [feedback, setFeedback] = useState<Feedback>(null)
@@ -53,7 +62,10 @@ export function GameImportPanel({ onImported }: { onImported: () => void }) {
     setFeedback(null)
     try {
       if (fonte === 'pgn') {
-        const { games, issues } = importPgnTextDetailed(pgn, {
+        // O arquivo tem precedência: se ele está carregado, é o que o usuário
+        // acabou de escolher, e importar o texto antigo seria surpresa.
+        const texto = arquivo?.texto ?? pgn
+        const { games, issues } = importPgnTextDetailed(texto, {
           username: profile?.lichessUsername ?? profile?.chesscomUsername,
         })
         if (games.length === 0) {
@@ -149,12 +161,46 @@ export function GameImportPanel({ onImported }: { onImported: () => void }) {
             aria-describedby="pgn-import-ajuda"
             className={styles.textarea}
             value={pgn}
-            onChange={(e) => setPgn(e.target.value)}
+            onChange={(e) => {
+              setPgn(e.target.value)
+              // Digitar no campo tira o arquivo do caminho. Sem isto, o texto
+              // recém-escrito seria ignorado em silêncio pela precedência.
+              setArquivo(null)
+            }}
             placeholder="Cole uma ou várias partidas"
             spellCheck={false}
           />
           <p id="pgn-import-ajuda" className={styles.help}>
             Várias partidas seguidas no mesmo texto funcionam.
+          </p>
+
+          <label className={styles.label} htmlFor="pgn-arquivo">
+            Ou envie um arquivo .pgn
+          </label>
+          <input
+            id="pgn-arquivo"
+            type="file"
+            accept=".pgn,application/x-chess-pgn,text/plain"
+            className={styles.fileInput}
+            aria-describedby="pgn-arquivo-ajuda"
+            disabled={ocupado}
+            onChange={(e) => {
+              const escolhido = e.target.files?.[0]
+              if (!escolhido) {
+                setArquivo(null)
+                return
+              }
+              setFeedback(null)
+              void escolhido
+                .text()
+                .then((texto) => setArquivo({ nome: escolhido.name, texto }))
+                .catch(() => setFeedback({ tipo: 'bad', texto: 'Não consegui ler este arquivo.' }))
+            }}
+          />
+          <p id="pgn-arquivo-ajuda" className={styles.help}>
+            {arquivo
+              ? `${arquivo.nome} pronto para importar. Ele tem prioridade sobre o texto acima.`
+              : 'É o mesmo formato: o arquivo que o Lichess ou o Chess.com exporta.'}
           </p>
         </div>
       ) : (

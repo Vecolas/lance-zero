@@ -105,3 +105,54 @@ test('a engine analisa a partida e cruza com o que o usuário marcou', async ({ 
   // O rodapé é honesto sobre quanto da análise foi profunda.
   await expect(page.getByText(/receberam análise profunda/)).toBeVisible()
 })
+
+test('importa um arquivo .pgn, e o arquivo tem precedência sobre o texto', async ({ page }) => {
+  await page.goto('/games')
+
+  await page.getByLabel(/Ou envie um arquivo/).setInputFiles({
+    name: 'minhas-partidas.pgn',
+    mimeType: 'application/x-chess-pgn',
+    buffer: Buffer.from(PGN_DUAS, 'utf8'),
+  })
+  await expect(page.getByText(/minhas-partidas\.pgn pronto para importar/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Importar' }).click()
+  await expect(page.getByText(/2 importadas/)).toBeVisible()
+  await expect(page.getByRole('link', { name: /Alice × Bruno/ })).toBeVisible()
+})
+
+test('digitar no campo tira o arquivo do caminho, sem surpresa silenciosa', async ({ page }) => {
+  await page.goto('/games')
+
+  await page.getByLabel(/Ou envie um arquivo/).setInputFiles({
+    name: 'lote.pgn',
+    mimeType: 'application/x-chess-pgn',
+    buffer: Buffer.from(PGN_DUAS, 'utf8'),
+  })
+  await expect(page.getByText(/lote\.pgn pronto para importar/)).toBeVisible()
+
+  // Ao digitar, o aviso do arquivo some: o que vale passa a ser o texto.
+  await page.getByLabel('PGN', { exact: true }).fill('não é um pgn')
+  await expect(page.getByText(/lote\.pgn pronto para importar/)).toBeHidden()
+
+  await page.getByRole('button', { name: 'Importar' }).click()
+  await expect(page.getByText(/Nenhuma partida/)).toBeVisible()
+})
+
+test('as anotações do passe 1 ficam visíveis ao lado do veredito da engine', async ({ page }) => {
+  test.setTimeout(240_000)
+  await importar(page)
+  await page.getByRole('link', { name: /Alice × Bruno/ }).click()
+
+  await page.getByLabel('Suas anotações').fill('Achei que a dama saiu cedo demais.')
+  await page.getByRole('button', { name: 'Salvar minha análise' }).click()
+  await expect(page.getByText(/^Salvo:/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Analisar com a engine' }).click()
+
+  const passe2 = page.getByRole('region', { name: /Passe 2/ })
+  await expect(passe2.getByText('O que você escreveu antes de ver a engine')).toBeVisible({
+    timeout: 180_000,
+  })
+  await expect(passe2.getByText('Achei que a dama saiu cedo demais.')).toBeVisible()
+})

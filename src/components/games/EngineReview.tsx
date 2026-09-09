@@ -30,6 +30,14 @@ export interface EngineReviewProps {
   game: Game
   /** Plies que o usuário marcou no passe 1. */
   markedPlies: number[]
+  /**
+   * O que o usuário escreveu no passe 1.
+   *
+   * Aparece ao lado do veredito de propósito: comparar as duas leituras é o
+   * ponto da revisão, e obrigar o usuário a rolar a tela para reler o que ele
+   * mesmo pensou transforma a comparação em esforço de memória.
+   */
+  notas: string
   /** Leva o tabuleiro até o lance do momento clicado. */
   onIrParaPly: (ply: number) => void
   plyAtual: number
@@ -45,7 +53,13 @@ export interface EngineReviewProps {
  * O resultado não é apresentado como lista de erros, e sim como o cruzamento
  * entre a leitura do jogador e a da engine — o que ele viu, o que passou batido.
  */
-export function EngineReview({ game, markedPlies, onIrParaPly, plyAtual }: EngineReviewProps) {
+export function EngineReview({
+  game,
+  markedPlies,
+  notas,
+  onIrParaPly,
+  plyAtual,
+}: EngineReviewProps) {
   const { repo } = useRepository()
   const { analyze, stop, status: statusEngine } = useEngine()
   const [fase, setFase] = useState<Fase>('ocioso')
@@ -172,6 +186,13 @@ export function EngineReview({ game, markedPlies, onIrParaPly, plyAtual }: Engin
           <p className={styles.veredito} role="status">
             {describeComparison(comparacao)}
           </p>
+
+          {notas.trim() ? (
+            <div className={styles.suaLeitura}>
+              <p className={styles.suaLeituraTitulo}>O que você escreveu antes de ver a engine</p>
+              <p className={styles.suaLeituraTexto}>{notas}</p>
+            </div>
+          ) : null}
 
           {momentosOrdenados.length > 0 ? (
             <ul className={styles.lista}>
