@@ -59,7 +59,10 @@ export function DailyPlanView() {
         const agora = new Date()
         // Só partidas dentro da janela de recência interessam ao planner, e o
         // repositório já sabe filtrar por data: pedir tudo e descartar depois
-        // custaria leitura à toa. A MESMA borda que o domínio usa.
+        // custaria leitura à toa. A MESMA borda que o domínio usa — `since` é
+        // comparado por instante do outro lado (ver `@/lib/storage/query`),
+        // então uma partida importada com offset não é cortada aqui e aceita
+        // lá. Trocar isto por um recorte próprio ressuscita a issue #53.
         const desde = inicioDaJanela(agora).toISOString()
         const [mastery, dueCards, partidas] = await Promise.all([
           repo.getSkillMastery(),
