@@ -49,6 +49,7 @@
 
 import { PLANNER_CONFIG, type RecentGameError } from '@/domain/planning/planner'
 import type { AnalysisPrecision, Game, PositionAnalysis } from '@/domain/types'
+import { instanteDe } from '@/lib/tempo'
 
 const MS_POR_DIA = 86_400_000
 
@@ -140,8 +141,10 @@ export function errosRecentesDeAnalises(
     const partida = partidasPorId.get(analise.gameId)
     if (!partida) continue
 
-    const jogadaEm = Date.parse(partida.playedAt)
-    if (Number.isNaN(jogadaEm) || jogadaEm < limite) continue
+    // Mesma função que `applyGameQuery` usa para recortar por `since`: a regra
+    // de comparação tem um dono só, senão as duas pontas divergem em silêncio.
+    const jogadaEm = instanteDe(partida.playedAt)
+    if (jogadaEm === null || jogadaEm < limite) continue
 
     // Análise sem habilidade atribuída (explicação `unknown`) não contribui, e
     // não há filtro para isso porque não há regra extra: a atribuição de

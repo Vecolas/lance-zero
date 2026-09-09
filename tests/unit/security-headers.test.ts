@@ -16,6 +16,7 @@ import {
   CSP_HEADER_ENFORCING,
   CSP_HEADER_REPORT_ONLY,
   HSTS_HEADER,
+  ORIGENS_EXTERNAS,
   SECURITY_HEADERS,
 } from '@/lib/security/headers'
 
@@ -69,11 +70,54 @@ describe('conteúdo da CSP', () => {
     expect(mapa.get('script-src')).toContain("'wasm-unsafe-eval'")
   })
 
-  it('libera exatamente as duas APIs de importação, e nada além', () => {
+  it('connect-src libera exatamente as origens declaradas, e nada além', () => {
+    // Deriva de `ORIGENS_EXTERNAS` em vez de cravar a lista. A versão anterior
+    // cravava as duas APIs de importação à mão e, por isso, DEFENDIA a omissão:
+    // quem acrescentasse a origem que faltava veria este teste ficar vermelho e
+    // teria motivo para achar que a correção é que estava errada.
     const externas = (diretivas(politicaProducao).get('connect-src') ?? []).filter((fonte) =>
       fonte.startsWith('http'),
     )
-    expect(externas).toEqual(['https://lichess.org', 'https://api.chess.com'])
+    expect(externas.length).toBeGreaterThan(0)
+    expect(externas).toEqual([...ORIGENS_EXTERNAS])
+  })
+
+  it('toda origem que algum adapter chama está em ORIGENS_EXTERNAS', () => {
+    // VARRE A FONTE — os `baseUrl` dos adapters em `src/lib/` — em vez de uma
+    // lista escrita à mão, que nunca acusaria o adapter que nunca entrou nela.
+    //
+    // Foi assim que `tablebase.lichess.ovh` ficou de fora: um adapter novo
+    // apontava para um host que a CSP não autoriza, e o sintoma era MUDO —
+    // enquanto Report-Only, a requisição ainda sai; ao virar enforcing, o
+    // bloqueio vira `null`, o mesmo valor de "sem resposta para esta posição".
+    //
+    // PONTO CEGO DECLARADO: a varredura reconhece o padrão da casa,
+    // `baseUrl: 'https://…'`. Um adapter que nomeie o host de outro jeito
+    // escapa. É por isso que a regra vale para o padrão E existe o teste de
+    // contra-prova abaixo, que confirma que a varredura acha alguma coisa.
+    const arquivos = import.meta.glob('/src/lib/**/*.ts', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }) as Record<string, string>
+
+    const encontradas = new Map<string, string>()
+    for (const [caminho, texto] of Object.entries(arquivos)) {
+      for (const achado of texto.matchAll(/baseUrl:\s*'(https:\/\/[^']+)'/g)) {
+        encontradas.set(new URL(achado[1]).origin, caminho)
+      }
+    }
+
+    // Portão com zero verificações tem de REPROVAR: se o padrão mudar e a
+    // varredura passar a achar nada, isto grita em vez de imprimir "tudo certo".
+    expect(encontradas.size, 'a varredura não encontrou nenhum baseUrl').toBeGreaterThan(0)
+
+    for (const [origem, caminho] of encontradas) {
+      expect(
+        (ORIGENS_EXTERNAS as readonly string[]).includes(origem),
+        `${caminho} chama ${origem}, que não está em ORIGENS_EXTERNAS — a CSP vai bloquear em silêncio`,
+      ).toBe(true)
+    }
   })
 
   it('não usa curinga em nenhuma diretiva de script', () => {

@@ -4,8 +4,43 @@
  * Memória e IndexedDB precisam responder igual ao mesmo teste de contrato, e
  * a única forma barata de garantir isso é as duas chamarem as mesmas funções
  * puras de filtro e ordenação.
+ *
+ * ## `GameQuery.since` e `Game.playedAt`: a pré-condição, agora explícita
+ *
+ * A pré-condição tácita de todo este arquivo era "toda data gravada é ISO-8601
+ * em UTC", o que torna a comparação de TEXTO equivalente à comparação
+ * CRONOLÓGICA. Para as datas que o próprio app gera (`dueAt`, `createdAt`,
+ * `attemptedAt`) isso continua valendo: quem as escreve é `toISOString()`.
+ *
+ * `playedAt` é diferente, e é a exceção que a issue #53 cobrou: ele vem de
+ * FORA — de importadores e de arquivos de backup restaurados, que hoje não
+ * validam formato de data. Um `2026-08-26T06:00:00-03:00` é ISO-8601 perfeito
+ * e ordena errado como texto. O sintoma seria mudo: `DailyPlanView` recorta com
+ * `listGames({ since })` e o domínio (`errosRecentesDeAnalises`) recorta por
+ * `Date.parse`, então a partida seria CORTADA pela tela e ACEITA pelo domínio
+ * — sem exceção, sem log, sem nada na interface. O erro daquela partida
+ * simplesmente não entraria no plano do dia.
+ *
+ * Decisões que este arquivo carrega por causa disso:
+ *
+ * 1. **`since` e a ordenação de partidas comparam INSTANTE**, com `Date.parse`,
+ *    a mesma comparação do domínio. A pré-condição sobre `playedAt` passa a ser
+ *    apenas "é uma data que `Date.parse` lê", sem exigir fuso nenhum.
+ * 2. **Nada é normalizado na escrita.** Reescrever `playedAt` ao gravar deixaria
+ *    o dado já persistido no formato antigo e criaria duas eras de dado no mesmo
+ *    banco. A borda que decide é a LEITURA, uma só.
+ * 3. **`playedAt` ilegível não entra na janela** — igual ao domínio, que
+ *    descarta `Date.parse` NaN. PONTO CEGO DECLARADO: a partida some do recorte
+ *    sem avisar. É o comportamento menos ruim porque o efeito é subestimar o
+ *    sinal, nunca inventá-lo, e porque as duas pontas somem juntas.
+ * 4. **`since` ilegível é erro em voz alta.** Comparar contra um NaN filtraria
+ *    TUDO e devolveria lista vazia em silêncio — o mesmo defeito da issue #53
+ *    numa roupa nova. Quem monta o `since` é código nosso; um `since` quebrado
+ *    é defeito de programação, e defeito de programação tem de doer.
  */
 import type { Game, GameQuery, PositionAnalysis, PuzzleAttempt, ReviewCard } from '@/domain/types'
+import { StorageError } from './repository'
+import { instanteDe } from '@/lib/tempo'
 
 /** Clona valores JSON puros para que o repositório nunca devolva referência viva. */
 export function cloneJson<T>(value: T): T {
@@ -27,19 +62,50 @@ export function gameDedupeKey(game: Pick<Game, 'source' | 'sourceGameId'>): stri
   return `${game.source}:${game.sourceGameId}`
 }
 
-/** Filtra, ordena da mais recente para a mais antiga e aplica o limite. */
+/**
+ * Ordem cronológica decrescente de partidas, com desempate estável pelo id.
+ *
+ * Partida com data ilegível vai para o fim: assim ela nunca desloca uma partida
+ * real do topo de uma consulta com `limit`.
+ */
+function compareGamesDesc(a: Game, b: Game): number {
+  const instanteA = instanteDe(a.playedAt)
+  const instanteB = instanteDe(b.playedAt)
+  if (instanteA !== instanteB) {
+    if (instanteA === null) return 1
+    if (instanteB === null) return -1
+    return instanteB - instanteA
+  }
+  return compareDesc(a.id, b.id)
+}
+
+/**
+ * Filtra, ordena da mais recente para a mais antiga e aplica o limite.
+ *
+ * `since` é INCLUSIVO e comparado por instante — ver o cabeçalho do módulo.
+ *
+ * @throws {StorageError} código `formato-invalido`, quando `since` não é uma
+ * data legível.
+ */
 export function applyGameQuery(games: Game[], query?: GameQuery): Game[] {
   let result = games
   if (query?.source) {
     result = result.filter((game) => game.source === query.source)
   }
-  if (query?.since) {
-    const since = query.since
-    result = result.filter((game) => game.playedAt >= since)
+  if (query?.since !== undefined) {
+    const desde = instanteDe(query.since)
+    if (desde === null) {
+      throw new StorageError(
+        'formato-invalido',
+        `GameQuery.since precisa ser uma data ISO-8601 legível; recebi "${query.since}".`,
+      )
+    }
+    result = result.filter((game) => {
+      const jogadaEm = instanteDe(game.playedAt)
+      return jogadaEm !== null && jogadaEm >= desde
+    })
   }
-  result = [...result].sort(
-    (a, b) => compareDesc(a.playedAt, b.playedAt) || compareDesc(a.id, b.id),
-  )
+  result = [...result].sort(compareGamesDesc)
   if (query?.limit !== undefined) {
     result = result.slice(0, Math.max(0, query.limit))
   }

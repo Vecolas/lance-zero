@@ -5,9 +5,13 @@
  * partidas) e de implementação de referência do contrato: quando o
  * comportamento de memória e de IndexedDB divergem, o teste de contrato falha.
  *
- * Pré-condição de todo o armazenamento: `dueAt`, `createdAt`, `playedAt` e
- * companhia são sempre ISO-8601 em UTC, o que torna a comparação textual
+ * Pré-condição das datas que o próprio app gera (`dueAt`, `createdAt`,
+ * `attemptedAt`): são sempre ISO-8601 em UTC, o que torna a comparação textual
  * equivalente à comparação cronológica.
+ *
+ * `Game.playedAt` NÃO tem essa garantia — vem de importador e de backup
+ * restaurado, e pode trazer offset. Por isso o recorte por data de partidas
+ * compara instante, e não texto. A regra e o porquê estão em `./query`.
  */
 import type {
   Game,
