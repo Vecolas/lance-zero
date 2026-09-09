@@ -23,6 +23,8 @@
  */
 
 import type {
+  AnalysisPrecision,
+  EngineWdlSnapshot,
   CriticalMoment,
   Game,
   MistakeExplanation,
@@ -31,6 +33,7 @@ import type {
   SkillId,
 } from '@/domain/types'
 import type { EngineAnalysis, EngineProvider } from '@/lib/engine/types'
+import { normalizeWdlToWhite } from '@/lib/engine/uci'
 import { parsePgn, positionStatus, type PieceColor, type Ply } from '@/lib/chess'
 import {
   CRITICAL_CONFIG,
@@ -175,6 +178,14 @@ interface Avaliacao {
   score: EvalScore
   bestMoveUci: string
   pv: string[]
+  /**
+   * WDL já na perspectiva das brancas, quando a engine reportou.
+   *
+   * Só a passagem de aprofundamento pede WDL: na varredura rasa ele custaria em
+   * todos os lances e não seria usado, porque o CLAUDE.md só exige persistir
+   * WDL nos lances críticos.
+   */
+  wdl?: EngineWdlSnapshot
 }
 
 const SEVERIDADES: readonly MoveSeverity[] = ['ok', 'imprecisao', 'erro', 'erro-grave']
@@ -187,10 +198,14 @@ function arredondar(valor: number): number {
 function avaliacaoDaEngine(analise: EngineAnalysis): Avaliacao {
   const principal = analise.lines.find((linha) => linha.multiPv === 1) ?? analise.lines[0]
   const pv = principal?.pv ?? []
+  const wdlBruto = principal?.wdl
   return {
     score: { scoreCp: principal?.scoreCp ?? null, mateIn: principal?.mateIn ?? null },
     bestMoveUci: analise.bestMoveUci ?? pv[0] ?? '',
     pv,
+    // A engine reporta na perspectiva de quem joga; guardamos sempre em
+    // brancas, senão comparar dois lances exigiria lembrar de quem era a vez.
+    wdl: wdlBruto ? normalizeWdlToWhite(wdlBruto, analise.turn) : undefined,
   }
 }
 
@@ -259,6 +274,7 @@ interface MontarAnaliseArgs {
   depois: Avaliacao
   skillIds: SkillId[]
   explanationCode: string
+  precisao: AnalysisPrecision
   config: PipelineConfig
 }
 
@@ -283,6 +299,9 @@ function montarAnalise(args: MontarAnaliseArgs): PositionAnalysis {
     ),
     skillIds: args.skillIds,
     explanationCode: args.explanationCode,
+    precisao: args.precisao,
+    wdlBefore: antes.wdl,
+    wdlAfter: depois.wdl,
   }
 }
 
@@ -375,6 +394,7 @@ export async function analyzeGame(input: AnalyzeGameInput): Promise<GameAnalysis
       depois: avaliacoes.depois,
       skillIds: [],
       explanationCode: UNKNOWN_CODE,
+      precisao: 'rasa',
       config,
     })
 
@@ -411,6 +431,9 @@ export async function analyzeGame(input: AnalyzeGameInput): Promise<GameAnalysis
       const avaliacoes = await avaliarLance(ply, engine, signal, {
         nodes: config.aprofundamentoNodes,
         multiPv: config.multiPvAprofundamento,
+        // Só aqui: o CLAUDE.md exige WDL nos lances críticos, e pedir na
+        // varredura custaria em todos os lances sem ninguém usar.
+        showWdl: true,
       })
       base = montarAnalise({
         gameId: game.id,
@@ -419,6 +442,7 @@ export async function analyzeGame(input: AnalyzeGameInput): Promise<GameAnalysis
         depois: avaliacoes.depois,
         skillIds: [],
         explanationCode: UNKNOWN_CODE,
+        precisao: 'aprofundada',
         config,
       })
       pliesAprofundados += 1
@@ -494,13 +518,14 @@ async function avaliarLance(
   ply: Ply,
   engine: EngineProvider,
   signal: AbortSignal | undefined,
-  orcamento: { nodes: number; multiPv: number },
+  orcamento: { nodes: number; multiPv: number; showWdl?: boolean },
 ): Promise<{ antes: Avaliacao; depois: Avaliacao }> {
   const antes = avaliacaoDaEngine(
     await comCancelamento(
       engine.analyzePosition(ply.fenBefore, {
         nodes: orcamento.nodes,
         multiPv: orcamento.multiPv,
+        showWdl: orcamento.showWdl,
       }),
       engine,
       signal,
@@ -517,6 +542,7 @@ async function avaliarLance(
         engine.analyzePosition(ply.fenAfter, {
           nodes: orcamento.nodes,
           multiPv: orcamento.multiPv,
+          showWdl: orcamento.showWdl,
         }),
         engine,
         signal,
