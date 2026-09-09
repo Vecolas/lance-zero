@@ -39,8 +39,31 @@ export interface CspOptions {
 export const CSP_HEADER_ENFORCING = 'Content-Security-Policy'
 export const CSP_HEADER_REPORT_ONLY = 'Content-Security-Policy-Report-Only'
 
-/** Origens externas que o app realmente chama. Ver `src/lib/importers/`. */
-export const ORIGENS_IMPORTADORES = ['https://lichess.org', 'https://api.chess.com'] as const
+/**
+ * Origens externas que o app realmente chama, e a lista que alimenta
+ * `connect-src`.
+ *
+ * O nome anterior era `ORIGENS_IMPORTADORES` e passou a mentir quando a
+ * tablebase entrou: ela nao importa partida nenhuma, ela consulta final. Nome
+ * que descreve metade do conteudo faz a proxima pessoa concluir que o que ela
+ * tem em maos nao pertence aqui — foi exatamente o que aconteceu.
+ *
+ * OMITIR UMA ORIGEM DAQUI FALHA EM SILENCIO. Enquanto a CSP for Report-Only a
+ * requisicao ainda sai; no dia em que `LANCEZERO_CSP_ENFORCING=true`, o
+ * navegador bloqueia e o adapter — que degrada graciosamente — devolve `null`,
+ * o MESMO valor de "nao ha resposta para esta posicao". Nenhuma tela acusa
+ * nada. Por isso existe o portao em `tests/unit/security-headers.test.ts` que
+ * varre os `baseUrl` dos adapters e cobra que cada origem esteja aqui.
+ */
+export const ORIGENS_EXTERNAS = [
+  // Importacao de partidas — `src/lib/importers/lichess.ts`.
+  'https://lichess.org',
+  // Importacao de partidas — `src/lib/importers/chesscom.ts`.
+  'https://api.chess.com',
+  // Defesa perfeita em finais — `src/lib/tablebase/provider.ts`.
+  // NAO e `lichess.org`: o servico de tablebase mora em outro host.
+  'https://tablebase.lichess.ovh',
+] as const
 
 /**
  * Diretivas da política, na ordem em que serão serializadas.
@@ -101,9 +124,11 @@ const DIRETIVAS: readonly (readonly [string, readonly string[]])[] = [
   // se qualquer violação de CSP aparecer no console.
   ['font-src', ["'self'"]],
 
-  // Os importadores (`src/lib/importers/`) falam com estas duas APIs oficiais.
-  // Nada de scraping de HTML, nada de terceiro genérico.
-  ['connect-src', ["'self'", ...ORIGENS_IMPORTADORES]],
+  // Os adapters de servico externo falam com estas APIs oficiais, e so com
+  // elas. Nada de scraping de HTML, nada de terceiro generico. A lista e
+  // derivada de `ORIGENS_EXTERNAS`, e um portao cobra que nenhum adapter chame
+  // host que nao esteja la.
+  ['connect-src', ["'self'", ...ORIGENS_EXTERNAS]],
 
   // A engine roda em Web Worker de mesma origem
   // (`/engine/stockfish/stockfish-18-lite-single.js`).
