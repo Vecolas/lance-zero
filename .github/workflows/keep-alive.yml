@@ -1,0 +1,160 @@
+# LanceZero — keep-alive do projeto Supabase gratuito
+#
+# ISTO É CONTORNO, NÃO ARQUITETURA.
+#
+# O plano gratuito do Supabase pausa um projeto depois de ~1 semana sem
+# atividade. Projeto pausado = login fora do ar, perfil fora do ar, e alguém
+# precisa entrar no painel e despausar à mão. Enquanto o LanceZero tiver pouco
+# tráfego real — que é justamente o começo — esse é um risco concreto.
+#
+# Este workflow existe só para bater no projeto e zerar o contador de
+# inatividade. Ele não faz parte do desenho do produto, não é referenciado por
+# nenhum código, e nenhuma decisão de arquitetura deve depender dele.
+#
+# ELE SAI DO REPOSITÓRIO no dia em que houver plano pago: no Supabase Pro não
+# existe pausa por inatividade, e este arquivo vira lixo que ninguém entende.
+# Quem migrar o projeto para o plano pago deve apagar este arquivo no mesmo PR.
+#
+# HONESTIDADE SOBRE O QUE ISTO GARANTE
+# Uma requisição à API REST é a forma mais barata de sinalizar atividade, e é o
+# que este workflow faz. Não temos como conferir de fora exatamente qual
+# métrica o Supabase usa para decidir a pausa, e essa política pode mudar sem
+# aviso. Trate isto como redução de risco, não como garantia: o alarme de
+# verdade é o job falhar (ver docs/OPERACAO.md, "O projeto pausou").
+
+name: Keep-alive do Supabase
+
+on:
+  schedule:
+    # Segunda e quinta, 07:00 UTC (04:00 em Brasília).
+    # Por que duas vezes por semana e não uma: o limite é de ~1 semana, e cron
+    # do GitHub Actions pode atrasar bastante em horário de pico. Agendar
+    # exatamente no limite é agendar a falha. Duas execuções dão margem para
+    # uma delas atrasar ou falhar sem o projeto pausar.
+    - cron: '0 7 * * 1,4'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive-supabase
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Requisição trivial à API REST
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Conferir se os secrets existem
+        id: segredos
+        env:
+          URL_SUPABASE: ${{ secrets.SUPABASE_URL }}
+          CHAVE_ANON: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          faltando=''
+          [ -n "${URL_SUPABASE:-}" ] || faltando="${faltando} SUPABASE_URL"
+          [ -n "${CHAVE_ANON:-}" ] || faltando="${faltando} SUPABASE_ANON_KEY"
+
+          if [ -n "${faltando}" ]; then
+            # Ainda não existe projeto Supabase provisionado. Esperado, e não é
+            # motivo para reprovar o CI inteiro.
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "faltando=${faltando# }" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - name: Bater na API REST
+        if: steps.segredos.outputs.ok == 'true'
+        env:
+          URL_SUPABASE: ${{ secrets.SUPABASE_URL }}
+          CHAVE_ANON: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          # A anon key é pública por desenho (vai no bundle do navegador como
+          # NEXT_PUBLIC_SUPABASE_ANON_KEY) e é a RLS que protege os dados. Ainda
+          # assim ela entra por --config lido do stdin, e não por -H na linha de
+          # comando: header em argv fica visível no `ps` do runner, e é bom que
+          # o hábito seja sempre esse.
+          base="${URL_SUPABASE%/}"
+          alvo="${base}/rest/v1/"
+          resposta="${RUNNER_TEMP}/keep-alive.txt"
+
+          # O `|| saida_curl=$?` existe porque falha de transporte (DNS, TLS,
+          # timeout) faz o curl sair diferente de zero, e com `set -e` isso
+          # mataria o passo antes de chegar no `case` abaixo — trocando um
+          # diagnóstico útil por uma linha crua de erro do curl.
+          saida_curl=0
+          codigo="$(
+            printf 'header = "apikey: %s"\nheader = "Authorization: Bearer %s"\n' \
+              "${CHAVE_ANON}" "${CHAVE_ANON}" \
+            | curl \
+                --silent \
+                --show-error \
+                --config - \
+                --max-time 30 \
+                --retry 2 \
+                --retry-delay 10 \
+                --output "${resposta}" \
+                --write-out '%{http_code}' \
+                "${alvo}"
+          )" || saida_curl=$?
+
+          echo "GET ${alvo} -> HTTP ${codigo:-000} (curl saiu com ${saida_curl})"
+
+          case "${codigo:-000}" in
+            2*)
+              echo "Projeto ativo. Contador de inatividade zerado."
+              ;;
+            401 | 403)
+              echo "::error::HTTP ${codigo}. A anon key foi rotacionada ou está errada. Atualizar o secret SUPABASE_ANON_KEY."
+              exit 1
+              ;;
+            000)
+              echo "::error::Sem resposta do host. Projeto pausado, apagado, ou SUPABASE_URL errada. Ver docs/OPERACAO.md."
+              exit 1
+              ;;
+            *)
+              # 503/540 é o que o Supabase costuma devolver para projeto
+              # pausado. Falhar aqui é o ponto: o job vermelho é o alarme.
+              echo "::error::HTTP ${codigo} inesperado. Provável projeto pausado. Ver docs/OPERACAO.md."
+              head -c 500 "${resposta}" || true
+              exit 1
+              ;;
+          esac
+
+      - name: Secrets ausentes — o que configurar
+        if: steps.segredos.outputs.ok != 'true'
+        env:
+          FALTANDO: ${{ steps.segredos.outputs.faltando }}
+        run: |
+          set -euo pipefail
+          echo "::warning::Keep-alive não executado. Secrets ausentes:${FALTANDO:+ }${FALTANDO}"
+          cat <<'TEXTO'
+
+          O keep-alive não rodou porque faltam secrets do repositório. Isso é
+          esperado enquanto não existir projeto Supabase provisionado — não é
+          falha do CI, e por isso este job termina em verde.
+
+          Em Settings -> Secrets and variables -> Actions -> New repository secret:
+
+            SUPABASE_URL
+              Supabase -> Project Settings -> Data API -> Project URL.
+              Formato: https://<ref>.supabase.co
+              É o mesmo valor de NEXT_PUBLIC_SUPABASE_URL.
+
+            SUPABASE_ANON_KEY
+              Supabase -> Project Settings -> API Keys -> anon / publishable.
+              É o mesmo valor de NEXT_PUBLIC_SUPABASE_ANON_KEY.
+              NUNCA usar aqui a service_role / secret key: ela contorna RLS e
+              não tem nada que fazer num workflow de ping.
+
+          Passo a passo completo: docs/OPERACAO.md
+          TEXTO

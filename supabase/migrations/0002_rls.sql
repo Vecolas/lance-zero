@@ -22,9 +22,15 @@ alter table public.reserved_usernames enable row level security;
 -- 2. Policies — profiles
 -- ---------------------------------------------------------------------------
 --
--- A identidade nunca vem do corpo da requisicao. Ela vem do JWT do Clerk que o
--- Postgres recebe, via auth.jwt()->>'sub'. O `select` em volta faz o Postgres
--- avaliar a expressao uma vez por consulta em vez de uma vez por linha.
+-- A identidade nunca vem do corpo da requisicao. Com Supabase Auth ela vem de
+-- auth.uid(), que le o `sub` do JWT que o proprio Supabase emitiu e verificou,
+-- e devolve uuid — o mesmo tipo da coluna user_id, sem cast no meio.
+--
+-- O `select` em volta faz o Postgres avaliar a expressao uma vez por consulta
+-- em vez de uma vez por linha.
+--
+-- Sessao ausente ou token invalido faz auth.uid() devolver null, e `user_id =
+-- null` nao e verdadeiro para linha nenhuma: o modo de falha e negar.
 
 drop policy if exists "users_select_own_profile" on public.profiles;
 create policy "users_select_own_profile"
@@ -32,7 +38,7 @@ on public.profiles
 for select
 to authenticated
 using (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 drop policy if exists "users_insert_own_profile" on public.profiles;
@@ -41,7 +47,7 @@ on public.profiles
 for insert
 to authenticated
 with check (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 -- O USING decide quais linhas o UPDATE alcanca; o WITH CHECK decide o que pode
@@ -53,10 +59,10 @@ on public.profiles
 for update
 to authenticated
 using (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 )
 with check (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 -- ---------------------------------------------------------------------------
@@ -69,7 +75,7 @@ on public.user_settings
 for select
 to authenticated
 using (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 drop policy if exists "users_insert_own_settings" on public.user_settings;
@@ -78,7 +84,7 @@ on public.user_settings
 for insert
 to authenticated
 with check (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 drop policy if exists "users_update_own_settings" on public.user_settings;
@@ -87,10 +93,10 @@ on public.user_settings
 for update
 to authenticated
 using (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 )
 with check (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 -- ---------------------------------------------------------------------------
@@ -103,7 +109,7 @@ on public.linked_chess_accounts
 for select
 to authenticated
 using (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 drop policy if exists "users_insert_own_linked_accounts" on public.linked_chess_accounts;
@@ -112,7 +118,7 @@ on public.linked_chess_accounts
 for insert
 to authenticated
 with check (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 drop policy if exists "users_update_own_linked_accounts" on public.linked_chess_accounts;
@@ -121,10 +127,10 @@ on public.linked_chess_accounts
 for update
 to authenticated
 using (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 )
 with check (
-  user_id = (select auth.jwt()->>'sub')
+  user_id = (select auth.uid())
 );
 
 -- ---------------------------------------------------------------------------
@@ -137,7 +143,7 @@ with check (
 --
 -- Nao usa `using (true)` de proposito. A leitura exige sessao autenticada, o
 -- que mantem a lista fora do alcance de visitante anonimo e mantem a regra
--- "toda policy compara com auth.jwt()" valida sem excecao.
+-- "toda policy compara com auth.uid()" valida sem excecao.
 
 drop policy if exists "authenticated_select_reserved_usernames" on public.reserved_usernames;
 create policy "authenticated_select_reserved_usernames"
@@ -145,7 +151,7 @@ on public.reserved_usernames
 for select
 to authenticated
 using (
-  (select auth.jwt()->>'sub') is not null
+  (select auth.uid()) is not null
 );
 
 -- Escrever na lista de reservados e operacao administrativa: sem policy de
@@ -164,14 +170,15 @@ using (
 -- Por que a exclusao e operacao de servidor:
 --   1. apagar conta e irreversivel e precisa de step-up de autenticacao
 --      (secao 49), nao apenas de uma sessao valida;
---   2. a exclusao atravessa sistemas — Clerk, Postgres e Storage — e precisa
---      ser orquestrada, com falha parcial registrada e retomavel (secao 75);
+--   2. a exclusao atravessa Postgres e Storage e precisa ser orquestrada, com
+--      falha parcial registrada e retomavel (secao 75);
 --   3. exclusao acidental por bug de UI ou por CSRF vira perda de dado do
 --      usuario, nao apenas um incidente tecnico.
 --
--- A rotina de exclusao roda no servidor, com a secret key, e e auditada.
--- Quem precisar de "remover minha conta" implementa esse fluxo. Ninguem
--- resolve isso adicionando uma policy de DELETE aqui.
+-- A rotina de exclusao roda no servidor, com a secret key, apagando a linha de
+-- auth.users; o `on delete cascade` das tabelas leva o resto junto. Quem
+-- precisar de "remover minha conta" implementa esse fluxo. Ninguem resolve isso
+-- adicionando uma policy de DELETE aqui.
 
 -- ---------------------------------------------------------------------------
 -- 7. Grants

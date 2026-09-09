@@ -2,14 +2,20 @@
 -- Estrutura de perfil, preferencias e contas de xadrez vinculadas.
 -- Referencias do plano de seguranca: secoes 9, 10, 11, 12, 13, 78, 128, 130 e 131.
 --
+-- Autenticacao: Supabase Auth (alternativa B da secao 4 do plano). Nao ha mais
+-- ponte de JWT de terceiro: a identidade e a linha de auth.users, e a RLS
+-- compara com auth.uid(), que e uuid nativo. O motivo da troca e custo — o
+-- produto nao tem capital e tudo precisa caber no plano gratuito do Supabase.
+--
 -- Esta migration cria APENAS estrutura. A RLS e os grants estao em 0002_rls.sql.
 -- As duas sao inseparaveis: tabela com user_id sem RLS e release blocker
 -- (secao 14 do plano, regra 1 do ADR-0008). Nunca aplique a 0001 sozinha em um
 -- projeto que ja receba trafego.
 --
--- Dados proibidos aqui (secao 13): senha, hash de senha, sessao, refresh token,
--- JWT do Clerk, segredo de MFA, secret do Supabase, secret do Clerk. Nenhuma
--- coluna abaixo guarda credencial, e nenhuma deve passar a guardar.
+-- Dados proibidos aqui (secao 13): credencial de qualquer especie, sessao,
+-- token de renovacao, segredo de segundo fator, chave secreta do Supabase.
+-- Nenhuma coluna abaixo guarda credencial, e nenhuma deve passar a guardar.
+-- O Supabase Auth mantem isso no schema auth, que a aplicacao nao toca.
 
 create extension if not exists pgcrypto;
 
@@ -95,11 +101,17 @@ comment on function public.assert_username_permitido() is
 -- profiles
 -- ---------------------------------------------------------------------------
 
--- user_id e o "sub" do Clerk (secao 6). Nunca email, nunca username, nunca id
--- sequencial. E texto porque o identificador do Clerk e opaco.
+-- user_id e o id da linha em auth.users (secao 6). Nunca email, nunca username,
+-- nunca id sequencial. E uuid porque e exatamente o tipo que auth.uid() devolve:
+-- a comparacao da policy fica sem cast e sem conversao implicita.
+--
+-- Sobre o `on delete cascade`: ele nao contradiz a secao 18. O cliente continua
+-- sem poder apagar linha nenhuma. O cascade so dispara quando o SERVIDOR apaga
+-- a conta em auth.users, que e o fluxo auditado e com step-up de autenticacao.
+-- O ganho e nao restar perfil orfao apontando para um usuario inexistente.
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
-  user_id text not null unique,
+  user_id uuid not null unique references auth.users(id) on delete cascade,
   username text unique,
   display_name text,
   avatar_path text,
@@ -108,9 +120,6 @@ create table if not exists public.profiles (
   profile_visibility text not null default 'private',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint profiles_user_id_formato check (
-    user_id ~ '^[A-Za-z0-9_-]{6,128}$'
-  ),
   constraint profile_rating_range check (
     rating_estimate is null
     or rating_estimate between 100 and 4000
@@ -133,7 +142,7 @@ create table if not exists public.profiles (
   constraint profiles_avatar_path_do_dono check (
     avatar_path is null
     or (
-      avatar_path like user_id || '/%'
+      avatar_path like user_id::text || '/%'
       and strpos(avatar_path, '..') = 0
       and strpos(avatar_path, chr(92)) = 0
     )
@@ -143,7 +152,7 @@ create table if not exists public.profiles (
 comment on table public.profiles is
   'Perfil publico-opcional do usuario. profile_visibility nasce private (secao 78).';
 comment on column public.profiles.user_id is
-  'sub do Clerk. Comparado com auth.jwt()->>''sub'' na RLS. Nunca vem do formulario.';
+  'id de auth.users. Comparado com auth.uid() na RLS. Nunca vem do formulario.';
 comment on column public.profiles.avatar_path is
   'Caminho no bucket avatars, sempre <user_id>/<uuid>.webp. Derivado do user_id, nunca do nome enviado (secao 58).';
 comment on column public.profiles.profile_visibility is
@@ -176,7 +185,7 @@ create trigger profiles_username_permitido
 -- Tabela sempre privada: nao existe visibilidade publica de preferencia.
 create table if not exists public.user_settings (
   id uuid primary key default gen_random_uuid(),
-  user_id text not null unique,
+  user_id uuid not null unique references auth.users(id) on delete cascade,
   language text not null default 'pt-BR',
   theme text not null default 'system',
   board_theme text not null default 'paper',
@@ -186,9 +195,6 @@ create table if not exists public.user_settings (
   analytics_opt_in boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint user_settings_user_id_formato check (
-    user_id ~ '^[A-Za-z0-9_-]{6,128}$'
-  ),
   constraint user_settings_language_valido check (
     language in ('pt-BR', 'en')
   ),
@@ -219,12 +225,13 @@ create trigger user_settings_set_updated_at
 -- linked_chess_accounts
 -- ---------------------------------------------------------------------------
 
--- Nunca existe coluna de senha aqui. Vinculo se faz por API publica, OAuth
--- oficial ou username publico (secao 12). Pedir a senha do Chess.com/Lichess e
--- proibido, e a ausencia de coluna torna o erro dificil de cometer sem migration.
+-- Nunca existe coluna de credencial aqui. Vinculo se faz por API publica, OAuth
+-- oficial ou username publico (secao 12). Pedir a credencial do Chess.com ou do
+-- Lichess e proibido, e a ausencia da coluna torna o erro dificil de cometer
+-- sem uma migration que passe por revisao.
 create table if not exists public.linked_chess_accounts (
   id uuid primary key default gen_random_uuid(),
-  user_id text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
   provider text not null,
   provider_username text not null,
   provider_user_id text,
@@ -232,9 +239,6 @@ create table if not exists public.linked_chess_accounts (
   connected_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint linked_chess_accounts_user_id_formato check (
-    user_id ~ '^[A-Za-z0-9_-]{6,128}$'
-  ),
   constraint linked_chess_accounts_provider_valido check (
     provider in ('lichess', 'chesscom')
   ),
@@ -245,7 +249,7 @@ create table if not exists public.linked_chess_accounts (
 );
 
 comment on table public.linked_chess_accounts is
-  'Vinculo com contas externas. Sem credencial: nunca pedimos senha de terceiro (secao 12).';
+  'Vinculo com contas externas. Sem credencial: nunca pedimos a senha de terceiro (secao 12).';
 
 create index if not exists linked_chess_accounts_user_idx
   on public.linked_chess_accounts (user_id);
