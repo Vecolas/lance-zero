@@ -34,6 +34,8 @@ const FEN_DEPOIS = applyMove(FEN_ANTES, LANCE_DO_USUARIO)?.fenAfter ?? ''
 const SAN_MELHOR = applyMove(FEN_ANTES, MELHOR_LANCE)?.move.san ?? ''
 
 const AGORA = new Date('2026-03-10T12:00:00.000Z')
+/** Dentro da janela de erros recentes do planner (14 dias). */
+const PARTIDA_RECENTE = '2026-03-05T20:00:00.000Z'
 const OUTRO_RELOGIO = new Date('2027-08-01T23:30:00.000Z')
 
 /**
@@ -64,6 +66,7 @@ interface MomentoParcial {
   perdaPp?: number
   code?: string | null
   bestMoveUci?: string
+  ocorridoEm?: string
 }
 
 function momento(parcial: MomentoParcial = {}): CriticalMoment {
@@ -71,6 +74,7 @@ function momento(parcial: MomentoParcial = {}): CriticalMoment {
   const explanation = code === null ? null : explicacaoDe(code)
   return {
     gameId: parcial.gameId ?? 'partida-a',
+    ocorridoEm: parcial.ocorridoEm ?? PARTIDA_RECENTE,
     ply: parcial.ply ?? 21,
     fenBefore: FEN_ANTES,
     userMoveUci: LANCE_DO_USUARIO,
@@ -396,14 +400,28 @@ describe('prioridades de habilidade para o planner', () => {
     expect(esperado).toBeGreaterThan(0)
     expect(erros).toHaveLength(esperado)
     expect(new Set(erros.map((erro) => erro.severity))).toEqual(new Set(['erro-grave', 'erro']))
-    expect(new Set(erros.map((erro) => erro.ocorridoEm))).toEqual(new Set([AGORA.toISOString()]))
+    // A data é a da PARTIDA, não a de agora: analisar hoje um jogo antigo não
+    // pode registrá-lo como erro recente.
+    expect(new Set(erros.map((erro) => erro.ocorridoEm))).toEqual(
+      new Set(momentos.map((m) => m.ocorridoEm)),
+    )
   })
 
-  it('usa a data da partida quando ela é informada', () => {
-    const jogadaEm = new Date('2026-02-01T09:00:00.000Z')
-    const erros = prioridadesDeHabilidade([momento()], { agora: AGORA, ocorridoEm: jogadaEm })
+  it('usa a data da PARTIDA, nunca a de agora', () => {
+    const jogadaEm = '2026-02-01T09:00:00.000Z'
+    const erros = prioridadesDeHabilidade([momento({ ocorridoEm: jogadaEm })], { agora: AGORA })
 
-    expect(erros[0].ocorridoEm).toBe(jogadaEm.toISOString())
+    expect(erros[0].ocorridoEm).toBe(jogadaEm)
+    expect(erros[0].ocorridoEm).not.toBe(AGORA.toISOString())
+  })
+
+  it('partida antiga analisada hoje NÃO vira erro recente', () => {
+    // O caso que motivou tirar o parâmetro opcional: sem isto, o planner
+    // inflaria a prioridade da habilidade e ninguém ligaria o plano à causa.
+    const antiga = '2020-01-01T00:00:00.000Z'
+    const erros = prioridadesDeHabilidade([momento({ ocorridoEm: antiga })], { agora: AGORA })
+
+    expect(erros[0].ocorridoEm).toBe(antiga)
   })
 
   it('momento sem habilidade atribuída não contribui', () => {

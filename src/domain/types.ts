@@ -373,4 +373,16 @@ export interface CriticalMoment {
   severity: MoveSeverity
   skillIds: SkillId[]
   explanation: MistakeExplanation | null
+  /**
+   * Quando a PARTIDA foi jogada, não quando ela foi analisada.
+   *
+   * O planner usa uma janela curta para "erro recente de partida real". Sem
+   * este campo, analisar hoje uma partida de três semanas atrás a faria entrar
+   * como erro recente e inflaria a prioridade daquela habilidade — e o sintoma
+   * seria o plano do dia errado, que ninguém liga à causa.
+   *
+   * É obrigatório de propósito: era um parâmetro opcional, e parâmetro opcional
+   * é o desenho em que alguém esquece.
+   */
+  ocorridoEm: string
 }

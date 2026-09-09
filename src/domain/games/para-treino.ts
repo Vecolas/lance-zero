@@ -259,18 +259,18 @@ export function selecionarParaTreino(
 
 // ------------------------------------------------------------------ prioridade
 
+/**
+ * A data do erro NÃO entra por aqui.
+ *
+ * Ela vem de `momento.ocorridoEm`, que é a data da partida. Era um parâmetro
+ * opcional, e parâmetro opcional é o desenho em que alguém esquece: quem
+ * esquecesse registraria uma partida de três semanas atrás como erro de hoje, o
+ * planner inflaria a prioridade daquela habilidade, e o sintoma seria o plano do
+ * dia errado — sem ninguém ligar à causa.
+ */
 export interface PrioridadesOptions {
-  /** Relógio injetado. Usado como data do erro quando `ocorridoEm` não vem. */
+  /** Reservado para regras futuras que dependam do agora (janela, decaimento). */
   agora: Date
-  /**
-   * Quando o erro aconteceu de fato.
-   *
-   * `CriticalMoment` não carrega a data da partida, e a janela de "erro
-   * recente" do planner é medida em dias. Analisar hoje uma partida de três
-   * semanas atrás e registrar como se fosse de hoje inflaria a prioridade
-   * daquela habilidade — por isso quem conhece a `Game.playedAt` passa por aqui.
-   */
-  ocorridoEm?: Date
 }
 
 /**
@@ -288,12 +288,13 @@ export function prioridadesDeHabilidade(
   momentos: readonly CriticalMoment[],
   options: PrioridadesOptions,
 ): RecentGameError[] {
-  const quando = (options.ocorridoEm ?? options.agora).toISOString()
+  void options.agora
 
   const erros: RecentGameError[] = []
   for (const momento of momentos) {
     for (const skillId of momento.skillIds) {
-      erros.push({ skillId, severity: momento.severity, ocorridoEm: quando })
+      // A data é a da PARTIDA, não a da análise.
+      erros.push({ skillId, severity: momento.severity, ocorridoEm: momento.ocorridoEm })
     }
   }
   return erros

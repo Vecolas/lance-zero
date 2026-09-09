@@ -108,6 +108,13 @@ const PERDA_DA_ANALISE = porPerda<PositionAnalysis>((analise) => analise.expecte
 export interface CriticalMomentsOptions {
   /** Cor do usuário na partida: só os erros dele viram momento. */
   userColor: PieceColor
+  /**
+   * Quando a PARTIDA foi jogada, em ISO 8601 — não quando foi analisada.
+   *
+   * Obrigatório: o planner usa isso para decidir se o erro é recente, e uma
+   * data errada aqui vira plano do dia errado sem ninguém ligar à causa.
+   */
+  playedAt: string
   /** Explicações já calculadas, indexadas por ply. */
   explanations?: Readonly<Record<number, MistakeExplanation | null>>
   config?: CriticalConfig
@@ -157,16 +164,18 @@ export function selectCriticalMoments(
   }
 
   return escolhidos.map((analise) =>
-    toCriticalMoment(analise, options.explanations?.[analise.ply] ?? null),
+    toCriticalMoment(analise, options.explanations?.[analise.ply] ?? null, options.playedAt),
   )
 }
 
 function toCriticalMoment(
   analise: PositionAnalysis,
   explanation: MistakeExplanation | null,
+  playedAt: string,
 ): CriticalMoment {
   return {
     gameId: analise.gameId,
+    ocorridoEm: playedAt,
     ply: analise.ply,
     fenBefore: analise.fenBefore,
     userMoveUci: analise.userMoveUci,

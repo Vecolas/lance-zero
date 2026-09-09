@@ -8,6 +8,7 @@ import {
   AnalysisAbortedError,
   compareHumanAndEngine,
   describeComparison,
+  gravarErrosComoTreino,
   porGravidade,
   SEVERITY_LABEL,
   type GameAnalysis,
@@ -51,6 +52,7 @@ export function EngineReview({ game, markedPlies, onIrParaPly, plyAtual }: Engin
   const [progresso, setProgresso] = useState({ feito: 0, total: 0 })
   const [resultado, setResultado] = useState<GameAnalysis | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [cardsCriados, setCardsCriados] = useState(0)
   const abortRef = useRef<AbortController | null>(null)
 
   const analisar = useCallback(async () => {
@@ -73,6 +75,10 @@ export function EngineReview({ game, markedPlies, onIrParaPly, plyAtual }: Engin
       // meia partida gravada no banco local.
       if (repo && analise.analises.length > 0) {
         await repo.savePositionAnalyses(analise.analises)
+        const gravacao = await gravarErrosComoTreino(repo, analise.momentos, {
+          agora: new Date(),
+        })
+        setCardsCriados(gravacao.criados + gravacao.atualizados)
       }
     } catch (e) {
       if (e instanceof AnalysisAbortedError) {
@@ -220,6 +226,14 @@ export function EngineReview({ game, markedPlies, onIrParaPly, plyAtual }: Engin
               Você marcou os lances {comparacao.semConfirmacao.join(', ')} e a engine não viu
               problema neles. Isso não é erro seu: pode ser um momento de tensão que a engine
               resolve e um humano não.
+            </p>
+          ) : null}
+
+          {cardsCriados > 0 ? (
+            <p className={styles.veredito}>
+              {cardsCriados === 1
+                ? 'Um destes erros virou treino e volta em Treinar, na hora certa.'
+                : `${cardsCriados} destes erros viraram treino e voltam em Treinar, na hora certa.`}
             </p>
           ) : null}
 

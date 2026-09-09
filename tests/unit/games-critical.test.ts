@@ -70,6 +70,8 @@ function comConfig(patch: Partial<CriticalConfig>): CriticalConfig {
   return { ...CRITICAL_CONFIG, ...patch }
 }
 
+const DATA_DA_PARTIDA = '2026-01-15T10:00:00.000Z'
+
 describe('varredura rasa', () => {
   const scans: ShallowScan[] = [
     {
@@ -137,13 +139,14 @@ describe('seleção de momentos críticos', () => {
     )
     expect(candidatos.length).toBeGreaterThan(CRITICAL_CONFIG.maxMomentos)
 
-    const momentos = selectCriticalMoments(analises, { userColor: 'w' })
+    const momentos = selectCriticalMoments(analises, { userColor: 'w', playedAt: DATA_DA_PARTIDA })
     expect(momentos).toHaveLength(CRITICAL_CONFIG.maxMomentos)
   })
 
   it('escolhe os piores lances, não os primeiros', () => {
     const momentos = selectCriticalMoments(analises, {
       userColor: 'w',
+      playedAt: DATA_DA_PARTIDA,
       config: comConfig({ maxMomentos: 3 }),
     })
     const perdas = momentos.map((momento) => momento.expectedScoreLossPp)
@@ -155,10 +158,10 @@ describe('seleção de momentos críticos', () => {
   })
 
   it('só destaca lances do lado do usuário', () => {
-    const brancas = selectCriticalMoments(analises, { userColor: 'w' })
+    const brancas = selectCriticalMoments(analises, { userColor: 'w', playedAt: DATA_DA_PARTIDA })
     expect(brancas.every((momento) => momento.ply % 2 === 1)).toBe(true)
 
-    const pretas = selectCriticalMoments(analises, { userColor: 'b' })
+    const pretas = selectCriticalMoments(analises, { userColor: 'b', playedAt: DATA_DA_PARTIDA })
     expect(pretas.every((momento) => momento.ply % 2 === 0)).toBe(true)
   })
 
@@ -169,18 +172,18 @@ describe('seleção de momentos críticos', () => {
       expectedScoreLossPp: 12,
       severity: 'erro',
     }))
-    const momentos = selectCriticalMoments(empatadas, { userColor: 'w' })
+    const momentos = selectCriticalMoments(empatadas, { userColor: 'w', playedAt: DATA_DA_PARTIDA })
     expect(momentos.map((momento) => momento.ply)).toEqual([3, 7, 11])
   })
 
   it('é estável entre chamadas com a mesma entrada', () => {
-    const primeira = selectCriticalMoments(analises, { userColor: 'w' })
-    const segunda = selectCriticalMoments(analises, { userColor: 'w' })
+    const primeira = selectCriticalMoments(analises, { userColor: 'w', playedAt: DATA_DA_PARTIDA })
+    const segunda = selectCriticalMoments(analises, { userColor: 'w', playedAt: DATA_DA_PARTIDA })
     expect(primeira).toEqual(segunda)
   })
 
   it('ignora lances classificados como ok', () => {
-    const momentos = selectCriticalMoments(analises, { userColor: 'w' })
+    const momentos = selectCriticalMoments(analises, { userColor: 'w', playedAt: DATA_DA_PARTIDA })
     expect(momentos.every((momento) => momento.severity !== 'ok')).toBe(true)
   })
 
@@ -190,7 +193,7 @@ describe('seleção de momentos críticos', () => {
       expectedScoreLossPp: 0.4,
       severity: classifySeverity(0.4),
     }))
-    expect(selectCriticalMoments(limpa, { userColor: 'w' })).toEqual([])
+    expect(selectCriticalMoments(limpa, { userColor: 'w', playedAt: DATA_DA_PARTIDA })).toEqual([])
   })
 
   it('anexa a explicação já calculada do ply, quando existe', () => {
@@ -204,6 +207,7 @@ describe('seleção de momentos críticos', () => {
     }
     const momentos = selectCriticalMoments(analises, {
       userColor: 'w',
+      playedAt: DATA_DA_PARTIDA,
       explanations: { 39: explicacao },
     })
     const comExplicacao = momentos.find((momento) => momento.ply === 39)
@@ -218,10 +222,13 @@ describe('seleção de momentos críticos', () => {
       severity: classifySeverity(analise.ply === 1 ? 12 : 2.5),
     }))
 
-    expect(selectCriticalMoments(quaseLimpa, { userColor: 'w' })).toHaveLength(1)
+    expect(
+      selectCriticalMoments(quaseLimpa, { userColor: 'w', playedAt: DATA_DA_PARTIDA }),
+    ).toHaveLength(1)
 
     const completada = selectCriticalMoments(quaseLimpa, {
       userColor: 'w',
+      playedAt: DATA_DA_PARTIDA,
       config: comConfig({ completarAteMinimo: true }),
     })
     expect(completada).toHaveLength(CRITICAL_CONFIG.minMomentos)
@@ -229,7 +236,7 @@ describe('seleção de momentos críticos', () => {
   })
 
   it('ordenarPorPly devolve a mesma seleção em ordem cronológica', () => {
-    const momentos = selectCriticalMoments(analises, { userColor: 'w' })
+    const momentos = selectCriticalMoments(analises, { userColor: 'w', playedAt: DATA_DA_PARTIDA })
     const cronologica = ordenarPorPly(momentos)
     expect(cronologica).toHaveLength(momentos.length)
     for (let i = 1; i < cronologica.length; i += 1) {

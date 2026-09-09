@@ -19,6 +19,7 @@ function momento(ply: number, severity: MoveSeverity = 'erro'): CriticalMoment {
     severity,
     skillIds: ['tactics.hanging-piece'],
     explanation: null,
+    ocorridoEm: '2026-01-15T10:00:00.000Z',
   }
 }
 
