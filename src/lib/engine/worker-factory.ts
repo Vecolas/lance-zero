@@ -19,13 +19,22 @@ export const ENGINE_WASM_URL = `${ENGINE_ASSET_BASE}/stockfish-18-lite-single.wa
 /**
  * Monta a URL de worker no formato que o stockfish.js espera.
  *
- * O build resolve o `.wasm` a partir do fragmento da própria URL do worker
- * (`#<caminho-do-wasm>,worker`). Sem o fragmento ele tenta trocar `.js` por
- * `.wasm` no caminho do script, o que só funciona quando o worker é criado
- * diretamente a partir do arquivo da engine.
+ * O build resolve o `.wasm` a partir do fragmento da própria URL do worker:
+ * `#<caminho-do-wasm>`.
+ *
+ * ATENÇÃO — não acrescente `,worker` ao fragmento. A primeira linha executável
+ * do binário é, em essência,
+ * `self.location.hash.split(',')[1] === 'worker' || <bootstrap>`: esse sufixo
+ * significa "sou um worker auxiliar de pthread, não me inicialize". Com ele o
+ * worker sobe, aceita `postMessage` e nunca responde — o handshake morre no
+ * timeout de `uciok`.
+ *
+ * Medido em Chromium contra o build 18 lite-single: com `,worker` chegam 0
+ * mensagens de volta; sem ele chegam 19 (banner, id, options, uciok). O build
+ * lite é single-threaded e não tem workers auxiliares para anunciar.
  */
 export function buildEngineWorkerUrl(scriptUrl: string, wasmUrl: string): string {
-  return `${scriptUrl}#${wasmUrl},worker`
+  return `${scriptUrl}#${wasmUrl}`
 }
 
 /**

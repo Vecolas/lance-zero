@@ -22,31 +22,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AnalysisOptions, EngineAnalysis, EngineProvider } from './types'
 
 /**
- * Cria o worker da engine.
+ * Carrega a fábrica de worker da engine.
  *
- * Por que não usar `createStockfishWorker()` de `worker-factory.ts`:
- * aquela fábrica monta a URL como `<script>#<wasm>,worker`, e o sufixo
- * `,worker` é justamente o que DESLIGA a engine. No build 18 lite-single a
- * primeira coisa que o arquivo faz é
- * `self.location.hash.split(',')[1] === 'worker' || <bootstrap>`: o sufixo marca
- * "sou um worker auxiliar de pthread, não me inicialize". O worker sobe, aceita
- * `postMessage`, e nunca responde — o handshake morre no timeout de `uciok`.
- * Verificado em Chromium: com `,worker`, zero mensagens; sem ele, 19.
- *
- * O formato correto para o worker principal é `<script>#<wasm>` (o build lê o
- * caminho do `.wasm` do trecho antes da vírgula). As constantes de caminho
- * continuam vindo de `worker-factory.ts` — só o fragmento é montado aqui.
- *
- * TODO(dono de `src/lib/engine/worker-factory.ts`): corrigir
- * `buildEngineWorkerUrl` para não emitir `,worker` no worker principal e apagar
- * esta função.
+ * O import é dinâmico de propósito: só aqui a engine entra no grafo de módulos,
+ * para o binário de 7 MB não ser baixado por quem só abriu a landing.
  */
 async function carregarFabricaDeWorker(): Promise<() => Worker> {
-  // Import dinâmico de propósito: só aqui a engine entra no grafo de módulos.
-  const { ENGINE_SCRIPT_URL, ENGINE_WASM_URL } = await import('@/lib/engine/worker-factory')
-  const url = `${ENGINE_SCRIPT_URL}#${ENGINE_WASM_URL}`
-  // Síncrona porque o provider recria o worker sozinho ao se recuperar de falha.
-  return () => new Worker(url)
+  const { createStockfishWorker } = await import('@/lib/engine/worker-factory')
+  return createStockfishWorker
 }
 
 /** Ciclo de vida da engine do ponto de vista da tela. */
