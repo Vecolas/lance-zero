@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Artefatos GPL do Stockfish: código de terceiros, distribuído sem modificação.
+    'public/engine/**',
+    // Saída do Playwright.
+    'test-results/**',
+    'playwright-report/**',
   ]),
 ])
 

@@ -42,6 +42,14 @@ export const runtimeDependencies: DependencyLicense[] = [
     url: 'https://github.com/Clariity/react-chessboard',
   },
   {
+    name: 'Stockfish 18 (stockfish.js)',
+    version: '18.0.8 — build lite single-threaded',
+    license: 'GPL-3.0',
+    reason:
+      'Engine de análise em WebAssembly. Distribuída sem modificação e isolada em public/engine/stockfish/, com COPYING.txt e SOURCE.txt.',
+    url: 'https://github.com/nmrugg/stockfish.js',
+  },
+  {
     name: 'ts-fsrs',
     version: '5.4.2',
     license: 'MIT',
@@ -97,12 +105,6 @@ export const runtimeDependencies: DependencyLicense[] = [
 ]
 
 export const plannedDependencies: DependencyLicense[] = [
-  {
-    name: 'Stockfish 18 (stockfish.js)',
-    license: 'GPL-3.0',
-    reason: 'Engine de análise em WebAssembly, isolada em public/engine/stockfish/. Fase 2.',
-    url: 'https://github.com/nmrugg/stockfish.js',
-  },
   {
     name: 'Lichess puzzle database',
     license: 'CC0-1.0',

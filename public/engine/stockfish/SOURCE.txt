@@ -1,0 +1,40 @@
+LanceZero — origem dos binários da engine
+=========================================
+
+Pacote npm .......... stockfish
+Versão exata ........ 18.0.8
+Projeto ............. nmrugg/stockfish.js (port WASM do Stockfish)
+Repositório ......... https://github.com/nmrugg/stockfish.js
+Upstream ............ https://github.com/official-stockfish/Stockfish
+Licença ............. GPL-3.0 (texto integral em COPYING.txt)
+Build escolhido ..... lite, single-threaded (sem SharedArrayBuffer, sem pthreads)
+Rede neural ......... nn-9067e33176e (Linmiao Xu / linrock), embutida no .wasm
+Baixado em .......... 2026-09-09
+
+Arquivos e origem
+-----------------
+stockfish-18-lite-single.js
+  URL: https://unpkg.com/stockfish@18.0.8/bin/stockfish-18-lite-single.js
+  Tamanho: 21429 bytes
+  sha256: 5243fd9b276cab7dfe3ad1d43ab9ead73568fac76468c614242977a210c4a391
+
+stockfish-18-lite-single.wasm
+  URL: https://unpkg.com/stockfish@18.0.8/bin/stockfish-18-lite-single.wasm
+  Tamanho: 7295411 bytes
+  sha256: a8fbc05ec6920b56d7485826dcb02c5ffd2826bcbf751cf973046f237a9096f1
+
+Integridade do tarball npm (registry.npmjs.org, stockfish@18.0.8):
+  sha512-z+f2UMPXLylDBGjv9e9zU8QulY7hUl8MYHesLRrdddewlOXjJrUSmtNmbtID1/F72EPhq0CCkCNxgWS5MQVWtQ==
+
+Modificações
+------------
+Nenhuma. Os arquivos são cópias byte a byte do pacote publicado. Modificar a
+engine no MVP está proibido por CLAUDE.md; se um dia for necessário, a mudança
+precisa ser publicada junto, como manda a GPL-3.0.
+
+Como atualizar
+--------------
+1. Baixar os dois arquivos da nova versão a partir do unpkg/jsdelivr.
+2. Recalcular o sha256 e atualizar este arquivo.
+3. Rodar os testes de contrato da engine (mate em 1, MultiPV, cancelamento).
+4. Atualizar docs/LICENSES.md com a nova versão.
