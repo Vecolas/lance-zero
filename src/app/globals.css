@@ -83,7 +83,20 @@ kbd,
   top: var(--space-2);
   z-index: 100;
   padding: var(--space-2) var(--space-4);
-  background: var(--accent);
+  /*
+    `--accent-strong`, e não `--accent`.
+
+    Medido no renderizado (issue #75): branco sobre `--accent` (Zero Blue,
+    #00A9D6) dá 2,75:1 — reprova em WCAG AA por larga margem. É exatamente o
+    desvio que o CLAUDE.md manda evitar no botão primário; a regra estava
+    escrita e aplicada em todo lugar MENOS aqui, no primeiro elemento que quem
+    navega por teclado encontra em qualquer página.
+
+    `--accent-strong` (Zero Deep no claro, Zero Cyan no escuro) leva o par para
+    4,58:1 no tema claro e continua folgado no escuro. É o mesmo token que os
+    botões primários já usam — não um valor novo.
+  */
+  background: var(--accent-strong);
   color: var(--on-accent);
   border-radius: var(--radius-md);
   transform: translateY(-200%);
