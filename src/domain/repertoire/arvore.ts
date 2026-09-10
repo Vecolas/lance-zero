@@ -50,7 +50,22 @@ import {
   identidadeDePosicao,
   type IndiceEco,
 } from '@/lib/openings'
-import type { Abertura, SkillId, Side } from '@/domain/types'
+import type {
+  Abertura,
+  DefinicaoDeRepertorio,
+  LanceDeRepertorio,
+  LinhaDeRepertorio,
+  SkillId,
+  Side,
+} from '@/domain/types'
+
+/**
+ * O SCHEMA DECLARADO mora em `@/domain/types` desde que passou a ser gravado —
+ * o motivo está escrito lá. Aqui ele é reexportado para que todo import antigo
+ * de `@/domain/repertoire` continue valendo. Reexportação, nunca redefinição:
+ * duas declarações da mesma forma divergem no dia em que alguém melhora uma.
+ */
+export type { DefinicaoDeRepertorio, LanceDeRepertorio, LinhaDeRepertorio }
 
 /**
  * Números ajustáveis do repertório.
@@ -64,39 +79,6 @@ export const REPERTORIO_CONFIG = {
   /** Maior linha aceita, em meios-lances. */
   profundidadeMaxima: 12,
 } as const
-
-/** Um lance dentro de uma linha declarada. */
-export interface LanceDeRepertorio {
-  /** Lance em SAN, como se escreve numa partida (`Nf3`, `O-O`, `exd5`). */
-  san: string
-  /**
-   * Por que este lance, em uma ou duas frases. Obrigatória na PRIMEIRA vez que
-   * o par (posição, lance) aparece; proibida nas repetições — ver DECISÃO 2.
-   */
-  ideia?: string
-}
-
-/** Uma linha declarada, do primeiro lance em diante, alternando os dois lados. */
-export interface LinhaDeRepertorio {
-  /** Único dentro do repertório. */
-  id: string
-  lances: readonly LanceDeRepertorio[]
-}
-
-/** Um repertório declarado, para um dos lados. */
-export interface DefinicaoDeRepertorio {
-  /** Único entre os repertórios. */
-  id: string
-  /** Título em PT-BR. */
-  titulo: string
-  /** Lado do usuário. Só os lances DELE viram nó de estudo. */
-  lado: Side
-  /** O princípio que rege o repertório inteiro, acima de qualquer sequência. */
-  principio: string
-  /** Habilidades do catálogo que este repertório treina. */
-  habilidades: readonly SkillId[]
-  linhas: readonly LinhaDeRepertorio[]
-}
 
 /** Um lance saindo de um nó. */
 export interface RamoDeRepertorio {

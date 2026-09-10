@@ -4,3 +4,13 @@
   display: grid;
   gap: var(--space-6);
 }
+
+/* A leitura do repertório gravado falhou: a tela mostra a semente e diz isso.
+   Barra à esquerda + ícone + texto — status nunca depende só de cor. */
+.avisoDoRepertorio {
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--attention);
+  color: var(--text);
+  font-size: 0.875rem;
+}

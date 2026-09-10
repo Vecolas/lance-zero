@@ -35,7 +35,7 @@ import { cardsDeRepertorio } from '@/domain/repertoire'
 import { createMastery } from '@/domain/skills/mastery'
 import { SKILL_IDS, type Game, type SkillMastery, type UserProfile } from '@/domain/types'
 import { MemoryTrainingRepository } from '@/lib/storage/memory-repository'
-import { repertoriosDoAluno } from '@/lib/training/repertorio-no-treino'
+import { repertoriosDeFabrica } from '@/lib/training/repertorio-no-treino'
 
 const contexto = vi.hoisted(() => ({ valor: null as unknown }))
 
@@ -118,9 +118,14 @@ function blocos(): string[] {
  * Quantos cards o CONTEÚDO manda existir. Derivado, nunca cravado: se alguém
  * acrescentar uma linha ao repertório, o número acompanha em vez de reprovar o
  * código certo.
+ *
+ * Usa `repertoriosDeFabrica` e não `repertoriosDoAluno`: a pergunta aqui é o
+ * que o CONTEÚDO manda existir, e o aluno deste teste não editou nada. Ler do
+ * repositório mediria o mesmo número por um caminho mais longo — e faria o
+ * teste depender do que a semeadura gravou, que é justamente o que ele afere.
  */
 function cardsEsperados(): number {
-  return repertoriosDoAluno().arvores.reduce(
+  return repertoriosDeFabrica().arvores.reduce(
     (soma, arvore) => soma + cardsDeRepertorio(arvore, AGORA).length,
     0,
   )

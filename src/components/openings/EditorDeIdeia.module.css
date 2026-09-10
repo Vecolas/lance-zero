@@ -1,0 +1,115 @@
+/* O editor da ideia de um lance.
+   Alvo de toque de 2.75rem nos dois botões e no campo, e nada aqui depende de
+   cor sozinha: o resultado sempre vem com ícone e texto. */
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Botão secundário: o primário da tela é a consulta do explorer, e trinta
+   botões cheios de cor de marca ao lado de cada lance transformariam a leitura
+   das linhas numa barra de ferramentas. */
+.botao {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.botao:hover {
+  background: var(--surface-sunken);
+}
+
+.botao:disabled {
+  color: var(--text-muted);
+  cursor: progress;
+}
+
+.principal {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.principal:hover {
+  background: var(--accent-hover);
+}
+
+.principal:disabled {
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+  color: var(--text-muted);
+  cursor: progress;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.rotulo {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* `min-width: 0` deixa o campo encolher dentro do flex em 360px em vez de
+   empurrar o cartão inteiro para fora da tela. */
+.campo {
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  resize: vertical;
+}
+
+.ajuda {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.salvo {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--success-text);
+}
+
+.erro {
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--danger);
+  color: var(--error-text);
+  font-size: 0.8125rem;
+}

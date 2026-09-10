@@ -91,12 +91,17 @@ export async function carregarSinaisDePartida(
 
   const partidasPorId = indexarPartidas(partidas)
 
+  // O repertório passou a vir do REPOSITÓRIO, e não do conteúdo de fábrica: o
+  // que vale é o que o aluno editou, com a semente preenchendo o resto. Por
+  // isso a leitura é assíncrona agora.
+  const { arvores } = await repertoriosDoAluno(repo)
+
   return {
     recentGameErrors: errosRecentesDeAnalises(analises, partidasPorId, { agora }),
     // As MESMAS partidas dos outros dois sinais. O repertório não abre leitura
     // própria: se um dia ele precisar de mais partidas que os erros recentes, o
     // lugar de mudar é a janela acima, para todo mundo de uma vez.
-    desviosDeRepertorio: desviosDeRepertorios(repertoriosDoAluno().arvores, partidas),
+    desviosDeRepertorio: desviosDeRepertorios(arvores, partidas),
     retencoes: verificarRetencaoDeTreinos(
       instantesDeTreinoPorHabilidade(cards),
       analises,

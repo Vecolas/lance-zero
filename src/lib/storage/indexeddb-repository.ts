@@ -10,6 +10,7 @@ import type {
   GameQuery,
   PositionAnalysis,
   PuzzleAttempt,
+  RepertorioDoAluno,
   ReviewCard,
   ReviewLog,
   SkillMastery,
@@ -22,6 +23,7 @@ import {
   selectDueCards,
   sortPositionAnalyses,
   sortPuzzleAttempts,
+  sortRepertorios,
   sortReviewCards,
 } from './query'
 
@@ -34,6 +36,7 @@ export const STORES = {
   reviewCards: 'reviewCards',
   reviewLogs: 'reviewLogs',
   skillMastery: 'skillMastery',
+  repertorios: 'repertorios',
 } as const
 
 export type StoreName = (typeof STORES)[keyof typeof STORES]
@@ -50,7 +53,7 @@ export const INDEXES = {
 export const INDEXEDDB_CONFIG = {
   databaseName: 'lance-zero',
   /** Versão do schema. Incrementar sempre junto de um novo `case` em `migrate`. */
-  schemaVersion: 1,
+  schemaVersion: 2,
 } as const
 
 export interface IndexedDbRepositoryOptions {
@@ -91,7 +94,10 @@ function migrate(db: IDBDatabase, oldVersion: number): void {
   switch (oldVersion) {
     case 0:
       createSchemaV1(db)
-    // Próximas versões entram como `case 1:` etc., também sem `break`.
+    // falls through
+    case 1:
+      createSchemaV2(db)
+    // Próximas versões entram como `case 2:` etc., também sem `break`.
   }
 }
 
@@ -115,6 +121,22 @@ function createSchemaV1(db: IDBDatabase): void {
   logs.createIndex(INDEXES.reviewLogsByCardId, 'cardId', { unique: false })
 
   db.createObjectStore(STORES.skillMastery, { keyPath: 'skillId' })
+}
+
+/**
+ * V2: o repertório montado pelo aluno.
+ *
+ * A chave é `definicao.id` — um keyPath ANINHADO, de propósito. O id do
+ * repertório já existe dentro da definição e é o mesmo que compõe o id dos cards
+ * FSRS; copiá-lo para um campo de topo só para servir de chave criaria duas
+ * fontes da mesma verdade, livres para divergir na primeira gravação desatenta.
+ *
+ * Só ACRESCENTA uma store: nada do que já estava gravado é lido, reescrito ou
+ * apagado aqui. Um banco na versão 1 sobe para a 2 sem tocar em um único card,
+ * que é o que mantém o agendamento FSRS de quem já usa o app.
+ */
+function createSchemaV2(db: IDBDatabase): void {
+  db.createObjectStore(STORES.repertorios, { keyPath: 'definicao.id' })
 }
 
 export class IndexedDbTrainingRepository implements BackupRepository {
@@ -341,6 +363,17 @@ export class IndexedDbTrainingRepository implements BackupRepository {
       for (const item of mastery) {
         await requestToPromise(store.put(item))
       }
+    })
+  }
+
+  async listRepertorios(): Promise<RepertorioDoAluno[]> {
+    return sortRepertorios(await this.readAll<RepertorioDoAluno>(STORES.repertorios))
+  }
+
+  /** `put` com keyPath em `definicao.id`: regravar substitui, não duplica. */
+  async saveRepertorio(repertorio: RepertorioDoAluno): Promise<void> {
+    await this.run([STORES.repertorios], 'readwrite', async (tx) => {
+      await requestToPromise(tx.objectStore(STORES.repertorios).put(repertorio))
     })
   }
 

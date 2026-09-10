@@ -40,6 +40,15 @@ import type { Abertura } from '@/domain/types'
 export interface RamoLegivel {
   /** Chave estável para o React: identidade de origem + lance. */
   chave: string
+  /**
+   * Identidade da posição de ONDE o lance sai.
+   *
+   * Sai daqui como campo próprio, e não recortado de `chave`, porque é o
+   * endereço com que a tela pede ao domínio para trocar a ideia deste lance
+   * (`editarIdeiaDoRepertorio`). Recortar o texto da chave faria a regra do
+   * separador `|` viver em dois lugares.
+   */
+  origem: string
   /** Meios-lances jogados ANTES deste. 0 é o primeiro lance das brancas. */
   nivel: number
   san: string
@@ -121,6 +130,7 @@ function montar(
   const aberturaDoDestino = destino?.abertura ?? null
   return {
     chave: `${ramo.origem}|${ramo.san}`,
+    origem: ramo.origem,
     nivel,
     san: ramo.san,
     ideia: ramo.ideia,

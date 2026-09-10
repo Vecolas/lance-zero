@@ -49,10 +49,22 @@ const PREFIXO = 'repertorio'
  * — sem erro nenhum, só um card que nunca mais encontra o próprio nó.
  */
 export function idDeCardDeRepertorio(repertorioId: string, identidade: string): string {
-  if (repertorioId.includes(':')) {
-    throw new Error(`Id de repertório não pode conter ":": ${repertorioId}`)
+  if (!idDeRepertorioEhUsavel(repertorioId)) {
+    throw new Error(`Id de repertório não pode ser vazio nem conter ":": ${repertorioId}`)
   }
   return `${PREFIXO}:${repertorioId}:${identidade}`
+}
+
+/**
+ * O id de repertório serve para montar id de card?
+ *
+ * Existe como função exportada para que a FRONTEIRA (importação de backup)
+ * recuse o id ruim antes de gravá-lo, em vez de repetir a regra do `:` lá e
+ * deixar as duas cópias divergirem. A regra é uma só e mora aqui, junto do
+ * formato que ela protege.
+ */
+export function idDeRepertorioEhUsavel(repertorioId: string): boolean {
+  return repertorioId.length > 0 && !repertorioId.includes(':')
 }
 
 /** Quebra o id de volta em repertório e posição, ou `null` se não for um deles. */

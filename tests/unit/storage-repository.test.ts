@@ -4,6 +4,7 @@ import type {
   Game,
   PositionAnalysis,
   PuzzleAttempt,
+  RepertorioDoAluno,
   ReviewCard,
   SkillMastery,
   UserProfile,
@@ -106,6 +107,30 @@ function mastery(overrides: Partial<SkillMastery> = {}): SkillMastery {
     confidence: 0.3,
     lastSeenAt: '2026-02-28T20:00:00.000Z',
     ...overrides,
+  }
+}
+
+/**
+ * Um repertório do aluno, minimo.
+ *
+ * A fixture e escrita a mao (e nao tirada do conteudo de fabrica) porque este
+ * portao e sobre PERSISTENCIA: ele tem de continuar valendo no dia em que o
+ * conteudo de fabrica mudar de forma.
+ */
+function repertorio(
+  overrides: { id?: string; atualizadoEm?: string } = {},
+  ideia = 'A minha ideia.',
+): RepertorioDoAluno {
+  return {
+    atualizadoEm: overrides.atualizadoEm ?? '2026-03-01T09:00:00.000Z',
+    definicao: {
+      id: overrides.id ?? 'brancas-teste',
+      titulo: 'Brancas de teste',
+      lado: 'w',
+      principio: 'Ocupe o centro.',
+      habilidades: ['opening.center'],
+      linhas: [{ id: 'linha-1', lances: [{ san: 'e4', ideia }] }],
+    },
   }
 }
 
@@ -319,6 +344,54 @@ describe.each(implementacoes)('contrato do repositorio ($nome)', (impl) => {
   it('aceita lote vazio sem quebrar', async () => {
     await expect(repo.savePositionAnalyses([])).resolves.toBeUndefined()
     await expect(repo.saveSkillMastery([])).resolves.toBeUndefined()
+  })
+
+  // --------------------------------------------------- repertório do aluno
+
+  it('sem nada gravado, o repertorio do aluno e uma lista VAZIA', async () => {
+    // Vazio significa "use a semente", e não "não tenho repertório". As duas
+    // implementações precisam concordar nisso, senão o IndexedDB devolveria
+    // `undefined` e a semente sumiria só em produção.
+    await expect(repo.listRepertorios()).resolves.toEqual([])
+  })
+
+  it('salva e le o repertorio do aluno inteiro', async () => {
+    await repo.saveRepertorio(repertorio())
+    const lidos = await repo.listRepertorios()
+    expect(lidos).toHaveLength(1)
+    expect(lidos[0].definicao.id).toBe('brancas-teste')
+    expect(lidos[0].definicao.linhas[0].lances[0].ideia).toBe('A minha ideia.')
+    expect(lidos[0].atualizadoEm).toBe('2026-03-01T09:00:00.000Z')
+  })
+
+  it('regrava pelo id da definicao em vez de duplicar', async () => {
+    await repo.saveRepertorio(repertorio())
+    await repo.saveRepertorio(
+      repertorio({ atualizadoEm: '2026-04-01T09:00:00.000Z' }, 'Outra ideia.'),
+    )
+    const lidos = await repo.listRepertorios()
+    expect(lidos).toHaveLength(1)
+    expect(lidos[0].definicao.linhas[0].lances[0].ideia).toBe('Outra ideia.')
+    expect(lidos[0].atualizadoEm).toBe('2026-04-01T09:00:00.000Z')
+  })
+
+  it('guarda repertorios de ids diferentes lado a lado, em ordem estavel', async () => {
+    // A ordem é do id: sem critério, memória devolveria ordem de inserção e o
+    // IndexedDB a ordem da chave, e o contrato passaria a depender da gravação.
+    await repo.saveRepertorio(repertorio({ id: 'pretas-teste' }))
+    await repo.saveRepertorio(repertorio())
+    expect((await repo.listRepertorios()).map((item) => item.definicao.id)).toEqual([
+      'brancas-teste',
+      'pretas-teste',
+    ])
+  })
+
+  it('nao devolve referencia viva do repertorio salvo', async () => {
+    const gravado = repertorio()
+    await repo.saveRepertorio(gravado)
+    const lido = await repo.listRepertorios()
+    lido[0].definicao.titulo = 'mexido por fora'
+    expect((await repo.listRepertorios())[0].definicao.titulo).toBe('Brancas de teste')
   })
 })
 
