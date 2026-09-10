@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import type { DesvioDeRepertorio } from '@/domain/planning/aberturas'
 import { ERROS_RECENTES_CONFIG } from '@/domain/planning/erros-recentes'
 import { buildDailyPlan, type RecentGameError } from '@/domain/planning/planner'
 import { aplicarRetencaoDePartida } from '@/domain/skills/retencao-de-partida'
+import { semearCardsDeRepertorio } from '@/lib/training/repertorio-no-treino'
 import { carregarSinaisDePartida } from '@/lib/training/sinais-de-partida'
 import { BUDGET_OPTIONS } from '@/domain/profile'
 import type { DailyPlan, PlanBlockKind, ReviewCard, SkillMastery } from '@/domain/types'
@@ -39,6 +41,7 @@ interface Carregado {
   mastery: SkillMastery[]
   dueCards: ReviewCard[]
   recentGameErrors: RecentGameError[]
+  desviosDeRepertorio: DesvioDeRepertorio[]
 }
 
 export function DailyPlanView() {
@@ -54,8 +57,16 @@ export function DailyPlanView() {
       if (!repo) return
       try {
         const agora = new Date()
-        // As duas leituras de partida moram num lugar só: a tela de progresso
-        // usa a MESMA função. Duplicar a sequência aqui criaria duas janelas de
+
+        // ANTES de perguntar quais cards venceram: os nós de estudo do
+        // repertório precisam existir como card para poderem vencer. A
+        // semeadura é idempotente (só grava id ausente) e nunca sobrescreve o
+        // agendamento de quem já foi revisado. Sem esta linha o repertório
+        // continua sendo conteúdo que ninguém treina.
+        await semearCardsDeRepertorio(repo, { agora })
+
+        // As leituras de partida moram num lugar só: a tela de progresso usa a
+        // MESMA função. Duplicar a sequência aqui criaria duas janelas de
         // recência e duas bordas de data, divergindo sem nada acusar.
         const [mastery, dueCards, sinais] = await Promise.all([
           repo.getSkillMastery(),
@@ -70,7 +81,16 @@ export function DailyPlanView() {
         const masteryComRetencao = aplicarRetencaoDePartida(mastery, sinais.retencoes)
         const recentGameErrors: RecentGameError[] = sinais.recentGameErrors
 
-        if (!cancelado) setDados({ mastery: masteryComRetencao, dueCards, recentGameErrors })
+        if (!cancelado) {
+          setDados({
+            mastery: masteryComRetencao,
+            dueCards,
+            recentGameErrors,
+            // O ramo que apareceu em partida real: o aluno saiu do próprio
+            // repertório, e o planner trata isso como evidência, não currículo.
+            desviosDeRepertorio: sinais.desviosDeRepertorio,
+          })
+        }
       } catch (e) {
         if (!cancelado) {
           setFalha(e instanceof Error ? e.message : 'Não consegui ler seus dados locais.')
@@ -115,6 +135,7 @@ export function DailyPlanView() {
       mastery: dados.mastery,
       dueCards: dados.dueCards,
       recentGameErrors: dados.recentGameErrors,
+      desviosDeRepertorio: dados.desviosDeRepertorio,
       now: agora,
     },
     seedForDay(agora),
@@ -179,8 +200,9 @@ export function DailyPlanView() {
 
       <p className={styles.note}>
         O plano é montado a partir das suas habilidades, das revisões vencidas e dos erros das
-        partidas que você analisou nos últimos {ERROS_RECENTES_CONFIG.janelaDias} dias. Enquanto
-        você não importar partidas, ele usa o currículo rotativo para quem está por volta de 1100.
+        partidas que você analisou nos últimos {ERROS_RECENTES_CONFIG.janelaDias} dias — e das vezes
+        em que você saiu do seu próprio repertório nessas partidas. Enquanto você não importar
+        partidas, ele usa o currículo rotativo para quem está por volta de 1100.
       </p>
     </>
   )

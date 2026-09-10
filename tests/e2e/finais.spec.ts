@@ -242,8 +242,15 @@ test('a posição que o aluno não cumpriu aparece no treino de hoje', async ({ 
   // E o plano do dia CONTA essa revisão: é o "Treino de hoje" da issue, não só
   // a fila de /train.
   await page.goto('/dashboard')
-  await expect(page.getByRole('heading', { name: 'Revisões vencidas' })).toBeVisible()
-  await expect(page.getByText(/1 revisão vencida esperando/)).toBeVisible()
+  const bloco = page.getByRole('heading', { name: 'Revisões vencidas' })
+  await expect(bloco).toBeVisible()
+
+  // Afirma a REGRA, e não o número. A versão anterior cravava "1 revisão
+  // vencida esperando" e passou a reprovar no dia em que o planner começou a
+  // semear cards de repertório — reprovando o código CERTO, que é o pior tipo
+  // de portão. O que a issue pede é que o card de final CONTE no plano do dia;
+  // quantos outros cards existem ao lado não é assunto deste teste.
+  await expect(page.getByText(/revis(ão|ões) vencidas? esperando/)).toBeVisible()
 })
 
 test('cumprir sem dica não enche a fila de revisão', async ({ page }) => {

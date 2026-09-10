@@ -353,7 +353,10 @@ describe('robustez', () => {
     expect(resultado.analises.some((analise) => analise.ply > quebrado.index)).toBe(true)
   })
 
-  it('falha no aprofundamento mantém o número raso do lance', async () => {
+  // Duas passadas da engine falsa sobre a partida inteira: lento por natureza,
+  // e estourava o limite padrão sob carga paralela. Ver a nota de tempo em
+  // `tests/unit/varredura-de-modulos.test.ts`.
+  it('falha no aprofundamento mantém o número raso do lance', { timeout: 30_000 }, async () => {
     const partida = parsePgn(PGN)
     const lancesDoUsuario = partida.plies.filter((ply) => ply.color === 'b')
     // Índice 2 é a maior perda do roteiro: primeiro candidato do aprofundamento.
@@ -414,18 +417,23 @@ describe('progresso e determinismo', () => {
     expect(ultima).toEqual([lancesDoUsuario + candidatos, lancesDoUsuario + candidatos])
   })
 
-  it('mesma partida e mesma engine falsa produzem o mesmo resultado', async () => {
-    const partida = parsePgn(PGN)
-    const primeira = await analisar(
-      new FakeEngine({ roteiro: montarRoteiro(partida, 'b', perdaEscolhida) }),
-    )
-    const segunda = await analisar(
-      new FakeEngine({ roteiro: montarRoteiro(partida, 'b', perdaEscolhida) }),
-    )
+  // Analisa a MESMA partida duas vezes para comparar: o dobro do custo acima.
+  it(
+    'mesma partida e mesma engine falsa produzem o mesmo resultado',
+    { timeout: 45_000 },
+    async () => {
+      const partida = parsePgn(PGN)
+      const primeira = await analisar(
+        new FakeEngine({ roteiro: montarRoteiro(partida, 'b', perdaEscolhida) }),
+      )
+      const segunda = await analisar(
+        new FakeEngine({ roteiro: montarRoteiro(partida, 'b', perdaEscolhida) }),
+      )
 
-    expect(segunda).toEqual(primeira)
-    expect(JSON.stringify(segunda)).toBe(JSON.stringify(primeira))
-  })
+      expect(segunda).toEqual(primeira)
+      expect(JSON.stringify(segunda)).toBe(JSON.stringify(primeira))
+    },
+  )
 })
 
 describe('precisão declarada e WDL', () => {

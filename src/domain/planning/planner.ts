@@ -24,6 +24,7 @@ import {
   type SkillMastery,
   type UserProfile,
 } from '@/domain/types'
+import { ladoPorExtenso, type DesvioDeRepertorio } from './aberturas'
 import { createRng } from './rng'
 
 /** Erro cometido pelo usuário em partida real, já atribuído a uma habilidade. */
@@ -39,6 +40,16 @@ export interface PlannerContext {
   mastery: SkillMastery[]
   dueCards: ReviewCard[]
   recentGameErrors: RecentGameError[]
+  /**
+   * Vezes em que o usuário saiu do PRÓPRIO repertório em partida real, já
+   * ordenadas por relevância (ver `./aberturas`).
+   *
+   * Opcional porque chegou depois, e obrigá-lo quebraria chamadas que não têm
+   * repertório nenhum para oferecer. O preço de um campo opcional é ele ser
+   * esquecido em silêncio pela tela; quem cobra isso é
+   * `tests/unit/planning-aberturas-tela.test.tsx`, não o tipo.
+   */
+  desviosDeRepertorio?: readonly DesvioDeRepertorio[]
   now: Date
 }
 
@@ -95,6 +106,15 @@ export const PLANNER_CONFIG = {
   } satisfies Record<MoveSeverity, number>,
   /** Janela, em dias, para um erro de partida ainda contar como recente. */
   janelaErrosRecentesDias: 14,
+  /**
+   * Quantas partidas com o mesmo desvio bastam para virar bloco de abertura.
+   *
+   * HEURÍSTICA DE PRODUTO, e o valor 1 é uma escolha, não um mínimo técnico:
+   * uma única vez em que o aluno não jogou o próprio lance já é falha de
+   * recuperação, e o repertório existe para ser recuperado. Subir isto é
+   * decidir que o produto espera o erro se repetir antes de tratá-lo.
+   */
+  minPartidasDeDesvio: 1,
   /** Abaixo desta confiança tratamos a habilidade como "pouco medida". */
   limiarConfiancaBaixa: 0.25,
 } as const
@@ -371,10 +391,51 @@ export function buildDailyPlan(
     })
   }
 
+  // 2b. Abertura vinda do repertório: o aluno saiu da linha que ele mesmo
+  //     escreveu, numa partida real. Fica ao lado do bloco de erro de partida,
+  //     e não no rodízio, porque é a mesma classe de evidência — algo que
+  //     aconteceu no tabuleiro, e não uma fatia de currículo. Só DESVIO entra;
+  //     lacuna é conteúdo a escrever, não treino a fazer (ver `./aberturas`).
+  const desvio = (context.desviosDeRepertorio ?? []).find(
+    (item) => item.partidas >= config.minPartidasDeDesvio,
+  )
+  if (desvio) {
+    const lado = ladoPorExtenso(desvio.lado)
+    // As habilidades saem do repertório. Se ele não declarar nenhuma, o bloco
+    // pega a melhor candidata da área em vez de nascer sem habilidade alguma —
+    // um bloco com `skillIds` vazio não alimenta maestria de nada.
+    const habilidades =
+      desvio.habilidades.length > 0
+        ? [...desvio.habilidades]
+        : ranking
+            .filter((item) => item.area === 'opening')
+            .slice(0, 1)
+            .map((item) => item.skillId)
+    selecionar({
+      kind: 'abertura',
+      title: `${TITULO_POR_KIND.abertura}: seu repertório de ${lado}`,
+      // O lance PRESCRITO não aparece aqui de propósito: a mesma posição vira
+      // card de repertório, e dizer a resposta no plano responderia o card
+      // antes da pergunta.
+      rationale:
+        `Em ${desvio.partidas} ${plural(desvio.partidas, 'partida recente', 'partidas recentes')} ` +
+        `você jogou ${desvio.sanJogado} numa posição do seu repertório de ${lado}, que prevê ` +
+        'outro lance ali. A linha já está escrita: isto é treino, não conteúdo novo.',
+      skillIds: habilidades,
+      peso: config.alocacaoAlvo.abertura,
+    })
+    // A área fica marcada mesmo quando não coube: o bloco de fraqueza de
+    // abertura seria uma segunda tentativa de tratar a mesma área com evidência
+    // pior, e quem perdeu a vaga aqui a perdeu para algo mais urgente.
+    areasSelecionadas.add('opening')
+  }
+
   // 3. Habilidades fracas e de alto valor pedagógico, no máximo uma por área.
   //    A área é escolhida pelo score da sua melhor candidata ponderado pela
   //    fatia alvo: uma tática fraca vale mais tempo que uma abertura fraca.
   const areasDeFraqueza = (['tactics', 'endgame', 'opening'] as const)
+    // Área já tratada por evidência concreta não volta pela porta da estimativa.
+    .filter((area) => !areasSelecionadas.has(area))
     .map((area) => {
       const candidato = ranking.find((item) => item.area === area && !usados.has(item.skillId))
       const kind = KIND_POR_AREA[area]
