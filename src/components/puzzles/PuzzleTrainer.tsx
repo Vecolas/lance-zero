@@ -17,43 +17,124 @@
  * Por isso, aqui: tudo que fala de dica — o texto exibido, o rótulo do botão,
  * o `disabled` e a mensagem de desfecho — é DERIVADO de `tentativa`, lido na
  * hora. Não há segundo registro do apoio para sair de sincronia.
+ *
+ * ---------------------------------------------------------------------------
+ * SEGUNDA DECISÃO (issue #17): o lance fora da linha do dataset passa pelo
+ * JUIZ antes de virar erro, e a tela FALA nos três vereditos.
+ *
+ * `equivalente` e `pior` são acerto, e o segundo desconta a maestria pela
+ * família que já existe (`MasteryEvent.porCaminhoMaisLongo`). Desconto
+ * silencioso seria punição sem causa aparente — por isso a frase nomeia o que
+ * foi pior, com número. `indeterminado` não é erro nem acerto, e ele vai ser
+ * COMUM: aqui só existe a engine, que dá ordenação e não verdade. Silêncio
+ * depois de um lance lê como aprovação, então a tela diz que não deu para
+ * confirmar.
+ *
+ * O veredito é do DOMÍNIO (`submitMoveComJuiz`) e é lido da tentativa. A tela
+ * guarda só o que o domínio não guarda: qual lance está sendo conferido agora e
+ * contra qual lance da linha ele foi comparado. Nenhum `if` de política vive
+ * aqui — quem responde por isso é `EFEITO_DA_ALTERNATIVA`.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { FeedbackBanner } from '@/components/ui/FeedbackBanner'
 import { STARTER_PUZZLES_CSV } from '@/content/puzzles/starter'
 import {
   createAttemptState,
+  EFEITO_DA_ALTERNATIVA,
   giveUp,
   hintAt,
+  houveDesconto,
   MAX_HINT_LEVEL,
   nextHintLevel,
   parsePuzzleCsv,
   revelarRotulos,
   selectPuzzles,
   submitMove,
+  submitMoveComJuiz,
   toPuzzleAttempt,
   toSolvable,
+  ultimaAlternativa,
   // Apelido de propósito: `useHint` é função pura de domínio, não hook de
   // React, mas o prefixo `use` faz a regra `react-hooks/rules-of-hooks`
   // reprovar a chamada dentro de um manipulador de evento.
   useHint as aplicarDica,
   type AttemptState,
+  type AvaliarPosicao,
   type PuzzleCard,
 } from '@/domain/puzzles'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
 import { getSkill } from '@/domain/skills/catalog'
 import type { SkillMastery } from '@/domain/types'
+import { useEngine } from '@/lib/engine/use-engine'
 import { createReviewCard } from '@/lib/fsrs/cards'
-import { positionStatus, type PromotionPiece, type SquareName } from '@/lib/chess'
+import {
+  applyMove,
+  parseUci,
+  positionStatus,
+  type PromotionPiece,
+  type SquareName,
+} from '@/lib/chess'
+import { APRESENTACAO_DA_ALTERNATIVA, descreverAlternativa } from './textos-alternativa'
 import styles from './PuzzleTrainer.module.css'
 
 /** O pool é constante: parseia uma vez por carga do módulo, não por render. */
 const POOL = parsePuzzleCsv(STARTER_PUZZLES_CSV, { pularCabecalho: true }).puzzles
 
 const TAMANHO_DA_SESSAO = 5
+
+/**
+ * Orçamento de análise do julgamento de alternativa, em NÓS POR POSIÇÃO.
+ *
+ * LIMITE DE DESIGN, NUNCA CALIBRADO. O jogador está PARADO esperando, e cada
+ * julgamento paga duas posições — o dobro deste número. Por isso ele fica bem
+ * abaixo do aprofundamento da revisão de partidas (600 mil nós, que roda em
+ * segundo plano) e acima da varredura rasa (60 mil), que existe para
+ * distribuição de severidade e não para julgar um lance isolado. Subir o
+ * número compra ordenação melhor e paga em espera; descer faz `indeterminado`
+ * ficar mais comum. Medir antes de girar.
+ */
+export const NOS_DO_JULGAMENTO = 150_000
+
+/**
+ * O que a tela sabe sobre a conferência do lance atual.
+ *
+ * A tela NÃO guarda o veredito: ele mora na tentativa, no domínio, e é lido de
+ * `ultimaAlternativa`. Aqui fica só o que o domínio não guarda — qual lance
+ * está sendo conferido e contra qual lance da linha ele foi comparado, que é o
+ * índice que a tentativa perde quando a alternativa é aceita.
+ */
+type Analise =
+  | { situacao: 'ocioso' }
+  | { situacao: 'conferindo'; uci: string }
+  | { situacao: 'julgado'; uci: string; uciEsperado: string | null }
+
+const ANALISE_OCIOSA: Analise = { situacao: 'ocioso' }
+
+/**
+ * O UCI CANÔNICO do lance arrastado.
+ *
+ * `ChessBoardView` manda `promotion: 'q'` mesmo em lance que não é promoção, e
+ * esse `q` sobrando mudaria o lance julgado (`e1e8q` não é `e1e8`). O canônico
+ * sai de `applyMove`, que é quem sabe a forma certa. `null` só para lance
+ * ilegal, que nem chega ao juiz.
+ */
+function lanceCanonico(
+  fen: string,
+  from: SquareName,
+  to: SquareName,
+  promotion?: PromotionPiece,
+): string | null {
+  for (const bruto of [`${from}${to}${promotion ?? ''}`, `${from}${to}`]) {
+    const entrada = parseUci(bruto)
+    if (entrada === null) continue
+    const aplicado = applyMove(fen, entrada)
+    if (aplicado !== null) return aplicado.move.uci
+  }
+  return null
+}
 
 /**
  * O que aconteceu NESTA posição, em uma frase.
@@ -73,6 +154,14 @@ export const MENSAGEM_DO_DESFECHO = {
     'Você chegou à linha que ganha. Como precisou de apoio, este padrão volta em revisão para você reencontrá-lo sozinho.',
   naoResolvido:
     'A linha que ganha está logo abaixo. Esta posição vira revisão e volta no seu treino para você reencontrá-la sozinho.',
+  /**
+   * O desfecho de quem ganhou POR FORA da linha do dataset (issue #17). Existe
+   * porque as duas frases acima dizem "a linha que ganha", no singular, e aqui
+   * o jogador achou outra. O que a alternativa valeu — mesmo patamar ou acerto
+   * com desconto — está no bloco do julgamento, logo abaixo do desfecho.
+   */
+  resolvidoPorAlternativa:
+    'Você chegou a uma linha que ganha, diferente da linha guardada para este problema.',
 } as const
 
 type Fase = 'carregando' | 'treinando' | 'sem-puzzles' | 'concluida' | 'erro'
@@ -87,6 +176,14 @@ export function PuzzleTrainer() {
   const [inicio, setInicio] = useState(() => Date.now())
   const [resolvidos, setResolvidos] = useState(0)
   const [salvo, setSalvo] = useState(false)
+  const [analise, setAnalise] = useState<Analise>(ANALISE_OCIOSA)
+  const { analyze } = useEngine()
+  /**
+   * Número do puzzle em conferência. Uma análise que volta depois que a tela já
+   * mudou de puzzle é LIXO: aplicá-la julgaria um lance contra uma posição que
+   * o jogador nem vê mais, e o registro cairia na tentativa errada.
+   */
+  const geracao = useRef(0)
 
   useEffect(() => {
     if (!repo || !profile) return
@@ -115,6 +212,8 @@ export function PuzzleTrainer() {
         )
         setFase(escolhidos.length > 0 ? 'treinando' : 'sem-puzzles')
         setInicio(Date.now())
+        geracao.current += 1
+        setAnalise(ANALISE_OCIOSA)
       } catch (e) {
         if (!cancelado) {
           setFalha(e instanceof Error ? e.message : 'Não consegui montar a sessão.')
@@ -152,6 +251,11 @@ export function PuzzleTrainer() {
               acertou: registro.solved,
               usouDica: registro.hintsUsed > 0,
               primeiraTentativa: registro.firstTry,
+              // O acerto com desconto (#17) usa o mecanismo que JÁ existe: o
+              // evento carrega o fato e quem decide o quanto vale é
+              // `MASTERY_CONFIG`. Um desconto próprio desta tela seria a
+              // segunda cópia da mesma regra, livre para divergir.
+              porCaminhoMaisLongo: houveDesconto(estado),
               thinkTimeMs: registro.thinkTimeMs,
               ocorridoEm: agora.toISOString(),
             }),
@@ -213,6 +317,10 @@ export function PuzzleTrainer() {
   const proximo = useCallback(() => {
     const alvo = indice + 1
     setSalvo(false)
+    // A conferência em voo é do puzzle ANTERIOR. Sem isto ela voltaria e
+    // aplicaria um veredito sobre a tentativa nova, em silêncio.
+    geracao.current += 1
+    setAnalise(ANALISE_OCIOSA)
     // Nada de zerar contador de dica aqui: a tentativa nova já nasce com
     // `hintsUsed: 0`. Um reset manual seria a segunda fonte voltando.
     setInicio(Date.now())
@@ -226,17 +334,79 @@ export function PuzzleTrainer() {
     setTentativa(createAttemptState(toSolvable(cards[alvo].puzzle)))
   }, [cards, indice, refresh])
 
+  /**
+   * Adapta a engine da tela para a função de avaliação que o domínio pede.
+   *
+   * `analyze` NUNCA rejeita: resultado obsoleto e falha real chegam como
+   * `null`, e `null` vira avaliação vazia — que o domínio lê como
+   * `indeterminado`. É o caminho honesto: sem juiz não se reprova, e também
+   * não se inventa número.
+   *
+   * DÍVIDA DECLARADA: a leitura da linha principal (`multiPv === 1`, senão a
+   * primeira) é a mesma de `avaliacaoDaEngine`, em `@/domain/games/pipeline`,
+   * que não é exportada. Duas cópias de três linhas, e a casa delas é a camada
+   * de engine — mover exige mexer em arquivo de outra frente.
+   */
+  const avaliar = useCallback<AvaliarPosicao>(
+    async (fen) => {
+      const resposta = await analyze(fen, { nodes: NOS_DO_JULGAMENTO, multiPv: 1 })
+      const principal = resposta?.lines.find((l) => l.multiPv === 1) ?? resposta?.lines[0]
+      return { scoreCp: principal?.scoreCp ?? null, mateIn: principal?.mateIn ?? null }
+    },
+    [analyze],
+  )
+
+  /**
+   * Manda o lance fora da linha ao JUIZ e aplica o que o domínio decidir.
+   *
+   * O lance esperado é lido ANTES da chamada: depois que a alternativa é aceita
+   * a tentativa pula `solutionIndex` para o fim da linha, e o lance com o qual a
+   * comparação foi feita não teria mais como ser recuperado para a frase.
+   */
+  const conferir = useCallback(
+    async (estado: AttemptState, uci: string) => {
+      const minhaGeracao = geracao.current
+      const uciEsperado = estado.solvable.solutionUci[estado.solutionIndex] ?? null
+      setAnalise({ situacao: 'conferindo', uci })
+      const resultado = await submitMoveComJuiz(estado, uci, { avaliar })
+      // A tela já mudou de puzzle: este veredito é de outra tentativa.
+      if (minhaGeracao !== geracao.current) return
+      // Sem julgamento: o filtro barato recusou o lance sem pagar análise, e ele
+      // é erro comum, como sempre foi.
+      setAnalise(
+        resultado.alternativa === undefined
+          ? ANALISE_OCIOSA
+          : { situacao: 'julgado', uci, uciEsperado },
+      )
+      aplicar(resultado.state)
+    },
+    [aplicar, avaliar],
+  )
+
   const jogar = useCallback(
     (from: SquareName, to: SquareName, promotion?: PromotionPiece) => {
       if (!tentativa || tentativa.status !== 'em-andamento') return false
+      // Uma conferência por vez: o segundo lance seria julgado contra a posição
+      // antiga, que ainda está na tela porque a primeira não voltou.
+      if (analise.situacao === 'conferindo') return false
       const comSufixo = submitMove(tentativa, `${from}${to}${promotion ?? ''}`)
       // A solução do dataset pode não trazer sufixo de promoção.
       const resultado =
         !comSufixo.correto && promotion ? submitMove(tentativa, `${from}${to}`) : comSufixo
+
+      const canonico = lanceCanonico(tentativa.currentFen, from, to, promotion)
+      // Só o lance LEGAL e fora da linha passa pelo juiz. Acerto, lance ilegal e
+      // formato podre continuam decididos de graça, sem engine.
+      if (!resultado.correto && resultado.motivo === 'lance-errado' && canonico !== null) {
+        void conferir(tentativa, canonico)
+        return false
+      }
+
+      setAnalise(ANALISE_OCIOSA)
       aplicar(resultado.state)
       return resultado.correto
     },
-    [aplicar, tentativa],
+    [analise.situacao, aplicar, conferir, tentativa],
   )
 
   /** Pede a próxima dica AO DOMÍNIO. A tela não conta dica por fora. */
@@ -308,6 +478,59 @@ export function PuzzleTrainer() {
    */
   const semApoio = tentativa.firstTry
 
+  /**
+   * O julgamento na tela.
+   *
+   * O VEREDITO vem da tentativa (`ultimaAlternativa`), não de um estado próprio
+   * desta tela: um segundo registro do mesmo fato sairia de sincronia com o que
+   * é gravado, e foi exatamente esse desenho que a issue #66 removeu daqui. O
+   * estado local só diz SE há julgamento fresco para mostrar — depois de um
+   * lance novo ele volta a `ocioso` e o bloco some.
+   */
+  const julgado = analise.situacao === 'julgado' ? analise : null
+  const registroNaTela = julgado === null ? null : ultimaAlternativa(tentativa)
+  const blocoDaAlternativa =
+    julgado === null || registroNaTela === null ? null : (
+      <div
+        className={styles.alternativa}
+        data-testid="julgamento-da-alternativa"
+        data-veredito={registroNaTela.veredito}
+      >
+        {/* Ícone + rótulo + frase: status nunca depende só de cor, e este bloco
+            é NEUTRO de propósito — a cor de acerto e de erro é do FeedbackBanner,
+            e uma segunda tabela de cor aqui é o que a issue #61 removeu. */}
+        <p className={styles.alternativaTitulo}>
+          <span aria-hidden="true">
+            {APRESENTACAO_DA_ALTERNATIVA[registroNaTela.veredito].icone}
+          </span>{' '}
+          {APRESENTACAO_DA_ALTERNATIVA[registroNaTela.veredito].rotulo}
+        </p>
+        <p className={styles.think}>{descreverAlternativa(registroNaTela, julgado.uciEsperado)}</p>
+      </div>
+    )
+
+  /** O desfecho de acerto muda quando a linha vencedora foi outra. */
+  const ultima = ultimaAlternativa(tentativa)
+  const venceuPorAlternativa =
+    ultima !== null && EFEITO_DA_ALTERNATIVA[ultima.veredito].aceitaOLance
+  const mensagemDoAcerto = venceuPorAlternativa
+    ? MENSAGEM_DO_DESFECHO.resolvidoPorAlternativa
+    : semApoio
+      ? MENSAGEM_DO_DESFECHO.resolvidoSemApoio
+      : MENSAGEM_DO_DESFECHO.resolvidoComApoio
+
+  /**
+   * Lances que ficaram sem juiz nesta tentativa.
+   *
+   * Derivado de `EFEITO_DA_ALTERNATIVA`, não de uma lista de vereditos escrita
+   * aqui. Fica visível DEPOIS do fim da tentativa porque a frase do momento já
+   * saiu da tela: sem esta linha, o jogador que teve um lance não confirmado
+   * terminaria sem nenhum vestígio de que aquilo aconteceu.
+   */
+  const naoConfirmados = tentativa.alternativas
+    .filter((item) => !EFEITO_DA_ALTERNATIVA[item.veredito].temJuiz)
+    .map((item) => item.uci)
+
   return (
     <div className={styles.layout}>
       <ChessBoardView
@@ -334,6 +557,13 @@ export function PuzzleTrainer() {
               resposta — é isso que faz o exercício valer.
             </p>
             {dica ? <p className={styles.hint}>{dica.text}</p> : null}
+            {analise.situacao === 'conferindo' ? (
+              /* O jogador precisa saber POR QUE o tabuleiro não respondeu. Sem
+                 esta linha, a espera da engine lê como travamento. */
+              <p className={styles.think} role="status">
+                Conferindo {analise.uci} na engine…
+              </p>
+            ) : null}
             {tentativa.wrongMoves.length > 0 ? (
               /* Contagem durante a tentativa, não veredito: por isso texto
                  corrido e sem cor própria. Dar a ela um selo colorido foi o que
@@ -364,15 +594,10 @@ export function PuzzleTrainer() {
           </>
         ) : null}
 
+        {blocoDaAlternativa}
+
         {tentativa.status === 'resolvido' ? (
-          <FeedbackBanner
-            tone="correto"
-            mensagem={
-              semApoio
-                ? MENSAGEM_DO_DESFECHO.resolvidoSemApoio
-                : MENSAGEM_DO_DESFECHO.resolvidoComApoio
-            }
-          />
+          <FeedbackBanner tone="correto" mensagem={mensagemDoAcerto} />
         ) : null}
 
         {tentativa.status === 'falhou' ? (
@@ -399,6 +624,12 @@ export function PuzzleTrainer() {
               <p className={styles.think}>
                 Você tentou {tentativa.wrongMoves.join(', ')}. Esse lance não faz parte da linha que
                 ganha — e o padrão volta como revisão para você reencontrá-lo sozinho.
+              </p>
+            ) : null}
+            {naoConfirmados.length > 0 ? (
+              <p className={styles.think} data-testid="nao-confirmados">
+                Não deu para confirmar {naoConfirmados.join(', ')}. Não contaram como erro — e, por
+                não terem sido conferidos, também não viraram treino.
               </p>
             ) : null}
             <div className={styles.actions}>

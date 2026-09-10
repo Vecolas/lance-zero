@@ -145,6 +145,61 @@ export interface SolvablePuzzle {
   solutionUci: string[]
 }
 
+/**
+ * Vereditos do julgamento de um lance alternativo num puzzle (issue #17).
+ *
+ * A CONSTANTE É A FONTE. Quem precisa cobrir os três casos — a tela, o portão,
+ * a tabela de efeitos — percorre esta lista em vez de escrever a própria, que
+ * esqueceria o veredito novo em silêncio no dia em que ele nascer.
+ *
+ * Mora aqui, e não em `@/domain/puzzles`, porque o veredito É GRAVADO: ele faz
+ * parte do contrato de armazenamento, não só do cálculo.
+ */
+export const VEREDITOS_DE_ALTERNATIVA = ['equivalente', 'pior', 'indeterminado'] as const
+
+export type VereditoAlternativa = (typeof VEREDITOS_DE_ALTERNATIVA)[number]
+
+/**
+ * Por que não deu para comparar. Só existe quando o veredito é
+ * `indeterminado`, e é GRAVADO junto: a distribuição destes motivos é o que
+ * depois diz se o limiar está calibrado ou se a engine é que não responde.
+ */
+export const MOTIVOS_INDETERMINADOS = [
+  'fen-invalido',
+  'lance-do-jogador-ilegal',
+  'lance-esperado-ilegal',
+  'avaliacao-falhou',
+  'avaliacao-ausente',
+  'avaliacao-nao-confiavel',
+] as const
+
+export type MotivoIndeterminado = (typeof MOTIVOS_INDETERMINADOS)[number]
+
+/**
+ * Um lance alternativo julgado dentro de uma tentativa de puzzle.
+ *
+ * POR QUE ISTO É GRAVADO, e gravado com o veredito explícito: sem a marca,
+ * `equivalente` e `indeterminado` chegariam ao armazenamento como a mesma
+ * tentativa resolvida, e a taxa de "a engine não respondeu" ficaria impossível
+ * de medir depois — é ela que diz se o limiar de tolerância está calibrado.
+ * Sem esse número a política vira folclore.
+ */
+export interface PuzzleAlternativaRegistro {
+  /** Lance do jogador, em UCI canônico. */
+  uci: string
+  veredito: VereditoAlternativa
+  /**
+   * Perda em pontos percentuais de pontuação esperada, quando existe número.
+   *
+   * AUSENTE em `indeterminado`, de propósito: o domínio usa `NaN` em memória
+   * para ninguém ler "sem perda" por acidente, e `NaN` não sobrevive a
+   * `JSON.stringify` (vira `null`). Campo ausente é a única forma honesta de
+   * dizer "não há número" no arquivo de backup.
+   */
+  margemPp?: number
+  motivo?: MotivoIndeterminado
+}
+
 export interface PuzzleAttempt {
   id: string
   puzzleId: string
@@ -157,6 +212,14 @@ export interface PuzzleAttempt {
   thinkTimeMs: number
   /** Rating do puzzle, quando conhecido. */
   puzzleRating?: number
+  /**
+   * Lances alternativos julgados nesta tentativa (issue #17), em ordem.
+   *
+   * Ausente vale "nenhum": campo novo nasce NEUTRO, senão toda tentativa
+   * gravada antes desta issue passaria a ser lida como tentativa sem
+   * julgamento nenhum — que é verdade — mas de um jeito que exigiria migração.
+   */
+  alternativas?: PuzzleAlternativaRegistro[]
 }
 
 // ------------------------------------------------------------------ partidas

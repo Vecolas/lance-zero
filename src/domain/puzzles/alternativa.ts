@@ -37,7 +37,17 @@
 import { applyMove, isValidFen, normalizeUci, parseUci } from '@/lib/chess'
 import { PIECE_VALUES, captureGain, parseBoard, worstHangingPiece } from '@/domain/games/board'
 import { SEVERITY_CONFIG, moveLossPp, type EvalScore } from '@/domain/games/severity'
+import type { MotivoIndeterminado, VereditoAlternativa } from '@/domain/types'
 import type { AttemptState } from './attempt'
+
+/**
+ * O veredito e o motivo são GRAVADOS, então a definição deles mora no contrato
+ * compartilhado (`@/domain/types`) e é reexportada aqui. Redeclarar as duas
+ * uniões neste arquivo daria duas fontes para a mesma verdade — e a cópia que
+ * fica para trás numa recalibração nunca dá erro, só grava veredito que a tela
+ * não sabe exibir.
+ */
+export type { MotivoIndeterminado, VereditoAlternativa }
 
 /**
  * Critérios e limiares do julgamento de alternativa.
@@ -181,17 +191,6 @@ export function valeConsultarEngine(
     ganhoCp: Math.max(ganhoDaCaptura, ameacaCriada, 0),
   }
 }
-
-export type VereditoAlternativa = 'equivalente' | 'pior' | 'indeterminado'
-
-/** Por que não deu para comparar. Preenchido só quando o veredito é `indeterminado`. */
-export type MotivoIndeterminado =
-  | 'fen-invalido'
-  | 'lance-do-jogador-ilegal'
-  | 'lance-esperado-ilegal'
-  | 'avaliacao-falhou'
-  | 'avaliacao-ausente'
-  | 'avaliacao-nao-confiavel'
 
 export interface JulgamentoAlternativa {
   veredito: VereditoAlternativa
