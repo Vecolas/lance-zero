@@ -1,4 +1,6 @@
 .header {
+  /* `sticky` já cria o bloco de contenção que `.tools` usa para se ancorar no
+     canto: um `relative` extra aqui seria linha morta afirmando o contrário. */
   position: sticky;
   top: 0;
   z-index: 20;
@@ -11,6 +13,8 @@
   max-width: var(--content-max);
   margin: 0 auto;
   padding: var(--space-3) var(--space-4);
+  /* Espaço reservado para o botão de tema, que é posicionado no canto. */
+  padding-right: calc(var(--space-4) + 3.25rem);
   display: flex;
   align-items: center;
   gap: var(--space-5);
@@ -105,15 +109,61 @@
   box-shadow: inset 0 2px 0 0 var(--accent);
 }
 
+/*
+  O botão de tema fica no CANTO DA TELA, não no fim do conteúdo.
+
+  `.headerInner` tem largura máxima e centraliza; em telas largas isso deixaria
+  o botão flutuando no meio do vazio, longe da borda. Posicionar contra o
+  `.header` — que ocupa a largura toda — põe o controle onde a mão vai procurar.
+
+  O `padding-right` reservado em `.headerInner` existe para o botão absoluto não
+  cobrir o último item da navegação quando o conteúdo chega perto da borda.
+*/
 .tools {
-  margin-left: auto;
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
 @media (min-width: 60rem) {
-  .tools {
-    margin-left: var(--space-2);
+}
+
+/*
+  A MARCA NO CABEÇALHO — e o motivo de ela ter fundo no modo escuro.
+
+  A arte tem fundo transparente, e as suas duas partes escuras somem contra as
+  superfícies do modo escuro. Medido: o peão fica em 1,30:1 contra
+  `--dark-background`, e a metade navy do anel em 1,14:1. Só o arco azul
+  sobrevive (3,59:1), então o símbolo perderia justamente o peão — a parte que
+  diz que isto é xadrez.
+
+  A placa clara resolve sem tocar na arte e sem manter duas versões do arquivo,
+  que divergiriam. Ela não aparece no modo claro porque lá o fundo da página já
+  faz esse papel: a mesma placa nos dois temas seria uma moldura sem função.
+*/
+
+.brandMark {
+  flex: none;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .brandMark {
+    background: var(--bg-pure);
+    padding: 2px;
   }
+}
+
+:root[data-theme='dark'] .brandMark {
+  background: var(--bg-pure);
+  padding: 2px;
+}
+
+:root[data-theme='light'] .brandMark {
+  background: none;
+  padding: 0;
 }

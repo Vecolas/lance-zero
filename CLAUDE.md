@@ -177,7 +177,9 @@ Regras que valem para qualquer tela nova:
 - o gradiente da marca é para logo e hero. Não em todos os botões, cards, inputs
   ou bordas;
 - toda tela deve funcionar em modo claro **e** escuro. A preferência tem três
-  estados: sistema (padrão), claro e escuro;
+  estados no ARMAZENAMENTO — sem escolha (padrão, segue o aparelho), claro e
+  escuro — mas o botão oferece só DOIS: claro e escuro. "Seguir o sistema" é o
+  estado de quem ainda não escolheu, não uma opção da interface. Ver ADR-0010;
 - o tabuleiro não muda com o tema da interface;
 - raios: 6 px pequenos, 8 px botões e inputs, 12 px cards, 16 px cards grandes e
   modais;
