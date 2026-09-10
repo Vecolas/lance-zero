@@ -31,10 +31,18 @@
  *    É a mesma regra que já governa os puzzles.
  *
  * 4. A SOLUÇÃO DO CARD É O PRIMEIRO LANCE DA LINHA MODELO, e isso não é botão
- *    de ajuste. A sessão de revisão compara UCI exato; quanto mais fundo na
- *    linha, mais lances igualmente vencedores existem, e reprovar um lance
- *    correto do aluno seria mentir para ele. O primeiro lance de uma posição
- *    didática é o lance sobre o qual a lição é.
+ *    de ajuste. É escolha PEDAGÓGICA: o primeiro lance de uma posição didática
+ *    é o lance sobre o qual a lição é, e cobrar a linha inteira transformaria a
+ *    revisão espaçada — que existe para relembrar — na execução completa da
+ *    técnica, que é o trabalho da tela de finais.
+ *
+ *    ESTA DECISÃO JÁ FOI JUSTIFICADA POR OUTRO MOTIVO, e o motivo morreu.
+ *    Enquanto a fila de revisão comparava UCI letra a letra, guardar um lance
+ *    só era também a MITIGAÇÃO daquela comparação: quanto mais fundo na linha,
+ *    mais lances igualmente vencedores seriam reprovados. Quem julga o lance na
+ *    fila agora é `vereditoDaRevisao`, aqui embaixo, com a tablebase. Deixar a
+ *    justificativa antiga escrita criaria a segunda verdade sobre o mesmo
+ *    assunto — e a errada é sempre a que parece mais razoável.
  *
  * 5. RELÓGIO POR PARÂMETRO. Nada aqui chama `Date.now`. Mesma entrada e mesmo
  *    relógio produzem exatamente o mesmo registro.
@@ -50,7 +58,9 @@
 import { preservarProgresso } from '@/domain/games/para-treino'
 import { createMastery, updateMastery, type MasteryEvent } from '@/domain/skills/mastery'
 import type { PuzzleAttempt, ReviewCard, SkillId, SkillMastery } from '@/domain/types'
+import { normalizeUci } from '@/lib/chess'
 import { createReviewCard } from '@/lib/fsrs/cards'
+import type { GrauDoLance, JulgamentoDoLance } from './julgamento'
 import type { LicaoDeFinal, PosicaoDeFinal } from './licao'
 
 // -------------------------------------------------------------------- config
@@ -239,6 +249,112 @@ export function posicaoParaReviewCard(
     },
     agora,
   )
+}
+
+// ------------------------------------------------- veredito na fila de revisão
+
+/**
+ * O que a FILA DE REVISÃO faz com o lance que o aluno jogou num card de final.
+ *
+ * POR QUE ISTO EXISTE. Até a segunda metade da issue #62 a fila comparava
+ * `solutionUci` letra a letra. Num final vários lances ganham, e o aluno que
+ * jogasse um deles era marcado como errado — o que BAIXA a maestria e reagenda
+ * o card. Isso não é um detalhe de interface: é treinar o aluno a repetir um
+ * lance específico em vez de entender a técnica, que é o oposto da lição.
+ *
+ * A POLÍTICA VEM DA ISSUE E NÃO SE REABRE AQUI:
+ * - melhor lance → acerto limpo;
+ * - ganha mas é pior → ACEITO E SINALIZADO, e conta como acerto COM DESCONTO;
+ * - não ganha → erro;
+ * - indeterminado (sem juiz) → NÃO é erro, e a tela DIZ que não deu para
+ *   confirmar.
+ *
+ * DEGRADAÇÃO, E ELA É O MOTIVO DE `lanceDoCard` ENTRAR AQUI. Sem tablebase não
+ * há juiz, e a fila volta à COMPARAÇÃO EXATA: o lance do card é aceito sem
+ * consultar ninguém. É o que mantém a revisão utilizável com o serviço fora do
+ * ar. O que NÃO se aceita mais é o outro lado do mesmo caso: reprovar em
+ * silêncio um lance que talvez estivesse certo. Por isso ele vira
+ * `nao-confirmado` — nem acerto, nem erro — e quem chama é OBRIGADO a dizer ao
+ * aluno que está em modo estrito. Um chamador que engolir esse veredito recria
+ * exatamente o defeito que a issue existe para acabar.
+ *
+ * O DESCONTO NÃO NASCE AQUI. `MasteryEvent.porCaminhoMaisLongo` e
+ * `MASTERY_CONFIG.penalidadeLanceVencedorPior` já existem e já são a família
+ * multiplicativa dos outros descontos. Esta função só diz QUE aconteceu; o
+ * quanto vale continua sendo decisão de `MASTERY_CONFIG`.
+ */
+export const VEREDITOS_DA_REVISAO = [
+  'aceito',
+  'aceito-com-desconto',
+  'erro',
+  'nao-confirmado',
+] as const
+
+export type VereditoDaRevisao = (typeof VEREDITOS_DA_REVISAO)[number]
+
+/**
+ * O que cada veredito faz com o resto do sistema.
+ *
+ * É a FONTE que a tela e o portão varrem, em vez de cada chamador escrever o
+ * seu próprio `if`: veredito novo sem efeito declarado NÃO COMPILA, e um `if`
+ * espalhado por tela seria a segunda cópia da política, livre para divergir.
+ */
+export interface EfeitoDoVeredito {
+  /** Encerra a revisão como ERRO — nota `again`, maestria para baixo. */
+  ehErro: boolean
+  /** Entra no evento de maestria como acerto com desconto. */
+  comDesconto: boolean
+  /**
+   * Houve juiz para este lance. `false` obriga a tela a dizer que está em modo
+   * estrito: sem isto o aluno leria silêncio como aprovação.
+   */
+  temJuiz: boolean
+}
+
+export const EFEITO_DO_VEREDITO: Record<VereditoDaRevisao, EfeitoDoVeredito> = {
+  aceito: { ehErro: false, comDesconto: false, temJuiz: true },
+  'aceito-com-desconto': { ehErro: false, comDesconto: true, temJuiz: true },
+  erro: { ehErro: true, comDesconto: false, temJuiz: true },
+  'nao-confirmado': { ehErro: false, comDesconto: false, temJuiz: false },
+}
+
+/**
+ * Degrau do julgamento → veredito da fila.
+ *
+ * `Record` sobre `GrauDoLance`: degrau novo no domínio não compila até alguém
+ * decidir o que a fila faz com ele. Um `switch` com `default` deixaria o degrau
+ * novo cair no caso mais comum, em silêncio.
+ */
+const VEREDITO_POR_GRAU: Record<GrauDoLance, VereditoDaRevisao> = {
+  melhor: 'aceito',
+  'mantem-mas-e-pior': 'aceito-com-desconto',
+  'perde-o-resultado': 'erro',
+  // Sem juiz não se reprova. Ver a degradação no cabeçalho desta seção.
+  indeterminado: 'nao-confirmado',
+}
+
+export interface EntradaDoVeredito {
+  /** Lance do aluno, em UCI. */
+  uciDoAluno: string
+  /** Lance que o card guarda como solução — o lance da lição. */
+  lanceDoCard: string
+  /**
+   * Julgamento da tablebase para esse lance, ou `null` quando ela não foi
+   * consultada. `null` não é falha: o lance do card é aceito sem juiz.
+   */
+  julgamento: JulgamentoDoLance | null
+}
+
+/** Aplica a política da issue #62 a UM lance da fila de revisão. */
+export function vereditoDaRevisao(entrada: EntradaDoVeredito): VereditoDaRevisao {
+  if (normalizeUci(entrada.uciDoAluno) === normalizeUci(entrada.lanceDoCard)) {
+    // A comparação exata continua valendo — e vale SEM juiz, de propósito.
+    return 'aceito'
+  }
+  if (entrada.julgamento === null) {
+    return 'nao-confirmado'
+  }
+  return VEREDITO_POR_GRAU[entrada.julgamento.grau]
 }
 
 // ------------------------------------------------------------------- histórico
