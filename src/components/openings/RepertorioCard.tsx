@@ -30,6 +30,17 @@
  * `conflitos` em vez de lançar, e o portão de conteúdo exige lista vazia. Se
  * mesmo assim um conflito chegar aqui, a tela DIZ — em vez de desenhar um ramo
  * sem ideia, que é indistinguível de "ainda não carregou".
+ *
+ * DECISÃO 6 — O CARTÃO DIZ DE QUEM SÃO AS IDEIAS QUE O ALUNO ESTÁ LENDO. Um
+ * repertório de fábrica desenhado sem essa frase se passa pelo repertório do
+ * aluno, e foi exatamente esse silêncio que fez a tela mostrar durante meses um
+ * repertório que ele nunca escolheu. `deFabrica` é a resposta, e ela é DERIVADA
+ * de haver ou não gravação — não de um botão que alguém marcou um dia.
+ *
+ * DECISÃO 7 — SEM ONDE GRAVAR, A EXPLICAÇÃO É UMA SÓ, em cima da lista. Quando
+ * `salvarIdeia` não chega (armazenamento fora do ar), os editores somem e uma
+ * única frase diz por quê. Repetir o aviso em cada um dos trinta lances seria
+ * transformar uma informação em ruído.
  */
 
 import { useMemo } from 'react'
@@ -41,6 +52,7 @@ import {
   type SaidaDoLivro,
 } from '@/domain/repertoire'
 import { arvoreLegivel, type RamoLegivel } from './arvore-legivel'
+import { EditorDeIdeia, type SalvarIdeia } from './EditorDeIdeia'
 import { ExplorerPanel, type ConsultaDoExplorer } from './ExplorerPanel'
 import {
   APRESENTACAO_POR_SAIDA,
@@ -71,11 +83,21 @@ export type EstadoDasPartidas =
 export interface RepertorioCardProps {
   arvore: ArvoreDeRepertorio
   partidas: EstadoDasPartidas
+  /** `true` enquanto ninguém editou este repertório. Ver DECISÃO 6. */
+  deFabrica: boolean
+  /** Ausente quando não há onde gravar. Ver DECISÃO 7. */
+  salvarIdeia?: SalvarIdeia
   /** Injetada no teste. Ausente em produção: o painel cria o adapter real. */
   consultarExplorer?: ConsultaDoExplorer
 }
 
-export function RepertorioCard({ arvore, partidas, consultarExplorer }: RepertorioCardProps) {
+export function RepertorioCard({
+  arvore,
+  partidas,
+  deFabrica,
+  salvarIdeia,
+  consultarExplorer,
+}: RepertorioCardProps) {
   const linhas = useMemo(() => arvoreLegivel(arvore), [arvore])
 
   const posicoes = useMemo(
@@ -105,7 +127,19 @@ export function RepertorioCard({ arvore, partidas, consultarExplorer }: Repertor
       ) : null}
 
       <h3 className={styles.secao}>As linhas</h3>
-      <ListaDeRamos ramos={linhas} />
+      <p className={deFabrica ? styles.neutro : styles.ok}>
+        <span aria-hidden="true">{deFabrica ? '○' : '●'}</span>{' '}
+        {deFabrica
+          ? 'Este repertório ainda é o que veio com o app. As ideias abaixo foram escritas por nós — troque pelas suas.'
+          : 'Este repertório é seu: você já reescreveu pelo menos uma ideia dele.'}
+      </p>
+      {salvarIdeia === undefined ? (
+        <p className={styles.atencao}>
+          <span aria-hidden="true">!</span> Não dá para editar as ideias agora: o armazenamento
+          local deste navegador está indisponível. As linhas abaixo continuam válidas.
+        </p>
+      ) : null}
+      <ListaDeRamos ramos={linhas} salvarIdeia={salvarIdeia} />
 
       <Frequencia arvore={arvore} partidas={partidas} />
 
@@ -114,7 +148,13 @@ export function RepertorioCard({ arvore, partidas, consultarExplorer }: Repertor
   )
 }
 
-function ListaDeRamos({ ramos }: { ramos: readonly RamoLegivel[] }) {
+function ListaDeRamos({
+  ramos,
+  salvarIdeia,
+}: {
+  ramos: readonly RamoLegivel[]
+  salvarIdeia?: SalvarIdeia
+}) {
   if (ramos.length === 0) {
     return <p className={styles.neutro}>Este repertório não tem nenhuma linha escrita ainda.</p>
   }
@@ -145,6 +185,15 @@ function ListaDeRamos({ ramos }: { ramos: readonly RamoLegivel[] }) {
             </p>
           )}
 
+          {salvarIdeia === undefined ? null : (
+            <EditorDeIdeia
+              alvo={{ origem: ramo.origem, san: ramo.san }}
+              ideia={ramo.ideia}
+              rotulo={lanceComNumero(ramo.nivel, ramo.san)}
+              salvar={salvarIdeia}
+            />
+          )}
+
           {ramo.transposicaoDe === null ? null : (
             <p className={styles.transposicao}>
               <span aria-hidden="true">↔</span> Transposição: esta mesma posição já apareceu depois
@@ -152,7 +201,9 @@ function ListaDeRamos({ ramos }: { ramos: readonly RamoLegivel[] }) {
             </p>
           )}
 
-          {ramo.filhos.length > 0 ? <ListaDeRamos ramos={ramo.filhos} /> : null}
+          {ramo.filhos.length > 0 ? (
+            <ListaDeRamos ramos={ramo.filhos} salvarIdeia={salvarIdeia} />
+          ) : null}
         </li>
       ))}
     </ul>

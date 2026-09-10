@@ -7,18 +7,34 @@
  * um backup não zera o espaçamento das revisões.
  */
 import type {
+  DefinicaoDeRepertorio,
   Game,
   PositionAnalysis,
   PuzzleAttempt,
+  RepertorioDoAluno,
   ReviewCard,
   ReviewLog,
   SchedulerState,
   SkillMastery,
   UserProfile,
 } from '@/domain/types'
+import { idDeRepertorioEhUsavel } from '@/domain/repertoire'
 import { StorageError, UnsupportedBackupVersionError, type BackupRepository } from './repository'
 
-/** Versão do formato de arquivo. Independente da versão do schema IndexedDB. */
+/**
+ * Versão do formato de arquivo. Independente da versão do schema IndexedDB.
+ *
+ * QUANDO ELA SOBE, e é a decisão que este número carrega: quando um arquivo
+ * escrito por uma build antiga deixaria de ser lido CORRETAMENTE. Coleção
+ * ACRESCENTADA não é esse caso — `readArray` lê campo ausente como lista vazia,
+ * e lista vazia é a verdade sobre um aluno que nunca editou o repertório. Subir
+ * a versão aqui faria `validateBackupFile` RECUSAR o backup de todo mundo que já
+ * exportou, e recusar backup é a pior coisa que um arquivo de backup pode fazer.
+ *
+ * O que ela NÃO cobre, declarado: restaurar num app ANTIGO um arquivo escrito
+ * por um app novo descarta em silêncio o que o antigo não conhece. Downgrade não
+ * é suportado, e a versão do arquivo não é o lugar de fingir que é.
+ */
 export const BACKUP_VERSION = 1
 
 export interface BackupFile {
@@ -31,6 +47,14 @@ export interface BackupFile {
   reviewCards: ReviewCard[]
   reviewLogs: ReviewLog[]
   skillMastery: SkillMastery[]
+  /**
+   * Os repertórios que o aluno editou.
+   *
+   * Sem isto, restaurar um backup devolveria o repertório de FÁBRICA a quem
+   * escreveu as próprias ideias — e devolveria calado, com os cards de revisão
+   * inteiros apontando para nós que voltaram a ter texto de outra pessoa.
+   */
+  repertorios: RepertorioDoAluno[]
 }
 
 export interface ImportCounts {
@@ -41,6 +65,7 @@ export interface ImportCounts {
   reviewCards: number
   reviewLogs: number
   skillMastery: number
+  repertorios: number
 }
 
 export interface ImportResult {
@@ -54,16 +79,25 @@ export async function exportBackup(
   repo: BackupRepository,
   now: Date = new Date(),
 ): Promise<BackupFile> {
-  const [profile, games, puzzleAttempts, positionAnalyses, reviewCards, reviewLogs, skillMastery] =
-    await Promise.all([
-      repo.getProfile(),
-      repo.listGames(),
-      repo.listPuzzleAttempts(),
-      repo.listAllPositionAnalyses(),
-      repo.listReviewCards(),
-      repo.listReviewLogs(),
-      repo.getSkillMastery(),
-    ])
+  const [
+    profile,
+    games,
+    puzzleAttempts,
+    positionAnalyses,
+    reviewCards,
+    reviewLogs,
+    skillMastery,
+    repertorios,
+  ] = await Promise.all([
+    repo.getProfile(),
+    repo.listGames(),
+    repo.listPuzzleAttempts(),
+    repo.listAllPositionAnalyses(),
+    repo.listReviewCards(),
+    repo.listReviewLogs(),
+    repo.getSkillMastery(),
+    repo.listRepertorios(),
+  ])
 
   return {
     version: BACKUP_VERSION,
@@ -75,6 +109,7 @@ export async function exportBackup(
     reviewCards,
     reviewLogs,
     skillMastery,
+    repertorios,
   }
 }
 
@@ -104,6 +139,9 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
     await repo.saveReviewLog(log)
   }
   await repo.saveSkillMastery(parsed.skillMastery)
+  for (const repertorio of parsed.repertorios) {
+    await repo.saveRepertorio(repertorio)
+  }
 
   return {
     version: parsed.version,
@@ -116,6 +154,7 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
       reviewCards: parsed.reviewCards.length,
       reviewLogs: parsed.reviewLogs.length,
       skillMastery: parsed.skillMastery.length,
+      repertorios: parsed.repertorios.length,
     },
   }
 }
@@ -199,6 +238,67 @@ function validateSchedulerState(value: unknown, where: string): SchedulerState {
 }
 
 /**
+ * Checa a definição de repertório que chegou no arquivo.
+ *
+ * O `id` é checado com `idDeRepertorioEhUsavel`, importado do domínio: um id com
+ * `:` parte o id do card de revisão no lugar errado e o card nunca mais encontra
+ * o próprio nó — falha muda, e do tipo que só aparece semanas depois, quando o
+ * aluno percebe que aquele repertório parou de vir para revisão. Repetir a regra
+ * do `:` aqui seria a segunda cópia dela.
+ *
+ * O resto é estrutural, como manda a política deste arquivo: campos e tipos. Se
+ * um lance for ilegal ou faltar ideia, quem diz é `construirRepertorio`, que já
+ * devolve conflito em vez de lançar — recusar o backup inteiro por causa de um
+ * SAN torto tiraria do aluno TODO o resto dos dados dele.
+ */
+function validateDefinicaoDeRepertorio(value: unknown, where: string): DefinicaoDeRepertorio {
+  if (!isRecord(value)) {
+    throw invalid(`${where}.definicao deveria ser um objeto.`)
+  }
+  const onde = `${where}.definicao`
+  const id = readString(value, 'id', onde)
+  if (!idDeRepertorioEhUsavel(id)) {
+    throw invalid(`${onde}.id não pode ser vazio nem conter ":".`)
+  }
+  readString(value, 'titulo', onde)
+  readString(value, 'principio', onde)
+  const lado = value['lado']
+  if (lado !== 'w' && lado !== 'b') {
+    throw invalid(`${onde}.lado deveria ser "w" ou "b".`)
+  }
+  if (!Array.isArray(value['habilidades'])) {
+    throw invalid(`${onde}.habilidades deveria ser uma lista.`)
+  }
+  const linhas = value['linhas']
+  if (!Array.isArray(linhas)) {
+    throw invalid(`${onde}.linhas deveria ser uma lista.`)
+  }
+  linhas.forEach((linha, indice) => {
+    const ondeLinha = `${onde}.linhas[${indice}]`
+    if (!isRecord(linha)) {
+      throw invalid(`${ondeLinha} deveria ser um objeto.`)
+    }
+    readString(linha, 'id', ondeLinha)
+    const lances = linha['lances']
+    if (!Array.isArray(lances)) {
+      throw invalid(`${ondeLinha}.lances deveria ser uma lista.`)
+    }
+    lances.forEach((lance, posicao) => {
+      const ondeLance = `${ondeLinha}.lances[${posicao}]`
+      if (!isRecord(lance)) {
+        throw invalid(`${ondeLance} deveria ser um objeto.`)
+      }
+      readString(lance, 'san', ondeLance)
+      const ideia = lance['ideia']
+      if (ideia !== undefined && typeof ideia !== 'string') {
+        throw invalid(`${ondeLance}.ideia deveria ser texto quando existe.`)
+      }
+    })
+  })
+  return value as unknown as DefinicaoDeRepertorio
+}
+
+/**
  * Valida o envelope e todas as coleções.
  *
  * A validação é estrutural, não semântica: campos obrigatórios e tipos. Ela
@@ -278,6 +378,13 @@ export function validateBackupFile(file: unknown): BackupFile {
     return item as unknown as SkillMastery
   })
 
+  const repertorios = readRecords(file, 'repertorios').map((item, index) => {
+    const where = `repertorios[${index}]`
+    readString(item, 'atualizadoEm', where)
+    validateDefinicaoDeRepertorio(item['definicao'], where)
+    return item as unknown as RepertorioDoAluno
+  })
+
   return {
     version,
     exportedAt,
@@ -288,6 +395,7 @@ export function validateBackupFile(file: unknown): BackupFile {
     reviewCards,
     reviewLogs,
     skillMastery,
+    repertorios,
   }
 }
 

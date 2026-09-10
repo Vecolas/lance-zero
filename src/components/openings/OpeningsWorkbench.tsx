@@ -1,8 +1,8 @@
 'use client'
 
 /**
- * A tela de aberturas: os dois repertórios, com as ideias, e o que as partidas
- * do aluno dizem sobre eles.
+ * A tela de aberturas: os repertórios DO ALUNO, com as ideias, e o que as
+ * partidas dele dizem sobre eles.
  *
  * DECISÃO 1 — OS DOIS REPERTÓRIOS APARECEM JUNTOS, sem aba e sem acordeão. São
  * dois: brancas e pretas, e cada um responde uma pergunta diferente ("o que eu
@@ -10,16 +10,19 @@
  * e criaria o aluno que estudou só o de brancas por seis meses sem nunca ter
  * visto que o outro existe.
  *
- * DECISÃO 2 — A LISTA SAI DO CONTEÚDO, nunca de uma lista escrita aqui.
- * Repertório novo em `@/content/openings` aparece nesta tela sem ninguém lembrar
- * de cadastrá-lo. Uma lista paralela seria o desenho em que o conteúdo existe,
- * passa no portão, e mesmo assim some da tela em silêncio.
+ * DECISÃO 2 — A LISTA SAI DE `repertoriosDoAluno`, nunca de uma lista escrita
+ * aqui e nunca mais do conteúdo de fábrica direto. Até esta rodada esta tela
+ * montava as árvores a partir de `@/content/openings`, o que fazia dela uma tela
+ * sobre o repertório de OUTRA pessoa: o aluno não tinha como mudar nada, e as
+ * lacunas apontavam buracos de um conteúdo que não era dele.
  *
- * DECISÃO 3 — O REPERTÓRIO NÃO ESPERA O BANCO. As árvores são construídas do
- * conteúdo local, de forma síncrona, e desenham na primeira renderização. A
- * leitura das partidas é assíncrona e alimenta APENAS o bloco de frequência. É
- * o critério de aceite "explorer indisponível não quebra a tela" levado até o
- * fim: nem o explorer, nem o IndexedDB, nem a rede seguram o que é local.
+ * DECISÃO 3 — O REPERTÓRIO NÃO ESPERA O BANCO, e continua não esperando. A
+ * primeira renderização usa a SEMENTE (`repertoriosDeFabrica`), que é conteúdo
+ * local e síncrono; a leitura do repositório substitui a semente quando chega.
+ * É o critério de aceite "explorer indisponível não quebra a tela" levado até o
+ * fim: nem o explorer, nem o IndexedDB, nem a rede seguram o que é local. O que
+ * a semente NÃO faz é se passar pelo repertório do aluno — cada cartão diz, com
+ * texto, de quem são as ideias que estão ali.
  *
  * DECISÃO 4 — A FREQUÊNCIA É RECALCULADA DE `partidas`, e nunca guardada. É
  * função pura do domínio; congelar o resultado num estado criaria a cópia que
@@ -27,15 +30,28 @@
  *
  * DECISÃO 5 — LEITURA QUE FALHA É DITA, e não vira lista vazia. Aba anônima e
  * permissão negada derrubam o IndexedDB. "Não consegui ler" e "você não tem
- * partidas" levam a conclusões opostas, e a segunda seria mentira.
+ * partidas" levam a conclusões opostas, e a segunda seria mentira. Vale também
+ * para a leitura do repertório: se ela falhar, a tela diz que está mostrando a
+ * semente, em vez de deixar o aluno achar que apagamos o que ele escreveu.
+ *
+ * DECISÃO 6 — DEPOIS DE GRAVAR, A TELA RELÊ DO REPOSITÓRIO. Não aplica a edição
+ * na cópia que tem em mãos: o que vale é o que está gravado, e costurar o texto
+ * novo no estado local criaria a segunda verdade — que sobreviveria intacta a
+ * uma gravação que na verdade falhou pela metade.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
-import { construirRepertorio, frequenciaDoRepertorio } from '@/domain/repertoire'
-import { INDICE_ECO, REPERTORIOS_INICIAIS } from '@/content/openings'
+import { frequenciaDoRepertorio, type AlvoDaIdeia } from '@/domain/repertoire'
+import {
+  repertoriosDeFabrica,
+  repertoriosDoAluno,
+  salvarIdeiaDoRepertorio,
+  type RepertoriosDoAluno,
+} from '@/lib/training/repertorio-no-treino'
 import type { Game } from '@/domain/types'
 import type { ConsultaDoExplorer } from './ExplorerPanel'
+import type { ResultadoDeSalvar, SalvarIdeia } from './EditorDeIdeia'
 import { RepertorioCard, type EstadoDasPartidas } from './RepertorioCard'
 import styles from './OpeningsWorkbench.module.css'
 
@@ -55,20 +71,21 @@ export const ABERTURAS_CONFIG = {
 export interface OpeningsWorkbenchProps {
   /** Injetada no teste. Ausente em produção: o painel cria o adapter real. */
   consultarExplorer?: ConsultaDoExplorer
+  /**
+   * Relógio, injetado no teste. Só carimba `atualizadoEm` do repertório gravado.
+   * A borda é aqui: quem faz conta com data recebe o instante por parâmetro.
+   */
+  agora?: () => Date
 }
 
-export function OpeningsWorkbench({ consultarExplorer }: OpeningsWorkbenchProps = {}) {
+export function OpeningsWorkbench({ consultarExplorer, agora }: OpeningsWorkbenchProps = {}) {
   const { repo, status, erro, revision } = useRepository()
   const [partidas, setPartidas] = useState<Game[] | null>(null)
   const [falha, setFalha] = useState<string | null>(null)
-
-  const arvores = useMemo(
-    () =>
-      REPERTORIOS_INICIAIS.map((definicao) =>
-        construirRepertorio(definicao, { indiceEco: INDICE_ECO }),
-      ),
-    [],
-  )
+  const [repertorios, setRepertorios] = useState<RepertoriosDoAluno>(repertoriosDeFabrica)
+  const [falhaDoRepertorio, setFalhaDoRepertorio] = useState<string | null>(null)
+  /** Sobe a cada gravação bem-sucedida e força a releitura — ver DECISÃO 6. */
+  const [recarga, setRecarga] = useState(0)
 
   useEffect(() => {
     let cancelado = false
@@ -98,6 +115,72 @@ export function OpeningsWorkbench({ consultarExplorer }: OpeningsWorkbenchProps 
     }
   }, [repo, revision])
 
+  useEffect(() => {
+    let cancelado = false
+    if (!repo) {
+      return
+    }
+    void (async () => {
+      try {
+        const lidos = await repertoriosDoAluno(repo)
+        if (cancelado) return
+        setRepertorios(lidos)
+        setFalhaDoRepertorio(null)
+      } catch (e) {
+        if (cancelado) return
+        // A semente continua na tela: ela é conteúdo local e não depende do
+        // banco. O que muda é que a tela DIZ que é a semente que está ali.
+        setFalhaDoRepertorio(
+          e instanceof Error
+            ? `Não consegui ler o seu repertório: ${e.message}`
+            : 'Não consegui ler o seu repertório gravado.',
+        )
+      }
+    })()
+    return () => {
+      cancelado = true
+    }
+  }, [repo, revision, recarga])
+
+  /**
+   * O gravador de UM repertório.
+   *
+   * A função é criada por repertório porque o id não vem do editor: o editor
+   * conhece a posição e o lance, e nada mais. Fazer o id viajar pela árvore de
+   * componentes até o campo de texto daria a cada `<textarea>` a chance de
+   * gravar no repertório errado.
+   */
+  const criarSalvador = useCallback(
+    (repertorioId: string): SalvarIdeia | undefined => {
+      if (!repo) {
+        return undefined
+      }
+      return async (alvo: AlvoDaIdeia, ideia: string): Promise<ResultadoDeSalvar> => {
+        try {
+          const resultado = await salvarIdeiaDoRepertorio(repo, repertorioId, alvo, ideia, {
+            agora: agora ? agora() : new Date(),
+          })
+          if (!resultado.ok) {
+            return { ok: false, mensagem: resultado.mensagem }
+          }
+          setRecarga((n) => n + 1)
+          return { ok: true }
+        } catch (e) {
+          return {
+            ok: false,
+            mensagem:
+              e instanceof Error
+                ? `Não consegui gravar: ${e.message}`
+                : 'Não consegui gravar a ideia no armazenamento local.',
+          }
+        }
+      }
+    },
+    [repo, agora],
+  )
+
+  const arvores = repertorios.arvores
+
   /**
    * Um estado por árvore, recalculado quando a entrada muda — ver DECISÃO 4.
    *
@@ -122,12 +205,22 @@ export function OpeningsWorkbench({ consultarExplorer }: OpeningsWorkbenchProps 
     }))
   }, [arvores, falha, status, erro, partidas])
 
+  const deFabrica = useMemo(() => new Set(repertorios.deFabrica), [repertorios.deFabrica])
+
   return (
     <div className={styles.repertorios}>
+      {falhaDoRepertorio === null ? null : (
+        <p className={styles.avisoDoRepertorio} role="status">
+          <span aria-hidden="true">!</span> {falhaDoRepertorio} Você está vendo o repertório que
+          veio com o app; nada do que você escreveu foi apagado.
+        </p>
+      )}
       {arvores.map((arvore, indice) => (
         <RepertorioCard
           key={arvore.id}
           arvore={arvore}
+          deFabrica={deFabrica.has(arvore.id)}
+          salvarIdeia={criarSalvador(arvore.id)}
           consultarExplorer={consultarExplorer}
           partidas={estados[indice]}
         />

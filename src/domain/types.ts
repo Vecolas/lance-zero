@@ -380,6 +380,85 @@ export interface GameQuery {
   since?: Date
 }
 
+// ------------------------------------------------- repertório: schema gravado
+
+/**
+ * Um lance dentro de uma linha declarada.
+ *
+ * O schema do repertório mora AQUI, e não em `@/domain/repertoire`, desde que
+ * ele passou a ser gravado: `TrainingRepository` persiste uma
+ * `DefinicaoDeRepertorio` inteira, e um contrato de persistência que aponta para
+ * dentro de uma subcamada inverte a fronteira que este arquivo existe para
+ * segurar. `@/domain/repertoire/arvore` reexporta os três tipos, então quem já
+ * importava de lá continua importando de lá — é reexportação, não uma segunda
+ * definição.
+ */
+export interface LanceDeRepertorio {
+  /** Lance em SAN, como se escreve numa partida (`Nf3`, `O-O`, `exd5`). */
+  san: string
+  /**
+   * Por que este lance, em uma ou duas frases. Obrigatória na PRIMEIRA vez que
+   * o par (posição, lance) aparece; proibida nas repetições — ver DECISÃO 2 de
+   * `@/domain/repertoire/arvore`.
+   */
+  ideia?: string
+}
+
+/** Uma linha declarada, do primeiro lance em diante, alternando os dois lados. */
+export interface LinhaDeRepertorio {
+  /** Único dentro do repertório. */
+  id: string
+  lances: readonly LanceDeRepertorio[]
+}
+
+/** Um repertório declarado, para um dos lados. */
+export interface DefinicaoDeRepertorio {
+  /**
+   * Único entre os repertórios, e ESTÁVEL para sempre.
+   *
+   * O id do card FSRS de um nó é `repertorio:{este id}:{identidade da posição}`.
+   * Trocar este id órfã, em silêncio, todo o agendamento que o aluno já
+   * construiu naquele repertório. Ver `@/domain/repertoire/cards`, DECISÃO 3.
+   */
+  id: string
+  /** Título em PT-BR. */
+  titulo: string
+  /** Lado do usuário. Só os lances DELE viram nó de estudo. */
+  lado: Side
+  /** O princípio que rege o repertório inteiro, acima de qualquer sequência. */
+  principio: string
+  /** Habilidades do catálogo que este repertório treina. */
+  habilidades: readonly SkillId[]
+  linhas: readonly LinhaDeRepertorio[]
+}
+
+/**
+ * O repertório do aluno, do jeito que ele fica gravado.
+ *
+ * DECISÃO — O QUE SE GRAVA É A DEFINIÇÃO INTEIRA, e não um remendo sobre o
+ * conteúdo de fábrica. Enquanto o aluno não editar nada, NADA é gravado e ele lê
+ * a semente que veio com o app — então melhorias de conteúdo chegam a quem nunca
+ * editou. No instante em que ele edita, o repertório inteiro passa a ser dele e
+ * é gravado inteiro. Guardar só o remendo manteria o conteúdo de fábrica como
+ * verdade para sempre, o que é exatamente o que este trabalho veio desfazer, e
+ * ainda deixaria o remendo pendurado num conteúdo que pode mudar embaixo dele.
+ *
+ * PONTO CEGO DECLARADO, e é o preço do desenho: depois da primeira edição, uma
+ * linha nova escrita no conteúdo de fábrica NÃO aparece mais para aquele aluno.
+ * Ele fica com o repertório que é dele, inclusive nas partes que ele não
+ * escreveu. Fundir os dois automaticamente seria decidir por ele qual das duas
+ * versões vale.
+ *
+ * NÃO há campo de id aqui: o id é `definicao.id`, e a chave do IndexedDB aponta
+ * para ele. Um `id` no topo seria a segunda fonte da mesma verdade, livre para
+ * divergir da definição que ele diz identificar.
+ */
+export interface RepertorioDoAluno {
+  definicao: DefinicaoDeRepertorio
+  /** Quando o aluno gravou. ISO-8601 em UTC, como todo instante que o app gera. */
+  atualizadoEm: string
+}
+
 export interface TrainingRepository {
   getProfile(): Promise<UserProfile | null>
   saveProfile(profile: UserProfile): Promise<void>
@@ -395,6 +474,13 @@ export interface TrainingRepository {
   saveReviewLog(log: ReviewLog): Promise<void>
   getSkillMastery(): Promise<SkillMastery[]>
   saveSkillMastery(mastery: SkillMastery[]): Promise<void>
+  /**
+   * Os repertórios que o aluno editou. Lista VAZIA é a resposta normal de quem
+   * nunca editou — significa "use a semente", e não "não tenho repertório".
+   */
+  listRepertorios(): Promise<RepertorioDoAluno[]>
+  /** Grava (ou regrava) um repertório inteiro, pelo `definicao.id`. */
+  saveRepertorio(repertorio: RepertorioDoAluno): Promise<void>
 }
 
 // ----------------------------------------------------------------- importação

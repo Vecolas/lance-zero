@@ -43,7 +43,14 @@
  *    numa roupa nova. Quem monta o `since` é código nosso; um `since` quebrado
  *    é defeito de programação, e defeito de programação tem de doer.
  */
-import type { Game, GameQuery, PositionAnalysis, PuzzleAttempt, ReviewCard } from '@/domain/types'
+import type {
+  Game,
+  GameQuery,
+  PositionAnalysis,
+  PuzzleAttempt,
+  RepertorioDoAluno,
+  ReviewCard,
+} from '@/domain/types'
 import { StorageError } from './repository'
 import { instanteDe } from '@/lib/tempo'
 
@@ -151,4 +158,20 @@ export function selectDueCards(cards: ReviewCard[], now: Date): ReviewCard[] {
 /** Todos os cards, ordenados por vencimento. */
 export function sortReviewCards(cards: ReviewCard[]): ReviewCard[] {
   return [...cards].sort(compareReviewCards)
+}
+
+/**
+ * Repertórios do aluno em ordem estável, pelo id da definição.
+ *
+ * A ordem é do ID e não da data de gravação DE PROPÓSITO: as duas
+ * implementações do repositório precisam devolver a mesma lista para o mesmo
+ * conteúdo, e `atualizadoEm` empata sempre que o aluno grava dois repertórios no
+ * mesmo instante. Empate sem critério devolve ordem de inserção — que difere
+ * entre memória e IndexedDB, e o teste de contrato acusaria isso um dia sim,
+ * outro não.
+ */
+export function sortRepertorios(itens: RepertorioDoAluno[]): RepertorioDoAluno[] {
+  return [...itens].sort((a, b) =>
+    a.definicao.id < b.definicao.id ? -1 : a.definicao.id > b.definicao.id ? 1 : 0,
+  )
 }

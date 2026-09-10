@@ -13,9 +13,17 @@ import { applyReview, createReviewCard } from '@/lib/fsrs/cards'
 import { MemoryTrainingRepository } from '@/lib/storage/memory-repository'
 import { IndexedDbTrainingRepository, deleteDatabase } from '@/lib/storage/indexeddb-repository'
 import { StorageError, UnsupportedBackupVersionError } from '@/lib/storage/repository'
+import { editarIdeiaDoRepertorio } from '@/domain/repertoire'
+import { REPERTORIO_BRANCAS } from '@/content/openings'
+import { identidadeDePosicao } from '@/lib/openings'
+import { START_FEN } from '@/lib/chess'
+import type { RepertorioDoAluno } from '@/domain/types'
 
 const CRIADO_EM = new Date('2026-03-01T09:00:00.000Z')
 const EXPORTADO_EM = new Date('2026-03-10T21:15:00.000Z')
+
+/** A frase do aluno. Não pode coincidir com nenhuma de fábrica, e não coincide. */
+const IDEIA_DO_ALUNO = 'Eu jogo isto porque decorei que abre a diagonal do bispo e nada mais.'
 
 let contador = 0
 const bancosAbertos: IndexedDbTrainingRepository[] = []
@@ -132,7 +140,27 @@ async function repositorioPovoado(): Promise<MemoryTrainingRepository> {
       lastSeenAt: CRIADO_EM.toISOString(),
     },
   ])
+  await repo.saveRepertorio(repertorioEditado())
   return repo
+}
+
+/**
+ * Um repertório com a ideia REESCRITA pelo aluno.
+ *
+ * Sai do conteúdo de fábrica de propósito: é o caso que existe de verdade, e o
+ * que a ida e volta precisa preservar é justamente a frase que ele escreveu por
+ * cima da nossa.
+ */
+function repertorioEditado(): RepertorioDoAluno {
+  const editado = editarIdeiaDoRepertorio(
+    REPERTORIO_BRANCAS,
+    { origem: identidadeDePosicao(START_FEN), san: REPERTORIO_BRANCAS.linhas[0].lances[0].san },
+    IDEIA_DO_ALUNO,
+  )
+  if (!editado.ok) {
+    throw new Error(`fixture quebrada: ${editado.mensagem}`)
+  }
+  return { definicao: editado.definicao, atualizadoEm: CRIADO_EM.toISOString() }
 }
 
 describe('exportacao de backup', () => {
@@ -153,6 +181,15 @@ describe('exportacao de backup', () => {
     expect(arquivo.reviewCards).toHaveLength(1)
     expect(arquivo.reviewLogs).toHaveLength(1)
     expect(arquivo.skillMastery).toHaveLength(1)
+    expect(arquivo.repertorios).toHaveLength(1)
+  })
+
+  it('leva a IDEIA que o aluno reescreveu, e nao a de fabrica', async () => {
+    const repo = await repositorioPovoado()
+    const arquivo = await exportBackup(repo, EXPORTADO_EM)
+    // A asserção é sobre o TEXTO, e não sobre a contagem: um export que levasse
+    // a definição de fábrica no lugar da editada também teria comprimento 1.
+    expect(JSON.stringify(arquivo.repertorios)).toContain(IDEIA_DO_ALUNO)
   })
 
   it('exporta um repositorio vazio sem quebrar', async () => {
@@ -182,6 +219,7 @@ describe('ida e volta do backup', () => {
       reviewCards: 1,
       reviewLogs: 1,
       skillMastery: 1,
+      repertorios: 1,
     })
 
     const cardOriginal = (await origem.listReviewCards())[0]
@@ -198,6 +236,14 @@ describe('ida e volta do backup', () => {
     expect((await destino.getProfile())?.lichessUsername).toBe('jogador')
     expect((await destino.getSkillMastery())[0]?.skillId).toBe('tactics.back-rank')
     expect((await destino.listReviewLogs())[0]?.cardId).toBe('card-erro-7')
+
+    // O repertório do aluno sobrevive à ida e volta com o TEXTO dele dentro.
+    // Sem isto, restaurar um backup devolvia calado o repertório de fábrica a
+    // quem tinha escrito as próprias ideias.
+    const restaurados = await destino.listRepertorios()
+    expect(restaurados.map((item) => item.definicao.id)).toEqual([REPERTORIO_BRANCAS.id])
+    expect(JSON.stringify(restaurados[0].definicao)).toContain(IDEIA_DO_ALUNO)
+    expect(restaurados[0].atualizadoEm).toBe(CRIADO_EM.toISOString())
   })
 
   it('reexportar o que foi importado devolve o mesmo conteudo', async () => {
@@ -224,6 +270,7 @@ describe('validacao na importacao', () => {
       reviewCards: [],
       reviewLogs: [],
       skillMastery: [],
+      repertorios: [],
       ...overrides,
     }
   }
@@ -305,6 +352,45 @@ describe('validacao na importacao', () => {
     await expect(importBackup(repo, arquivo)).rejects.toBeInstanceOf(StorageError)
     expect(await repo.listGames()).toEqual([])
     expect(await repo.listReviewCards()).toEqual([])
+  })
+
+  it('recusa repertorio com id que quebraria o id do card', async () => {
+    // `:` é o separador de `repertorio:{id}:{identidade}`. Um id com `:` parte o
+    // id do card no lugar errado e o card nunca mais encontra o próprio nó —
+    // falha muda, que só aparece semanas depois. A fronteira recusa.
+    const repo = new MemoryTrainingRepository()
+    const bom = repertorioEditado()
+    const torto = {
+      ...bom,
+      definicao: { ...bom.definicao, id: 'brancas:italiana' },
+    }
+    await expect(importBackup(repo, arquivoValido({ repertorios: [torto] }))).rejects.toMatchObject(
+      { code: 'formato-invalido' },
+    )
+    expect(await repo.listRepertorios()).toEqual([])
+  })
+
+  it('recusa repertorio sem linhas legiveis', async () => {
+    const repo = new MemoryTrainingRepository()
+    const bom = repertorioEditado()
+    const torto = { ...bom, definicao: { ...bom.definicao, linhas: 'nenhuma' } }
+    await expect(
+      importBackup(repo, arquivoValido({ repertorios: [torto] as never })),
+    ).rejects.toMatchObject({ code: 'formato-invalido' })
+  })
+
+  it('arquivo de uma build ANTIGA, sem a colecao de repertorios, ainda importa', async () => {
+    // A versão do arquivo não subiu de propósito (ver o cabeçalho de
+    // `BACKUP_VERSION`): coleção acrescentada lê como lista vazia, e lista vazia
+    // é a verdade sobre quem nunca editou. Subir a versão recusaria o backup de
+    // todo mundo que já exportou.
+    const repo = new MemoryTrainingRepository()
+    const antigo: Record<string, unknown> = { ...arquivoValido() }
+    delete antigo.repertorios
+
+    const resultado = await importBackup(repo, antigo)
+    expect(resultado.imported.repertorios).toBe(0)
+    expect(await repo.listRepertorios()).toEqual([])
   })
 
   it('parseBackup recusa texto que nao e JSON', () => {

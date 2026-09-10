@@ -1,20 +1,29 @@
 import type { Metadata } from 'next'
-import { PlaceholderScreen } from '@/components/ui/PlaceholderScreen'
+import Link from 'next/link'
+import { BibliotecaDeLicoes } from '@/components/lessons/BibliotecaDeLicoes'
+import { CATALOGO_DE_LICOES, LICOES_PLANEJADAS } from '@/content/lessons'
 
 export const metadata: Metadata = { title: 'Biblioteca' }
 
 export default function LessonsPage() {
+  // Números derivados do catálogo: uma contagem escrita à mão aqui envelheceria
+  // em silêncio na primeira lição nova.
+  const escritas = CATALOGO_DE_LICOES.length
+  const faltam = LICOES_PLANEJADAS.minimo - escritas
+
   return (
-    <PlaceholderScreen
-      title="Biblioteca"
-      phase={10}
-      lead="Microlições curtas que sempre terminam em recuperação ativa, nunca em texto solto."
-      planned={[
-        '30 a 40 lições em PT-BR',
-        'Exemplo resolvido, imitação guiada e depois teste sem dica',
-        'Vínculo direto com as habilidades do skill graph',
-        'Estados vazios que apontam para o treino, não para o catálogo',
-      ]}
-    />
+    <>
+      <h1>Biblioteca</h1>
+      <p>
+        Microlições curtas: um conceito, um exemplo resolvido e um exercício sem ajuda. A ordem é
+        sempre essa, e a última etapa é sempre o exercício — ler de novo não ensina, tentar
+        responder ensina.
+      </p>
+      <p>
+        {escritas} lições escritas até agora; faltam pelo menos {faltam} para fechar o currículo
+        planejado. Enquanto isso, o <Link href="/dashboard">treino de hoje</Link> não depende delas.
+      </p>
+      <BibliotecaDeLicoes />
+    </>
   )
 }

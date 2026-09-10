@@ -18,6 +18,7 @@ import type {
   GameQuery,
   PositionAnalysis,
   PuzzleAttempt,
+  RepertorioDoAluno,
   ReviewCard,
   ReviewLog,
   SkillMastery,
@@ -32,6 +33,7 @@ import {
   selectDueCards,
   sortPositionAnalyses,
   sortPuzzleAttempts,
+  sortRepertorios,
   sortReviewCards,
 } from './query'
 
@@ -43,6 +45,7 @@ export class MemoryTrainingRepository implements BackupRepository {
   private readonly reviewCards = new Map<string, ReviewCard>()
   private readonly reviewLogs: ReviewLog[] = []
   private readonly skillMastery = new Map<string, SkillMastery>()
+  private readonly repertorios = new Map<string, RepertorioDoAluno>()
 
   async getProfile(): Promise<UserProfile | null> {
     return this.profile ? cloneJson(this.profile) : null
@@ -131,6 +134,15 @@ export class MemoryTrainingRepository implements BackupRepository {
     }
   }
 
+  async listRepertorios(): Promise<RepertorioDoAluno[]> {
+    return sortRepertorios([...this.repertorios.values()]).map((item) => cloneJson(item))
+  }
+
+  /** A chave é `definicao.id`: regravar o mesmo repertório substitui, não duplica. */
+  async saveRepertorio(repertorio: RepertorioDoAluno): Promise<void> {
+    this.repertorios.set(repertorio.definicao.id, cloneJson(repertorio))
+  }
+
   /** Apaga tudo. Existe para os testes, não faz parte do contrato. */
   clear(): void {
     this.profile = null
@@ -140,5 +152,6 @@ export class MemoryTrainingRepository implements BackupRepository {
     this.reviewCards.clear()
     this.reviewLogs.length = 0
     this.skillMastery.clear()
+    this.repertorios.clear()
   }
 }
