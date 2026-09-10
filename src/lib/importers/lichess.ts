@@ -13,6 +13,7 @@
  */
 import type { Game, GameImportProvider, GamePage, GameSource, ImportQuery } from '@/domain/types'
 import { HttpClient, RateLimitError, type HttpClientOptions } from './http'
+import { instanteDoSince } from './since'
 
 /**
  * Parâmetros de importação.
@@ -267,7 +268,14 @@ export class LichessImporter implements GameImportProvider {
   }
 }
 
-/** `cursor` (ms) tem prioridade sobre `since` (ISO). */
+/**
+ * `cursor` (ms) tem prioridade sobre `since` (instante).
+ *
+ * O cursor é opaco e nosso: quando ele existe, é ele que manda, porque é a
+ * continuação exata da página anterior. `since` só entra quando não há cursor,
+ * e é lido pela mesma porta do outro importador (`./since`), que grita se a
+ * data for inválida em vez de importar a biblioteca inteira em silêncio.
+ */
 function sinceMs(query: ImportQuery): number | null {
   if (query.cursor) {
     const cursor = Number(query.cursor)
@@ -275,11 +283,5 @@ function sinceMs(query: ImportQuery): number | null {
       return Math.trunc(cursor)
     }
   }
-  if (query.since) {
-    const parsed = Date.parse(query.since)
-    if (!Number.isNaN(parsed)) {
-      return parsed
-    }
-  }
-  return null
+  return instanteDoSince(query.since)
 }

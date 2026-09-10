@@ -353,10 +353,31 @@ export interface RetencaoDeHabilidade {
 
 // --------------------------------------------------------------- persistência
 
+/**
+ * Recorte de leitura de partidas.
+ *
+ * `since` é `Date`, e não `string`, DE PROPÓSITO (issue #57). Enquanto era
+ * texto, `playedAt >= since` compilava e rodava — e comparava data como texto,
+ * que só coincide com a ordem cronológica enquanto todo mundo escrever em UTC.
+ * Um `2026-08-26T06:00:00-03:00` é ISO-8601 perfeito e ordena errado. Com
+ * `Date`, a comparação errada não chega a existir: ela morre no compilador em
+ * vez de morrer num teste — e os dois lados (tela e domínio) passam a falar do
+ * mesmo instante por construção.
+ *
+ * `Date` é MUTÁVEL. A pré-condição do contrato é: quem recebe um `since` LÊ O
+ * INSTANTE NA ENTRADA (`getTime()`) e descarta a referência. Nenhuma
+ * implementação guarda o objeto, então não há cópia defensiva a fazer e não há
+ * como o chamador mudar o recorte depois da chamada. Quem guardar a referência
+ * quebra esta pré-condição e volta a ter duas verdades.
+ *
+ * O que é GRAVADO continua string ISO-8601: a borda que decide é a LEITURA, uma
+ * só. Decidido na #53 e não reaberto aqui.
+ */
 export interface GameQuery {
   limit?: number
   source?: GameSource
-  since?: string
+  /** Instante INCLUSIVO. Partida cuja data não é legível fica de fora. */
+  since?: Date
 }
 
 export interface TrainingRepository {
@@ -378,9 +399,20 @@ export interface TrainingRepository {
 
 // ----------------------------------------------------------------- importação
 
+/**
+ * Recorte de importação.
+ *
+ * `since` é `Date` pelo mesmo motivo de `GameQuery.since` — ver lá. Aqui o
+ * defeito estava ARMADO e não disparado: o importador do Chess.com só escrevia
+ * UTC, então texto e instante coincidiam por acidente do caminho, não por
+ * regra. `ImportQuery` é contrato público, e `since` vem de fora.
+ *
+ * Mesma pré-condição de mutabilidade: o instante é lido na entrada e a
+ * referência é descartada.
+ */
 export interface ImportQuery {
-  /** ISO date; só partidas jogadas a partir daí. */
-  since?: string
+  /** Instante INCLUSIVO; só partidas jogadas a partir daí. */
+  since?: Date
   max?: number
   cursor?: string
 }

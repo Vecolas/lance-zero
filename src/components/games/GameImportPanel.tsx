@@ -88,7 +88,9 @@ export function GameImportPanel({ onImported }: { onImported: () => void }) {
         return
       }
 
-      const since = new Date(Date.now() - DIAS_PADRAO * 24 * 60 * 60 * 1000).toISOString()
+      // `since` é `Date` no contrato: a comparação por texto deixou de ser
+      // possível de escrever, e é por isso que o `.toISOString()` saiu daqui.
+      const since = new Date(Date.now() - DIAS_PADRAO * 24 * 60 * 60 * 1000)
       const importer =
         fonte === 'lichess'
           ? new LichessImporter({ fetchFn: fetch.bind(globalThis) })

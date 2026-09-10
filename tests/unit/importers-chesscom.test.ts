@@ -136,8 +136,12 @@ describe('ChessComImporter', () => {
       Promise.resolve(fakeResponse({ body: ARCHIVE }))) as unknown as typeof fetch
 
     const importer = build(fetchFn)
-    const completo = await importer.listGames('ana', { since: '2024-05-01T00:00:00.000Z' })
-    const recorte = await importer.listGames('ana', { since: '2024-05-11T00:00:00.000Z' })
+    const completo = await importer.listGames('ana', {
+      since: new Date('2024-05-01T00:00:00.000Z'),
+    })
+    const recorte = await importer.listGames('ana', {
+      since: new Date('2024-05-11T00:00:00.000Z'),
+    })
 
     expect(completo.games).toHaveLength(2)
     expect(completo.hasMore).toBe(false)

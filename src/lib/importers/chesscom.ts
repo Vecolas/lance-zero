@@ -13,6 +13,8 @@
 import type { Game, GameImportProvider, GamePage, GameSource, ImportQuery } from '@/domain/types'
 import { HttpClient, type HttpClientOptions } from './http'
 import { hashString } from './hash'
+import { instanteDoSince } from './since'
+import { instanteDe } from '@/lib/tempo'
 
 /**
  * Parâmetros da PubAPI.
@@ -127,6 +129,28 @@ function sourceGameId(json: ChessComGameJson): string {
   return hashString(json.pgn ?? '')
 }
 
+/**
+ * Recorte de partidas por instante, INCLUSIVO em `desde`.
+ *
+ * Exportado — e não escondido dentro de `listGames` — porque carrega duas
+ * decisões que precisam de portão próprio, e um portão que só alcança a regra
+ * pela rede não consegue construir os casos que a rede nunca devolve:
+ *
+ * 1. **A comparação é de INSTANTE**, pelo mesmo `instanteDe` que o repositório
+ *    usa. Foi o defeito da issue #57: aqui comparava-se TEXTO e do outro lado
+ *    instante, e as duas pontas discordavam em silêncio sobre a mesma janela.
+ * 2. **Partida com data ilegível fica de FORA.** É a mesma escolha do
+ *    repositório e do domínio: subestimar o sinal é menos ruim do que inventá-lo,
+ *    e importa que as três pontas sumam com a mesma partida em vez de cada uma
+ *    sumir com a sua.
+ */
+export function recortarPeloInstante(games: readonly Game[], desde: number): Game[] {
+  return games.filter((game) => {
+    const jogadaEm = instanteDe(game.playedAt)
+    return jogadaEm !== null && jogadaEm >= desde
+  })
+}
+
 /** Converte uma partida crua da PubAPI no nosso `Game`. */
 export function toGame(
   json: ChessComGameJson,
@@ -221,12 +245,14 @@ export class ChessComImporter implements GameImportProvider {
       })
     }
 
-    const floor = query.since ? monthKey(Date.parse(query.since)) : this.earliestMonth
-    let games = monthGames
-    if (query.since) {
-      const since = query.since
-      games = games.filter((game) => game.playedAt >= since)
-    }
+    // O `since` vira INSTANTE uma vez, e as duas pontas que dependem dele — o
+    // piso da paginação e o recorte das partidas — usam esse mesmo número.
+    // Enquanto o recorte comparava TEXTO (`playedAt >= since`) e o piso
+    // comparava instante, os dois podiam discordar sobre a mesma janela sem
+    // nada estourar. Ver issue #57 e o cabeçalho de `./since`.
+    const desde = instanteDoSince(query.since)
+    const floor = desde === null ? this.earliestMonth : monthKey(desde)
+    let games = desde === null ? monthGames : recortarPeloInstante(monthGames, desde)
     if (query.max !== undefined) {
       games = games.slice(0, Math.max(0, query.max))
     }

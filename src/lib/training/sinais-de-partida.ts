@@ -48,10 +48,12 @@ export async function carregarSinaisDePartida(
 
   // Só partidas dentro da janela de recência interessam, e o repositório já
   // sabe filtrar por data: pedir tudo e descartar depois custaria leitura à toa.
-  // `since` é comparado por INSTANTE do outro lado (ver `@/lib/storage/query`),
-  // então uma partida importada com deslocamento de fuso não é cortada aqui e
-  // aceita lá. Trocar isto por um recorte próprio ressuscita a issue #53.
-  const desde = inicioDaJanela(agora).toISOString()
+  // O `Date` vai INTEIRO para `GameQuery.since`, sem virar texto no caminho:
+  // desde a issue #57 o contrato é `Date`, e é isso que impede a outra ponta de
+  // comparar como texto uma partida importada com deslocamento de fuso — ela
+  // seria cortada aqui e aceita pelo domínio, sem exceção e sem log (issue #53).
+  // Trocar isto por um recorte próprio ressuscita as duas.
+  const desde = inicioDaJanela(agora)
 
   const [partidas, cards] = await Promise.all([
     repo.listGames({ since: desde, limit: ERROS_RECENTES_CONFIG.maxPartidasVarridas }),
