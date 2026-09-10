@@ -35,6 +35,21 @@
  *    permissão negada. Quando some, o aluno termina a posição do mesmo jeito e
  *    lê que nada foi gravado. Tela que engole a falha promete um histórico que
  *    não existe.
+ *
+ * 7. CADA LANCE DO ALUNO É JULGADO EM TRÊS DEGRAUS (issue #62), e não em dois.
+ *    O juiz é `julgarLanceDeFinal`, que é puro e recebe a resposta da tablebase
+ *    por parâmetro — a tela só consulta e mostra. O degrau do meio ("ganha, mas
+ *    é mais longo") tem tom próprio: mostrá-lo em verde esconderia a lição, e em
+ *    vermelho puniria um lance que ganha.
+ *
+ *    DEGRADAÇÃO: sem tablebase não existe "melhor lance", e a tela NÃO inventa o
+ *    degrau do meio — ela diz que não consegue comparar. O veredito do OBJETIVO
+ *    continua vindo de `avaliarObjetivo`, que não depende de rede: o julgamento
+ *    é informação a mais, nunca o juiz da tentativa.
+ *
+ *    A sonda entra por parâmetro, com o provider real como padrão. É o mesmo
+ *    desenho de `resposta-do-adversario.ts`: o teste roda sem rede nenhuma, e
+ *    quem monta a tela escolhe o transporte.
  */
 
 import Link from 'next/link'
@@ -43,6 +58,9 @@ import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import {
   avaliarObjetivo,
+  julgarLanceDeFinal,
+  resumirJulgamentos,
+  type JulgamentoDoLance,
   type LicaoDeFinal,
   type PosicaoDeFinal,
   type ResultadoObjetivo,
@@ -56,14 +74,18 @@ import {
   escolherRespostaDoAdversario,
   type FonteDaResposta,
   type RespostaDoAdversario,
+  type Sonda,
 } from './resposta-do-adversario'
 import {
   APRESENTACAO_DA_GRAVACAO,
   APRESENTACAO_POR_ESTADO,
   APRESENTACAO_POR_FONTE,
+  APRESENTACAO_POR_GRAU,
+  descreverJulgamento,
   descreverObjetivo,
   FRASE_POR_MOTIVO,
   ressalvaDaDefesa,
+  resumirEmTexto,
   type EstadoDaGravacao,
 } from './textos'
 import styles from './EndgameTrainer.module.css'
@@ -103,9 +125,16 @@ export interface EndgameTrainerProps {
   licao: LicaoDeFinal
   posicao: PosicaoDeFinal
   onVoltar: () => void
+  /**
+   * Consulta à tablebase. Sem ela, o padrão é o provider real — é a produção.
+   * Existe para o teste poder fixar a resposta do serviço em vez de depender de
+   * rede; é o único campo opcional desta tela, e é opcional porque o padrão é o
+   * comportamento de produção, não porque alguém pode esquecê-lo.
+   */
+  probe?: Sonda
 }
 
-export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps) {
+export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrainerProps) {
   const { profile, repo, refresh, status: statusDoArmazenamento } = useRepository()
   const [tentativa, setTentativa] = useState<Tentativa>(() => tentativaInicial(posicao))
   const [fase, setFase] = useState<Fase>('jogando')
@@ -117,6 +146,8 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
   const [inicio, setInicio] = useState(() => Date.now())
   const [gravacao, setGravacao] = useState<EstadoDaGravacao | null>(null)
   const [detalheDaFalha, setDetalheDaFalha] = useState<string | null>(null)
+  /** Um julgamento por lance do aluno, na ordem em que as consultas voltaram. */
+  const [julgamentos, setJulgamentos] = useState<JulgamentoDoLance[]>([])
 
   /**
    * Marca a geração da tentativa. Resposta do adversário que chega depois de um
@@ -137,11 +168,16 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
   const gravada = useRef<number | null>(null)
 
   // Um provider por instância da tela: cache de tablebase por sessão de estudo,
-  // e nenhum estado global disfarçado de constante de módulo.
-  const provider = useMemo(
-    () => new LichessTablebaseProvider({ fetchFn: fetch.bind(globalThis) }),
-    [],
-  )
+  // e nenhum estado global disfarçado de constante de módulo. O `fetch` entra
+  // como função, e não como `bind`, para o módulo não explodir no render em
+  // ambiente sem `fetch` global.
+  const sondaPadrao = useMemo<Sonda>(() => {
+    const provider = new LichessTablebaseProvider({
+      fetchFn: (...args) => globalThis.fetch(...args),
+    })
+    return (fen) => provider.probe(fen)
+  }, [])
+  const sonda = probe ?? sondaPadrao
 
   const recomecar = useCallback(() => {
     geracao.current += 1
@@ -155,6 +191,7 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
     setInicio(Date.now())
     setGravacao(null)
     setDetalheDaFalha(null)
+    setJulgamentos([])
   }, [posicao])
 
   const responder = useCallback(
@@ -164,7 +201,7 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
         fen: estado.fen,
         linhaModelo: posicao.linhaModelo,
         lancesJogados: estado.lancesJogados,
-        probe: (fen) => provider.probe(fen),
+        probe: sonda,
       })
       if (minhaGeracao !== geracao.current) {
         return
@@ -194,7 +231,49 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
       })
       setFase(resultado.estado === 'em-andamento' ? 'jogando' : 'encerrada')
     },
-    [posicao, provider],
+    [posicao, sonda],
+  )
+
+  /**
+   * Julga o lance do aluno contra a tablebase da posição em que ele foi jogado.
+   *
+   * A consulta é do FEN DE ANTES — julgar contra a posição de depois seria
+   * comparar o lance do aluno com os lances do adversário. A geração é conferida
+   * na volta, como em `responder`: consulta lenta que chega depois de um
+   * recomeço descreve uma tentativa que não existe mais.
+   *
+   * Falha de rede não interrompe o treino: vira `null`, que o juiz traduz em
+   * `indeterminado`, e a tela diz que não consegue comparar.
+   */
+  const julgar = useCallback(
+    async (fenAntes: string, uci: string, lancesAntes: readonly string[]) => {
+      const minhaGeracao = geracao.current
+      let daTablebase = null
+      try {
+        daTablebase = await sonda(fenAntes)
+      } catch {
+        daTablebase = null
+      }
+      if (minhaGeracao !== geracao.current) {
+        return
+      }
+      // O lance da lição só existe enquanto a partida estiver EM CIMA da linha
+      // modelo. Fora dela não há lance ensinado para aquela posição, e mandar
+      // um lance de outra posição faria o juiz comparar coisas diferentes.
+      const naLinha =
+        lancesAntes.length < posicao.linhaModelo.length &&
+        lancesAntes.every(
+          (jogado, i) => normalizeUci(jogado) === normalizeUci(posicao.linhaModelo[i]),
+        )
+      const julgamento = julgarLanceDeFinal({
+        fenAntes,
+        uciDoAluno: uci,
+        antes: daTablebase,
+        uciDaLicao: naLinha ? posicao.linhaModelo[lancesAntes.length] : undefined,
+      })
+      setJulgamentos((anteriores) => [...anteriores, julgamento])
+    },
+    [posicao.linhaModelo, sonda],
   )
 
   const jogar = useCallback(
@@ -214,6 +293,9 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
         return false
       }
       setErroDeLance(null)
+      // O julgamento é do lance NESTA posição, então o FEN de antes é capturado
+      // aqui, antes de qualquer troca de estado.
+      void julgar(tentativa.fen, aplicado.move.uci, tentativa.lancesJogados)
       const lancesDoAluno = tentativa.lancesDoAluno + 1
       const resultado = avaliarObjetivo(aplicado.fenAfter, posicao.objetivo, {
         ladoDoAluno: posicao.ladoDoAluno,
@@ -237,7 +319,7 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
       void responder(proxima)
       return true
     },
-    [fase, posicao, responder, tentativa],
+    [fase, julgar, posicao, responder, tentativa],
   )
 
   /**
@@ -265,6 +347,9 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
   const ressalva = encerrada ? ressalvaDaDefesa(tentativa.fontes) : null
   const status = positionStatus(tentativa.fen)
   const fonteAtual = tentativa.ultimaResposta?.fonte ?? null
+  // Derivados na hora dos julgamentos gravados: nenhum contador paralelo.
+  const ultimoJulgamento = julgamentos[julgamentos.length - 1] ?? null
+  const resumoDosLances = encerrada ? resumirEmTexto(resumirJulgamentos(julgamentos)) : null
   const totalDeDicas = posicao.dicas.length
   const lancesDoAluno = tentativa.lancesDoAluno
 
@@ -307,6 +392,11 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
       dicasUsadas: dicasReveladas,
       recomecos,
       lancesDoAluno,
+      // Acerto COM DESCONTO (issue #62): cumprir por um caminho que ganha mas é
+      // mais longo conta, e conta menos. A contagem vem do mesmo resumo que a
+      // tela mostra, para o número descontado e o número exibido nunca
+      // divergirem.
+      lancesPorCaminhoMaisLongo: resumirJulgamentos(julgamentos).porGrau['mantem-mas-e-pior'],
       thinkTimeMs: Date.now() - inicio,
     }
 
@@ -434,6 +524,33 @@ export function EndgameTrainer({ licao, posicao, onVoltar }: EndgameTrainerProps
             ? 'Você desistiu desta posição.'
             : FRASE_POR_MOTIVO[tentativa.resultado.motivo]}
         </p>
+
+        {/* O julgamento do último lance do aluno. `role="status"` porque ele
+            chega DEPOIS da jogada, quando a tablebase responde: sem região viva,
+            quem usa leitor de tela nunca saberia que ele apareceu. Cor, ícone e
+            texto sempre juntos — o degrau do meio se distingue pelo rótulo, não
+            pela cor. */}
+        {ultimoJulgamento !== null ? (
+          <div
+            className={`${styles.fonte} ${styles[APRESENTACAO_POR_GRAU[ultimoJulgamento.grau].tom]}`}
+            role="status"
+            data-testid="julgamento-do-lance"
+            data-grau={ultimoJulgamento.grau}
+          >
+            <p className={styles.fonteTitulo}>
+              <span aria-hidden="true">{APRESENTACAO_POR_GRAU[ultimoJulgamento.grau].icone}</span>{' '}
+              Seu lance {ultimoJulgamento.uciDoAluno}:{' '}
+              {APRESENTACAO_POR_GRAU[ultimoJulgamento.grau].rotulo}
+            </p>
+            <p className={styles.fonteTexto}>{descreverJulgamento(ultimoJulgamento)}</p>
+          </div>
+        ) : null}
+
+        {resumoDosLances !== null ? (
+          <p className={styles.meta} data-testid="resumo-dos-lances">
+            {resumoDosLances}
+          </p>
+        ) : null}
 
         {fonteAtual !== null ? (
           <div className={`${styles.fonte} ${styles[APRESENTACAO_POR_FONTE[fonteAtual].tom]}`}>

@@ -225,7 +225,9 @@ describe.each(implementacoes)('contrato do repositorio ($nome)', (impl) => {
     expect((await repo.listGames({ limit: 2 })).map((jogo) => jogo.id)).toEqual(['c', 'b'])
     expect((await repo.listGames({ source: 'chesscom' })).map((jogo) => jogo.id)).toEqual(['c'])
     expect(
-      (await repo.listGames({ since: '2026-02-01T00:00:00.000Z' })).map((jogo) => jogo.id),
+      (await repo.listGames({ since: new Date('2026-02-01T00:00:00.000Z') })).map(
+        (jogo) => jogo.id,
+      ),
     ).toEqual(['c', 'b'])
   })
 

@@ -48,13 +48,16 @@ import type { TrainingRepository } from '@/lib/storage/repository'
 const AGORA = new Date('2026-09-09T08:00:00.000Z')
 
 /**
- * A MESMA borda que `DailyPlanView` monta antes de chamar `listGames`.
+ * A MESMA borda que a tela monta antes de chamar `listGames`.
  *
- * Escrita aqui do mesmo jeito que na tela, e de propósito: se a tela deixar de
- * derivar o `since` de `inicioDaJanela`, é este teste que deixa de descrever a
- * tela — e a issue #53 volta por outra porta.
+ * Escrita aqui do mesmo jeito que lá, e de propósito: se o carregamento dos
+ * sinais deixar de derivar o `since` de `inicioDaJanela`, é este teste que
+ * deixa de descrever a tela — e a issue #53 volta por outra porta.
+ *
+ * Vai como `Date`, sem `toISOString()`: desde a issue #57 `GameQuery.since` é
+ * `Date`, e é o TIPO que impede a comparação textual de voltar por acidente.
  */
-const DESDE = inicioDaJanela(AGORA).toISOString()
+const DESDE = inicioDaJanela(AGORA)
 
 interface PartidaDeFixture {
   id: string
@@ -193,12 +196,23 @@ const implementacoes: Implementacao[] = [
   },
 ]
 
+/**
+ * A borda em TEXTO, do jeito que o defeito da issue #53 a escrevia.
+ *
+ * Continua existindo depois da issue #57 porque a #57 só matou METADE da
+ * classe: `GameQuery.since` virou `Date`, mas o outro operando, `playedAt`,
+ * segue sendo `string` vinda de fora. Nada impede alguém de escrever
+ * `game.playedAt >= since.toISOString()` — e é exatamente essa a armadilha que
+ * a fixture abaixo precisa continuar detectando.
+ */
+const DESDE_COMO_TEXTO = DESDE.toISOString()
+
 describe('fixture do recorte por data', () => {
   it('contem partidas em que texto e instante discordam', () => {
     // Portão de zero verificações REPROVA: sem nenhuma armadilha, tudo abaixo
     // passaria a comparar UTC com UTC e não mediria mais o defeito da issue #53.
     const armadilhas = FIXTURE.filter(
-      (item) => item.playedAt >= DESDE !== Date.parse(item.playedAt) >= Date.parse(DESDE),
+      (item) => item.playedAt >= DESDE_COMO_TEXTO !== Date.parse(item.playedAt) >= DESDE.getTime(),
     )
     expect(armadilhas.map((item) => item.id).length).toBeGreaterThan(0)
     // E precisa haver armadilha dos DOIS lados: só "cortada pela tela" deixaria
@@ -280,6 +294,9 @@ describe.each(implementacoes)('recorte por data do repositorio ($nome)', (impl) 
   it('recusa em voz alta um since ilegivel em vez de devolver lista vazia', async () => {
     // Comparar contra um NaN filtraria TUDO em silêncio, que é o mesmo defeito
     // da issue #53 numa roupa nova.
-    await expect(repo.listGames({ since: '26/08/2026' })).rejects.toThrow(/since/i)
+    // `new Date('26/08/2026')` compila: `Date` inválido é um `Date`. O tipo
+    // matou a comparação textual, não a data inválida — esta ponta continua
+    // precisando de portão.
+    await expect(repo.listGames({ since: new Date('26/08/2026') })).rejects.toThrow(/since/i)
   })
 })

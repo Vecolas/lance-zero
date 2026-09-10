@@ -150,7 +150,7 @@ describe('LichessImporter', () => {
       sleep: () => Promise.resolve(),
       now: () => NOW,
     })
-    await importer.listGames('ana', { since: new Date(1_700_000_000_000).toISOString(), max: 50 })
+    await importer.listGames('ana', { since: new Date(1_700_000_000_000), max: 50 })
 
     const call = calls[0]
     expect(call?.url).toContain('https://lichess.org/api/games/user/ana?')

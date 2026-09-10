@@ -15,6 +15,20 @@ export interface MasteryEvent {
   acertou: boolean
   usouDica: boolean
   primeiraTentativa: boolean
+  /**
+   * O aluno chegou ao objetivo por um caminho que GANHA, mas não é o melhor
+   * (issue #62). Não é erro — o objetivo foi cumprido — e por isso desconta em
+   * vez de zerar.
+   *
+   * A DECISÃO DE PRODUTO POR TRÁS DISSO: acerto com desconto, para incentivar
+   * procurar o melhor lance. Só "acerto" apagaria a distinção; só "desconto",
+   * sem o aluno saber por quê, seria punição sem causa aparente — por isso a
+   * tela é obrigada a dizer o que foi pior, com número conferível.
+   *
+   * Ausente vale `false`: campo novo nasce NEUTRO, senão toda tentativa antiga
+   * passaria a ser lida como caminho torto.
+   */
+  porCaminhoMaisLongo?: boolean
   thinkTimeMs: number
   /** ISO 8601. Quando ausente, `lastSeenAt` não é alterado. */
   ocorridoEm?: string
@@ -50,6 +64,14 @@ export const MASTERY_CONFIG = {
   penalidadeDicaNaAmostra: 0.4,
   /** Quanto acertar fora da primeira tentativa reduz o crédito da amostra. */
   penalidadeSegundaTentativa: 0.25,
+  /**
+   * Desconto de quem cumpriu o objetivo por um caminho que ganha, mas é mais
+   * longo que o melhor. NUNCA FOI CALIBRADO: não há telemetria dizendo quanto
+   * vale ganhar por caminho torto, e o único argumento por trás do valor é que
+   * ele precisa ser menor que o de errar (que zera) e maior que zero (senão o
+   * incentivo não existe).
+   */
+  penalidadeLanceVencedorPior: 0.2,
   /** Redução máxima da maestria quando o usuário depende sempre de dica. */
   penalidadeDicaAcumulada: 0.25,
   /** Composição da maestria: acerto recente. */
@@ -118,6 +140,18 @@ function creditoDaAmostra(evento: MasteryEvent, config: MasteryConfig): number {
   let credito = 1
   if (!evento.primeiraTentativa) credito *= 1 - config.penalidadeSegundaTentativa
   if (evento.usouDica) credito *= 1 - config.penalidadeDicaNaAmostra
+  // Entra na MESMA família multiplicativa dos outros descontos, de propósito:
+  // um mecanismo paralelo para "acerto com desconto" seria a quinta cópia da
+  // mesma lógica com outro nome, e cópias divergem.
+  //
+  // OS DESCONTOS SE ACUMULAM. Quem usa dica E ganha por caminho torto leva os
+  // dois. É coerente com o modelo, mas vale medir: multiplicar descontos pode
+  // esvaziar o crédito de uma tentativa que, afinal, ganhou. Se isso aparecer
+  // na prática, o conserto é um PISO no crédito — não remover o desconto, que
+  // é justamente o incentivo.
+  if (evento.porCaminhoMaisLongo === true) {
+    credito *= 1 - config.penalidadeLanceVencedorPior
+  }
   return clamp01(credito)
 }
 

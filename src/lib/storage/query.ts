@@ -25,7 +25,11 @@
  *
  * 1. **`since` e a ordenação de partidas comparam INSTANTE**, com `Date.parse`,
  *    a mesma comparação do domínio. A pré-condição sobre `playedAt` passa a ser
- *    apenas "é uma data que `Date.parse` lê", sem exigir fuso nenhum.
+ *    apenas "é uma data que `Date.parse` lê", sem exigir fuso nenhum. Desde a
+ *    issue #57 o próprio TIPO fecha a porta: `GameQuery.since` é `Date`, então
+ *    `playedAt >= since` nem compila e a comparação textual deixou de ser um
+ *    acidente possível. O instante é lido na entrada e a referência ao `Date`
+ *    é descartada — nada aqui guarda o objeto mutável do chamador.
  * 2. **Nada é normalizado na escrita.** Reescrever `playedAt` ao gravar deixaria
  *    o dado já persistido no formato antigo e criaria duas eras de dado no mesmo
  *    banco. A borda que decide é a LEITURA, uma só.
@@ -33,7 +37,8 @@
  *    descarta `Date.parse` NaN. PONTO CEGO DECLARADO: a partida some do recorte
  *    sem avisar. É o comportamento menos ruim porque o efeito é subestimar o
  *    sinal, nunca inventá-lo, e porque as duas pontas somem juntas.
- * 4. **`since` ilegível é erro em voz alta.** Comparar contra um NaN filtraria
+ * 4. **`since` ilegível é erro em voz alta.** Um `Date` inválido (`new
+ *    Date('26/08/2026')`) tem `getTime()` NaN; comparar contra NaN filtraria
  *    TUDO e devolveria lista vazia em silêncio — o mesmo defeito da issue #53
  *    numa roupa nova. Quem monta o `since` é código nosso; um `since` quebrado
  *    é defeito de programação, e defeito de programação tem de doer.
@@ -93,11 +98,11 @@ export function applyGameQuery(games: Game[], query?: GameQuery): Game[] {
     result = result.filter((game) => game.source === query.source)
   }
   if (query?.since !== undefined) {
-    const desde = instanteDe(query.since)
-    if (desde === null) {
+    const desde = query.since.getTime()
+    if (Number.isNaN(desde)) {
       throw new StorageError(
         'formato-invalido',
-        `GameQuery.since precisa ser uma data ISO-8601 legível; recebi "${query.since}".`,
+        `GameQuery.since precisa ser uma data legível; recebi "${String(query.since)}".`,
       )
     }
     result = result.filter((game) => {

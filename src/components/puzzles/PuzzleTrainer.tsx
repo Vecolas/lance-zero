@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import { FeedbackBanner } from '@/components/ui/FeedbackBanner'
 import { STARTER_PUZZLES_CSV } from '@/content/puzzles/starter'
 import {
   createAttemptState,
@@ -30,6 +31,26 @@ import styles from './PuzzleTrainer.module.css'
 const POOL = parsePuzzleCsv(STARTER_PUZZLES_CSV, { pularCabecalho: true }).puzzles
 
 const TAMANHO_DA_SESSAO = 5
+
+/**
+ * O que aconteceu NESTA posição, em uma frase.
+ *
+ * DECISÃO QUE ESTE BLOCO CARREGA: a PALAVRA do estado ("Correto" / "Achamos
+ * algo para treinar") não mora aqui — ela vem do catálogo, dentro do
+ * `FeedbackBanner`. Aqui fica só o que a tela sabe e o catálogo não. Foi
+ * exatamente a mistura das duas coisas que produziu três desenhos para o mesmo
+ * estado (issue #61).
+ *
+ * O texto do estado incorreto não diz "errou" nem "falhou": diz o que vai
+ * acontecer com o padrão. Erro aqui é informação, não veredito.
+ */
+const MENSAGEM_DO_DESFECHO = {
+  resolvidoSemApoio: 'Você encontrou a linha que ganha sem dica e sem tentativa perdida.',
+  resolvidoComApoio:
+    'Você chegou à linha que ganha. Como precisou de apoio, este padrão volta em revisão para você reencontrá-lo sozinho.',
+  naoResolvido:
+    'A linha que ganha está logo abaixo. Esta posição vira revisão e volta no seu treino para você reencontrá-la sozinho.',
+} as const
 
 type Fase = 'carregando' | 'treinando' | 'sem-puzzles' | 'concluida' | 'erro'
 
@@ -230,6 +251,9 @@ export function PuzzleTrainer() {
   const posicao = positionStatus(tentativa.currentFen)
   const revelado = encerrada ? revelarRotulos(card) : card
   const proximaDica = nextHintLevel(tentativa)
+  // Derivado do que o aluno de fato fez nesta tela, lido na hora. Não é um
+  // segundo registro do apoio: é a leitura do estado que já existe.
+  const semApoio = tentativa.wrongMoves.length === 0 && nivelDeDica === 0
 
   return (
     <div className={styles.layout}>
@@ -258,11 +282,14 @@ export function PuzzleTrainer() {
             </p>
             {dica ? <p className={styles.hint}>{dica.text}</p> : null}
             {tentativa.wrongMoves.length > 0 ? (
-              <span className={`${styles.status} ${styles.warn}`}>
-                ! {tentativa.wrongMoves.length} tentativa
+              /* Contagem durante a tentativa, não veredito: por isso texto
+                 corrido e sem cor própria. Dar a ela um selo colorido foi o que
+                 fez a segunda tabela de status parecer legítima. */
+              <p className={styles.tentativas}>
+                {tentativa.wrongMoves.length} tentativa
                 {tentativa.wrongMoves.length > 1 ? 's' : ''} errada
-                {tentativa.wrongMoves.length > 1 ? 's' : ''}
-              </span>
+                {tentativa.wrongMoves.length > 1 ? 's' : ''} até agora.
+              </p>
             ) : null}
             <div className={styles.actions}>
               <button
@@ -285,11 +312,18 @@ export function PuzzleTrainer() {
         ) : null}
 
         {tentativa.status === 'resolvido' ? (
-          <span className={`${styles.status} ${styles.ok}`}>✓ Resolvido</span>
+          <FeedbackBanner
+            tone="correto"
+            mensagem={
+              semApoio
+                ? MENSAGEM_DO_DESFECHO.resolvidoSemApoio
+                : MENSAGEM_DO_DESFECHO.resolvidoComApoio
+            }
+          />
         ) : null}
 
         {tentativa.status === 'falhou' ? (
-          <span className={`${styles.status} ${styles.bad}`}>✕ Não saiu desta vez</span>
+          <FeedbackBanner tone="incorreto" mensagem={MENSAGEM_DO_DESFECHO.naoResolvido} />
         ) : null}
 
         {encerrada ? (

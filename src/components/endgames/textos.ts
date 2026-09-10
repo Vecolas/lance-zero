@@ -18,11 +18,26 @@
  * ela é dita ao aluno com todas as letras. Apresentar um lance de roteiro como
  * se fosse defesa perfeita seria mentir em silêncio; e "sem defesa perfeita" é
  * informação pedagógica, não detalhe técnico.
+ *
+ * DECISÃO 4 — o degrau do meio do julgamento (issue #62) tem TOM PRÓPRIO. Ele
+ * não pode parecer erro nem parecer acerto limpo: o lance ganhou, e ainda assim
+ * não é o da lição. Por isso `atencao` existe como tom, em vez de reaproveitar
+ * `ok` ou `ruim` — e por isso a frase carrega OS NÚMEROS, não um "não foi o
+ * melhor" que o aluno não tem como conferir.
  */
 
-import type { EstadoDoObjetivo, MotivoDeObjetivo, ObjetivoFinal } from '@/domain/endgames'
+import type {
+  ComparacaoDeDistancia,
+  EstadoDoObjetivo,
+  GrauDoLance,
+  JulgamentoDoLance,
+  MotivoDeObjetivo,
+  ObjetivoFinal,
+  ResumoDosJulgamentos,
+} from '@/domain/endgames'
 import type { HistoricoDaPosicao } from '@/domain/endgames/persistencia'
 import type { PromotionPiece } from '@/lib/chess'
+import type { ResultadoTeorico } from '@/lib/tablebase'
 import type { FonteDaResposta } from './resposta-do-adversario'
 
 /** Nome da peça de promoção em PT-BR. Exaustivo por tipo, como tudo aqui. */
@@ -74,7 +89,15 @@ export const FRASE_POR_MOTIVO: Record<MotivoDeObjetivo, string> = {
   'em-andamento': 'A posição continua: nem cumprida, nem perdida.',
 }
 
-export type TomDoEstado = 'ok' | 'ruim' | 'neutro'
+/**
+ * Os tons possíveis. `atencao` não é enfeite: é o degrau do meio do julgamento,
+ * que precisa ser visivelmente diferente de acerto E de erro. Tom novo aqui
+ * sem classe correspondente no CSS apareceria sem cor nenhuma, em silêncio —
+ * por isso o portão da tela varre esta lista contra a folha de estilo.
+ */
+export const TONS_DO_ESTADO = ['ok', 'atencao', 'ruim', 'neutro'] as const
+
+export type TomDoEstado = (typeof TONS_DO_ESTADO)[number]
 
 export interface ApresentacaoDoEstado {
   /** Cor, ícone e texto andam juntos: status nunca é só cor. */
@@ -187,6 +210,170 @@ export const APRESENTACAO_DA_GRAVACAO: Record<EstadoDaGravacao, ApresentacaoDaGr
     rotulo: 'Não consegui gravar',
     explicacao: 'A tentativa terminou, mas não entrou no seu histórico.',
   },
+}
+
+// ------------------------------------------------- julgamento do lance (#62)
+
+/** Nome em PT-BR de cada resultado teórico. Exaustivo por tipo, como tudo aqui. */
+const NOME_DO_RESULTADO: Record<ResultadoTeorico, string> = {
+  vitoria: 'vitória',
+  empate: 'empate',
+  derrota: 'derrota',
+}
+
+/**
+ * Como cada degrau do julgamento se apresenta.
+ *
+ * O degrau do meio usa `atencao` e o rótulo diz as DUAS metades ("mantém o
+ * resultado" + "não é o melhor"). Um rótulo com só uma delas empurraria o aluno
+ * para a leitura errada: "errei" ou "acertei limpo", e nenhuma das duas é
+ * verdade.
+ */
+export const APRESENTACAO_POR_GRAU: Record<GrauDoLance, ApresentacaoDoEstado> = {
+  melhor: { tom: 'ok', icone: '✓', rotulo: 'Melhor lance' },
+  'mantem-mas-e-pior': {
+    tom: 'atencao',
+    icone: '≈',
+    rotulo: 'Mantém o resultado, mas não é o melhor lance',
+  },
+  'perde-o-resultado': { tom: 'ruim', icone: '✕', rotulo: 'Este lance joga o resultado fora' },
+  indeterminado: { tom: 'neutro', icone: '?', rotulo: 'Sem tablebase, não dá para comparar' },
+}
+
+/** Como o aluno continua, do ponto de vista dele, depois do lance. */
+function comoVoceSegue(resultado: ResultadoTeorico | null): string {
+  if (resultado === 'vitoria') {
+    return 'Você continua ganhando'
+  }
+  if (resultado === 'empate') {
+    return 'Você continua segurando o empate'
+  }
+  return 'A posição já estava perdida'
+}
+
+/** O melhor lance como o aluno o lê: SAN quando existe, senão o UCI. */
+function melhorLegivel(julgamento: JulgamentoDoLance): string {
+  return julgamento.melhorSan ?? julgamento.melhorUci ?? 'o melhor lance'
+}
+
+/**
+ * A frase que diz O QUE foi pior, com os números na mão.
+ *
+ * "Ganha em 12 lances; o melhor ganha em 4" é conferível pelo aluno no
+ * tabuleiro. "Não foi o melhor" não é — e frase não conferível não ensina.
+ */
+function descreverDiferenca(julgamento: JulgamentoDoLance, c: ComparacaoDeDistancia): string {
+  const inicio = comoVoceSegue(julgamento.resultadoDepois)
+  if (c.lancesAteOMate !== null) {
+    return (
+      `${inicio}: por este caminho o mate sai em ${c.lancesAteOMate.doAluno} lances seus, ` +
+      `contando este. Por ${melhorLegivel(julgamento)} sai em ${c.lancesAteOMate.doMelhor}.`
+    )
+  }
+  return (
+    `${inicio}: a tablebase conta ${c.doAluno} meios-lances até a próxima captura ou lance de ` +
+    `peão (DTZ). Por ${melhorLegivel(julgamento)} são ${c.doMelhor}. Menos é caminho mais direto.`
+  )
+}
+
+/**
+ * A frase de um julgamento.
+ *
+ * `switch` com `default` sobre `never`: motivo novo no domínio REPROVA em
+ * compilação aqui, em vez de virar um parágrafo vazio na tela.
+ */
+export function descreverJulgamento(julgamento: JulgamentoDoLance): string {
+  switch (julgamento.motivo) {
+    case 'e-o-melhor-lance':
+      return 'É o lance que a tablebase põe em primeiro lugar nesta posição: não há caminho mais direto.'
+    case 'empata-com-o-melhor':
+      return (
+        `A tablebase não vê diferença entre ele e ${melhorLegivel(julgamento)}: mesma avaliação e ` +
+        'mesma distância. Onde ela não distingue, nós também não distinguimos.'
+      )
+    case 'mais-longo-que-o-melhor':
+      return julgamento.comparacao === null
+        ? // Inalcançável por construção: este motivo só nasce com comparação.
+          // A frase existe para o caminho não devolver texto vazio se mudar.
+          'Este lance mantém o resultado, mas é mais longo que o melhor.'
+        : descreverDiferenca(julgamento, julgamento.comparacao)
+    case 'perde-o-resultado-teorico':
+      return (
+        `A posição valia ${NOME_DO_RESULTADO[julgamento.resultadoAntes ?? 'derrota']} e, depois ` +
+        `deste lance, vale ${NOME_DO_RESULTADO[julgamento.resultadoDepois ?? 'derrota']}. ` +
+        `O melhor lance aqui era ${melhorLegivel(julgamento)}.`
+      )
+    case 'e-o-lance-da-licao':
+      return (
+        'É a técnica que esta lição ensina. A tablebase põe ' +
+        `${melhorLegivel(julgamento)} na frente por chegar ao mate um pouco antes, mas o caminho ` +
+        'que você jogou é o que vale a pena guardar: ele se repete em posições parecidas.'
+      )
+    case 'sem-tablebase':
+      return (
+        'A tablebase não respondeu para esta posição, então não há como dizer qual era o melhor ' +
+        'lance. O objetivo da posição continua sendo julgado normalmente.'
+      )
+    case 'resultado-desconhecido':
+      return (
+        'Esta posição está fora do alcance da tablebase, então não há resultado teórico para ' +
+        'comparar lances.'
+      )
+    case 'sem-lances-na-resposta':
+      return 'A tablebase respondeu sem nenhum lance para esta posição: não há com o que comparar.'
+    case 'lance-fora-da-lista':
+      return 'Este lance não está na lista que a tablebase devolveu, então não dá para compará-lo com o melhor.'
+    case 'sem-metrica-comparavel':
+      return (
+        'Este lance não é o primeiro da lista da tablebase, mas ela não devolveu distância que ' +
+        'permita dizer o quanto ele é pior. Sinalizar sem poder mostrar o quê não ensina nada.'
+      )
+    default:
+      return motivoNaoTratado(julgamento.motivo)
+  }
+}
+
+function motivoNaoTratado(motivo: never): never {
+  throw new Error(`Motivo de julgamento sem frase na tela: ${JSON.stringify(motivo)}`)
+}
+
+/**
+ * O balanço da tentativa inteira, em uma frase. `null` quando não há lance
+ * julgado — silêncio é a informação certa aí.
+ *
+ * O degrau do meio aparece SEMPRE que existir, inclusive numa tentativa
+ * cumprida: é exatamente o caso que a issue #62 existe para deixar de esconder.
+ */
+export function resumirEmTexto(resumo: ResumoDosJulgamentos): string | null {
+  if (resumo.total === 0) {
+    return null
+  }
+  const partes: string[] = []
+  const lances = (n: number) => (n === 1 ? '1 lance' : `${n} lances`)
+
+  if (resumo.porGrau['mantem-mas-e-pior'] > 0) {
+    partes.push(
+      `${lances(resumo.porGrau['mantem-mas-e-pior'])} de ${resumo.total} mantiveram o resultado, ` +
+        'mas por um caminho mais longo que o melhor.',
+    )
+  }
+  if (resumo.porGrau['perde-o-resultado'] > 0) {
+    partes.push(
+      `${lances(resumo.porGrau['perde-o-resultado'])} jogaram fora o resultado que a posição valia.`,
+    )
+  }
+  if (resumo.porGrau.indeterminado > 0) {
+    partes.push(
+      `Não consegui comparar ${lances(resumo.porGrau.indeterminado)} com a tablebase: sem ela não ` +
+        'há como dizer qual era o melhor.',
+    )
+  }
+  if (partes.length === 0) {
+    return resumo.total === 1
+      ? 'O seu único lance foi o melhor da posição.'
+      : `Todos os seus ${resumo.total} lances foram os melhores da posição.`
+  }
+  return partes.join(' ')
 }
 
 /**
