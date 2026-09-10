@@ -14,9 +14,24 @@ import {
   avaliarObjetivo,
   contarPecas,
   reproduzirLinhaModelo,
+  type ContextoObjetivo,
   type ObjetivoFinal,
   type PosicaoDeFinal,
 } from '@/domain/endgames'
+import type { Side } from '@/domain/types'
+
+/**
+ * Contexto SEM histórico de posições, montado à mão de propósito.
+ *
+ * Este arquivo mede o que se decide olhando o tabuleiro: prazo de mate, peça
+ * promovida, afogamento, material. As duas regras de empate que dependem do
+ * histórico — repetição e 50 lances — têm portão próprio em
+ * `endgames-empate.test.ts`, montado pela primitiva do domínio. Misturar as
+ * duas coisas aqui esconderia qual metade quebrou.
+ */
+function semHistorico(ladoDoAluno: Side, lancesDoAluno: number): ContextoObjetivo {
+  return { ladoDoAluno, lancesDoAluno, identidadesAnteriores: [] }
+}
 
 const MATE_EM_1: ObjetivoFinal = { tipo: 'mate-em', lancesMaximos: 1 }
 const PROMOVER: ObjetivoFinal = { tipo: 'promocao', peca: 'q', quantidadeMinima: 1 }
@@ -25,78 +40,102 @@ const EMPATAR: ObjetivoFinal = { tipo: 'empate-defendido' }
 describe('avaliarObjetivo — mate em N', () => {
   it('reconhece o mate aplicado dentro do prazo', () => {
     // Brancas deram mate: pretas a jogar e em xeque-mate.
-    const resultado = avaliarObjetivo('Q6k/8/6K1/8/8/8/8/8 b - - 1 1', MATE_EM_1, {
-      ladoDoAluno: 'w',
-      lancesDoAluno: 1,
-    })
-    expect(resultado).toEqual({ estado: 'cumprido', motivo: 'mate-aplicado' })
+    const resultado = avaliarObjetivo(
+      'Q6k/8/6K1/8/8/8/8/8 b - - 1 1',
+      MATE_EM_1,
+      semHistorico('w', 1),
+    )
+    expect(resultado).toEqual({ estado: 'cumprido', motivo: 'mate-aplicado', regraDoEmpate: null })
   })
 
   it('reprova o mesmo mate quando o aluno gastou lances demais', () => {
-    const resultado = avaliarObjetivo('Q6k/8/6K1/8/8/8/8/8 b - - 1 1', MATE_EM_1, {
-      ladoDoAluno: 'w',
-      lancesDoAluno: 2,
-    })
-    expect(resultado).toEqual({ estado: 'falhou', motivo: 'lances-esgotados' })
+    const resultado = avaliarObjetivo(
+      'Q6k/8/6K1/8/8/8/8/8 b - - 1 1',
+      MATE_EM_1,
+      semHistorico('w', 2),
+    )
+    expect(resultado).toEqual({ estado: 'falhou', motivo: 'lances-esgotados', regraDoEmpate: null })
   })
 
   it('trata afogamento como falha, não como fim neutro', () => {
     // Pretas a jogar, sem lance legal e sem xeque.
-    const resultado = avaliarObjetivo('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1', MATE_EM_1, {
-      ladoDoAluno: 'w',
-      lancesDoAluno: 1,
+    const resultado = avaliarObjetivo(
+      '7k/5Q2/6K1/8/8/8/8/8 b - - 0 1',
+      MATE_EM_1,
+      semHistorico('w', 1),
+    )
+    expect(resultado).toEqual({
+      estado: 'falhou',
+      motivo: 'empate-indevido',
+      regraDoEmpate: 'afogamento',
     })
-    expect(resultado).toEqual({ estado: 'falhou', motivo: 'afogamento-indevido' })
   })
 
   it('reprova quando o prazo acabou sem mate', () => {
-    const resultado = avaliarObjetivo('7k/8/6K1/8/8/8/8/1Q6 w - - 0 1', MATE_EM_1, {
-      ladoDoAluno: 'w',
-      lancesDoAluno: 1,
-    })
-    expect(resultado).toEqual({ estado: 'falhou', motivo: 'lances-esgotados' })
+    const resultado = avaliarObjetivo(
+      '7k/8/6K1/8/8/8/8/1Q6 w - - 0 1',
+      MATE_EM_1,
+      semHistorico('w', 1),
+    )
+    expect(resultado).toEqual({ estado: 'falhou', motivo: 'lances-esgotados', regraDoEmpate: null })
   })
 
   it('segue em andamento enquanto há prazo', () => {
-    const resultado = avaliarObjetivo('7k/8/6K1/8/8/8/8/1Q6 w - - 0 1', MATE_EM_1, {
-      ladoDoAluno: 'w',
-      lancesDoAluno: 0,
-    })
+    const resultado = avaliarObjetivo(
+      '7k/8/6K1/8/8/8/8/1Q6 w - - 0 1',
+      MATE_EM_1,
+      semHistorico('w', 0),
+    )
     expect(resultado.estado).toBe('em-andamento')
   })
 
   it('levar mate derruba o objetivo de dar mate', () => {
-    const resultado = avaliarObjetivo('Q6k/8/6K1/8/8/8/8/8 b - - 1 1', MATE_EM_1, {
-      ladoDoAluno: 'b',
-      lancesDoAluno: 1,
+    const resultado = avaliarObjetivo(
+      'Q6k/8/6K1/8/8/8/8/8 b - - 1 1',
+      MATE_EM_1,
+      semHistorico('b', 1),
+    )
+    expect(resultado).toEqual({
+      estado: 'falhou',
+      motivo: 'aluno-recebeu-mate',
+      regraDoEmpate: null,
     })
-    expect(resultado).toEqual({ estado: 'falhou', motivo: 'aluno-recebeu-mate' })
   })
 })
 
 describe('avaliarObjetivo — promoção', () => {
   it('reconhece a dama nova no tabuleiro', () => {
-    const resultado = avaliarObjetivo('Q6k/8/8/8/8/8/8/7K b - - 0 1', PROMOVER, {
-      ladoDoAluno: 'w',
-      lancesDoAluno: 3,
+    const resultado = avaliarObjetivo(
+      'Q6k/8/8/8/8/8/8/7K b - - 0 1',
+      PROMOVER,
+      semHistorico('w', 3),
+    )
+    expect(resultado).toEqual({
+      estado: 'cumprido',
+      motivo: 'promocao-alcancada',
+      regraDoEmpate: null,
     })
-    expect(resultado).toEqual({ estado: 'cumprido', motivo: 'promocao-alcancada' })
   })
 
   it('segue em andamento com o peão ainda a caminho', () => {
-    const resultado = avaliarObjetivo('7k/8/8/P7/8/8/8/7K w - - 0 1', PROMOVER, {
-      ladoDoAluno: 'w',
-      lancesDoAluno: 0,
-    })
+    const resultado = avaliarObjetivo(
+      '7k/8/8/P7/8/8/8/7K w - - 0 1',
+      PROMOVER,
+      semHistorico('w', 0),
+    )
     expect(resultado.estado).toBe('em-andamento')
   })
 
-  it('reprova quando não sobrou peão para promover', () => {
-    const resultado = avaliarObjetivo('7k/8/8/8/8/8/8/7K w - - 0 1', PROMOVER, {
-      ladoDoAluno: 'w',
-      lancesDoAluno: 4,
+  it('reprova quando não sobrou peão para promover, e diz que a partida empatou', () => {
+    // Rei contra rei: não há peão E a partida acabou empatada por material
+    // insuficiente. As duas informações saem juntas de propósito — o motivo diz
+    // por que o OBJETIVO caiu, e a regra diz por que a PARTIDA acabou.
+    const resultado = avaliarObjetivo('7k/8/8/8/8/8/8/7K w - - 0 1', PROMOVER, semHistorico('w', 4))
+    expect(resultado).toEqual({
+      estado: 'falhou',
+      motivo: 'sem-peao-para-promover',
+      regraDoEmpate: 'material-insuficiente',
     })
-    expect(resultado).toEqual({ estado: 'falhou', motivo: 'sem-peao-para-promover' })
   })
 
   it('exigir duas damas não se satisfaz com uma', () => {
@@ -107,7 +146,7 @@ describe('avaliarObjetivo — promoção', () => {
         peca: 'q',
         quantidadeMinima: 2,
       },
-      { ladoDoAluno: 'w', lancesDoAluno: 3 },
+      semHistorico('w', 3),
     )
     expect(resultado.estado).toBe('em-andamento')
   })
@@ -115,43 +154,49 @@ describe('avaliarObjetivo — promoção', () => {
 
 describe('avaliarObjetivo — empate defendido', () => {
   it('reconhece o afogamento como empate defendido', () => {
-    const resultado = avaliarObjetivo('k7/P7/K7/8/8/8/8/8 b - - 0 1', EMPATAR, {
-      ladoDoAluno: 'b',
-      lancesDoAluno: 4,
+    const resultado = avaliarObjetivo('k7/P7/K7/8/8/8/8/8 b - - 0 1', EMPATAR, semHistorico('b', 4))
+    expect(resultado).toEqual({
+      estado: 'cumprido',
+      motivo: 'empate-alcancado',
+      regraDoEmpate: 'afogamento',
     })
-    expect(resultado).toEqual({ estado: 'cumprido', motivo: 'empate-alcancado' })
   })
 
   it('reconhece material insuficiente como empate defendido', () => {
-    const resultado = avaliarObjetivo('8/k7/8/8/8/8/8/K7 w - - 0 1', EMPATAR, {
-      ladoDoAluno: 'b',
-      lancesDoAluno: 3,
+    const resultado = avaliarObjetivo('8/k7/8/8/8/8/8/K7 w - - 0 1', EMPATAR, semHistorico('b', 3))
+    expect(resultado).toEqual({
+      estado: 'cumprido',
+      motivo: 'empate-alcancado',
+      regraDoEmpate: 'material-insuficiente',
     })
-    expect(resultado).toEqual({ estado: 'cumprido', motivo: 'empate-alcancado' })
   })
 
   it('não dá o empate por antecipado com peça ainda no tabuleiro', () => {
-    const resultado = avaliarObjetivo('3k4/8/8/P7/8/8/8/K7 b - - 0 1', EMPATAR, {
-      ladoDoAluno: 'b',
-      lancesDoAluno: 0,
-    })
+    const resultado = avaliarObjetivo(
+      '3k4/8/8/P7/8/8/8/K7 b - - 0 1',
+      EMPATAR,
+      semHistorico('b', 0),
+    )
     expect(resultado.estado).toBe('em-andamento')
   })
 
   it('levar mate derruba a defesa do empate', () => {
-    const resultado = avaliarObjetivo('Q6k/8/6K1/8/8/8/8/8 b - - 1 1', EMPATAR, {
-      ladoDoAluno: 'b',
-      lancesDoAluno: 5,
+    const resultado = avaliarObjetivo(
+      'Q6k/8/6K1/8/8/8/8/8 b - - 1 1',
+      EMPATAR,
+      semHistorico('b', 5),
+    )
+    expect(resultado).toEqual({
+      estado: 'falhou',
+      motivo: 'aluno-recebeu-mate',
+      regraDoEmpate: null,
     })
-    expect(resultado).toEqual({ estado: 'falhou', motivo: 'aluno-recebeu-mate' })
   })
 })
 
 describe('avaliarObjetivo — contrato', () => {
   it('FEN inválido lança em vez de virar "em andamento"', () => {
-    expect(() =>
-      avaliarObjetivo('isto não é um fen', MATE_EM_1, { ladoDoAluno: 'w', lancesDoAluno: 0 }),
-    ).toThrow()
+    expect(() => avaliarObjetivo('isto não é um fen', MATE_EM_1, semHistorico('w', 0))).toThrow()
   })
 
   it('todo tipo declarado em TIPOS_DE_OBJETIVO é tratado sem lançar', () => {
@@ -162,10 +207,11 @@ describe('avaliarObjetivo — contrato', () => {
     }
     let verificados = 0
     for (const tipo of TIPOS_DE_OBJETIVO) {
-      const resultado = avaliarObjetivo('3k4/8/8/P7/8/8/8/K7 b - - 0 1', exemplos[tipo], {
-        ladoDoAluno: 'b',
-        lancesDoAluno: 0,
-      })
+      const resultado = avaliarObjetivo(
+        '3k4/8/8/P7/8/8/8/K7 b - - 0 1',
+        exemplos[tipo],
+        semHistorico('b', 0),
+      )
       expect(resultado.estado, tipo).toBeTruthy()
       verificados += 1
     }

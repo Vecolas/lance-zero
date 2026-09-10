@@ -20,6 +20,7 @@
  */
 
 import type { SkillId, Side } from '@/domain/types'
+import { contextoInicial } from './historico'
 import type { ContextoObjetivo, ObjetivoFinal } from './objetivo'
 
 /**
@@ -75,13 +76,14 @@ export interface LicaoDeFinal {
 }
 
 /**
- * Contexto inicial de uma posição: nenhum lance do aluno ainda.
+ * Contexto inicial de uma posição: nenhum lance jogado ainda.
  *
- * Existe para ninguém montar `{ ladoDoAluno, lancesDoAluno: 0 }` à mão em cinco
- * lugares diferentes e um deles divergir.
+ * Existe para ninguém montar o contexto à mão em cinco lugares diferentes e um
+ * deles divergir — hoje ele tem três campos, e um deles é o histórico de que a
+ * repetição depende.
  */
 export function contextoInicialDe(posicao: PosicaoDeFinal): ContextoObjetivo {
-  return { ladoDoAluno: posicao.ladoDoAluno, lancesDoAluno: 0 }
+  return contextoInicial(posicao.ladoDoAluno)
 }
 
 /**

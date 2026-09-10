@@ -48,11 +48,16 @@
  *   melhor evidência que temos, e a pergunta continua aberta.
  *
  * O QUE ELE NÃO PROVA:
- * 1. que a TELA reconhece o objetivo cumprido. `avaliarObjetivo` não reconhece
- *    empate por repetição (um FEN não carrega histórico), então um
- *    `empate-defendido` provado forçado AQUI pode nunca ser marcado como
- *    cumprido lá se a defesa embolar até a tríplice. A prova é sobre o xadrez;
- *    o reconhecimento é outro assunto;
+ * 1. que a TELA reconhece o objetivo cumprido. A prova aqui é sobre o XADREZ;
+ *    o reconhecimento é outro assunto, com portão próprio em
+ *    `tests/unit/endgames-objetivo.test.ts`.
+ *
+ *    Este item dizia, até 2026-09-10, que `avaliarObjetivo` não reconhecia
+ *    empate por repetição — e por isso um `empate-defendido` provado forçado
+ *    AQUI podia nunca ser marcado como cumprido lá. Deixou de ser verdade: o
+ *    domínio passou a receber o histórico e a reconhecer repetição e a regra
+ *    dos 50 lances. O texto fica registrado porque documentação errada dentro
+ *    de um portão é o pior lugar para ela;
  * 2. que a LINHA MODELO é boa. Isso é de `curriculo-vs-tablebase.test.ts`;
  * 3. nada sobre `passado-rompimento`, que nenhuma tablebase alcança.
  *

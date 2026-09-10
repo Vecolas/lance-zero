@@ -21,8 +21,9 @@
  */
 
 import { applyMove, normalizeUci, parseUci } from '@/lib/chess'
+import { avancarContexto, contextoInicial } from './historico'
 import type { PosicaoDeFinal } from './licao'
-import { avaliarObjetivo, type ResultadoObjetivo } from './objetivo'
+import { avaliarObjetivo, type ContextoObjetivo, type ResultadoObjetivo } from './objetivo'
 
 export interface ReproducaoDaLinha {
   /** FENs do início ao fim, incluindo o inicial. Tem `lances.length + 1` itens. */
@@ -42,13 +43,14 @@ export interface ReproducaoDaLinha {
 export function reproduzirLinhaModelo(posicao: PosicaoDeFinal): ReproducaoDaLinha {
   const fens: string[] = [posicao.fen]
   let fenAtual = posicao.fen
-  let lancesDoAluno = 0
+  // O contexto é acumulado pela MESMA primitiva que a tela usa lance a lance.
+  // Antes daqui a contagem de lances do aluno saía da paridade do índice, e o
+  // histórico de posições não existia — então uma linha modelo que terminasse em
+  // repetição nunca seria reconhecida como cumprida pelo portão do currículo.
+  let contexto: ContextoObjetivo = contextoInicial(posicao.ladoDoAluno)
   let erro: string | null = null
 
   for (const [indice, uci] of posicao.linhaModelo.entries()) {
-    // Na linha modelo o aluno joga sempre nos índices pares: o FEN inicial é a
-    // vez dele, e isso é cobrado pelo portão do currículo.
-    const ehLanceDoAluno = indice % 2 === 0
     // Parseia o UCI explicitamente em vez de entregar a string ao adapter: o
     // `chess.js` aceitaria a string pelo caminho tolerante do parser de SAN, e
     // aí um lance com forma errada viraria outro lance em silêncio.
@@ -58,20 +60,15 @@ export function reproduzirLinhaModelo(posicao: PosicaoDeFinal): ReproducaoDaLinh
       erro = `lance ${indice + 1} (${uci}) é ilegal em ${fenAtual}`
       break
     }
+    contexto = avancarContexto(contexto, fenAtual, aplicado.move.color)
     fenAtual = aplicado.fenAfter
     fens.push(fenAtual)
-    if (ehLanceDoAluno) {
-      lancesDoAluno += 1
-    }
   }
 
   return {
     fens,
-    lancesDoAluno,
-    resultadoFinal: avaliarObjetivo(fenAtual, posicao.objetivo, {
-      ladoDoAluno: posicao.ladoDoAluno,
-      lancesDoAluno,
-    }),
+    lancesDoAluno: contexto.lancesDoAluno,
+    resultadoFinal: avaliarObjetivo(fenAtual, posicao.objetivo, contexto),
     erro,
   }
 }
