@@ -24,8 +24,15 @@
  * não é o da lição. Por isso `atencao` existe como tom, em vez de reaproveitar
  * `ok` ou `ruim` — e por isso a frase carrega OS NÚMEROS, não um "não foi o
  * melhor" que o aluno não tem como conferir.
+ *
+ * DECISÃO 5 — O EMPATE DIZ POR QUAL REGRA. O veredito do objetivo e a REGRA que
+ * fechou a partida são duas informações, e a tela mostra as duas: "cumprido" +
+ * "empate por repetição". Um "cumprido" mudo não ensina nada, e as quatro
+ * regras de empate ensinam coisas diferentes. Ver
+ * `APRESENTACAO_POR_REGRA_DE_EMPATE`.
  */
 
+import { REGRAS_DO_EMPATE } from '@/domain/endgames'
 import type {
   ComparacaoDeDistancia,
   EstadoDoObjetivo,
@@ -33,6 +40,7 @@ import type {
   JulgamentoDoLance,
   MotivoDeObjetivo,
   ObjetivoFinal,
+  RegraDeEmpate,
   ResumoDosJulgamentos,
 } from '@/domain/endgames'
 import type { HistoricoDaPosicao } from '@/domain/endgames/persistencia'
@@ -81,13 +89,67 @@ export const FRASE_POR_MOTIVO: Record<MotivoDeObjetivo, string> = {
   'promocao-alcancada': 'Peão promovido: o objetivo desta posição está cumprido.',
   'empate-alcancado': 'A partida terminou empatada — que é exatamente o que você defendia.',
   'aluno-recebeu-mate': 'Você levou mate. Qualquer objetivo cai junto com o rei.',
-  'afogamento-indevido': 'Afogamento: o adversário ficou sem lance legal e a partida empatou.',
-  'empate-indevido':
-    'A posição virou empate por material insuficiente ou pela regra dos 50 lances.',
+  'empate-indevido': 'A partida terminou empatada, e aqui empatar não era o objetivo.',
   'lances-esgotados': 'Os lances previstos no objetivo acabaram antes de você chegar lá.',
   'sem-peao-para-promover': 'Não sobrou peão para promover.',
   'em-andamento': 'A posição continua: nem cumprida, nem perdida.',
 }
+
+/**
+ * Como cada regra de empate se apresenta ao aluno.
+ *
+ * POR QUE ISTO EXISTE, e por que não é um motivo a mais: "empate por repetição"
+ * e "empate pela regra dos 50 lances" ensinam coisas DIFERENTES. A primeira é a
+ * técnica que a lição de oposição ensina; a segunda é o relógio da partida
+ * correndo contra quem tinha de progredir. Um "cumprido" mudo não ensina
+ * nenhuma das duas, e foi assim que o app ficou anos sem dizer ao aluno por que
+ * a defesa dele funcionou.
+ *
+ * A regra NÃO carrega tom. É de propósito: a MESMA regra é boa notícia quando o
+ * objetivo era segurar o empate e má notícia quando era dar mate. O tom vem do
+ * estado do objetivo, que é quem sabe disso; a regra só explica o tabuleiro.
+ *
+ * `Record` sobre a união: regra nova no domínio NÃO COMPILA sem frase aqui.
+ */
+export interface ApresentacaoDaRegraDeEmpate {
+  /** Nome da regra, em PT-BR, para o aluno reconhecê-la num torneio. */
+  rotulo: string
+  /** O que aconteceu no tabuleiro, em uma frase conferível. */
+  explicacao: string
+}
+
+export const APRESENTACAO_POR_REGRA_DE_EMPATE: Record<RegraDeEmpate, ApresentacaoDaRegraDeEmpate> =
+  {
+    afogamento: {
+      rotulo: 'Empate por afogamento',
+      explicacao:
+        'Quem tinha a vez ficou sem nenhum lance legal, e sem estar em xeque. A partida acaba empatada na hora.',
+    },
+    'material-insuficiente': {
+      rotulo: 'Empate por material insuficiente',
+      explicacao:
+        'O material que sobrou no tabuleiro não dá mate nem com a pior defesa do mundo. A partida acaba empatada na hora.',
+    },
+    repeticao: {
+      rotulo: 'Empate por repetição',
+      explicacao:
+        `A mesma posição apareceu ${REGRAS_DO_EMPATE.ocorrenciasParaRepeticao} vezes — mesmas peças nas mesmas casas, ` +
+        'mesma vez de jogar e os mesmos lances disponíveis. Em rei e peão, é assim que a defesa correta costuma terminar: ' +
+        'o rei vai e volta na casa que segura, e o adversário não tem como progredir.',
+    },
+    'regra-dos-50-lances': {
+      rotulo: 'Empate pela regra dos 50 lances',
+      explicacao:
+        `Passaram ${REGRAS_DO_EMPATE.meiosLancesSemProgresso / 2} lances de cada lado sem nenhuma captura e sem ` +
+        'nenhum lance de peão. Sem progresso, a partida empata — quem precisava avançar não avançou.',
+    },
+    'nao-identificada': {
+      rotulo: 'Empate por uma regra que não soube nomear',
+      explicacao:
+        'A partida terminou empatada e eu não consegui identificar por qual regra. Isto é um defeito nosso: prefiro dizer ' +
+        'que não sei a inventar uma explicação.',
+    },
+  }
 
 /**
  * Os tons possíveis. `atencao` não é enfeite: é o degrau do meio do julgamento,

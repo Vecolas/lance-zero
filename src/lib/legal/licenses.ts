@@ -200,7 +200,7 @@ export const plannedDependencies: DependencyLicense[] = [
     name: 'API de Opening Explorer da Lichess',
     license: 'Termos da API Lichess',
     reason:
-      'Estatísticas de aberturas a partir das partidas públicas do Lichess. O adapter já existe, com uma requisição por vez, cache e degradação graciosa; nenhuma tela consulta o serviço ainda.',
+      'Estatísticas de aberturas a partir das partidas públicas do Lichess. Consultado sob demanda pela tela de aberturas — nenhuma consulta acontece sem ação do aluno. O serviço responde 401 a requisição anônima (ver issue #71), então na prática a tela funciona sem ele.',
     url: 'https://lichess.org/api',
   },
 ]

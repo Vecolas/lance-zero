@@ -1,4 +1,5 @@
 export * from './objetivo'
+export * from './historico'
 export * from './julgamento'
 export * from './licao'
 export * from './linha-modelo'

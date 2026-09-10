@@ -1,0 +1,6 @@
+/* Os dois repertórios, empilhados. Uma coluna só até 60rem: a linha de lances
+   já é longa, e duas colunas num aparelho estreito quebrariam o SAN no meio. */
+.repertorios {
+  display: grid;
+  gap: var(--space-6);
+}

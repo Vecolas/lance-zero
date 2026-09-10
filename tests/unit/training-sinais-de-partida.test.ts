@@ -30,6 +30,11 @@ import { carregarSinaisDePartida } from '@/lib/training/sinais-de-partida'
 const DIA = 24 * 60 * 60 * 1000
 const AGORA = new Date('2026-09-09T12:00:00.000Z')
 
+/** O aluno de brancas sai do próprio repertório: 3.Bb5 onde o livro dele pede outro lance. */
+const DESVIO_BB5 = '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 *'
+/** A mesma abertura, do começo ao fim dentro do livro. */
+const NO_LIVRO = '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 5. O-O *'
+
 function partida(id: string, diasAtras: number): Game {
   return {
     id,
@@ -88,6 +93,10 @@ describe('carregarSinaisDePartida', () => {
     expect(consultas.length, 'a função não consultou partidas').toBeGreaterThan(0)
     expect(consultas[0].since?.getTime()).toBe(inicioDaJanela(AGORA).getTime())
     expect(consultas[0].limit).toBe(ERROS_RECENTES_CONFIG.maxPartidasVarridas)
+    // UMA leitura, e só uma. Cada sinal novo que precisar de partidas usa esta;
+    // uma segunda leitura com borda própria é literalmente como nasceu a issue
+    // #53, e o dia em que alguém girar só uma das duas janelas nada acusa.
+    expect(consultas.length, 'alguém abriu uma segunda leitura de partidas').toBe(1)
   })
 
   it('erro dentro da janela entra, erro fora dela não', async () => {
@@ -106,6 +115,42 @@ describe('carregarSinaisDePartida', () => {
 
     expect(sinais.recentGameErrors.length).toBe(1)
     expect(sinais.recentGameErrors[0].ocorridoEm).toBe(dentro.playedAt)
+  })
+
+  it('o desvio de repertório sai da MESMA janela, sem leitura própria', async () => {
+    // O terceiro sinal usa as partidas que já foram lidas. Se alguém lhe der
+    // uma janela própria — mais larga, para "não perder desvio antigo" — a
+    // partida de fora volta a contar, e o plano de hoje passa a tratar como
+    // urgente uma linha que o aluno talvez já tenha corrigido.
+    const base = new MemoryTrainingRepository()
+    const dentro = { ...partida('recente', 1), pgn: DESVIO_BB5 }
+    const fora = {
+      ...partida('antiga', ERROS_RECENTES_CONFIG.janelaDias + 5),
+      pgn: DESVIO_BB5,
+    }
+    await base.saveGame(dentro)
+    await base.saveGame(fora)
+
+    const { repo, consultas } = espiao(base)
+    const sinais = await carregarSinaisDePartida(repo, { agora: AGORA })
+
+    expect(consultas.length).toBe(1)
+    expect(sinais.desviosDeRepertorio).toHaveLength(1)
+    expect(sinais.desviosDeRepertorio[0].sanJogado).toBe('Bb5')
+    // Uma partida, e não duas: a de fora da janela não entrou.
+    expect(sinais.desviosDeRepertorio[0].partidas).toBe(1)
+    expect(sinais.desviosDeRepertorio[0].gameIds).toEqual([dentro.id])
+  })
+
+  it('CONTROLE: partida dentro do livro não vira desvio', async () => {
+    // Sem esta metade, uma implementação que devolvesse desvio para qualquer
+    // partida importada passaria no caso acima.
+    const base = new MemoryTrainingRepository()
+    await base.saveGame({ ...partida('recente', 1), pgn: NO_LIVRO })
+
+    const sinais = await carregarSinaisDePartida(base, { agora: AGORA })
+
+    expect(sinais.desviosDeRepertorio).toEqual([])
   })
 
   it('sem card de treino não há veredito de retenção nenhum', async () => {

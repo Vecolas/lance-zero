@@ -34,12 +34,17 @@
  *
  * O QUE ESTE ARQUIVO NÃO DECIDE, e que quem lê o veredito precisa saber:
  *
- * - `avaliarObjetivo` reconhece empate por afogamento, material insuficiente e
- *   regra dos 50 lances, mas NÃO por repetição (um FEN não carrega histórico).
- *   Então um `empate-defendido` provado forçado AQUI pode, na tela, nunca ser
- *   marcado como cumprido se a defesa embolar até a tríplice repetição. A prova
- *   é sobre o xadrez; o reconhecimento na tela é outro assunto, declarado em
- *   `objetivo.ts`.
+ * - PROVAR que o empate é forçado não é o mesmo que RECONHECÊ-LO na tela. As
+ *   duas coisas moram em lugares diferentes de propósito: aqui está o xadrez da
+ *   posição, e em `objetivo.ts` está o veredito da tentativa do aluno. Hoje as
+ *   quatro regras de empate são reconhecidas lá (afogamento, material
+ *   insuficiente, repetição e 50 lances) — a repetição passou a ser, depois que
+ *   o `ContextoObjetivo` ganhou o histórico de posições. Antes disso, um
+ *   `empate-defendido` provado forçado AQUI podia nunca aparecer como cumprido
+ *   na tela, e a defesa natural em rei-e-peão caía exatamente nesse buraco.
+ * - o inverso continua valendo e é o ponto: um empate PROVADO forçado não quer
+ *   dizer que qualquer defesa serve. Quer dizer que EXISTE defesa. Quem julga o
+ *   que o aluno jogou é `julgamento.ts`, contra a tablebase.
  * - nada aqui fala com a rede. A entrada é um `TablebaseResult` que alguém já
  *   obteve — é o que permite testar esta lógica sem rede e usá-la no portão de
  *   contrato, que tem rede.

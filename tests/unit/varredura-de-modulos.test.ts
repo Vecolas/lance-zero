@@ -61,7 +61,21 @@ describe('varredura de módulos', () => {
     }
   })
 
-  it('todo módulo fora da lista de exceções carrega', async () => {
+  /**
+   * O TEMPO AQUI NÃO É FOLGA GRATUITA, é o custo da varredura.
+   *
+   * Este caso carrega TODO módulo de `src/` — hoje 171, e o número só cresce.
+   * Medido em 2026-09-10: 4,6 s só de importação, contra o limite padrão de 5 s
+   * do vitest. Sob carga paralela ele estourava, e o sintoma era `Test timed
+   * out` — que se lê como código quebrado e não como suíte que cresceu.
+   *
+   * O limite generoso é deliberado: portão que reprova por motivo alheio ao que
+   * ele mede treina todo mundo a reexecutar até passar, e aí ele para de valer
+   * quando estiver certo. Se um dia isto estourar de novo, a resposta NÃO é
+   * subir o número: é medir o que passou a demorar. O maior custo hoje é
+   * `src/app/**`, porque cada página arrasta a árvore de componentes dela.
+   */
+  it('todo módulo fora da lista de exceções carrega', { timeout: 60_000 }, async () => {
     const falhas: string[] = []
     for (const caminho of caminhos) {
       const nome = nomeCurto(caminho)

@@ -1,20 +1,19 @@
 import type { Metadata } from 'next'
-import { PlaceholderScreen } from '@/components/ui/PlaceholderScreen'
+import { OpeningsWorkbench } from '@/components/openings/OpeningsWorkbench'
 
 export const metadata: Metadata = { title: 'Aberturas' }
 
 export default function OpeningsPage() {
   return (
-    <PlaceholderScreen
-      title="Aberturas"
-      phase={9}
-      lead="Repertório enxuto, baseado nas linhas que você de fato enfrenta."
-      planned={[
-        'Nomes ECO a partir de dados CC0',
-        'Opening Explorer do Lichess atrás de um adapter com cache',
-        'Árvore de repertório com nota de ideia, não só o lance',
-        'Cards FSRS priorizando ramos vistos nas suas partidas',
-      ]}
-    />
+    <>
+      <h1>Aberturas</h1>
+      <p>
+        Abertura para este nível não é livro de variantes: são poucas linhas, cada uma com a ideia
+        escrita ao lado do lance — inclusive os lances do adversário. O que decide o que estudar em
+        seguida não é a teoria, e sim as suas partidas: as lacunas abaixo saem do que você enfrentou
+        de verdade, ordenadas por quantas vezes apareceram.
+      </p>
+      <OpeningsWorkbench />
+    </>
   )
 }

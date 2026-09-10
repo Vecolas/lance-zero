@@ -50,6 +50,16 @@
  *    A sonda entra por parâmetro, com o provider real como padrão. É o mesmo
  *    desenho de `resposta-do-adversario.ts`: o teste roda sem rede nenhuma, e
  *    quem monta a tela escolhe o transporte.
+ *
+ * 8. A TELA CARREGA O HISTÓRICO DA TENTATIVA, e não só o tabuleiro. Duas regras
+ *    de empate do xadrez não cabem num FEN — repetição e regra dos 50 lances —
+ *    e a defesa correta em rei-e-peão termina justamente em tríplice repetição.
+ *    Sem histórico, o aluno segurava o empate exatamente como a lição ensina e a
+ *    tela nunca dizia "cumprido": o app punia quem fez certo.
+ *
+ *    O histórico é `tentativa.contexto`, avançado pela primitiva do domínio
+ *    (`avancarContexto`) a cada lance dos DOIS lados. E quando o empate se
+ *    consuma, a tela diz POR QUAL REGRA: um "cumprido" mudo não ensina nada.
  */
 
 import Link from 'next/link'
@@ -58,8 +68,11 @@ import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import {
   avaliarObjetivo,
+  avancarContexto,
+  contextoInicial,
   julgarLanceDeFinal,
   resumirJulgamentos,
+  type ContextoObjetivo,
   type JulgamentoDoLance,
   type LicaoDeFinal,
   type PosicaoDeFinal,
@@ -81,6 +94,7 @@ import {
   APRESENTACAO_POR_ESTADO,
   APRESENTACAO_POR_FONTE,
   APRESENTACAO_POR_GRAU,
+  APRESENTACAO_POR_REGRA_DE_EMPATE,
   descreverJulgamento,
   descreverObjetivo,
   FRASE_POR_MOTIVO,
@@ -94,7 +108,18 @@ interface Tentativa {
   fen: string
   /** UCIs desde o FEN inicial, dos dois lados. É o que o roteiro compara. */
   lancesJogados: string[]
-  lancesDoAluno: number
+  /**
+   * O histórico na forma que o domínio julga: quantos lances são do aluno e
+   * quais posições já apareceram. Não é um espelho de `lancesJogados`: é a
+   * projeção dele que `avaliarObjetivo` precisa, e ela é avançada pela
+   * primitiva do domínio (`avancarContexto`), nunca por conta desta tela.
+   *
+   * A contagem de lances do aluno vive AQUI DENTRO, e não num campo ao lado,
+   * porque um contador paralelo é a segunda fonte da mesma verdade — e o dia em
+   * que ele discordasse do histórico, o mate em 2 passaria a aceitar três
+   * lances sem uma linha no console.
+   */
+  contexto: ContextoObjetivo
   /** Procedência de cada resposta do adversário, na ordem em que vieram. */
   fontes: FonteDaResposta[]
   resultado: ResultadoObjetivo
@@ -106,15 +131,13 @@ interface Tentativa {
 type Fase = 'jogando' | 'adversario' | 'encerrada'
 
 function tentativaInicial(posicao: PosicaoDeFinal): Tentativa {
+  const contexto = contextoInicial(posicao.ladoDoAluno)
   return {
     fen: posicao.fen,
     lancesJogados: [],
-    lancesDoAluno: 0,
+    contexto,
     fontes: [],
-    resultado: avaliarObjetivo(posicao.fen, posicao.objetivo, {
-      ladoDoAluno: posicao.ladoDoAluno,
-      lancesDoAluno: 0,
-    }),
+    resultado: avaliarObjetivo(posicao.fen, posicao.objetivo, contexto),
     ultimoLance: [],
     ultimaResposta: null,
     desistiu: false,
@@ -230,14 +253,15 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
         setFase('encerrada')
         return
       }
-      const resultado = avaliarObjetivo(aplicado.fenAfter, posicao.objetivo, {
-        ladoDoAluno: posicao.ladoDoAluno,
-        lancesDoAluno: estado.lancesDoAluno,
-      })
+      // O FEN que entra no histórico é o de ANTES do lance do adversário: é ele
+      // que pode voltar a aparecer e consumar a repetição.
+      const contexto = avancarContexto(estado.contexto, estado.fen, aplicado.move.color)
+      const resultado = avaliarObjetivo(aplicado.fenAfter, posicao.objetivo, contexto)
       setTentativa({
         ...estado,
         fen: aplicado.fenAfter,
         lancesJogados: [...estado.lancesJogados, aplicado.move.uci],
+        contexto,
         fontes: [...estado.fontes, resposta.fonte],
         resultado,
         ultimoLance: [aplicado.move.from, aplicado.move.to],
@@ -316,16 +340,13 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
       // O julgamento é do lance NESTA posição, então o FEN de antes é capturado
       // aqui, antes de qualquer troca de estado.
       void julgar(tentativa.fen, aplicado.move.uci, tentativa.lancesJogados)
-      const lancesDoAluno = tentativa.lancesDoAluno + 1
-      const resultado = avaliarObjetivo(aplicado.fenAfter, posicao.objetivo, {
-        ladoDoAluno: posicao.ladoDoAluno,
-        lancesDoAluno,
-      })
+      const contexto = avancarContexto(tentativa.contexto, tentativa.fen, aplicado.move.color)
+      const resultado = avaliarObjetivo(aplicado.fenAfter, posicao.objetivo, contexto)
       const proxima: Tentativa = {
         ...tentativa,
         fen: aplicado.fenAfter,
         lancesJogados: [...tentativa.lancesJogados, aplicado.move.uci],
-        lancesDoAluno,
+        contexto,
         resultado,
         ultimoLance: [aplicado.move.from, aplicado.move.to],
         ultimaResposta: null,
@@ -371,7 +392,20 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
   const ultimoJulgamento = julgamentos[julgamentos.length - 1] ?? null
   const resumoDosLances = encerrada ? resumirEmTexto(resumirJulgamentos(julgamentos)) : null
   const totalDeDicas = posicao.dicas.length
-  const lancesDoAluno = tentativa.lancesDoAluno
+  const lancesDoAluno = tentativa.contexto.lancesDoAluno
+  /**
+   * A regra que fechou a partida em empate, quando houve empate.
+   *
+   * Derivada do veredito do domínio, nunca decidida aqui: um segundo juiz na
+   * interface diria uma regra e o histórico guardaria outra. E ela aparece
+   * TAMBÉM quando o empate é má notícia (o objetivo era dar mate e o aluno
+   * repetiu) — é a mesma informação, e esconder metade dela seria escolher
+   * quando ensinar.
+   */
+  const regraDoEmpate =
+    tentativa.resultado.regraDoEmpate === null
+      ? null
+      : APRESENTACAO_POR_REGRA_DE_EMPATE[tentativa.resultado.regraDoEmpate]
 
   /**
    * Grava a tentativa encerrada — uma vez por geração.
@@ -538,7 +572,7 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
           {descreverObjetivo(posicao.objetivo)}
         </p>
         <p className={styles.meta}>
-          Lances seus até aqui: {tentativa.lancesDoAluno}.{' '}
+          Lances seus até aqui: {lancesDoAluno}.{' '}
           {fase === 'adversario'
             ? 'O adversário está escolhendo a resposta…'
             : status.turn === posicao.ladoDoAluno && !encerrada
@@ -552,6 +586,18 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
             ? 'Você desistiu desta posição.'
             : FRASE_POR_MOTIVO[tentativa.resultado.motivo]}
         </p>
+
+        {/* POR QUE o empate valeu. Fica FORA do chip de propósito: o chip diz o
+            veredito da tentativa (que tem tom e ícone), e esta linha diz a regra
+            do xadrez que fechou a partida — a mesma regra pode acompanhar um
+            "cumprido" ou um "não cumprido". Um "cumprido" mudo não ensina nada,
+            e "empate por repetição" e "empate pela regra dos 50 lances" ensinam
+            coisas diferentes. */}
+        {regraDoEmpate !== null ? (
+          <p className={styles.meta} data-testid="regra-do-empate">
+            <strong>{regraDoEmpate.rotulo}.</strong> {regraDoEmpate.explicacao}
+          </p>
+        ) : null}
 
         {/* O julgamento do último lance do aluno. `role="status"` porque ele
             chega DEPOIS da jogada, quando a tablebase responde: sem região viva,

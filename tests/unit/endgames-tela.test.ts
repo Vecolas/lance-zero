@@ -25,7 +25,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { CURRICULO_FINAIS } from '@/content/endgames'
-import { MOTIVOS_DE_OBJETIVO, type PosicaoDeFinal } from '@/domain/endgames'
+import { MOTIVOS_DE_OBJETIVO, REGRAS_DE_EMPATE, type PosicaoDeFinal } from '@/domain/endgames'
 import { parseUci } from '@/lib/chess'
 import { applyMove, legalMoves } from '@/lib/chess'
 import type { TablebaseResult } from '@/domain/types'
@@ -38,6 +38,7 @@ import {
 import {
   APRESENTACAO_POR_ESTADO,
   APRESENTACAO_POR_FONTE,
+  APRESENTACAO_POR_REGRA_DE_EMPATE,
   descreverObjetivo,
   FRASE_POR_MOTIVO,
   ressalvaDaDefesa,
@@ -96,6 +97,34 @@ describe('tradução dos códigos do domínio', () => {
     for (const chave of Object.keys(FRASE_POR_MOTIVO)) {
       expect(doDominio.has(chave), `frase para motivo inexistente: ${chave}`).toBe(true)
     }
+  })
+
+  it('tem rótulo e explicação para toda regra de empate', () => {
+    // "Cumprido" mudo não ensina nada, e as quatro regras ensinam coisas
+    // diferentes. A varredura parte da FONTE do domínio: regra nova sem frase
+    // reprova aqui antes de aparecer em branco na tela.
+    expect(REGRAS_DE_EMPATE.length).toBeGreaterThan(0)
+    for (const regra of REGRAS_DE_EMPATE) {
+      const apresentacao = APRESENTACAO_POR_REGRA_DE_EMPATE[regra]
+      expect(apresentacao, `regra sem apresentação: ${regra}`).toBeTruthy()
+      expect(apresentacao.rotulo.trim().length, regra).toBeGreaterThan(0)
+      expect(apresentacao.explicacao.trim().length, regra).toBeGreaterThan(0)
+    }
+  })
+
+  it('não tem apresentação órfã de regra de empate', () => {
+    const doDominio = new Set<string>(REGRAS_DE_EMPATE)
+    for (const chave of Object.keys(APRESENTACAO_POR_REGRA_DE_EMPATE)) {
+      expect(doDominio.has(chave), `apresentação para regra inexistente: ${chave}`).toBe(true)
+    }
+  })
+
+  it('cada regra de empate tem rótulo próprio: duas regras não podem ler igual', () => {
+    // Rótulos repetidos seriam o "cumprido mudo" com outra roupa: a tela
+    // mostraria uma frase e o aluno não saberia distinguir repetição de 50
+    // lances, que é exatamente a diferença que ele precisa aprender.
+    const rotulos = REGRAS_DE_EMPATE.map((regra) => APRESENTACAO_POR_REGRA_DE_EMPATE[regra].rotulo)
+    expect(new Set(rotulos).size).toBe(REGRAS_DE_EMPATE.length)
   })
 
   it('descreve o objetivo de toda posição do currículo', () => {
