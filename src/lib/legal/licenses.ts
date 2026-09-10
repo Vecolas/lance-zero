@@ -177,6 +177,15 @@ export const runtimeDependencies: DependencyLicense[] = [
     url: 'https://github.com/prettier/prettier',
   },
   {
+    ids: ['chess-openings'],
+    name: 'chess-openings (Lichess)',
+    version: 'recorte de 2026-09-09',
+    license: 'CC0-1.0',
+    reason:
+      'Nomes e códigos ECO das aberturas. O LanceZero distribui um recorte curado, não o dump completo.',
+    url: 'https://github.com/lichess-org/chess-openings',
+  },
+  {
     ids: ['inter'],
     name: 'Inter',
     license: 'SIL Open Font License 1.1',
@@ -187,18 +196,11 @@ export const runtimeDependencies: DependencyLicense[] = [
 
 export const plannedDependencies: DependencyLicense[] = [
   {
-    ids: ['chess-openings'],
-    name: 'chess-openings (Lichess)',
-    license: 'CC0-1.0',
-    reason: 'Nomes e códigos ECO de aberturas. Fase 9.',
-    url: 'https://github.com/lichess-org/chess-openings',
-  },
-  {
     ids: ['lichess-api-opening-explorer'],
     name: 'API de Opening Explorer da Lichess',
     license: 'Termos da API Lichess',
     reason:
-      'Estatísticas de aberturas a partir das partidas públicas do Lichess. Fase 9. Uma requisição por vez, com cache.',
+      'Estatísticas de aberturas a partir das partidas públicas do Lichess. O adapter já existe, com uma requisição por vez, cache e degradação graciosa; nenhuma tela consulta o serviço ainda.',
     url: 'https://lichess.org/api',
   },
 ]
