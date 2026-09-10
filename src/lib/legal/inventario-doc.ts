@@ -21,8 +21,18 @@
 export interface EntradaDoInventario {
   /** Identificador estável, único no documento. É por ele que se cruza. */
   id: string
-  /** Nome como o documento o escreve, só para a mensagem de erro. */
+  /**
+   * Nome como o documento o escreve. Serve à mensagem de erro e, quando é um
+   * nome npm, é por ele que `inventario-instalado.ts` liga a linha ao
+   * `pnpm-lock.yaml`.
+   */
   pacote: string
+  /**
+   * Coluna `Versão`, como o documento a escreve — pode ser exata (`5.9.3`) ou
+   * texto (`—`, `dump de 2026`). Interpretar é papel de quem cruza; aqui só se
+   * lê. Tabela sem coluna `Versão` devolve string vazia.
+   */
+  versao: string
   licenca: string
   fonte: string
   /** Título da seção em que a linha está, só para a mensagem de erro. */
@@ -97,6 +107,7 @@ export function lerInventarioDoDocumento(markdown: string): LeituraDoInventario 
     const colunas = celulas(linha).map(textoLimpo)
     const colunaId = indiceDaColuna(colunas, 'id')
     const colunaPacote = indiceDaColuna(colunas, 'pacote')
+    const colunaVersao = indiceDaColuna(colunas, 'vers')
     const colunaLicenca = indiceDaColuna(colunas, 'licen')
     const colunaFonte = indiceDaColuna(colunas, 'fonte')
 
@@ -109,6 +120,7 @@ export function lerInventarioDoDocumento(markdown: string): LeituraDoInventario 
         entradas.push({
           id: textoLimpo(valores[colunaId] ?? ''),
           pacote: textoLimpo(valores[colunaPacote] ?? valores[0] ?? ''),
+          versao: colunaVersao >= 0 ? textoLimpo(valores[colunaVersao] ?? '') : '',
           licenca: textoLimpo(valores[colunaLicenca] ?? ''),
           fonte: textoLimpo(valores[colunaFonte] ?? ''),
           secao,
