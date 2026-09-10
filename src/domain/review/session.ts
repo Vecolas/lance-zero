@@ -49,6 +49,28 @@ function aplicarUci(fen: string, uci: string): string | null {
 }
 
 /**
+ * A solução do card com o sufixo de promoção que ela precisa para ser jogável.
+ *
+ * DAMA É O SUFIXO IMPLÍCITO. Um card cuja solução é `e7e8` não era respondível
+ * por caminho nenhum: a string é ilegal no tabuleiro, a sessão caía no ramo
+ * "solução inconsistente com a posição" e marcava ERRO contra o aluno que jogou
+ * certo. Ninguém percebia, porque o desfecho era o mesmo de errar de verdade.
+ *
+ * O conserto mora AQUI e não na tela. Afrouxar a comparação lá deixaria `e7e8n`
+ * passar por acerto de um card que ensina a dama — trocaria um defeito por
+ * outro, e o novo seria pior, porque premiaria a resposta errada.
+ *
+ * Só a promoção ganha sufixo, e só quando ele falta: lance que já aplica volta
+ * intocado, então nada mais no repertório de cards muda de comportamento.
+ */
+function comSufixoImplicito(fen: string, uci: string): string {
+  if (uci.length > 4) return uci
+  if (aplicarUci(fen, uci) !== null) return uci
+  const comDama = `${uci}q`
+  return aplicarUci(fen, comDama) !== null ? comDama : uci
+}
+
+/**
  * Aplica a tentativa do aluno. Devolve um estado novo; nunca muta o anterior.
  *
  * Lance certo avança o passo e já responde pelo adversário. Lance errado leva a
@@ -57,7 +79,7 @@ function aplicarUci(fen: string, uci: string): string | null {
 export function submitReviewMove(state: ReviewSessionState, uci: string): ReviewSessionState {
   if (state.phase !== 'resolvendo') return state
 
-  const esperado = state.card.solutionUci[state.step]
+  const esperado = comSufixoImplicito(state.fen, state.card.solutionUci[state.step])
   if (uci !== esperado) {
     return { ...state, phase: 'errou', lanceErrado: uci, semErro: false }
   }
