@@ -35,6 +35,15 @@ test('preferência de tabuleiro e de tempo persistem', async ({ page }) => {
   )
 
   await page.getByRole('button', { name: '60 min' }).click()
+  // Espera a CONFIRMAÇÃO antes de recarregar. `aria-pressed` só vira depois de
+  // a gravação no IndexedDB terminar — o provider dá `await` na escrita antes de
+  // mexer no estado —, então este é o sinal de que o dado está no disco.
+  //
+  // Sem esta linha o teste corria contra a escrita e reprovava de vez em quando.
+  // Aparecia SÓ no build de produção, porque lá o recarregamento chega mais
+  // cedo: em `next dev` o atraso do runtime escondia a corrida.
+  await expect(page.getByRole('button', { name: '60 min' })).toHaveAttribute('aria-pressed', 'true')
+
   await page.reload()
 
   await expect(page.getByRole('button', { name: '60 min' })).toHaveAttribute('aria-pressed', 'true')
