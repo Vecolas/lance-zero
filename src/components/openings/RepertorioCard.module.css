@@ -1,0 +1,191 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.lado {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.principio {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.secao {
+  margin: var(--space-3) 0 0;
+  font-size: 1rem;
+}
+
+/* --- as linhas do repertório ------------------------------------------- */
+
+/* A indentação só aparece onde a lista ANINHA, e ela aninha apenas em ponto de
+   escolha (ver DECISÃO 2 de arvore-legivel.ts). Por isso o recuo é pequeno: a
+   profundidade não empilha, só a ramificação. */
+.ramos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ramos .ramos {
+  margin-top: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border-strong);
+}
+
+.ramo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.lance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.san {
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+/* De quem é o lance: cor + ícone + texto. O texto vem do componente. */
+.meu {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+
+.dele {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.abertura {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.ideia {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.transposicao {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--info-text);
+}
+
+/* --- frequência --------------------------------------------------------- */
+
+.situacao {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.saidas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.tituloDaSaida {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.explicacao {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.acao {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.listaDeSaidas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.depoisDe {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.contagem {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.quando {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* --- tons ---------------------------------------------------------------
+   Os quatro tons de `TONS_DA_ABERTURA` existem aqui porque tom sem classe
+   apareceria SEM COR nenhuma, em silêncio: o ícone e o texto continuariam lá e
+   a revisão de código não veria a diferença. O portão varre a lista contra
+   este arquivo. */
+
+.ok {
+  color: var(--success-text);
+}
+
+.atencao {
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--attention);
+  color: var(--text);
+}
+
+.ruim {
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--danger);
+  color: var(--error-text);
+  font-size: 0.875rem;
+}
+
+.neutro {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
