@@ -34,8 +34,7 @@
  * precisa de motivo para escrever uma frase — não de um `throw` para engolir.
  */
 
-import { applyMove, START_FEN } from '@/lib/chess'
-import { identidadeDePosicao } from '@/lib/openings'
+import { applyMove, identidadeDePosicao, START_FEN } from '@/lib/chess'
 import type { DefinicaoDeRepertorio, LanceDeRepertorio, LinhaDeRepertorio } from '@/domain/types'
 
 /** Onde a ideia mora: o par posição + lance. Ver DECISÃO 1. */

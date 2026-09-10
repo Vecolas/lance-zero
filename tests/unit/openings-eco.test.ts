@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ChessParseError } from '@/lib/chess'
+import { ChessParseError, identidadeDePosicao } from '@/lib/chess'
 import {
   aberturaDaLinha,
   aberturaDaPosicao,
   construirIndiceEco,
   ehCodigoEco,
   identidadeDaEntrada,
-  identidadeDePosicao,
   lancesDaEntrada,
   type EntradaEco,
 } from '@/lib/openings'

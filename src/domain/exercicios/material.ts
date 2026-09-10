@@ -1,11 +1,17 @@
 /**
  * Saldo de material FORÇADO depois de um lance, com resolução de capturas.
  *
- * POR QUE EXISTE: o diagnóstico afirma "este lance ganha material". Sem código
- * que saiba conferir isso, a afirmação é opinião de quem escreveu o conteúdo, e
- * um item com resposta errada não aparece em lugar nenhum — ele só mede errado,
- * em silêncio, e o aluno recebe uma primeira semana montada sobre um número
- * inventado. Esta busca é o que torna o item CONFERÍVEL pelo portão.
+ * POR QUE EXISTE: um exercício posicional afirma "este lance ganha material".
+ * Sem código que saiba conferir isso, a afirmação é opinião de quem escreveu o
+ * conteúdo, e um item com resposta errada não aparece em lugar nenhum — ele só
+ * mede errado, em silêncio, e o aluno recebe uma primeira semana montada sobre
+ * um número inventado. Esta busca é o que torna o item CONFERÍVEL pelo portão.
+ *
+ * ONDE ISTO MORA, e por quê: em `@/domain/exercicios`, não em
+ * `@/domain/diagnostic`. Saldo de material forçado não é assunto do
+ * diagnóstico: ele serve a QUALQUER exercício posicional, e o esquema de lição
+ * já o consome pelo `avaliarLance`. Morava no diagnóstico só porque aquele era
+ * o único diretório que a rodada que o escreveu podia criar. Ver a issue #74.
  *
  * O QUE ELA PROVA: depois do lance do aluno, para TODA resposta do adversário,
  * e resolvidas as capturas seguintes, o saldo material do aluno subiu pelo

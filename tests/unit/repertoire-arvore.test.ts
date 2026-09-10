@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Chess } from 'chess.js'
-import { identidadeDePosicao } from '@/lib/openings'
+import { identidadeDePosicao } from '@/lib/chess'
 import {
   construirRepertorio,
   lanceDoRepertorio,

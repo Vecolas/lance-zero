@@ -27,9 +27,8 @@
  * reconhecido, como faz qualquer visualizador de partida.
  */
 
-import { applyMove, ChessParseError, START_FEN, type Ply } from '@/lib/chess'
+import { applyMove, ChessParseError, identidadeDePosicao, START_FEN, type Ply } from '@/lib/chess'
 import type { Abertura } from '@/domain/types'
-import { identidadeDePosicao } from './identidade'
 
 /**
  * Uma linha da fixture, espelhando as colunas do `chess-openings`.

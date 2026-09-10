@@ -1,5 +1,6 @@
 export * from './types'
 export * from './position'
+export * from './identidade'
 export * from './uci'
 export * from './pgn'
 export * from './navigation'

@@ -12,16 +12,16 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { CATALOGO_DE_LICOES } from '@/content/lessons'
+import { opcoesDe } from '@/domain/diagnostic'
 import {
-  CATALOGO_DE_LICOES,
   ETAPAS_DA_LICAO,
   definirLicao,
   estimarMinutos,
   etapasDaLicao,
   verificarLicao,
   type EntradaDeLicao,
-} from '@/content/lessons'
-import { opcoesDe } from '@/domain/diagnostic'
+} from '@/domain/lessons'
 import { SKILL_IDS } from '@/domain/types'
 
 /**

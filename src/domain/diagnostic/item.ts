@@ -1,5 +1,5 @@
 /**
- * Contrato de um item do diagnóstico e a verificação do banco inteiro.
+ * Item do diagnóstico: o que ele acrescenta a um exercício posicional.
  *
  * FORMATO: posição + alternativas em lance. O aluno escolhe entre lances
  * legais, não arrasta peça. A escolha é de acessibilidade, não de preguiça: o
@@ -8,47 +8,20 @@
  * entrada exclui parte do público logo na porta. O tabuleiro continua na tela,
  * como leitura; a resposta é um botão.
  *
- * DECISÃO QUE ESTE ARQUIVO CARREGA — as alternativas erradas são CONTEÚDO
- * VERIFICADO, não enfeite. O portão exige que cada uma seja legal e que cada
- * uma FALHE o objetivo. É o lado do portão que morde para dentro: se eu
- * escrever como "errada" uma jogada que também ganha, o banco reprova em vez de
- * ensinar ao aluno que a resposta certa dele estava errada.
+ * O QUE NÃO ESTÁ AQUI, e onde está: a posição, o objetivo, a chave de correção
+ * e a verificação deles vivem em `@/domain/exercicios`, porque valem para
+ * qualquer exercício posicional — o diagnóstico e a recuperação das lições
+ * precisam da MESMA prova. Este arquivo guarda só o que é do DIAGNÓSTICO:
+ * habilidade medida, dificuldade de referência, enunciado e explicação.
  *
- * `lancesAceitos` e `alternativas` são TUPLAS não-vazias: item sem resposta
- * certa, ou sem nenhuma alternativa, não chega a compilar. É a mesma ideia do
- * esquema de lição — impedir na forma em vez de cobrar num portão depois.
+ * `opcoesDe` e `acertou` também ficam aqui, e isso é DÍVIDA DECLARADA: as duas
+ * operam sobre `ExercicioPosicional` e a biblioteca de lições já as usa, então
+ * a casa delas é `@/domain/exercicios`. Não vieram junto porque migrá-las mexe
+ * em telas que pertencem a outra frente nesta rodada. Está relatado.
  */
 
-import type { SkillId, Side } from '@/domain/types'
-import { posicaoEhJogavel, positionStatus } from '@/lib/chess'
-import { avaliarLance, type ObjetivoDeDiagnostico } from './objetivo'
-
-/** Lista com pelo menos um elemento. */
-export type NaoVazia<T> = readonly [T, ...T[]]
-
-/**
- * Um exercício posicional conferível: posição, objetivo e a chave de correção.
- *
- * É o vocabulário COMPARTILHADO entre o banco de diagnóstico e a etapa de
- * recuperação das lições (`@/content/lessons/schema`). Os dois precisam da
- * mesma prova — lance aceito cumpre, alternativa apresentada como errada falha
- * — e escrever essa verificação duas vezes seria duas fontes para a mesma
- * verdade, com a segunda cópia divergindo no dia em que a primeira ganhasse um
- * caso novo.
- *
- * DÍVIDA DECLARADA: a casa certa deste tipo é um módulo de exercícios, não
- * `diagnostic/`. Ver o cabeçalho de `./index.ts`.
- */
-export interface ExercicioPosicional {
-  /** Único no catálogo onde ele vive. */
-  id: string
-  fen: string
-  /** Lado do aluno. É sempre a vez dele no FEN. */
-  ladoDoAluno: Side
-  objetivo: ObjetivoDeDiagnostico
-  lancesAceitos: NaoVazia<string>
-  alternativas: NaoVazia<string>
-}
+import type { SkillId } from '@/domain/types'
+import type { ExercicioPosicional } from '@/domain/exercicios'
 
 export interface ItemDeDiagnostico extends ExercicioPosicional {
   /** Habilidade do catálogo que este item mede. */
@@ -73,59 +46,8 @@ export interface ItemDeDiagnostico extends ExercicioPosicional {
   explicacao: string
 }
 
-/** Um problema encontrado no banco, já com o item que o carrega. */
-export interface FalhaDeItem {
-  itemId: string
-  problema: string
-}
-
 /**
- * Confere um item inteiro e devolve TODOS os problemas dele.
- *
- * Devolve lista em vez de lançar no primeiro problema porque quem chama é o
- * portão do banco: parar no primeiro item quebrado esconderia os outros e
- * transformaria a correção do conteúdo numa fila de uma falha por execução.
- */
-export function verificarExercicio(item: ExercicioPosicional): FalhaDeItem[] {
-  const falhas: string[] = []
-
-  if (!posicaoEhJogavel(item.fen)) {
-    // Sem posição jogável nada mais pode ser conferido: as buscas lançariam.
-    return [{ itemId: item.id, problema: `FEN inválido ou posição impossível: ${item.fen}` }]
-  }
-  const estado = positionStatus(item.fen)
-  if (estado.turn !== item.ladoDoAluno) {
-    return [{ itemId: item.id, problema: `o FEN não está na vez de ${item.ladoDoAluno}` }]
-  }
-  if (estado.isGameOver) {
-    return [{ itemId: item.id, problema: 'a posição já está terminada' }]
-  }
-
-  for (const uci of item.lancesAceitos) {
-    const veredito = avaliarLance(item.fen, item.ladoDoAluno, uci, item.objetivo)
-    if (!veredito.cumpre) {
-      falhas.push(`lance aceito não cumpre o objetivo: ${veredito.motivo}`)
-    }
-  }
-
-  for (const uci of item.alternativas) {
-    if (item.lancesAceitos.includes(uci)) {
-      falhas.push(`${uci} está ao mesmo tempo entre os aceitos e entre as alternativas`)
-      continue
-    }
-    const veredito = avaliarLance(item.fen, item.ladoDoAluno, uci, item.objetivo)
-    if (veredito.cumpre) {
-      falhas.push(
-        `alternativa apresentada como errada também cumpre o objetivo: ${veredito.motivo}`,
-      )
-    }
-  }
-
-  return falhas.map((problema) => ({ itemId: item.id, problema }))
-}
-
-/**
- * Todas as opções de um item, na ordem em que a tela deve apresentá-las.
+ * Todas as opções de um exercício, na ordem em que a tela deve apresentá-las.
  *
  * A ordem é DERIVADA do id do item, e não sorteada: o mesmo item mostra sempre
  * a mesma ordem, então o e2e e a tela falam da mesma tela, e nenhum aluno vê a
@@ -145,7 +67,7 @@ function somaDosCodigos(texto: string): number {
   return soma
 }
 
-/** O lance escolhido está entre os aceitos deste item? */
+/** O lance escolhido está entre os aceitos deste exercício? */
 export function acertou(item: ExercicioPosicional, lanceEscolhido: string): boolean {
   return item.lancesAceitos.includes(lanceEscolhido)
 }

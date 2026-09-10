@@ -22,20 +22,19 @@
  * nada: ela já vem no `LegalMove`.
  *
  * DECISÃO 3 — A IDENTIDADE DA POSIÇÃO NÃO É CALCULADA AQUI. Ela vem de
- * `identidadeDePosicao`, que já resolve exatamente este problema (tabuleiro,
- * vez, roque e en passant dentro; contadores fora) e já tem portão próprio.
- * Reescrever a regra aqui seria a segunda fonte da mesma verdade, e a cópia
- * erraria no en passant — que é onde a original quase errou.
- *
- * ONDE `identidadeDePosicao` DEVERIA MORAR: em `@/lib/chess`, junto de
- * `normalizeFen`. Identidade de posição é regra de xadrez geral, e finais,
- * puzzles e importação têm todos o mesmo problema. O próprio cabeçalho dela diz
- * isso. Não foi movida nesta rodada porque `@/lib/**` pertence a outra frente;
- * mover é uma troca de import e nada mais.
+ * `identidadeDePosicao`, em `@/lib/chess`, que já resolve exatamente este
+ * problema (tabuleiro, vez, roque e en passant dentro; contadores fora) e já
+ * tem portão próprio. Reescrever a regra aqui seria a segunda fonte da mesma
+ * verdade, e a cópia erraria no en passant — que é onde a original quase errou.
  */
 
-import { applyMove, normalizeUci, parseUci, type PieceColor } from '@/lib/chess'
-import { identidadeDePosicao } from '@/lib/openings/identidade'
+import {
+  applyMove,
+  identidadeDePosicao,
+  normalizeUci,
+  parseUci,
+  type PieceColor,
+} from '@/lib/chess'
 import type { Side } from '@/domain/types'
 import type { ContextoObjetivo } from './objetivo'
 

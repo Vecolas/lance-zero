@@ -43,13 +43,8 @@
  * erros de uma vez, não o primeiro. O portão do conteúdo exige lista vazia.
  */
 
-import { applyMove, START_FEN } from '@/lib/chess'
-import {
-  aberturaDaPosicao,
-  fenJogavelDe,
-  identidadeDePosicao,
-  type IndiceEco,
-} from '@/lib/openings'
+import { applyMove, fenJogavelDe, identidadeDePosicao, START_FEN } from '@/lib/chess'
+import { aberturaDaPosicao, type IndiceEco } from '@/lib/openings'
 import type {
   Abertura,
   DefinicaoDeRepertorio,

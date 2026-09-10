@@ -1,5 +1,14 @@
 /**
- * Identidade de uma posição: a chave que faz TRANSPOSIÇÃO virar o mesmo nó.
+ * Identidade de uma posição: a chave que responde "estas duas são a mesma?".
+ *
+ * ONDE ISTO MORA, e por quê: aqui, ao lado de `normalizeFen` e `isValidFen`.
+ * Identidade de posição é regra de XADREZ, não de abertura. Ela nasceu em
+ * `@/lib/openings` para resolver transposição, e quando os finais precisaram
+ * contar repetição a mesma regra passou a ter dois donos — com telas de
+ * puzzles e de importação a caminho do terceiro. Quem procura "mesma posição"
+ * olha em `@/lib/chess`; não achando aqui, escreve a própria, e aí passam a
+ * existir duas regras que divergem na primeira mudança, em silêncio. Ver a
+ * issue #74.
  *
  * O PROBLEMA QUE ESTE ARQUIVO RESOLVE. Duas ordens de lances chegam ao mesmo
  * tabuleiro:
@@ -28,8 +37,9 @@
  *   que sem ele não existe.
  *
  * O QUE FICA DE FORA: o contador de meios-lances e o número do lance. Nenhum
- * dos dois muda o que se pode jogar (a regra dos 50 lances é irrelevante na
- * abertura, que é o único lugar onde esta chave é usada).
+ * dos dois muda o que se pode JOGAR — e é isso que a chave mede. Vale para os
+ * dois consumidores: transposição na abertura, e repetição no final, que pela
+ * regra também ignora os contadores.
  *
  * A ARMADILHA DO EN PASSANT, que é onde este código quase errou. O FEN estrito
  * registra a casa de en passant sempre que um peão anda duas casas, MESMO que
@@ -45,17 +55,12 @@
  * A defesa é passar pelo `normalizeFen`, que carrega e reserializa a posição
  * pelo `chess.js` — e o `chess.js` 1.4.0 só emite a casa de en passant quando
  * existe captura legal para ela. Confirmado contra a biblioteca instalada, e
- * amarrado por um portão em `tests/unit/openings-identidade.test.ts`, porque é
+ * amarrado por um portão em `tests/unit/chess-identidade.test.ts`, porque é
  * comportamento de terceiro do qual esta função DEPENDE.
- *
- * ONDE ISTO DEVERIA MORAR: identidade de posição é regra de xadrez geral, não
- * de aberturas — puzzles, finais e importação têm o mesmo problema. O lugar
- * natural é `@/lib/chess`, junto de `normalizeFen` e `posicaoEhJogavel`. Ficou
- * aqui porque `@/lib/chess` pertence a outra frente nesta rodada; mover é uma
- * troca de import e nada mais.
  */
 
-import { ChessParseError, isValidFen, normalizeFen } from '@/lib/chess'
+import { isValidFen, normalizeFen } from './position'
+import { ChessParseError } from './types'
 
 /** Quantos campos do FEN entram na identidade: tabuleiro, vez, roque, en passant. */
 const CAMPOS_DE_IDENTIDADE = 4

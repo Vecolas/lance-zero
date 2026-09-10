@@ -28,8 +28,7 @@ import {
   primeiraOcorrenciaDoLance,
   type AlvoDaIdeia,
 } from '@/domain/repertoire'
-import { START_FEN } from '@/lib/chess'
-import { identidadeDePosicao } from '@/lib/openings'
+import { identidadeDePosicao, START_FEN } from '@/lib/chess'
 import type { DefinicaoDeRepertorio } from '@/domain/types'
 
 const AGORA = new Date('2026-05-04T08:00:00.000Z')

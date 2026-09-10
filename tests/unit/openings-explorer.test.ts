@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { START_FEN } from '@/lib/chess'
+import { identidadeDePosicao, START_FEN } from '@/lib/chess'
 import {
   EXPLORER_CONFIG,
   FILTRO_PADRAO,
   LichessExplorerProvider,
-  identidadeDePosicao,
   participacaoDe,
   type MotivoDeIndisponibilidade,
 } from '@/lib/openings'

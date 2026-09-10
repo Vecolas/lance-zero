@@ -32,8 +32,7 @@ import {
   semearCardsDeRepertorio,
 } from '@/lib/training/repertorio-no-treino'
 import { noDaPosicao, type ArvoreDeRepertorio } from '@/domain/repertoire'
-import { START_FEN } from '@/lib/chess'
-import { identidadeDePosicao } from '@/lib/openings'
+import { identidadeDePosicao, START_FEN } from '@/lib/chess'
 
 const AGORA = new Date('2026-05-04T08:00:00.000Z')
 const DEPOIS = new Date('2026-05-05T08:00:00.000Z')

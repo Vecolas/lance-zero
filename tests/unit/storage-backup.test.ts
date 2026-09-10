@@ -15,8 +15,7 @@ import { IndexedDbTrainingRepository, deleteDatabase } from '@/lib/storage/index
 import { StorageError, UnsupportedBackupVersionError } from '@/lib/storage/repository'
 import { editarIdeiaDoRepertorio } from '@/domain/repertoire'
 import { REPERTORIO_BRANCAS } from '@/content/openings'
-import { identidadeDePosicao } from '@/lib/openings'
-import { START_FEN } from '@/lib/chess'
+import { identidadeDePosicao, START_FEN } from '@/lib/chess'
 import type { RepertorioDoAluno } from '@/domain/types'
 
 const CRIADO_EM = new Date('2026-03-01T09:00:00.000Z')

@@ -42,8 +42,12 @@
  */
 
 import type { Side } from '@/domain/types'
-import { positionStatus, type PieceType, type PromotionPiece } from '@/lib/chess'
-import { identidadeDePosicao } from '@/lib/openings/identidade'
+import {
+  identidadeDePosicao,
+  positionStatus,
+  type PieceType,
+  type PromotionPiece,
+} from '@/lib/chess'
 
 /**
  * Os tipos de objetivo que existem.

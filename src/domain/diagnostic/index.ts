@@ -1,16 +1,15 @@
 /**
  * Barril do domínio do diagnóstico.
  *
- * DÍVIDA DECLARADA: `material.ts` e `objetivo.ts` não são "do diagnóstico" —
- * saldo de material forçado e verificação de objetivo servem a qualquer
- * exercício posicional do app, e o esquema de lição em `@/content/lessons` já
- * os consome. A casa certa deles é um módulo próprio de exercícios; eles moram
- * aqui porque esta rodada de trabalho só podia criar `src/domain/diagnostic/`.
- * Está relatado na entrega e vira issue.
+ * O que é do diagnóstico mora aqui: o item (habilidade, dificuldade, enunciado),
+ * a estimativa de rating e maestria a partir das respostas, e a montagem da
+ * primeira semana.
+ *
+ * O que vale para QUALQUER exercício posicional — objetivo, saldo de material
+ * forçado, contrato do exercício e a verificação dele — mora em
+ * `@/domain/exercicios`, e é de lá que o esquema de lição também consome.
  */
 
-export * from './material'
-export * from './objetivo'
 export * from './item'
 export * from './estimativa'
 export * from './primeira-semana'

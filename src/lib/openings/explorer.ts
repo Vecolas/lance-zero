@@ -58,7 +58,7 @@
  * Documentação: https://lichess.org/api#tag/Opening-Explorer
  */
 
-import { ChessParseError, isValidFen } from '@/lib/chess'
+import { ChessParseError, identidadeDePosicao, isValidFen } from '@/lib/chess'
 import {
   HttpClient,
   HttpStatusError,
@@ -74,7 +74,6 @@ import type {
   ExplorerStats,
   OpeningExplorerProvider,
 } from '@/domain/types'
-import { identidadeDePosicao } from './identidade'
 
 /**
  * Números ajustáveis do explorer.
