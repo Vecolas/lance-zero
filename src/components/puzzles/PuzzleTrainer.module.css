@@ -41,28 +41,16 @@
   font-size: 0.9375rem;
 }
 
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  align-self: flex-start;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid currentColor;
-  border-radius: var(--radius-sm);
-  font-size: 0.8125rem;
-  font-weight: 650;
-}
+/* Acerto e erro NÃO têm classe aqui: quem os pinta é o FeedbackBanner, com o
+   catálogo de `lib/design/feedback`. Reintroduzir `.status/.ok/.bad` seria
+   recriar a segunda tabela de cor que a issue #61 removeu. */
 
-.ok {
-  color: var(--positive);
-}
-
-.bad {
-  color: var(--danger);
-}
-
-.warn {
-  color: var(--warning);
+/* Contagem de tentativas erradas DURANTE a tentativa. Não é veredito, então
+   não carrega cor de estado. */
+.tentativas {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 .hint {

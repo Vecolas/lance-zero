@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import { FeedbackBanner } from '@/components/ui/FeedbackBanner'
 import {
   availableRatings,
   createReviewSession,
@@ -21,6 +22,22 @@ import { applyReview } from '@/lib/fsrs/cards'
 import styles from './ReviewSession.module.css'
 
 type Fase = 'carregando' | 'revisando' | 'concluida' | 'erro'
+
+/**
+ * O que aconteceu NESTA revisão, em uma frase.
+ *
+ * Mesma divisão de trabalho da tela de puzzles: a palavra do estado vem do
+ * catálogo, dentro do `FeedbackBanner`; aqui fica só o fato da posição. Antes
+ * da issue #61 esta tela tinha o seu próprio selo "✓ Correto" com as suas
+ * próprias classes de cor — uma terceira verdade para o mesmo estado.
+ *
+ * O estado incorreto vale também para quem clicou "Não lembro": em revisão
+ * espaçada não lembrar é o dado que interessa, não uma falta.
+ */
+const MENSAGEM_DA_REVISAO = {
+  acertou: 'Você lembrou o lance desta posição.',
+  errou: 'O lance desta posição ainda não está firme.',
+} as const
 
 export function ReviewSession() {
   const { status, repo, profile, erro, refresh } = useRepository()
@@ -192,16 +209,18 @@ export function ReviewSession() {
         ) : null}
 
         {sessao.phase === 'acertou' ? (
-          <span className={`${styles.status} ${styles.ok}`}>✓ Correto</span>
+          <FeedbackBanner tone="correto" mensagem={MENSAGEM_DA_REVISAO.acertou} />
         ) : null}
 
         {sessao.phase === 'errou' ? (
-          <>
-            <span className={`${styles.status} ${styles.bad}`}>✕ Não era esse</span>
+          /* A resposta certa entra COMO conteúdo da faixa, e não como parágrafo
+             solto ao lado: assim ela é anunciada junto com o estado, em vez de
+             o leitor de tela ouvir "algo para treinar" e nada mais. */
+          <FeedbackBanner tone="incorreto" mensagem={MENSAGEM_DA_REVISAO.errou}>
             <p className={styles.hint}>
               O lance certo era <strong>{esperado}</strong>. Ele volta em breve.
             </p>
-          </>
+          </FeedbackBanner>
         ) : null}
 
         {sessao.phase !== 'resolvendo' ? (
