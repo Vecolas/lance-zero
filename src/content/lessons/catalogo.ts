@@ -17,7 +17,7 @@
  * catálogo inteiro conferindo posição, linha e chave de correção.
  */
 
-import { definirLicao, type Licao } from './schema'
+import { definirLicao, type Licao } from '@/domain/lessons'
 
 const PECA_PENDURADA = definirLicao({
   id: 'peca-pendurada',

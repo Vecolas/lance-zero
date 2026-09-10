@@ -44,7 +44,7 @@
  */
 
 import { useMemo } from 'react'
-import { fenJogavelDe } from '@/lib/openings'
+import { fenJogavelDe } from '@/lib/chess'
 import {
   nosDeEstudo,
   type ArvoreDeRepertorio,

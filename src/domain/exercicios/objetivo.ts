@@ -1,8 +1,14 @@
 /**
- * Objetivo de um item do diagnóstico, e a sua verificação por código.
+ * Objetivo de um exercício posicional, e a sua verificação por código.
  *
- * DECISÃO CENTRAL, herdada de `@/domain/endgames/objetivo`: o item de
- * diagnóstico só pode afirmar o que o código sabe conferir. "Este é o melhor
+ * ONDE ISTO MORA, e por quê: em `@/domain/exercicios`. O objetivo é o
+ * vocabulário compartilhado entre o banco de diagnóstico e a etapa de
+ * recuperação das lições — os dois precisam da MESMA prova. Morava em
+ * `@/domain/diagnostic` só porque aquele era o único diretório que a rodada que
+ * o escreveu podia criar. Ver a issue #74.
+ *
+ * DECISÃO CENTRAL, herdada de `@/domain/endgames/objetivo`: um exercício
+ * posicional só pode afirmar o que o código sabe conferir. "Este é o melhor
  * lance" e "este lance é mais natural" não entram aqui. Um diagnóstico cuja
  * chave de correção é opinião de quem escreveu mede o autor, não o aluno — e o
  * erro nunca aparece, porque um item com resposta errada continua devolvendo um

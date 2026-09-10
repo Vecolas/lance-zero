@@ -14,8 +14,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { BANCO_DE_DIAGNOSTICO } from '@/content/diagnostic'
-import { opcoesDe, verificarExercicio } from '@/domain/diagnostic'
-import { TIPOS_DE_OBJETIVO_DIAGNOSTICO } from '@/domain/diagnostic'
+import { opcoesDe } from '@/domain/diagnostic'
+import { TIPOS_DE_OBJETIVO_DIAGNOSTICO, verificarExercicio } from '@/domain/exercicios'
 import { DEFAULT_ESTIMATED_RATING } from '@/domain/profile'
 import { SKILL_IDS } from '@/domain/types'
 

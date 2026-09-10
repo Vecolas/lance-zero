@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Chess } from 'chess.js'
-import { construirIndiceEco, identidadeDePosicao } from '@/lib/openings'
+import { identidadeDePosicao } from '@/lib/chess'
+import { construirIndiceEco } from '@/lib/openings'
 import {
   construirRepertorio,
   frequenciaDeAberturas,

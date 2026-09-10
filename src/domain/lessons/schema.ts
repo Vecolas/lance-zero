@@ -23,9 +23,11 @@
  * existe depois da resposta — por isso ela é campo do exercício e não do
  * enunciado. Dizer "garfo" antes destrói exatamente o que a etapa mede.
  *
- * DÍVIDA DECLARADA: um esquema não é conteúdo e deveria morar em
- * `src/domain/lessons/`. Ele está aqui porque esta rodada de trabalho só podia
- * criar `src/domain/diagnostic/` e `src/content/lessons/`. Está relatado.
+ * ONDE ISTO MORA, e por quê: em `@/domain/lessons`. Um esquema não é conteúdo.
+ * `@/content/lessons` guarda as lições ESCRITAS; a forma que elas têm de ter, e
+ * o verificador que confere isso, são domínio. Morava junto do conteúdo só
+ * porque aquele era um dos dois diretórios que a rodada que o escreveu podia
+ * criar. Ver a issue #74.
  */
 
 import {
@@ -35,7 +37,7 @@ import {
   type FalhaDeItem,
   type NaoVazia,
   type ObjetivoDeDiagnostico,
-} from '@/domain/diagnostic'
+} from '@/domain/exercicios'
 import { applyMove, normalizeUci, parseUci } from '@/lib/chess'
 import type { SkillId, Side } from '@/domain/types'
 
@@ -68,8 +70,8 @@ export type EtapaDaLicao = (typeof ETAPAS_DA_LICAO)[number]
 /**
  * Exercício de recuperação: o aluno responde SEM dica e sem o tema na tela.
  *
- * Herda `ExercicioPosicional` porque a prova de que ele é conferível é a mesma
- * do banco de diagnóstico, e ela mora num lugar só.
+ * Herda `ExercicioPosicional` (de `@/domain/exercicios`) porque a prova de que
+ * ele é conferível é a mesma do banco de diagnóstico, e ela mora num lugar só.
  */
 export interface ExercicioDeRecuperacao extends ExercicioPosicional {
   /** O que se pede, em uma frase. NÃO nomeia o tema. */

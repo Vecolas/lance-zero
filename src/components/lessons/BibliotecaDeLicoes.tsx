@@ -21,13 +21,13 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { CATALOGO_DE_LICOES } from '@/content/lessons'
 import {
-  CATALOGO_DE_LICOES,
   ETAPAS_DA_LICAO,
   estimarMinutos,
   type ExercicioDeRecuperacao,
   type Licao,
-} from '@/content/lessons'
+} from '@/domain/lessons'
 import { acertou, opcoesDe } from '@/domain/diagnostic'
 import { getSkill } from '@/domain/skills/catalog'
 import { applyMove, legalMoves, normalizeUci, parseUci } from '@/lib/chess'

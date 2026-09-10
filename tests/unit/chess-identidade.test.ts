@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { Chess } from 'chess.js'
-import { ChessParseError, START_FEN } from '@/lib/chess'
-import { fenJogavelDe, identidadeDePosicao, mesmaPosicao } from '@/lib/openings'
+import {
+  ChessParseError,
+  fenJogavelDe,
+  identidadeDePosicao,
+  mesmaPosicao,
+  START_FEN,
+} from '@/lib/chess'
 
 /**
  * Portão da identidade de posição — a chave da transposição.

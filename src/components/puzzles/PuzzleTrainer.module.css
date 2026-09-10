@@ -146,3 +146,25 @@
   border-color: var(--danger);
   color: var(--danger);
 }
+
+/* Bloco do julgamento de alternativa (issue #17).
+
+   NEUTRO de propósito. Acerto e erro são pintados pelo FeedbackBanner, com o
+   catálogo de `lib/design/feedback`; dar cor de estado a este bloco recriaria a
+   segunda tabela de cor que a issue #61 removeu. O que separa os três vereditos
+   aqui é ÍCONE + RÓTULO + FRASE, nunca a cor. */
+.alternativa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+.alternativaTitulo {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+}

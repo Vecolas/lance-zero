@@ -45,8 +45,7 @@ import {
   type RegraDeEmpate,
 } from '@/domain/endgames'
 import { CURRICULO_FINAIS } from '@/content/endgames'
-import { identidadeDePosicao } from '@/lib/openings/identidade'
-import { positionStatus } from '@/lib/chess'
+import { identidadeDePosicao, positionStatus } from '@/lib/chess'
 
 const EMPATAR: ObjetivoFinal = { tipo: 'empate-defendido' }
 const MATE_EM_2: ObjetivoFinal = { tipo: 'mate-em', lancesMaximos: 2 }

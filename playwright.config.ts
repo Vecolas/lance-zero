@@ -38,8 +38,46 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['Pixel 5'] } },
+    /**
+     * Os specs de acessibilidade rodam em UM projeto só, e o `testIgnore`
+     * abaixo é o que garante isso.
+     *
+     * CADA PROJETO NOVO MULTIPLICA A SUÍTE INTEIRA. Com dois projetos e dois
+     * workers ela leva ~2,3 min; um terceiro projeto irrestrito somaria toda a
+     * suíte de novo, e quatro specs dela sobem a Stockfish (ver a nota sobre
+     * `workers` acima) — repetir isso em 360 px custaria minutos para medir
+     * exatamente o que já foi medido em 393.
+     *
+     * A troca feita, com os olhos abertos: em 360 px roda a VARREDURA de
+     * refluxo e de contraste, que passa por TODAS as telas principais, e não os
+     * fluxos funcionais. FICA DE FORA de 360, e não adianta fingir que não:
+     * resolver puzzle, importar partida por Lichess/Chess.com, o pipeline de
+     * engine, os cabeçalhos de segurança e a troca de tema. Se um desses tiver
+     * um defeito que só aparece a 360 e não a 393, esta matriz não o encontra.
+     */
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /a11y-.*\.spec\.ts$/,
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['Pixel 5'] },
+      testIgnore: /a11y-.*\.spec\.ts$/,
+    },
+    {
+      /**
+       * 360 px é a régua escrita no CLAUDE.md ("360px viewport"), e até a issue
+       * #75 o e2e mais estreito rodava em 393 (Pixel 5).
+       *
+       * Os specs de contraste sobrescrevem este viewport de propósito: medem em
+       * 360 E em desktop, porque abaixo de 60rem o app troca a navegação
+       * lateral pela barra inferior — são composições diferentes.
+       */
+      name: 'acessibilidade-360',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 740 } },
+      testMatch: /a11y-.*\.spec\.ts$/,
+    },
   ],
   webServer: {
     /**
