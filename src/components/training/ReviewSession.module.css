@@ -45,6 +45,40 @@
   color: var(--text-muted);
 }
 
+/* Julgamento do lance num card de final (#62). A COR do degrau não mora aqui:
+   ela vem de `COR_DO_TOM`, no componente, porque esta folha não pode redeclarar
+   as classes de estado que a issue #61 removeu. O que mora aqui é forma. */
+.grau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-left: 3px solid currentColor;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.grauTitulo {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+/* Sem juiz: nem faixa de acerto, nem faixa de erro. O contorno neutro é o que
+   impede a leitura de "passou" — e o texto dentro dele diz o porquê. */
+.semJuiz {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
 .ratings {
   display: flex;
   flex-wrap: wrap;

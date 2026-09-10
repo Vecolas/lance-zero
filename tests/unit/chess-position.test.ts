@@ -5,6 +5,7 @@ import {
   isValidFen,
   legalMoves,
   normalizeFen,
+  posicaoEhJogavel,
   positionStatus,
   START_FEN,
 } from '@/lib/chess'
@@ -102,5 +103,38 @@ describe('status da posição', () => {
     expect(status.turn).toBe('w')
     expect(status.moveNumber).toBe(1)
     expect(status.isGameOver).toBe(false)
+  })
+})
+
+/**
+ * `posicaoEhJogavel` é o segundo nível da validação de FEN, e existe porque o
+ * primeiro mente por omissão: `isValidFen` aceita posição em que o lado SEM a
+ * vez está em xeque. Veio de `@/domain/endgames` na issue #55 (item 3) — as
+ * asserções são as mesmas, só o endereço mudou.
+ */
+describe('posicaoEhJogavel', () => {
+  it('aceita uma posição possível', () => {
+    expect(posicaoEhJogavel('7k/8/6K1/8/8/8/8/1Q6 w - - 0 1')).toBe(true)
+  })
+
+  it('recusa a posição em que o lado SEM a vez está em xeque', () => {
+    // Dama em a1 dá xeque ao rei em h8 pela diagonal, com as brancas a jogar:
+    // impossível numa partida. `isValidFen` aceita isto; este portão não.
+    expect(posicaoEhJogavel('7k/8/6K1/8/8/8/8/Q7 w - - 0 1')).toBe(false)
+  })
+
+  it('recusa FEN inválido', () => {
+    expect(posicaoEhJogavel('não é fen')).toBe(false)
+    expect(posicaoEhJogavel('8/8/8/8/8/8/8/8 w - - 0 1')).toBe(false)
+  })
+
+  it('não é a mesma pergunta que isValidFen', () => {
+    // A regra, não um número: existe pelo menos um FEN que o primeiro nível
+    // aceita e o segundo recusa. Se os dois passassem a concordar sempre,
+    // `posicaoEhJogavel` teria virado um apelido caro de `isValidFen` e este
+    // teste é quem diz isso em voz alta.
+    const impossivel = '7k/8/6K1/8/8/8/8/Q7 w - - 0 1'
+    expect(isValidFen(impossivel)).toBe(true)
+    expect(posicaoEhJogavel(impossivel)).toBe(false)
   })
 })

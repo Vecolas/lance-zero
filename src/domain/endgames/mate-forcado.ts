@@ -17,9 +17,14 @@
  * conteúdo que o paga.
  */
 
-import { applyMove, legalMoves, positionStatus, type LegalMove } from '@/lib/chess'
+import {
+  applyMove,
+  legalMoves,
+  posicaoEhJogavel,
+  positionStatus,
+  type LegalMove,
+} from '@/lib/chess'
 import type { Side } from '@/domain/types'
-import { posicaoEhJogavel } from './legalidade'
 
 /**
  * Existe mate forçado para `lado` em no máximo `lancesMaximos` lances dele?
@@ -106,8 +111,8 @@ function defensorEscapa(fen: string, lancesRestantes: number, memo: Memo): boole
  * Aplica o lance e devolve o FEN, ou `null` se a partida terminou sem mate.
  *
  * Reaplicar um lance que `legalMoves` acabou de declarar legal é desperdício,
- * mas `@/lib/chess` ainda não devolve o FEN junto do lance e esta frente não
- * pode editá-lo — dívida declarada no relatório da entrega.
+ * mas `@/lib/chess` ainda não devolve o FEN junto do lance — é o item 5 da
+ * issue #55, e é ele que hoje limita `mateMaximoVerificavel`.
  */
 function aplicar(fen: string, lance: LegalMove): string | null {
   const resultado = applyMove(fen, {

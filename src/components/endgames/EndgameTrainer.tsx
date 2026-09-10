@@ -66,7 +66,7 @@ import {
   type ResultadoObjetivo,
 } from '@/domain/endgames'
 import { gravarTentativaDeFinal } from '@/domain/endgames/persistencia'
-import { normalizeUci, parseUci } from '@/domain/puzzles/parser'
+import { normalizeUci, parseUci } from '@/lib/chess'
 import { applyMove, positionStatus, type PromotionPiece, type SquareName } from '@/lib/chess'
 import { LichessTablebaseProvider } from '@/lib/tablebase'
 import { descreverLinhaModelo } from './linha-modelo-legivel'
@@ -148,6 +148,16 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
   const [detalheDaFalha, setDetalheDaFalha] = useState<string | null>(null)
   /** Um julgamento por lance do aluno, na ordem em que as consultas voltaram. */
   const [julgamentos, setJulgamentos] = useState<JulgamentoDoLance[]>([])
+  /**
+   * Julgamentos ainda esperando a tablebase.
+   *
+   * A consulta é assíncrona, então o julgamento do ÚLTIMO lance chega DEPOIS de
+   * a tentativa terminar. Sem esta contagem, a gravação sairia com um caminho
+   * mais longo a menos — o desconto viria subcontado, sem erro, sem aviso e sem
+   * nada na tela. É o tipo de defeito que só apareceria como "a maestria sobe
+   * mais rápido do que deveria", meses depois, sem ninguém ligar à causa.
+   */
+  const [julgamentosEmVoo, setJulgamentosEmVoo] = useState(0)
 
   /**
    * Marca a geração da tentativa. Resposta do adversário que chega depois de um
@@ -192,6 +202,10 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
     setGravacao(null)
     setDetalheDaFalha(null)
     setJulgamentos([])
+    // Zera junto: as consultas da tentativa anterior ainda podem voltar, e elas
+    // decrementam ao chegar. Sem zerar, o contador ficaria negativo — e o
+    // `Math.max` que impede isso esconderia o descompasso em vez de acusá-lo.
+    setJulgamentosEmVoo(0)
   }, [posicao])
 
   const responder = useCallback(
@@ -248,6 +262,7 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
   const julgar = useCallback(
     async (fenAntes: string, uci: string, lancesAntes: readonly string[]) => {
       const minhaGeracao = geracao.current
+      setJulgamentosEmVoo((n) => n + 1)
       let daTablebase = null
       try {
         daTablebase = await sonda(fenAntes)
@@ -255,8 +270,13 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
         daTablebase = null
       }
       if (minhaGeracao !== geracao.current) {
+        // Consulta de uma tentativa que não existe mais. NÃO decrementa: o
+        // `recomecar` já zerou o contador, e abater aqui tiraria da conta da
+        // tentativa NOVA — a gravação sairia antes do último veredito chegar,
+        // que é exatamente o defeito que este contador existe para impedir.
         return
       }
+      setJulgamentosEmVoo((n) => Math.max(0, n - 1))
       // O lance da lição só existe enquanto a partida estiver EM CIMA da linha
       // modelo. Fora dela não há lance ensinado para aquela posição, e mandar
       // um lance de outra posição faria o juiz comparar coisas diferentes.
@@ -372,6 +392,12 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
     if (!encerrada || falhaDoSistema !== null) {
       return
     }
+    // Esperar o veredito que ainda está no ar. A geração NÃO é consumida aqui,
+    // pelo mesmo motivo do repositório ausente: quando o último julgamento
+    // chegar, o efeito roda de novo e grava com a conta completa.
+    if (julgamentosEmVoo > 0) {
+      return
+    }
     /**
      * Sem repositório ainda NÃO é falha: o provider pode estar abrindo o banco.
      * A geração não é consumida aqui de propósito — assim a gravação acontece
@@ -424,6 +450,8 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
     estadoVisivel,
     falhaDoSistema,
     inicio,
+    julgamentos,
+    julgamentosEmVoo,
     lancesDoAluno,
     licao,
     posicao,

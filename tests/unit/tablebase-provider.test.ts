@@ -11,12 +11,8 @@
  */
 
 import { describe, expect, it, vi } from 'vitest'
-import {
-  CATEGORIAS_TABLEBASE,
-  LichessTablebaseProvider,
-  TABLEBASE_CONFIG,
-  melhorLanceDe,
-} from '@/lib/tablebase'
+import { CATEGORIAS_TABLEBASE } from '@/domain/types'
+import { LichessTablebaseProvider, TABLEBASE_CONFIG, melhorLanceDe } from '@/lib/tablebase'
 
 const FEN_COBERTO = '4k3/8/4K3/4P3/8/8/8/8 w - - 0 1'
 const FEN_OUTRO = '7k/8/6K1/8/8/8/8/1Q6 w - - 0 1'

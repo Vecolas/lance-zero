@@ -1,4 +1,5 @@
 export * from './types'
 export * from './position'
+export * from './uci'
 export * from './pgn'
 export * from './navigation'

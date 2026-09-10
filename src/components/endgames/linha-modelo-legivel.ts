@@ -17,7 +17,7 @@
  */
 
 import { reproduzirLinhaModelo, type PosicaoDeFinal } from '@/domain/endgames'
-import { normalizeUci, parseUci } from '@/domain/puzzles/parser'
+import { normalizeUci, parseUci } from '@/lib/chess'
 import { applyMove, positionStatus } from '@/lib/chess'
 
 export interface LanceDaLinha {

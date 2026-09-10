@@ -31,9 +31,10 @@
  * não existir um teste que passa em quatro execuções de cinco.
  */
 
-import { normalizeUci, parseUci } from '@/domain/puzzles/parser'
+import { normalizeUci, parseUci } from '@/lib/chess'
 import { legalMoves } from '@/lib/chess'
-import { melhorLanceDe, type TablebaseResult } from '@/lib/tablebase'
+import type { TablebaseResult } from '@/domain/types'
+import { melhorLanceDe } from '@/lib/tablebase'
 
 /**
  * As procedências possíveis. É a FONTE que a tela e o portão varrem: fonte

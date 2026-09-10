@@ -28,11 +28,8 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import {
-  CATEGORIAS_TABLEBASE,
-  LichessTablebaseProvider,
-  TABLEBASE_CONFIG,
-} from '@/lib/tablebase/provider'
+import { CATEGORIAS_TABLEBASE } from '@/domain/types'
+import { LichessTablebaseProvider, TABLEBASE_CONFIG } from '@/lib/tablebase/provider'
 
 /** Rei e peão contra rei: 3 peças, dentro do alcance, vitória conhecida. */
 const FEN_REI_E_PEAO = '4k3/8/8/8/8/8/4P3/4K3 w - - 0 1'

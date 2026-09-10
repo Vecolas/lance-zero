@@ -10,9 +10,8 @@
  * de fazer a varredura sozinho. Existe teste de regressão para isso.
  */
 
-import { applyMove } from '@/lib/chess'
+import { applyMove, parseUci } from '@/lib/chess'
 import type { SkillId, SolvablePuzzle } from '@/domain/types'
-import { parseUci } from './parser'
 
 export type HintLevel = 1 | 2 | 3
 

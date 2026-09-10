@@ -35,6 +35,7 @@ import {
   descreverHistorico,
   ESTADOS_DA_GRAVACAO,
 } from '@/components/endgames/textos'
+import type { Sonda } from '@/components/endgames/resposta-do-adversario'
 import { legalMoves } from '@/lib/chess'
 import { MemoryTrainingRepository } from '@/lib/storage/memory-repository'
 import type { BackupRepository } from '@/lib/storage/repository'
@@ -95,10 +96,10 @@ function contextoCom(repo: BackupRepository | null, status: 'pronto' | 'erro' = 
   }
 }
 
-function montar() {
+function montar(probe?: Sonda) {
   return render(
     <StrictMode>
-      <EndgameTrainer licao={licao} posicao={posicao} onVoltar={() => {}} />
+      <EndgameTrainer licao={licao} posicao={posicao} onVoltar={() => {}} probe={probe} />
     </StrictMode>,
   )
 }
@@ -298,5 +299,48 @@ describe('histórico na lista de lições', () => {
 
     // O tom não é a informação: dois estados diferentes têm rótulos diferentes.
     expect(resolvida?.rotulo).not.toBe(tentada?.rotulo)
+  })
+})
+
+describe('a gravação espera o veredito que ainda está no ar', () => {
+  /**
+   * O defeito que este caso existe para impedir era MUDO.
+   *
+   * A consulta à tablebase é assíncrona, então o julgamento do ÚLTIMO lance
+   * chega DEPOIS de a tentativa terminar. A gravação disparava no fim da
+   * tentativa e levava a contagem incompleta — o desconto por caminho mais
+   * longo saía subcontado, sem erro, sem aviso e sem nada na tela. Apareceria
+   * meses depois como "a maestria sobe mais rápido do que deveria", sem
+   * ninguém ligar à causa.
+   *
+   * A sonda aqui é SEGURADA de propósito: é o único jeito de recriar a janela
+   * em que a tentativa acabou e o veredito ainda não chegou. Com uma sonda que
+   * resolve na hora, o defeito não aparece — e foi por isso que ele passou.
+   */
+  it('não grava enquanto a tablebase não responde, e grava depois', async () => {
+    const repo = new MemoryTrainingRepository()
+    const gravar = vi.spyOn(repo, 'savePuzzleAttempt')
+    contexto.valor = contextoCom(repo)
+
+    let liberar: () => void = () => {}
+    const presa = new Promise<void>((resolve) => {
+      liberar = resolve
+    })
+    const sondaPresa: Sonda = async () => {
+      await presa
+      return null
+    }
+
+    montar(sondaPresa)
+    await jogar(LANCE_CERTO)
+
+    // A tentativa ACABOU — a tela já mostra o desfecho — e mesmo assim nada foi
+    // gravado. É esta asserção que reprova quando alguém tira a espera.
+    await waitFor(() => expect(screen.getByText(/Objetivo cumprido/)).toBeInTheDocument())
+    expect(gravar).not.toHaveBeenCalled()
+
+    liberar()
+
+    await waitFor(() => expect(gravar).toHaveBeenCalledTimes(1))
   })
 })

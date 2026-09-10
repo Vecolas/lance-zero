@@ -37,7 +37,7 @@ import type {
 } from '@/domain/endgames'
 import type { HistoricoDaPosicao } from '@/domain/endgames/persistencia'
 import type { PromotionPiece } from '@/lib/chess'
-import type { ResultadoTeorico } from '@/lib/tablebase'
+import type { ResultadoTeorico } from '@/domain/types'
 import type { FonteDaResposta } from './resposta-do-adversario'
 
 /** Nome da peça de promoção em PT-BR. Exaustivo por tipo, como tudo aqui. */

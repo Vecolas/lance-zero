@@ -1,5 +1,24 @@
 'use client'
 
+/**
+ * Tela de treino de puzzles.
+ *
+ * DECISÃO QUE ESTE ARQUIVO CARREGA (issue #66): o nível de dica tem UM DONO SÓ,
+ * e o dono é `AttemptState.hintsUsed`, no domínio. A tela não guarda contador
+ * próprio de dica.
+ *
+ * O que existia antes: um `useState` chamado `nivelDeDica` desenhava o contador
+ * na tela enquanto `useHint` nunca era chamado. As duas verdades divergiam em
+ * silêncio — a tela dizia "3 dicas" e o registro gravado dizia `hintsUsed: 0`,
+ * `firstTry: true`. Nada disso dava erro: o botão nunca desabilitava, o modelo
+ * de maestria registrava acerto limpo onde houve apoio, e a regra "quem usou
+ * dica gera card de revisão" nunca disparava por dica.
+ *
+ * Por isso, aqui: tudo que fala de dica — o texto exibido, o rótulo do botão,
+ * o `disabled` e a mensagem de desfecho — é DERIVADO de `tentativa`, lido na
+ * hora. Não há segundo registro do apoio para sair de sincronia.
+ */
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
@@ -17,6 +36,10 @@ import {
   submitMove,
   toPuzzleAttempt,
   toSolvable,
+  // Apelido de propósito: `useHint` é função pura de domínio, não hook de
+  // React, mas o prefixo `use` faz a regra `react-hooks/rules-of-hooks`
+  // reprovar a chamada dentro de um manipulador de evento.
+  useHint as aplicarDica,
   type AttemptState,
   type PuzzleCard,
 } from '@/domain/puzzles'
@@ -44,7 +67,7 @@ const TAMANHO_DA_SESSAO = 5
  * O texto do estado incorreto não diz "errou" nem "falhou": diz o que vai
  * acontecer com o padrão. Erro aqui é informação, não veredito.
  */
-const MENSAGEM_DO_DESFECHO = {
+export const MENSAGEM_DO_DESFECHO = {
   resolvidoSemApoio: 'Você encontrou a linha que ganha sem dica e sem tentativa perdida.',
   resolvidoComApoio:
     'Você chegou à linha que ganha. Como precisou de apoio, este padrão volta em revisão para você reencontrá-lo sozinho.',
@@ -59,7 +82,6 @@ export function PuzzleTrainer() {
   const [cards, setCards] = useState<PuzzleCard[]>([])
   const [indice, setIndice] = useState(0)
   const [tentativa, setTentativa] = useState<AttemptState | null>(null)
-  const [nivelDeDica, setNivelDeDica] = useState(0)
   const [fase, setFase] = useState<Fase>('carregando')
   const [falha, setFalha] = useState<string | null>(null)
   const [inicio, setInicio] = useState(() => Date.now())
@@ -139,7 +161,18 @@ export function PuzzleTrainer() {
 
         // O princípio do produto: erro vira treino futuro. Só quem errou ou
         // precisou de dica gera card — acertar de primeira não vira dever de casa.
+        //
+        // Este `if` só passou a enxergar a dica quando o contador virou o do
+        // domínio (issue #66). Antes dela, `hintsUsed` era 0 sempre e o ramo
+        // da dica era código morto silencioso.
         if (!registro.solved || registro.hintsUsed > 0) {
+          const ladoQueJoga =
+            estado.solvable.playerColor === 'w' ? 'Brancas jogam.' : 'Pretas jogam.'
+          // O card não pode acusar erro de quem resolveu com dica: o texto sai
+          // do que o registro diz que aconteceu, não de um só caso presumido.
+          const porQueVoltou = registro.solved
+            ? 'Você resolveu este padrão com dica.'
+            : 'Você errou este padrão antes.'
           await repo.saveReviewCard(
             createReviewCard(
               {
@@ -148,10 +181,7 @@ export function PuzzleTrainer() {
                 skillIds: estado.solvable.puzzle.skillIds,
                 fen: estado.solvable.startFen,
                 solutionUci: [...estado.solvable.solutionUci],
-                prompt:
-                  estado.solvable.playerColor === 'w'
-                    ? 'Brancas jogam. Você errou este padrão antes.'
-                    : 'Pretas jogam. Você errou este padrão antes.',
+                prompt: `${ladoQueJoga} ${porQueVoltou}`,
               },
               agora,
             ),
@@ -183,7 +213,8 @@ export function PuzzleTrainer() {
   const proximo = useCallback(() => {
     const alvo = indice + 1
     setSalvo(false)
-    setNivelDeDica(0)
+    // Nada de zerar contador de dica aqui: a tentativa nova já nasce com
+    // `hintsUsed: 0`. Um reset manual seria a segunda fonte voltando.
     setInicio(Date.now())
     if (alvo >= cards.length) {
       setTentativa(null)
@@ -208,11 +239,16 @@ export function PuzzleTrainer() {
     [aplicar, tentativa],
   )
 
+  /** Pede a próxima dica AO DOMÍNIO. A tela não conta dica por fora. */
+  const pedirDica = useCallback(() => {
+    setTentativa((atual) => (atual === null ? atual : aplicarDica(atual)))
+  }, [])
+
   const dica = useMemo(() => {
-    if (!tentativa || nivelDeDica === 0) return null
-    const nivel = Math.min(nivelDeDica, MAX_HINT_LEVEL) as 1 | 2 | 3
+    if (!tentativa || tentativa.hintsUsed === 0) return null
+    const nivel = Math.min(tentativa.hintsUsed, MAX_HINT_LEVEL) as 1 | 2 | 3
     return hintAt(tentativa.solvable, nivel)
-  }, [nivelDeDica, tentativa])
+  }, [tentativa])
 
   if (status === 'carregando' || fase === 'carregando') {
     return <p className={styles.state}>Montando a sessão…</p>
@@ -251,9 +287,26 @@ export function PuzzleTrainer() {
   const posicao = positionStatus(tentativa.currentFen)
   const revelado = encerrada ? revelarRotulos(card) : card
   const proximaDica = nextHintLevel(tentativa)
-  // Derivado do que o aluno de fato fez nesta tela, lido na hora. Não é um
-  // segundo registro do apoio: é a leitura do estado que já existe.
-  const semApoio = tentativa.wrongMoves.length === 0 && nivelDeDica === 0
+  /**
+   * Rótulo do botão de dica, derivado do MESMO contador que será gravado.
+   *
+   * O último nível não deixa um "Mais uma dica" que não leva a lugar nenhum:
+   * o botão desabilita e o texto diz por quê. `disabled` sozinho é estado só
+   * por aparência — quem usa leitor de tela precisa da palavra.
+   */
+  const rotuloDaDica =
+    proximaDica === null
+      ? `Sem mais dicas (${MAX_HINT_LEVEL}/${MAX_HINT_LEVEL})`
+      : tentativa.hintsUsed === 0
+        ? 'Dica'
+        : `Mais uma dica (${tentativa.hintsUsed}/${MAX_HINT_LEVEL})`
+  /**
+   * "Sem apoio" é o mesmo `firstTry` que o domínio mantém: nenhum lance errado
+   * e nenhuma dica. Ler o campo em vez de recalcular a conta aqui é o que
+   * impede a mensagem de acerto de divergir do registro gravado — foi
+   * exatamente essa divergência que a issue #66 corrigiu.
+   */
+  const semApoio = tentativa.firstTry
 
   return (
     <div className={styles.layout}>
@@ -296,9 +349,9 @@ export function PuzzleTrainer() {
                 type="button"
                 className={styles.ghost}
                 disabled={proximaDica === null}
-                onClick={() => setNivelDeDica((n) => Math.min(n + 1, MAX_HINT_LEVEL))}
+                onClick={pedirDica}
               >
-                {nivelDeDica === 0 ? 'Dica' : `Mais uma dica (${nivelDeDica}/${MAX_HINT_LEVEL})`}
+                {rotuloDaDica}
               </button>
               <button
                 type="button"

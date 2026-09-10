@@ -27,7 +27,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CURRICULO_FINAIS } from '@/content/endgames'
 import type { LicaoDeFinal, PosicaoDeFinal } from '@/domain/endgames'
 import { legalMoves, normalizeFen } from '@/lib/chess'
-import type { LanceTablebase, TablebaseResult } from '@/lib/tablebase'
+import type { LanceTablebase, TablebaseResult } from '@/domain/types'
 import { APRESENTACAO_POR_GRAU } from '@/components/endgames/textos'
 import type { Sonda } from '@/components/endgames/resposta-do-adversario'
 

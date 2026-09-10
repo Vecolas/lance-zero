@@ -49,7 +49,7 @@
 import { describe, expect, it } from 'vitest'
 import { CURRICULO_FINAIS } from '@/content/endgames'
 import { julgarLanceDeFinal, posicoesDe, type PosicaoDeFinal } from '@/domain/endgames'
-import { normalizeUci } from '@/domain/puzzles/parser'
+import { normalizeUci } from '@/lib/chess'
 import { LichessTablebaseProvider, TABLEBASE_CONFIG } from '@/lib/tablebase/provider'
 
 /** Orçamento total: uma requisição por posição, em série, sem paralelismo. */

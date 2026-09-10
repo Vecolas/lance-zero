@@ -7,9 +7,8 @@
  * adversário é aplicada automaticamente logo depois do acerto do jogador.
  */
 
-import { applyMove, positionStatus } from '@/lib/chess'
+import { applyMove, normalizeUci, parseUci, positionStatus } from '@/lib/chess'
 import type { PuzzleAttempt, SolvablePuzzle } from '@/domain/types'
-import { normalizeUci, parseUci } from './parser'
 import { MAX_HINT_LEVEL, type HintLevel } from './hints'
 
 /**

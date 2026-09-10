@@ -51,9 +51,8 @@
  * em aberto, e escolher calado aqui seria inventar produto.
  */
 
-import { normalizeUci } from '@/domain/puzzles/parser'
-import { normalizeFen } from '@/lib/chess'
-import type { LanceTablebase, ResultadoTeorico, TablebaseResult } from '@/lib/tablebase'
+import { normalizeFen, normalizeUci } from '@/lib/chess'
+import type { LanceTablebase, ResultadoTeorico, TablebaseResult } from '@/domain/types'
 
 /**
  * Os degraus do veredito. É a FONTE que a tela e o portão varrem: degrau novo

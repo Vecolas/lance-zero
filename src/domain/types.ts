@@ -428,6 +428,87 @@ export interface GameImportProvider {
   listGames(identity: string, query?: ImportQuery): Promise<GamePage>
 }
 
+// ------------------------------------------------------------------ tablebase
+
+/**
+ * Contrato do serviço de tablebase (ADR-0006).
+ *
+ * Mora aqui, e não no adapter que o implementa, pelo mesmo motivo de
+ * `GameImportProvider`: é a fronteira entre o domínio de finais e o mundo
+ * externo, e quem consome não deve precisar conhecer a implementação para
+ * conhecer a forma (issue #55, item 1). A URL da Lichess, o cache, a fila e a
+ * degradação graciosa continuam sendo assunto exclusivo de
+ * `@/lib/tablebase/provider`.
+ *
+ * A vocabulário cru do serviço (`CATEGORIAS_TABLEBASE`) vem junto DE PROPÓSITO:
+ * `TablebaseResult.categoria` é derivado dele, e deixar a lista lá e o tipo
+ * aqui criaria duas fontes para a mesma verdade — a segunda inevitavelmente
+ * desatualizada no dia em que o serviço ganhar uma categoria.
+ */
+
+/**
+ * Categorias que a Lichess devolve.
+ *
+ * É a FONTE que o mapeamento e o teste varrem. Categoria nova que apareça na
+ * API e não entre aqui é tratada como resposta malformada — "desconhecido" é
+ * melhor que afirmar errado.
+ */
+export const CATEGORIAS_TABLEBASE = [
+  'win',
+  'syzygy-win',
+  'maybe-win',
+  'cursed-win',
+  'draw',
+  'blessed-loss',
+  'maybe-loss',
+  'syzygy-loss',
+  'loss',
+  'unknown',
+] as const
+
+export type CategoriaTablebase = (typeof CATEGORIAS_TABLEBASE)[number]
+
+export type ResultadoTeorico = 'vitoria' | 'empate' | 'derrota'
+
+export interface LanceTablebase {
+  uci: string
+  /** Notação curta, quando o serviço mandou. */
+  san: string | null
+  categoria: CategoriaTablebase
+  /** Do ponto de vista de quem joga DEPOIS deste lance. */
+  resultado: ResultadoTeorico | null
+  /** Distância até zerar o contador (captura ou lance de peão). */
+  dtz: number | null
+  /** Distância até o mate, só nas tabelas que a têm. */
+  dtm: number | null
+}
+
+export interface TablebaseResult {
+  /** FEN normalizado que foi consultado. */
+  fen: string
+  categoria: CategoriaTablebase
+  /** Do ponto de vista de quem tem a vez. */
+  resultado: ResultadoTeorico | null
+  dtz: number | null
+  dtm: number | null
+  xequeMate: boolean
+  afogamento: boolean
+  /**
+   * Na ordem em que a Lichess devolveu — melhor primeiro, conforme a
+   * documentação. NÃO reordenamos: recalcular a ordem a partir de DTZ/DTM sem
+   * as tabelas na mão produziria uma "defesa perfeita" errada, e errada em
+   * silêncio.
+   */
+  lances: readonly LanceTablebase[]
+  /** `true` quando a resposta veio do cache local, sem tocar a rede. */
+  doCache: boolean
+}
+
+/** Contrato do ADR-0006. Nenhuma URL de terceiro fora do adapter. */
+export interface TablebaseProvider {
+  probe(fen: string): Promise<TablebaseResult | null>
+}
+
 export interface ImportResult {
   importadas: number
   duplicadas: number
