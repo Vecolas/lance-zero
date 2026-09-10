@@ -185,3 +185,59 @@ describe('updateMastery', () => {
     expect(estado.medianThinkTimeMs).toBeLessThan(30_000)
   })
 })
+
+describe('acerto com desconto: caminho que ganha mas não é o melhor', () => {
+  /**
+   * Decisão de produto da issue #62: cumprir o objetivo por um caminho mais
+   * longo é ACERTO, e conta MENOS. As duas metades importam juntas — só
+   * "acerto" apagaria a distinção que a issue existe para criar, e só
+   * "desconto" sem o aluno saber por quê seria punição sem causa aparente.
+   *
+   * Estes casos afirmam a REGRA (a direção e a ordem), nunca um valor: o
+   * desconto é heurística de produto e nunca foi calibrado, então cravar um
+   * número aqui faria o portão reprovar o código certo no dia da calibração.
+   */
+  const PELO_CAMINHO_LONGO: MasteryEvent = { ...ACERTO_LIMPO, porCaminhoMaisLongo: true }
+
+  it('vale menos que o acerto limpo e mais que o erro', () => {
+    const inicial = createMastery('tactics.fork')
+    const limpo = updateMastery(inicial, ACERTO_LIMPO)
+    const longo = updateMastery(inicial, PELO_CAMINHO_LONGO)
+    const errou = updateMastery(inicial, ERRO_PUZZLE)
+
+    expect(longo.mastery).toBeLessThan(limpo.mastery)
+    expect(longo.mastery).toBeGreaterThan(errou.mastery)
+  })
+
+  it('continua sendo ACERTO, não erro', () => {
+    // CONTROLE da metade que a decisão do produto protege: se alguém traduzir
+    // "pior" como erro, isto reprova. O aluno cumpriu o objetivo.
+    const inicial = createMastery('tactics.fork')
+    const longo = updateMastery(inicial, PELO_CAMINHO_LONGO)
+
+    expect(longo.mastery).toBeGreaterThan(inicial.mastery)
+    expect(longo.firstTryCorrect).toBe(1)
+  })
+
+  it('campo ausente nasce NEUTRO: tentativa antiga não vira caminho torto', () => {
+    // Campo novo com default útil faz todo dado antigo mentir. `ACERTO_LIMPO`
+    // não declara `porCaminhoMaisLongo`, e tem de valer exatamente o mesmo que
+    // declará-lo `false`.
+    const inicial = createMastery('tactics.fork')
+    const semCampo = updateMastery(inicial, ACERTO_LIMPO)
+    const falsoExplicito = updateMastery(inicial, { ...ACERTO_LIMPO, porCaminhoMaisLongo: false })
+
+    expect(semCampo.mastery).toBe(falsoExplicito.mastery)
+  })
+
+  it('acumula com os outros descontos, em vez de substituí-los', () => {
+    // Quem usou dica E ganhou por caminho torto leva os dois. Está escrito no
+    // código com a ressalva de que multiplicar descontos pode esvaziar o
+    // crédito — se isso incomodar, o conserto é um piso, não remover um deles.
+    const inicial = createMastery('tactics.fork')
+    const soLongo = updateMastery(inicial, PELO_CAMINHO_LONGO)
+    const longoComDica = updateMastery(inicial, { ...PELO_CAMINHO_LONGO, usouDica: true })
+
+    expect(longoComDica.mastery).toBeLessThan(soLongo.mastery)
+  })
+})

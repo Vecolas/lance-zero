@@ -120,6 +120,12 @@ export interface TentativaDeFinal {
   recomecos: number
   /** Meios-lances do aluno até o fim da tentativa. */
   lancesDoAluno: number
+  /**
+   * Quantos lances do aluno mantiveram o resultado mas NÃO foram o melhor
+   * (issue #62). Ausente vale zero: campo novo nasce neutro, senão toda
+   * tentativa antiga passaria a ser lida como caminho torto.
+   */
+  lancesPorCaminhoMaisLongo?: number
   thinkTimeMs: number
 }
 
@@ -181,6 +187,10 @@ export function tentativaParaEvento(
     acertou: tentativa.cumpriu,
     usouDica: tentativa.dicasUsadas > 0,
     primeiraTentativa: tentativa.recomecos === 0,
+    // Acerto COM DESCONTO, não erro: o objetivo foi cumprido, e o caminho mais
+    // longo desconta em vez de zerar. Quem decide o quanto é `MASTERY_CONFIG`;
+    // aqui só se diz que aconteceu.
+    porCaminhoMaisLongo: (tentativa.lancesPorCaminhoMaisLongo ?? 0) > 0,
     thinkTimeMs: Math.max(0, Math.round(tentativa.thinkTimeMs)),
     ocorridoEm: agora.toISOString(),
   }

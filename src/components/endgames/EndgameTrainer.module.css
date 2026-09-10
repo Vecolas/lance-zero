@@ -66,6 +66,12 @@
   color: var(--positive);
 }
 
+/* O degrau do meio do julgamento (#62): nem acerto limpo, nem erro. O token é
+   consciente do tema — no claro ele é a variante de texto, que passa em AA. */
+.atencao {
+  color: var(--warning);
+}
+
 .ruim {
   color: var(--danger);
 }
