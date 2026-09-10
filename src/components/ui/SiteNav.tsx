@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { mainNav, mobilePrimaryNav, type NavItem } from '@/lib/navigation'
 import styles from './SiteNav.module.css'
@@ -32,7 +31,29 @@ export function SiteHeader() {
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link href="/" className={styles.brand}>
-          <Logo />
+          {/*
+            A marca é a arte do guia (`identidade-visual/icon.png`), e não mais
+            um SVG aproximado dela.
+
+            `<img>` e não `next/image`: o arquivo já é servido no tamanho de
+            exibição (128px para 28px de caixa, folga suficiente para telas
+            densas) e nunca muda de dimensão, então srcset, negociação de
+            formato e carregamento tardio não têm o que otimizar aqui. Em troca,
+            `next/image` custa ~1,4 s só para ser importado — num componente que
+            está em TODA página.
+
+            `alt=""` porque o nome da marca vem escrito ao lado: repetir aqui
+            faria o leitor de tela anunciar "LanceZero LanceZero".
+          */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className={styles.brandMark}
+            src="/marca/lancezero-icon.png"
+            alt=""
+            width={28}
+            height={28}
+            decoding="async"
+          />
           <span className={styles.brandName}>
             <span className={styles.brandLance}>Lance</span>
             <span className={styles.brandZero}>Zero</span>
