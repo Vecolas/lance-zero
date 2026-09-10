@@ -63,6 +63,10 @@ export const ORIGENS_EXTERNAS = [
   // Defesa perfeita em finais — `src/lib/tablebase/provider.ts`.
   // NAO e `lichess.org`: o servico de tablebase mora em outro host.
   'https://tablebase.lichess.ovh',
+  // Estatistica de aberturas — `src/lib/openings/explorer.ts`.
+  // Tambem NAO e `lichess.org`: outro host, mesmo padrao da tablebase. Foi o
+  // portao abaixo que acusou a falta desta linha quando o adapter nasceu.
+  'https://explorer.lichess.ovh',
 ] as const
 
 /**

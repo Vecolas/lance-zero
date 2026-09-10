@@ -560,3 +560,149 @@ export interface CriticalMoment {
    */
   ocorridoEm: string
 }
+
+// ------------------------------------------------------------------ aberturas
+
+/**
+ * Vocabulário de abertura e contrato do Opening Explorer (Fase 9, issue #10).
+ *
+ * Mora aqui pelo mesmo motivo de `TablebaseProvider` e `GameImportProvider`: é
+ * a fronteira entre o domínio e o mundo externo, e quem consome não deve
+ * precisar conhecer a implementação para conhecer a forma. A URL da Lichess, o
+ * cache, a fila e a degradação graciosa são assunto exclusivo de
+ * `@/lib/openings/explorer`.
+ */
+
+/**
+ * Nome e código de uma abertura.
+ *
+ * DUAS FONTES, DUAS VERDADES DIFERENTES — não é duplicação:
+ *
+ * - `nome` é o identificador canônico do `lichess-org/chess-openings` (CC0), em
+ *   inglês, VERBATIM. É o nome que o aluno vê no Lichess, no Chess.com e em
+ *   qualquer livro; traduzir em silêncio faria a nossa etiqueta divergir de todo
+ *   o resto do mundo dele.
+ * - `nomePt` é como se chama isso no Brasil, quando existe um nome consagrado
+ *   ("Abertura Italiana", "Ruy López"). É texto de INTERFACE.
+ *
+ * `nomePt` é `null` — e não uma cópia de `nome` — quando não há nome brasileiro
+ * consagrado. Preencher com o inglês faria a tela não conseguir distinguir
+ * "traduzido" de "não traduzido", e o dia em que a tradução chegasse ninguém
+ * saberia quais linhas já estavam prontas.
+ */
+export interface Abertura {
+  /** Código ECO, de `A00` a `E99`. */
+  eco: string
+  /** Nome canônico do `chess-openings`, em inglês. Identificador, não rótulo. */
+  nome: string
+  /** Nome em português consagrado, ou `null` quando não existe. */
+  nomePt: string | null
+}
+
+/**
+ * Cadências que o Opening Explorer aceita, exatamente como a API as escreve.
+ *
+ * É a FONTE da montagem da query. Cadência nova na API que não entre aqui
+ * simplesmente não é consultável — melhor que mandar um valor que o serviço
+ * ignora em silêncio e devolver estatística de outra coisa.
+ */
+export const VELOCIDADES_EXPLORER = [
+  'ultraBullet',
+  'bullet',
+  'blitz',
+  'rapid',
+  'classical',
+  'correspondence',
+] as const
+
+export type VelocidadeExplorer = (typeof VELOCIDADES_EXPLORER)[number]
+
+/**
+ * Faixas de rating do Opening Explorer. O número é o PISO da faixa, e é assim
+ * que a API os nomeia. Valor fora desta lista é recusado pelo serviço.
+ */
+export const FAIXAS_DE_RATING_EXPLORER = [
+  0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500,
+] as const
+
+export type FaixaDeRatingExplorer = (typeof FAIXAS_DE_RATING_EXPLORER)[number]
+
+export type BaseDoExplorer = 'lichess' | 'masters'
+
+/**
+ * Recorte de uma consulta ao explorer.
+ *
+ * É UNIÃO DISCRIMINADA de propósito: a base `masters` não aceita cadência nem
+ * faixa de rating, e o serviço ignora esses parâmetros em SILÊNCIO. Um filtro
+ * que a tela mostra como aplicado e o serviço descarta é falsa precisão — o
+ * aluno leria "partidas de 1000 a 1400" olhando para estatística de grandes
+ * mestres. Aqui esse erro não chega a compilar.
+ */
+export type ExplorerFilters =
+  | {
+      base: 'lichess'
+      /** Cadências consideradas. Vazio significa "todas", como na API. */
+      velocidades: readonly VelocidadeExplorer[]
+      /** Faixas de rating consideradas. Vazio significa "todas". */
+      ratings: readonly FaixaDeRatingExplorer[]
+      /** Quantos lances trazer. */
+      maxLances?: number
+    }
+  | {
+      base: 'masters'
+      maxLances?: number
+    }
+
+/** Um lance possível na posição, com o placar das partidas que o jogaram. */
+export interface ExplorerMove {
+  uci: string
+  san: string
+  /** Partidas em que as BRANCAS venceram. Não é "o lance é bom". */
+  brancas: number
+  empates: number
+  pretas: number
+  /** Soma das três. Derivado, não vem do serviço. */
+  total: number
+  /** Rating médio das partidas, quando o serviço reportou. */
+  ratingMedio: number | null
+}
+
+/**
+ * Estatística de uma posição no explorer.
+ *
+ * ATENÇÃO, e é regra do produto: isto é FREQUÊNCIA, não avaliação. "70% de
+ * vitórias das brancas" não quer dizer que o lance é bom — quer dizer que quem
+ * o jogou naquela faixa venceu mais. Nenhuma tela pode apresentar este número
+ * como julgamento de qualidade do lance; para isso existe a engine.
+ */
+export interface ExplorerStats {
+  /** Identidade da posição consultada (ver `identidadeDePosicao`). */
+  fen: string
+  base: BaseDoExplorer
+  brancas: number
+  empates: number
+  pretas: number
+  /** Soma das três. Derivado. */
+  total: number
+  lances: readonly ExplorerMove[]
+  /** Abertura que o serviço atribuiu à posição, quando houver. */
+  abertura: Abertura | null
+  /** `true` quando a resposta veio do cache local, sem tocar a rede. */
+  doCache: boolean
+}
+
+/**
+ * Contrato do adapter de explorer.
+ *
+ * DISCREPÂNCIA DELIBERADA COM O ESBOÇO DO `CLAUDE.md`, registrada aqui porque a
+ * regra do projeto manda documentar em vez de inventar: lá a assinatura é
+ * `getStats(...): Promise<ExplorerStats>`. Aqui ela devolve `ExplorerStats |
+ * null`, pelo mesmo motivo de `TablebaseProvider.probe` — o critério de aceite
+ * da issue #10 é "explorer indisponível não quebra a tela", e um contrato que
+ * só sabe devolver estatística obriga TODO chamador a envolver a chamada em
+ * `try`. `null` é "não há estatística agora"; exceção fica para bug de quem
+ * chama (FEN inválido).
+ */
+export interface OpeningExplorerProvider {
+  getStats(fen: string, filters: ExplorerFilters): Promise<ExplorerStats | null>
+}

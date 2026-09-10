@@ -35,6 +35,28 @@
  * A SONDA ENTRA POR PARÂMETRO, com o provider real como padrão. Mesmo desenho
  * de `EndgameTrainer`: o teste roda sem rede nenhuma e a produção não precisa
  * escolher nada.
+ *
+ * ENTRADA POR TEXTO ALÉM DO ARRASTE (issue #67). Até aqui o lance só entrava
+ * pelo tabuleiro, por arraste — quem usa teclado ou leitor de tela não
+ * conseguia responder um card, e a revisão espaçada é o NÚCLEO do produto. O
+ * campo de lance em UCI é a alternativa exigida pelo CLAUDE.md ("lista textual
+ * de lances como alternativa ao tabuleiro"), e vale para TODOS os tipos de
+ * card, não só para o de final: a razão dele é acessibilidade, e acessibilidade
+ * não vale só para o tipo que algum teste alcança.
+ *
+ * PORTA ÚNICA. Arraste e texto entram os dois por `jogar(uci)`. Dois caminhos
+ * separados criariam um lance que só um deles aceita, e a divergência
+ * apareceria justamente para quem usa o caminho menos testado. `jogarDoTabuleiro`
+ * é só a junção das casas em uma string: ele não decide nada.
+ *
+ * RECUSA COM FRASE. Lance mal escrito ou ilegal não some em silêncio — a tela
+ * diz o que houve, numa região viva, e a tentativa CONTINUA. Recusar calado é o
+ * pior desfecho para quem não vê o tabuleiro, e valia também para o arraste:
+ * antes desta issue um arraste ilegal só revertia a peça, sem uma palavra.
+ *
+ * O CAMPO É A ÚNICA FORMA DE PROMOÇÃO MENOR. `ChessBoardView` promove SEMPRE
+ * para dama. Torre, bispo e cavalo só existem por aqui — por isso o sufixo é
+ * aceito e a ajuda nomeia as quatro peças.
  */
 
 import Link from 'next/link'
@@ -66,7 +88,15 @@ import {
 import { getSkill } from '@/domain/skills/catalog'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
 import type { ReviewCard, ReviewRating, SkillMastery } from '@/domain/types'
-import { applyMove, positionStatus, type PromotionPiece, type SquareName } from '@/lib/chess'
+import {
+  applyMove,
+  normalizeUci,
+  parseUci,
+  positionStatus,
+  type PromotionPiece,
+  type SquareName,
+  type UciMove,
+} from '@/lib/chess'
 import { applyReview } from '@/lib/fsrs/cards'
 import { LichessTablebaseProvider } from '@/lib/tablebase'
 import styles from './ReviewSession.module.css'
@@ -150,6 +180,120 @@ const MODO_ESTRITO = {
     'Isto não conta como erro e não puxa a sua maestria para baixo — eu é que não tenho como confirmar.',
 } as const
 
+/**
+ * O que a porta única fez com a entrada.
+ *
+ * Três valores e não um booleano porque três coisas diferentes acontecem, e
+ * cada caminho de entrada precisa de uma delas: o tabuleiro só pode manter a
+ * peça no destino quando a POSIÇÃO andou (`aceita-e-avancou`), e o campo de
+ * texto só pode se limpar quando o lance foi CONSUMIDO — inclusive no lance
+ * legal que encerra a tentativa sem mexer o tabuleiro (`aceita`, o caso do
+ * erro e o do julgamento na tablebase). Com um booleano os dois teriam de
+ * adivinhar qual dos dois sentidos ele carregava.
+ */
+export type EntradaDoLance = 'recusada' | 'aceita' | 'aceita-e-avancou'
+
+/**
+ * Nome de cada peça de promoção, em PT-BR.
+ *
+ * LIMITE DE DESIGN, e ele é a razão de esta tela ter campo de texto:
+ * `ChessBoardView` promove SEMPRE para dama, então o campo é hoje a ÚNICA forma
+ * de promover para torre, bispo ou cavalo. Ajuda que não diga quais letras
+ * existem deixa a promoção menor inalcançável na prática.
+ *
+ * `Record` sobre `PromotionPiece`: peça nova no domínio não compila até ganhar
+ * nome aqui. E a FRASE de ajuda é derivada desta tabela — escrever as quatro
+ * peças também na frase daria duas fontes para a mesma verdade, e a que ficasse
+ * para trás seria justamente a que o aluno lê.
+ */
+export const PECAS_DE_PROMOCAO: Record<PromotionPiece, string> = {
+  q: 'dama',
+  r: 'torre',
+  b: 'bispo',
+  n: 'cavalo',
+}
+
+/** Casa de exemplo da ajuda. Só precisa ser uma promoção plausível. */
+const EXEMPLO_DE_PROMOCAO = 'e7e8'
+
+/**
+ * A ajuda do campo. Ela vai em `aria-describedby`, NUNCA dentro do `<label>`.
+ *
+ * CUIDADO CONHECIDO DESTE PROJETO: texto de ajuda dentro do `<label>` entra no
+ * NOME ACESSÍVEL e já produziu dois campos com o mesmo nome — quem navega por
+ * lista de formulários ouve duas vezes a mesma coisa e não distingue um do
+ * outro. Descrição é descrição; nome é nome.
+ */
+export const AJUDA_DO_LANCE = `Casa de origem e casa de destino, como e2e4. Para promover, acrescente a letra da peça: ${Object.entries(
+  PECAS_DE_PROMOCAO,
+)
+  .map(([letra, nome]) => `${EXEMPLO_DE_PROMOCAO}${letra} (${nome})`)
+  .join(', ')}.`
+
+/** As letras de sufixo aceitas, derivadas da tabela de nomes. Nunca reescritas. */
+const LETRAS_DE_PROMOCAO = Object.keys(PECAS_DE_PROMOCAO) as PromotionPiece[]
+
+/**
+ * A peça que um UCI SEM sufixo significa.
+ *
+ * É a mesma que `ChessBoardView` escolhe sozinho, e é por isso que ela é a
+ * implícita: um card gravado a partir de um arraste guarda uma promoção de
+ * dama, com ou sem letra. Mora numa constante só porque três lugares dependem
+ * dela — a lista de formas aceitas, o exemplo da frase e esta explicação.
+ */
+const PROMOCAO_IMPLICITA: PromotionPiece = 'q'
+
+/**
+ * O que a tela diz quando o lance não entra.
+ *
+ * As três frases nomeiam AS CASAS que o aluno escreveu ou arrastou. "Lance
+ * inválido" sozinho não diz se o problema é a forma, a posição ou a vez — e
+ * quem não vê o tabuleiro não tem como descobrir sozinho.
+ *
+ * A frase nomeia as CASAS e não o texto cru de propósito: o tabuleiro manda `q`
+ * em todo arraste, e "b1b2q não é um lance legal" faria a tela cobrar do aluno
+ * um sufixo que ele nunca escreveu. Nomear as casas também nunca engana: um
+ * lance de promoção é ilegal sem sufixo exatamente quando é ilegal com ele —
+ * quem decide é a casa de destino, não a peça escolhida.
+ *
+ * `semPromocao` existe porque `e7e8` é precisamente o que alguém digita, e
+ * "não é um lance legal" seria verdade e inútil. As letras vêm da tabela.
+ */
+const FRASE_DA_RECUSA = {
+  semForma: 'Escreva o lance como casa de origem e casa de destino, por exemplo e2e4.',
+  ilegal: (casas: string) => `${casas} não é um lance legal nesta posição.`,
+  semPromocao: (casas: string) =>
+    `${casas} é uma promoção: acrescente a letra da peça, como ${casas}${PROMOCAO_IMPLICITA}.`,
+} as const
+
+/**
+ * As formas de UCI que podem SER o lance do card.
+ *
+ * `solutionUci` é comparado letra a letra por `submitReviewMove`, e o mesmo
+ * lance chega aqui escrito de mais de um jeito: o tabuleiro manda `q` mesmo em
+ * lance que não é promoção, e cards antigos gravam promoção sem sufixo. Por
+ * isso a lista, e não uma string só.
+ *
+ * A DAMA É O SUFIXO IMPLÍCITO, e é ela que iguala os dois caminhos. Para o
+ * MESMO lance de xadrez, o tabuleiro entrega `b1c3q` e o teclado entrega `b1c3`;
+ * sem esta terceira forma, um card gravado com o sufixo sobrando seria aceito
+ * pelo arraste e recusado pelo teclado — a divergência que a issue #67 existe
+ * para não deixar nascer, visível só para quem usa o caminho menos testado.
+ *
+ * O QUE **NÃO** ENTRA na lista, e o motivo: a forma SEM sufixo de uma promoção
+ * (`e7e8` para o card `e7e8q`). Aceitá-la não ajudaria ninguém — `submitReviewMove`
+ * aplica a string do CARD, e `e7e8` é ilegal no tabuleiro —, e abriria a porta
+ * para `e7e8n` passar por acerto de um card que ensina a dama. Ver o bloqueio
+ * declarado em `tests/unit/review-entrada-por-teclado.test.tsx`.
+ */
+function formasDoLance(uci: string, entrada: UciMove, canonico: string): readonly string[] {
+  const formas = [uci, canonico]
+  if (entrada.promotion === undefined) {
+    formas.push(`${entrada.from}${entrada.to}${PROMOCAO_IMPLICITA}`)
+  }
+  return formas
+}
+
 export interface ReviewSessionProps {
   /**
    * Consulta à tablebase. Sem ela, o padrão é o provider real — é a produção.
@@ -167,6 +311,8 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const [falha, setFalha] = useState<string | null>(null)
   const [feitas, setFeitas] = useState(0)
   const [julgamento, setJulgamento] = useState<EstadoDoJulgamento>(SEM_JUIZ)
+  const [lanceDigitado, setLanceDigitado] = useState('')
+  const [erroDeLance, setErroDeLance] = useState<string | null>(null)
 
   /**
    * Marca a revisão em curso. Resposta da tablebase que chega depois de avançar
@@ -207,6 +353,11 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         setFila(cards)
         setIndice(0)
         setJulgamento(SEM_JUIZ)
+        // A recusa e o rascunho pertencem à revisão que estava na tela. Fila
+        // nova com a frase antiga faria a tela recusar um lance que ninguém
+        // jogou nesta posição.
+        setLanceDigitado('')
+        setErroDeLance(null)
         setSessao(cards.length > 0 ? createReviewSession(cards[0]) : null)
         setFase(cards.length > 0 ? 'revisando' : 'concluida')
       } catch (e) {
@@ -227,6 +378,9 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
     const proximo = indice + 1
     geracao.current += 1
     setJulgamento(SEM_JUIZ)
+    // Mesma razão do recarregar: a recusa é da revisão anterior.
+    setLanceDigitado('')
+    setErroDeLance(null)
     setFeitas((f) => f + 1)
     if (proximo >= fila.length) {
       setSessao(null)
@@ -328,41 +482,77 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
     [sonda],
   )
 
+  /**
+   * A PORTA ÚNICA do lance. Arraste e texto entram os dois aqui.
+   *
+   * A LEGALIDADE VEM ANTES DE TUDO, e vale para todo tipo de card. Antes da
+   * issue #67 um lance impossível num card que não é de final ia direto para
+   * `submitReviewMove` e virava ERRO — o aluno perdia a revisão por um arraste
+   * torto, e quem digita perderia por um dedo trocado. Lance que não existe não
+   * é resposta errada: é entrada recusada, e a tentativa continua.
+   *
+   * O UCI que segue adiante é o CANÔNICO, saído de `applyMove` — o mesmo
+   * caminho da tela de finais. `ChessBoardView` manda `promotion: 'q'` SEMPRE,
+   * inclusive em lance que não é promoção, e o `q` sobrando não existe na lista
+   * da tablebase: `e1e8q` cairia em "lance fora da lista", ou seja, TODO lance
+   * arrastado viraria "não consegui conferir".
+   */
   const jogar = useCallback(
-    (from: SquareName, to: SquareName, promotion?: PromotionPiece) => {
-      if (!sessao || sessao.phase !== 'resolvendo') return false
-      if (julgamento.situacao !== 'sem-juiz') return false
+    (uciBruto: string): EntradaDoLance => {
+      if (!sessao || sessao.phase !== 'resolvendo') return 'recusada'
+      if (julgamento.situacao !== 'sem-juiz') return 'recusada'
 
-      const esperado = sessao.card.solutionUci[sessao.step]
-      const comPromocao = `${from}${to}${promotion ?? ''}`
-      // A solução pode não trazer sufixo de promoção; tenta sem antes de seguir.
-      const exato = [comPromocao, `${from}${to}`].find((uci) => uci === esperado)
+      const uci = normalizeUci(uciBruto)
+      const entrada = parseUci(uci)
+      if (entrada === null) {
+        setErroDeLance(FRASE_DA_RECUSA.semForma)
+        return 'recusada'
+      }
+      const aplicado = applyMove(sessao.fen, entrada)
+      if (aplicado === null) {
+        const casas = `${entrada.from}${entrada.to}`
+        // Só falta a letra da peça? É o erro que quem digita comete, e a frase
+        // genérica seria verdadeira e inútil. O tabuleiro nunca cai aqui: ele
+        // manda a peça sempre.
+        const faltaAPeca =
+          entrada.promotion === undefined &&
+          LETRAS_DE_PROMOCAO.some(
+            (peca) => applyMove(sessao.fen, { ...entrada, promotion: peca }) !== null,
+          )
+        setErroDeLance(
+          faltaAPeca ? FRASE_DA_RECUSA.semPromocao(casas) : FRASE_DA_RECUSA.ilegal(casas),
+        )
+        return 'recusada'
+      }
+      setErroDeLance(null)
 
+      const doCard = sessao.card.solutionUci[sessao.step]
+      const exato = formasDoLance(uci, entrada, aplicado.move.uci).find((forma) => forma === doCard)
       if (exato !== undefined) {
         setSessao(submitReviewMove(sessao, exato))
-        return true
+        return 'aceita-e-avancou'
       }
       if (sessao.card.kind !== 'final') {
-        // Sem juiz para este tipo de card: comportamento inalterado.
-        setSessao(submitReviewMove(sessao, comPromocao))
-        return false
-      }
-      // O UCI que vai ao juiz é o CANÔNICO, e sai de `applyMove` — o mesmo
-      // caminho da tela de finais. `ChessBoardView` manda `promotion: 'q'`
-      // SEMPRE, inclusive em lance que não é promoção, e o `q` sobrando não
-      // existe na lista da tablebase: `e1e8q` cairia em "lance fora da lista",
-      // ou seja, TODO lance arrastado viraria "não consegui conferir".
-      //
-      // Lance ilegal nem chega ao juiz: o tabuleiro recusa e a revisão continua.
-      // Julgá-lo diria "não consegui conferir" sobre um lance que não existe.
-      const aplicado = applyMove(sessao.fen, { from, to, promotion })
-      if (aplicado === null) {
-        return false
+        // Sem juiz para este tipo de card: o lance legal e diferente é erro,
+        // como sempre foi.
+        setSessao(submitReviewMove(sessao, aplicado.move.uci))
+        return 'aceita'
       }
       void julgarNaTablebase(sessao, aplicado.move.uci)
-      return false
+      return 'aceita'
     },
     [julgamento.situacao, julgarNaTablebase, sessao],
+  )
+
+  /**
+   * O tabuleiro entrega casas; a porta única fala UCI. Este é o tradutor, e ele
+   * NÃO decide nada — nem legalidade, nem promoção, nem acerto. Todo `if` que
+   * aparecesse aqui seria a segunda regra de aceitação do mesmo lance.
+   */
+  const jogarDoTabuleiro = useCallback(
+    (from: SquareName, to: SquareName, promotion?: PromotionPiece): boolean =>
+      jogar(`${from}${to}${promotion ?? ''}`) === 'aceita-e-avancou',
+    [jogar],
   )
 
   if (status === 'carregando' || fase === 'carregando') {
@@ -427,13 +617,60 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
 
   return (
     <div className={styles.layout}>
-      <ChessBoardView
-        fen={sessao.fen}
-        orientation={posicao.turn}
-        theme={profile?.preferences.boardTheme ?? 'claro'}
-        interactive={emAndamento}
-        onMove={jogar}
-      />
+      <div className={styles.boardSide}>
+        <ChessBoardView
+          fen={sessao.fen}
+          orientation={posicao.turn}
+          theme={profile?.preferences.boardTheme ?? 'claro'}
+          interactive={emAndamento}
+          onMove={jogarDoTabuleiro}
+        />
+
+        {/* A alternativa ao arraste. Ela some junto com a interatividade do
+            tabuleiro: campo habilitado depois do veredito prometeria um segundo
+            lance que a sessão não aceita. */}
+        <form
+          className={styles.entrada}
+          onSubmit={(evento) => {
+            evento.preventDefault()
+            if (jogar(lanceDigitado) !== 'recusada') {
+              setLanceDigitado('')
+            }
+          }}
+        >
+          <label className={styles.label} htmlFor="lance-da-revisao">
+            Lance em UCI
+          </label>
+          <p id="ajuda-do-lance-da-revisao" className={styles.ajuda}>
+            {AJUDA_DO_LANCE}
+          </p>
+          <div className={styles.entradaLinha}>
+            <input
+              id="lance-da-revisao"
+              className={styles.input}
+              aria-describedby="ajuda-do-lance-da-revisao"
+              value={lanceDigitado}
+              onChange={(evento) => setLanceDigitado(evento.target.value)}
+              disabled={!emAndamento}
+              autoComplete="off"
+              spellCheck={false}
+              inputMode="text"
+            />
+            <button type="submit" className={styles.ghost} disabled={!emAndamento}>
+              Jogar lance
+            </button>
+          </div>
+          {/* `role="status"` e não `alert`: a recusa é informação, não
+              interrupção — mesma decisão de tom da faixa de erro (#61). Sem
+              região viva, quem não vê o tabuleiro não saberia que o lance não
+              entrou. */}
+          {erroDeLance !== null ? (
+            <p className={styles.recusa} role="status" data-testid="recusa-do-lance">
+              <span aria-hidden="true">✕</span> {erroDeLance}
+            </p>
+          ) : null}
+        </form>
+      </div>
 
       <div className={styles.panel}>
         <p className={styles.counter}>
