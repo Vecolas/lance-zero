@@ -34,11 +34,10 @@
  * quieto e sem ameaça não chega à segunda etapa.
  */
 
-import { applyMove, isValidFen } from '@/lib/chess'
+import { applyMove, isValidFen, normalizeUci, parseUci } from '@/lib/chess'
 import { PIECE_VALUES, captureGain, parseBoard, worstHangingPiece } from '@/domain/games/board'
 import { SEVERITY_CONFIG, moveLossPp, type EvalScore } from '@/domain/games/severity'
 import type { AttemptState } from './attempt'
-import { normalizeUci, parseUci } from './parser'
 
 /**
  * Critérios e limiares do julgamento de alternativa.

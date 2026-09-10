@@ -25,6 +25,11 @@
  * simultâneas ao mesmo FEN viram uma requisição, porque a segunda encontra o
  * cache já preenchido.
  *
+ * DECISÃO 6 — o CONTRATO (`TablebaseProvider`, `TablebaseResult` e o
+ * vocabulário do serviço) mora em `@/domain/types`, junto de
+ * `GameImportProvider`; aqui fica só a IMPLEMENTAÇÃO. Quem procura a forma no
+ * arquivo dono dos contratos encontra (issue #55, item 1).
+ *
  * NUNCA raspar HTML: só a API pública em JSON.
  * Documentação: https://lichess.org/api#tag/Tablebase
  *
@@ -47,6 +52,14 @@
  */
 
 import { ChessParseError, isValidFen, normalizeFen } from '@/lib/chess'
+import {
+  CATEGORIAS_TABLEBASE,
+  type CategoriaTablebase,
+  type LanceTablebase,
+  type ResultadoTeorico,
+  type TablebaseProvider,
+  type TablebaseResult,
+} from '@/domain/types'
 import {
   HttpClient,
   HttpStatusError,
@@ -75,30 +88,6 @@ export const TABLEBASE_CONFIG = {
 } as const
 
 /**
- * Categorias que a Lichess devolve.
- *
- * É a FONTE que o mapeamento e o teste varrem. Categoria nova que apareça na
- * API e não entre aqui é tratada como resposta malformada — "desconhecido" é
- * melhor que afirmar errado.
- */
-export const CATEGORIAS_TABLEBASE = [
-  'win',
-  'syzygy-win',
-  'maybe-win',
-  'cursed-win',
-  'draw',
-  'blessed-loss',
-  'maybe-loss',
-  'syzygy-loss',
-  'loss',
-  'unknown',
-] as const
-
-export type CategoriaTablebase = (typeof CATEGORIAS_TABLEBASE)[number]
-
-export type ResultadoTeorico = 'vitoria' | 'empate' | 'derrota'
-
-/**
  * Categoria → resultado teórico, do ponto de vista de quem tem a vez.
  *
  * `cursed-win` e `blessed-loss` viram EMPATE de propósito: são posições ganhas
@@ -123,45 +112,6 @@ const RESULTADO_POR_CATEGORIA: Record<CategoriaTablebase, ResultadoTeorico | nul
   'syzygy-loss': 'derrota',
   loss: 'derrota',
   unknown: null,
-}
-
-export interface LanceTablebase {
-  uci: string
-  /** Notação curta, quando o serviço mandou. */
-  san: string | null
-  categoria: CategoriaTablebase
-  /** Do ponto de vista de quem joga DEPOIS deste lance. */
-  resultado: ResultadoTeorico | null
-  /** Distância até zerar o contador (captura ou lance de peão). */
-  dtz: number | null
-  /** Distância até o mate, só nas tabelas que a têm. */
-  dtm: number | null
-}
-
-export interface TablebaseResult {
-  /** FEN normalizado que foi consultado. */
-  fen: string
-  categoria: CategoriaTablebase
-  /** Do ponto de vista de quem tem a vez. */
-  resultado: ResultadoTeorico | null
-  dtz: number | null
-  dtm: number | null
-  xequeMate: boolean
-  afogamento: boolean
-  /**
-   * Na ordem em que a Lichess devolveu — melhor primeiro, conforme a
-   * documentação. NÃO reordenamos: recalcular a ordem a partir de DTZ/DTM sem
-   * as tabelas na mão produziria uma "defesa perfeita" errada, e errada em
-   * silêncio.
-   */
-  lances: readonly LanceTablebase[]
-  /** `true` quando a resposta veio do cache local, sem tocar a rede. */
-  doCache: boolean
-}
-
-/** Contrato do ADR-0006. Nenhuma URL de terceiro fora deste arquivo. */
-export interface TablebaseProvider {
-  probe(fen: string): Promise<TablebaseResult | null>
 }
 
 export interface LichessTablebaseOptions {

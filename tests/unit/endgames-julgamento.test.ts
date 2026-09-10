@@ -47,7 +47,7 @@ import {
 } from '@/domain/endgames'
 import { posicoesDe, type PosicaoDeFinal } from '@/domain/endgames/licao'
 import { legalMoves, normalizeFen } from '@/lib/chess'
-import type { CategoriaTablebase, LanceTablebase, TablebaseResult } from '@/lib/tablebase'
+import type { CategoriaTablebase, LanceTablebase, TablebaseResult } from '@/domain/types'
 import {
   APRESENTACAO_POR_GRAU,
   descreverJulgamento,

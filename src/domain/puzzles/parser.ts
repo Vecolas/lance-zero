@@ -8,7 +8,7 @@
  * `PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags`
  */
 
-import { applyMove, isValidFen, positionStatus } from '@/lib/chess'
+import { applyMove, isUci, isValidFen, normalizeUci, parseUci, positionStatus } from '@/lib/chess'
 import type { Puzzle, SolvablePuzzle } from '@/domain/types'
 import { skillIdsForThemes } from './themes'
 
@@ -30,35 +30,6 @@ export const PUZZLE_CSV_HEADER =
 
 /** O dump não usa aspas nem vírgula dentro de campo: são sempre 10 colunas. */
 export const PUZZLE_CSV_COLUMNS = 10
-
-const UCI_PATTERN = /^[a-h][1-8][a-h][1-8][nbrq]?$/
-
-export interface UciMove {
-  from: string
-  to: string
-  promotion?: 'n' | 'b' | 'r' | 'q'
-}
-
-/** Normaliza um lance UCI: sem espaços, minúsculo. */
-export function normalizeUci(uci: string): string {
-  return uci.trim().toLowerCase()
-}
-
-export function isUci(uci: string): boolean {
-  return UCI_PATTERN.test(normalizeUci(uci))
-}
-
-/**
- * Quebra `e7e8q` em `{ from, to, promotion }`. Devolve `null` para entrada que
- * nem sequer tem forma de UCI — cabe ao chamador decidir se isso é erro de
- * dados ou lance digitado errado pelo usuário.
- */
-export function parseUci(uci: string): UciMove | null {
-  const limpo = normalizeUci(uci)
-  if (!UCI_PATTERN.test(limpo)) return null
-  const promotion = limpo.length === 5 ? (limpo[4] as 'n' | 'b' | 'r' | 'q') : undefined
-  return { from: limpo.slice(0, 2), to: limpo.slice(2, 4), promotion }
-}
 
 function campoNumerico(
   valor: string,
@@ -129,7 +100,7 @@ export function parsePuzzleCsvLine(linha: string, numeroDaLinha: number | null =
       { puzzleId, linha: numeroDaLinha },
     )
   }
-  const invalido = moves.find((move) => !UCI_PATTERN.test(move))
+  const invalido = moves.find((move) => !isUci(move))
   if (invalido !== undefined) {
     throw new PuzzleParseError(`Puzzle ${puzzleId}: lance fora do formato UCI ("${invalido}").`, {
       puzzleId,

@@ -40,7 +40,7 @@ import {
   tentativaParaRegistro,
   type TentativaDeFinal,
 } from '@/domain/endgames/persistencia'
-import { parseUci } from '@/domain/puzzles/parser'
+import { parseUci } from '@/lib/chess'
 import { applyMove } from '@/lib/chess'
 import { applyReview } from '@/lib/fsrs/cards'
 import { MemoryTrainingRepository } from '@/lib/storage/memory-repository'

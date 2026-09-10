@@ -11,7 +11,7 @@ import {
   type JulgamentoAlternativa,
 } from '@/domain/puzzles/alternativa'
 import { createAttemptState, type AttemptState } from '@/domain/puzzles/attempt'
-import { parseUci } from '@/domain/puzzles/parser'
+import { parseUci } from '@/lib/chess'
 import type { Puzzle, SolvablePuzzle } from '@/domain/types'
 
 /**

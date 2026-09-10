@@ -17,8 +17,9 @@
  *
  * O que ele NÃO prova, e está declarado de propósito: que promoção e defesa de
  * empate são FORÇADAS. A linha modelo usa a defesa que o autor escolheu. A
- * prova definitiva desses dois sai da tablebase (`@/lib/tablebase`), que não é
- * consultada aqui porque teste unitário não toca a rede.
+ * prova definitiva desses dois sai da tablebase (`@/domain/types` define o
+ * contrato, `@/lib/tablebase` o implementa), que não é consultada aqui porque
+ * teste unitário não toca a rede.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -29,12 +30,11 @@ import {
   contextoInicialDe,
   estimarMinutos,
   existeMateForcadoEm,
-  posicaoEhJogavel,
   posicoesDe,
   reproduzirLinhaModelo,
 } from '@/domain/endgames'
 import { SKILL_IDS } from '@/domain/types'
-import { isValidFen, positionStatus } from '@/lib/chess'
+import { isValidFen, posicaoEhJogavel, positionStatus } from '@/lib/chess'
 
 const licoes = CURRICULO_FINAIS
 const posicoes = posicoesDe(licoes)
@@ -79,6 +79,16 @@ describe('currículo de finais', () => {
     for (const id of deFinal) {
       expect(ensinadas.has(id), `${id} não é ensinada por nenhuma lição`).toBe(true)
     }
+  })
+
+  it('o detector de posição impossível ainda discrimina', () => {
+    // Canário do portão, não teste de `posicaoEhJogavel` (esse mora em
+    // `chess-position.test.ts`). O detector varre o currículo abaixo, e um
+    // detector que passasse a aprovar tudo deixaria a varredura verde sem ter
+    // olhado nada — a falha mais silenciosa que este portão pode ter, ainda
+    // mais agora que a função mora noutro módulo (issue #55, item 3).
+    expect(posicaoEhJogavel('7k/8/6K1/8/8/8/8/1Q6 w - - 0 1')).toBe(true)
+    expect(posicaoEhJogavel('7k/8/6K1/8/8/8/8/Q7 w - - 0 1')).toBe(false)
   })
 
   it('todo FEN é legal e começa na vez do aluno', () => {

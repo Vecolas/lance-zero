@@ -7,9 +7,9 @@
  * na frente do usuário.
  */
 
-import { applyMove, positionStatus } from '@/lib/chess'
+import { applyMove, parseUci, positionStatus } from '@/lib/chess'
 import type { Puzzle, SolvablePuzzle } from '@/domain/types'
-import { PuzzleParseError, parseUci, toSolvable } from './parser'
+import { PuzzleParseError, toSolvable } from './parser'
 
 export interface PuzzleValidation {
   valido: boolean

@@ -1,5 +1,8 @@
 /**
- * Testes de `avaliarObjetivo`, `contarPecas` e `posicaoEhJogavel`.
+ * Testes de `avaliarObjetivo` e `contarPecas`.
+ *
+ * `posicaoEhJogavel` saiu daqui: virou regra geral de xadrez e os testes dela
+ * foram junto, para `chess-position.test.ts` (issue #55, item 3).
  *
  * Cada objetivo é exercitado nos TRÊS estados: cumprido, falhou e em-andamento.
  * Régua que só conhece o caso feliz aprova qualquer coisa.
@@ -10,7 +13,6 @@ import {
   TIPOS_DE_OBJETIVO,
   avaliarObjetivo,
   contarPecas,
-  posicaoEhJogavel,
   reproduzirLinhaModelo,
   type ObjetivoFinal,
   type PosicaoDeFinal,
@@ -189,23 +191,6 @@ describe('contarPecas', () => {
       q: 0,
       k: 1,
     })
-  })
-})
-
-describe('posicaoEhJogavel', () => {
-  it('aceita uma posição possível', () => {
-    expect(posicaoEhJogavel('7k/8/6K1/8/8/8/8/1Q6 w - - 0 1')).toBe(true)
-  })
-
-  it('recusa a posição em que o lado SEM a vez está em xeque', () => {
-    // Dama em a1 dá xeque ao rei em h8 pela diagonal, com as brancas a jogar:
-    // impossível numa partida. `isValidFen` aceita isto; este portão não.
-    expect(posicaoEhJogavel('7k/8/6K1/8/8/8/8/Q7 w - - 0 1')).toBe(false)
-  })
-
-  it('recusa FEN inválido', () => {
-    expect(posicaoEhJogavel('não é fen')).toBe(false)
-    expect(posicaoEhJogavel('8/8/8/8/8/8/8/8 w - - 0 1')).toBe(false)
   })
 })
 

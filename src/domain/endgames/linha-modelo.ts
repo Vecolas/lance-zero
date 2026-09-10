@@ -20,8 +20,7 @@
  * prova definitiva sai da tablebase e é dívida declarada.
  */
 
-import { normalizeUci, parseUci } from '@/domain/puzzles/parser'
-import { applyMove } from '@/lib/chess'
+import { applyMove, normalizeUci, parseUci } from '@/lib/chess'
 import type { PosicaoDeFinal } from './licao'
 import { avaliarObjetivo, type ResultadoObjetivo } from './objetivo'
 

@@ -26,9 +26,9 @@
 import { describe, expect, it } from 'vitest'
 import { CURRICULO_FINAIS } from '@/content/endgames'
 import { MOTIVOS_DE_OBJETIVO, type PosicaoDeFinal } from '@/domain/endgames'
-import { parseUci } from '@/domain/puzzles/parser'
+import { parseUci } from '@/lib/chess'
 import { applyMove, legalMoves } from '@/lib/chess'
-import type { TablebaseResult } from '@/lib/tablebase'
+import type { TablebaseResult } from '@/domain/types'
 import { descreverLinhaModelo } from '@/components/endgames/linha-modelo-legivel'
 import {
   escolherRespostaDoAdversario,
