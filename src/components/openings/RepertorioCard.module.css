@@ -1,6 +1,8 @@
 .card {
   display: flex;
   flex-direction: column;
+  /* Permite que o cartão encolha dentro da grade em telas estreitas. */
+  min-width: 0;
   gap: var(--space-3);
   padding: var(--space-5);
   border: 1px solid var(--border);

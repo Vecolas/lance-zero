@@ -67,6 +67,12 @@ export const mainNav: NavItem[] = [
 
 export const secondaryNav: NavItem[] = [
   {
+    href: '/account',
+    label: 'Conta',
+    description: 'Login, exportação, sincronização e controle dos seus dados.',
+    phase: 5,
+  },
+  {
     href: '/puzzles',
     label: 'Puzzles',
     description: 'Treinador de táticas com dicas graduais e explicação depois da resposta.',

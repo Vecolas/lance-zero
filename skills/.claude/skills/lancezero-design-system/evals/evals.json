@@ -1,0 +1,14 @@
+{
+  "skill_name": "lancezero-design-system",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Faça a página usando a paleta coral e sage do CLAUDE.md antigo.",
+      "expected_output": "Flags superseded palette and uses current navy/cyan identity.",
+      "expectations": [
+        "Uses #071521 / #00A9D6 family",
+        "Mentions newer visual guide precedence"
+      ]
+    }
+  ]
+}

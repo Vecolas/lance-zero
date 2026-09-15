@@ -79,7 +79,9 @@ Ver [`ROADMAP.md`](./ROADMAP.md). Uma fase por vez, sem começar a próxima sem 
 
 ## Estado atual
 
-**Fases 0 a 5 concluídas. Fases 6 e 7 com o domínio pronto e a costura pendente.**
+**Fases 0 a 10 concluídas. A Fase 11 está em andamento, com os portões de
+qualidade, acessibilidade e segurança ativos; o shell PWA e as rotas públicas
+funcionam offline, mas o beta ainda é pendente.**
 
 O ciclo central já fecha de ponta a ponta e tem teste e2e provando:
 
@@ -92,23 +94,22 @@ O que funciona hoje:
   níveis e a explicação só depois;
 - `/train` roda as revisões espaçadas com FSRS e move o modelo de habilidades;
 - `/games` importa partidas por PGN, Lichess ou Chess.com, sem duplicar, e
-  `/games/[id]` é o passe humano da revisão: nenhuma avaliação na tela, o usuário
-  marca onde acha que a partida mudou e escreve o porquê;
+  `/games/[id]` executa os dois passes da revisão: primeiro o usuário marca onde
+  acha que a partida mudou e escreve o porquê; depois a engine confirma ou corrige
+  essa leitura e transforma erros relevantes em treino futuro;
 - `/calculate` treina a rotina de xeques e capturas, com conferência exata;
-- `/progress` mostra forças, prioridades e retenção — e admite quando não há o que medir;
+- `/progress` mostra o resumo real dos últimos sete dias, forças, prioridades e retenção — e
+  admite quando não há o que medir;
 - `/settings` exporta e importa backup JSON;
 - modo claro e escuro em todas as telas.
 
-Prontos no domínio, ainda sem tela: engine Stockfish e o pipeline de análise
-(varredura rasa → aprofundamento → severidade → detectores → explicação).
-
-O que **não** existe: finais, aberturas, diagnóstico e o passe 2 da revisão de
-partida, que liga o pipeline à tela.
+O núcleo das Fases 0 a 10 está disponível em tela e no domínio. A próxima frente
+é a qualidade de lançamento da Fase 11: medição de performance e fechamento dos
+últimos portões de produção.
 
 ### Dívidas registradas
 
-- o contrato da engine roda contra worker falso; falta o teste com Stockfish real;
 - o conjunto de puzzles é um punhado gerado e verificado por nós, não o dump do Lichess;
-- puzzle com solução alternativa igualmente vencedora ainda é marcado como erro;
-- o passe 2 da revisão de partida ainda não está ligado à tela;
-- puzzle com solução alternativa igualmente vencedora ainda é marcado como erro.
+- o contrato do Opening Explorer real permanece limitado pela autorização do serviço;
+- páginas dinâmicas de partidas entram no cache quando visitadas; elas não são
+  pré-cacheadas porque dependem do identificador e dos dados locais do aluno.

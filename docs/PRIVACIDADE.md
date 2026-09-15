@@ -57,6 +57,10 @@ Não há Google Analytics, pixel de rastreamento, nem cookie de terceiro.
 
 ## O que muda quando houver conta
 
+O fluxo pÃºblico estÃ¡ disponÃ­vel em `/account`: cadastro, login, recuperaÃ§Ã£o,
+logout, exportaÃ§Ã£o e exclusÃ£o. O endpoint `/api/sync` usa JWT verificado,
+identidade derivada da sessÃ£o e confirmaÃ§Ã£o antes de substituir uma cÃ³pia.
+
 A camada de conta está sendo construída (ADR-0008 e ADR-0009). Quando existir:
 
 | Onde                             | O que                                                        | Retenção                 |
@@ -93,9 +97,16 @@ na intenção — ver `supabase/migrations/`.
 | **Eliminação**                 | limpar os dados do site apaga tudo             | exclusão de conta como operação de servidor, cobrindo Auth, banco e Storage |
 | **Revogação de consentimento** | não há consentimento a revogar: não há coleta  | desligar sincronização                                                      |
 
-A exclusão com conta ainda **não está implementada** (issue #29). Enquanto não
-estiver, não haverá cadastro aberto ao público — não faz sentido coletar dado que
-não sabemos apagar.
+A exclusão com conta agora tem uma operação server-only testada (issue #29): ela
+exige confirmação explícita, remove os avatars do usuário e só então apaga a
+conta Auth, com falha segura se o Storage não responder. O cadastro e a tela
+pública de conta ainda não foram abertos; não há coleta de conta ativa enquanto
+esse fluxo completo não existir.
+
+A portabilidade dos dados de servidor também tem uma operação server-only
+testada: ela exporta o DTO privado do perfil, as preferências e o documento de
+sincronização sujeito à RLS. Email, tokens, IDs internos e erros crus não entram
+no artefato; uma leitura protegida que falhar reprova a exportação inteira.
 
 ---
 

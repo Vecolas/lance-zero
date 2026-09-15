@@ -187,9 +187,10 @@ export const runtimeDependencies: DependencyLicense[] = [
   },
   {
     ids: ['inter'],
-    name: 'Inter',
+    name: 'Inter (preferência do sistema)',
     license: 'SIL Open Font License 1.1',
-    reason: 'Tipografia de interface, servida localmente pelo next/font.',
+    reason:
+      'Referência tipográfica do guia; o app usa fontes locais e fallback de sistema, sem download no build.',
     url: 'https://github.com/rsms/inter',
   },
 ]

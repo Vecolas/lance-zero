@@ -40,6 +40,9 @@ jobs:
       - name: Testes
         run: pnpm test
 
+      - name: Contratos
+        run: pnpm test:contrato
+
   build:
     name: Build de produção
     runs-on: ubuntu-latest
@@ -59,3 +62,26 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  e2e-prod:
+    name: E2E no build de produção
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Instalar Chromium do Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E de produção
+        run: pnpm test:e2e:prod

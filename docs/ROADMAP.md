@@ -3,24 +3,27 @@
 Uma fase por vez. Nenhuma fase começa sem instrução explícita. Cada fase vira uma
 issue no GitHub com critérios de aceite verificáveis.
 
-| Fase | Título                                   | Estado                                             |
-| ---- | ---------------------------------------- | -------------------------------------------------- |
-| 0    | Fundação do repositório                  | ✅ concluída                                       |
-| 1    | Domínio do xadrez e tabuleiro            | ✅ concluída                                       |
-| 2    | Stockfish no Web Worker                  | ✅ concluída (contrato com engine real pendente)   |
-| 3    | Puzzles                                  | ✅ concluída                                       |
-| 4    | Persistência local + FSRS                | ✅ concluída                                       |
-| 5    | Skill graph + daily planner              | ✅ concluída                                       |
-| 6    | Importação e análise de partidas         | domínio pronto, UI de importação pendente          |
-| 7    | "Meus erros" e explicador determinístico | detectores prontos, ligação com o planner pendente |
-| 8    | Finais                                   | pendente                                           |
-| 9    | Aberturas                                | pendente                                           |
-| 10   | Diagnóstico e conteúdo                   | pendente                                           |
-| 11   | PWA, qualidade e beta                    | pendente                                           |
-| 12   | Sync opcional                            | depois de validar o loop                           |
-| 13   | Maia / sparring humanoide                | opcional, AGPL-3.0                                 |
+| Fase | Título                                   | Estado                                                       |
+| ---- | ---------------------------------------- | ------------------------------------------------------------ |
+| 0    | Fundação do repositório                  | ✅ concluída                                                 |
+| 1    | Domínio do xadrez e tabuleiro            | ✅ concluída                                                 |
+| 2    | Stockfish no Web Worker                  | ✅ concluída (contrato E2E com engine real coberto)          |
+| 3    | Puzzles                                  | ✅ concluída                                                 |
+| 4    | Persistência local + FSRS                | ✅ concluída                                                 |
+| 5    | Skill graph + daily planner              | ✅ concluída                                                 |
+| 6    | Importação e análise de partidas         | ✅ concluída (importação, revisão humana e passe 2)          |
+| 7    | "Meus erros" e explicador determinístico | ✅ concluída (cards e planner realimentado)                  |
+| 8    | Finais                                   | ✅ concluída (currículo, tablebase e FSRS)                   |
+| 9    | Aberturas                                | ✅ concluída (ECO, repertório, explorer e FSRS)              |
+| 10   | Diagnóstico e conteúdo                   | ✅ concluída (diagnóstico, primeira semana e lições)         |
+| 11   | PWA, qualidade e beta                    | em andamento (shell e rotas públicas offline; beta pendente) |
+| 12   | Sync opcional                            | depois de validar o loop                                     |
+| 13   | Maia / sparring humanoide                | opcional, AGPL-3.0                                           |
 
 ## Backlog priorizado
+
+O fluxo autenticado de sincronizaÃ§Ã£o da fase 12 jÃ¡ estÃ¡ implementado; a operaÃ§Ã£o
+real do projeto Supabase continua sendo uma etapa de provisionamento externo.
 
 **P0 — precisa existir para provar a ideia**
 tabuleiro · Stockfish local · puzzles · persistência · FSRS · plano diário ·

@@ -24,8 +24,15 @@ const modulos = import.meta.glob('../../src/**/*.{ts,tsx}')
  * silêncio o dia em que aquele módulo se perder.
  */
 const NAO_CARREGA_FORA_DO_AMBIENTE: Record<string, string> = {
-  'app/layout.tsx': 'usa next/font/google, que só resolve no build do Next',
   'server/profile-service.ts': "importa 'server-only': lançar aqui é a fronteira funcionando",
+  'server/account-deletion.ts': "importa 'server-only': lançar aqui é a fronteira funcionando",
+  'server/account-export.ts': "importa 'server-only': lançar aqui é a fronteira funcionando",
+  'server/request-auth.ts': "importa 'server-only': lançar aqui é a fronteira funcionando",
+  'app/api/account/delete/route.ts':
+    'rota Next server-only: não pode ser importada por Client Component',
+  'app/api/account/export/route.ts':
+    'rota Next server-only: não pode ser importada por Client Component',
+  'app/api/sync/route.ts': 'rota Next server-only: não pode ser importada por Client Component',
   'server/profile-store-supabase.ts':
     "importa 'server-only': lançar aqui é a fronteira funcionando",
   'server/supabase.ts': "importa 'server-only': lançar aqui é a fronteira funcionando",

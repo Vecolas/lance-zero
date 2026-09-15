@@ -78,6 +78,9 @@ describe('a tela diz de quem são as ideias', () => {
     expect(within(brancas).getByText(/ainda é o que veio com o app/)).toBeVisible()
   })
 
+  // Este fluxo monta os dois repertórios e simula digitação real; sob a suíte
+  // completa os dois workers disputam o jsdom, então a régua precisa medir o
+  // comportamento sem transformar contenção de CPU em falso defeito funcional.
   it('depois de o aluno escrever, o cartão passa a dizer que o repertório é dele', async () => {
     const repo = new MemoryTrainingRepository()
     await montar(repo)
@@ -98,7 +101,7 @@ describe('a tela diz de quem são as ideias', () => {
     expect(
       within(secaoDe(REPERTORIO_PRETAS.titulo)).getByText(/ainda é o que veio com o app/),
     ).toBeVisible()
-  })
+  }, 15_000)
 })
 
 describe('a ideia que o aluno escreve é gravada', () => {

@@ -122,10 +122,9 @@ const DIRETIVAS: readonly (readonly [string, readonly string[]])[] = [
   // `data:` cobre SVG/PNG embutidos (peças do tabuleiro, ícones).
   ['img-src', ["'self'", 'data:']],
 
-  // `next/font` baixa a Inter em tempo de build e a serve de
-  // `/_next/static/media`: em runtime nenhuma requisição sai para o Google.
-  // Por isso `fonts.gstatic.com` NÃO entra aqui — verificado no e2e, que falha
-  // se qualquer violação de CSP aparecer no console.
+  // A tipografia prefere Inter quando instalada no sistema e cai para fontes
+  // locais; não existe download de fonte no build nem em runtime. Por isso
+  // `fonts.gstatic.com` não entra aqui.
   ['font-src', ["'self'"]],
 
   // Os adapters de servico externo falam com estas APIs oficiais, e so com

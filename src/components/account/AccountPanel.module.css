@@ -1,0 +1,75 @@
+.section,
+.danger {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  margin-bottom: var(--space-5);
+}
+.danger {
+  border-color: var(--danger);
+}
+.form {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 28rem;
+}
+.form input,
+.danger input {
+  min-height: 2.75rem;
+  padding: var(--space-2);
+  font: inherit;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  margin-bottom: var(--space-3);
+}
+.section > input {
+  display: block;
+  width: min(100%, 28rem);
+  min-height: 2.75rem;
+  padding: var(--space-2);
+  font: inherit;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  margin-top: var(--space-2);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.primary,
+.ghost,
+.dangerButton {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.primary {
+  border: 0;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+.ghost {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+.dangerButton {
+  border: 0;
+  background: var(--danger);
+  color: white;
+  margin-top: var(--space-3);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

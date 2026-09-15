@@ -36,6 +36,8 @@ test('trocar o orçamento remonta o plano e persiste', async ({ page }) => {
 
 test('o progresso admite que ainda não há o que medir', async ({ page }) => {
   await page.goto('/progress')
+  await expect(page.getByRole('heading', { name: 'Últimos 7 dias' })).toBeVisible()
+  await expect(page.getByText(/Ainda não há atividade registrada nesta semana/)).toBeVisible()
   await expect(page.getByText(/Ainda não há o que medir/)).toBeVisible()
 })
 

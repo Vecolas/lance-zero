@@ -19,6 +19,38 @@
   box-shadow: var(--shadow-card);
 }
 
+.weeklyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.weeklyGrid > div {
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.weeklyGrid dt {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.weeklyGrid dd {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.weeklyEmpty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
 .cardTitle {
   margin: 0 0 var(--space-3);
   font-size: 1rem;
