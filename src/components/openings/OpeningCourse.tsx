@@ -417,6 +417,11 @@ function Variations({ opening }: { opening: OpeningDefinition }) {
         {opening.variations.map((variation) => (
           <article key={variation.id} className={styles.infoCard}>
             <h3>{variation.name}</h3>
+            <ChessBoardView
+              fen={opening.graph.get(variation.rootNodeId)?.fen ?? opening.rootFen}
+              orientation={opening.side === 'white' ? 'w' : 'b'}
+              interactive={false}
+            />
             <p>{variation.description}</p>
             <p className={styles.mono}>{variation.line.map((move) => move.san).join(' ')}</p>
           </article>
@@ -439,6 +444,11 @@ function Plans({ opening }: { opening: OpeningDefinition }) {
         {opening.plans.map((plan) => (
           <article key={plan.id} className={styles.infoCard}>
             <h3>{plan.name}</h3>
+            <ChessBoardView
+              fen={opening.graph.get(plan.positionNodeId)?.fen ?? opening.rootFen}
+              orientation={opening.side === 'white' ? 'w' : 'b'}
+              interactive={false}
+            />
             <p>
               <strong>Objetivo:</strong> {plan.objective}
             </p>
@@ -462,6 +472,11 @@ function Mistakes({ opening }: { opening: OpeningDefinition }) {
         {opening.mistakes.map((mistake) => (
           <article key={mistake.id} className={styles.infoCard}>
             <h3>{mistake.moveSan}</h3>
+            <ChessBoardView
+              fen={opening.graph.get(mistake.nodeId)?.fen ?? opening.rootFen}
+              orientation={opening.side === 'white' ? 'w' : 'b'}
+              interactive={false}
+            />
             <p>{mistake.explanation}</p>
             <p>
               <strong>Princípio:</strong> {mistake.principle}
