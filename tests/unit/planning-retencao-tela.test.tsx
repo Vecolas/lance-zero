@@ -24,6 +24,7 @@
 
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { criarSkillState } from '@/domain/aprendizado'
 import { RETENCAO_CONFIG } from '@/domain/planning/retencao'
 import { getSkill, SKILL_CATALOG } from '@/domain/skills/catalog'
 import { SKILL_IDS } from '@/domain/types'
@@ -186,6 +187,30 @@ const perfil: UserProfile = {
 async function montarRepo(treinada: boolean): Promise<MemoryTrainingRepository> {
   const repo = new MemoryTrainingRepository()
   await repo.saveProfile(perfil)
+
+  // TODAS as habilidades já ENSINADAS e praticáveis sem apoio.
+  //
+  // Sem isto o teste não chega a fazer a pergunta que quer fazer. Desde o
+  // ADR-0011, o estágio decide O QUE pode ser oferecido e a maestria decide
+  // QUAL VEM PRIMEIRO — nessa ordem. Com tudo em `unseen` o planner só pode
+  // oferecer lição, e lição é escolhida pela ordem do currículo, não por
+  // maestria: a retenção não teria por onde aparecer, e o teste mediria outra
+  // coisa enquanto parecia medir esta.
+  //
+  // Pôr todas no MESMO degrau é o que mantém a comparação limpa: a única coisa
+  // que difere entre TREINADA e RIVAL continua sendo a maestria.
+  await repo.saveSkillStates(
+    SKILL_IDS.map((skillId) => ({
+      ...criarSkillState(skillId, AGORA),
+      stage: 'independent' as const,
+      exposureCount: 1,
+      guidedAttempts: 4,
+      guidedSuccesses: 4,
+      independentAttempts: 4,
+      independentSuccesses: 4,
+      lastTaughtAt: AGORA.toISOString(),
+    })),
+  )
   // TODAS as habilidades recebem registro, e as outras nascem quase dominadas.
   // Sem isso o planner escolhe uma habilidade que nunca foi vista (maestria 0,
   // portanto prioridade máxima) e a comparação que este teste quer fazer nunca
@@ -233,9 +258,16 @@ async function renderizarCom(repo: MemoryTrainingRepository): Promise<void> {
   await waitFor(() => expect(screen.queryByText('Montando seu treino…')).toBeNull())
 }
 
-/** Títulos dos blocos, que é onde o rótulo da habilidade escolhida aparece. */
+/**
+ * Os CARDS do plano, que é onde o rótulo da habilidade escolhida aparece.
+ *
+ * Eram `heading level 2` até o Hoje V2: o plano deixou de ser uma lista de
+ * blocos com título e passou a ser uma lista de ATIVIDADES clicáveis, e o
+ * título virou um `span` dentro do link do card. O que o teste pergunta não
+ * mudou — qual habilidade o planner escolheu —, só onde ela aparece.
+ */
 function titulos(): string[] {
-  return screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent ?? '')
+  return screen.getAllByRole('listitem').map((item) => item.textContent ?? '')
 }
 
 describe('a verificação de retenção chega ao plano do dia', () => {

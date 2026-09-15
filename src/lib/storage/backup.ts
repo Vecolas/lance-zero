@@ -9,6 +9,7 @@
 import type {
   DefinicaoDeRepertorio,
   Game,
+  PlanoDoDia,
   PositionAnalysis,
   PuzzleAttempt,
   RepertorioDoAluno,
@@ -16,6 +17,7 @@ import type {
   ReviewLog,
   SchedulerState,
   SkillMastery,
+  SkillState,
   UserProfile,
 } from '@/domain/types'
 import { idDeRepertorioEhUsavel } from '@/domain/repertoire'
@@ -55,6 +57,31 @@ export interface BackupFile {
    * inteiros apontando para nós que voltaram a ter texto de outra pessoa.
    */
   repertorios: RepertorioDoAluno[]
+  /**
+   * O degrau de aprendizagem por habilidade.
+   *
+   * SEM ISTO, RESTAURAR UM BACKUP APAGARIA O ENSINO. Todas as habilidades
+   * voltariam a `unseen`, e o aluno que já sabia garfo receberia de novo a
+   * lição de garfo — calado, parecendo decisão pedagógica em vez de perda de
+   * dado. Pior ainda no sentido contrário: os cards de revisão VOLTAM (eles
+   * estão no backup), e cards de tema `unseen` são exatamente a situação que
+   * `precisaDeReensino` existe para tratar.
+   *
+   * A VERSÃO DO BACKUP NÃO SUBIU, e a escolha é deliberada: `validateBackupFile`
+   * exige a versão EXATA, então subir para 2 faria o app recusar todo backup
+   * que alguém já baixou. Como os campos novos são aditivos e `readArray`
+   * devolve lista vazia para campo ausente, um arquivo antigo continua
+   * importando — sem estágio, que é o estado correto de quem exportou antes de
+   * o estágio existir.
+   */
+  skillStates: SkillState[]
+  /**
+   * Os planos já gerados, com as conclusões.
+   *
+   * É o que faz o ✓ atravessar uma troca de aparelho. Um backup sem eles
+   * devolveria um histórico em que o aluno nunca concluiu nada.
+   */
+  planosDoDia: PlanoDoDia[]
 }
 
 export interface ImportCounts {
@@ -66,6 +93,8 @@ export interface ImportCounts {
   reviewLogs: number
   skillMastery: number
   repertorios: number
+  skillStates: number
+  planosDoDia: number
 }
 
 export interface ImportResult {
@@ -88,6 +117,8 @@ export async function exportBackup(
     reviewLogs,
     skillMastery,
     repertorios,
+    skillStates,
+    planosDoDia,
   ] = await Promise.all([
     repo.getProfile(),
     repo.listGames(),
@@ -97,6 +128,11 @@ export async function exportBackup(
     repo.listReviewLogs(),
     repo.getSkillMastery(),
     repo.listRepertorios(),
+    repo.getSkillStates(),
+    // SEM TETO, de propósito. O histórico de planos é o que sustenta o ✓ ao
+    // longo do tempo, e um `limit` aqui cortaria em silêncio os dias mais
+    // antigos de um backup que o aluno acha completo.
+    repo.listPlanosDoDia(),
   ])
 
   return {
@@ -110,6 +146,8 @@ export async function exportBackup(
     reviewLogs,
     skillMastery,
     repertorios,
+    skillStates,
+    planosDoDia,
   }
 }
 
@@ -142,6 +180,15 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
   for (const repertorio of parsed.repertorios) {
     await repo.saveRepertorio(repertorio)
   }
+  await repo.saveSkillStates(parsed.skillStates)
+  for (const plano of parsed.planosDoDia) {
+    // `put` por `dateKey`: restaurar por cima de um dia que já existe
+    // SUBSTITUI. É o comportamento certo aqui e não contradiz a fusão
+    // monotônica de `@/domain/aprendizado/plano`: importar backup é uma
+    // restauração deliberada do aluno, não uma reconciliação de duas cópias
+    // vivas. Quem quer fundir usa sync; quem importa backup quer o arquivo.
+    await repo.savePlanoDoDia(plano)
+  }
 
   return {
     version: parsed.version,
@@ -155,6 +202,8 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
       reviewLogs: parsed.reviewLogs.length,
       skillMastery: parsed.skillMastery.length,
       repertorios: parsed.repertorios.length,
+      skillStates: parsed.skillStates.length,
+      planosDoDia: parsed.planosDoDia.length,
     },
   }
 }
@@ -385,6 +434,24 @@ export function validateBackupFile(file: unknown): BackupFile {
     return item as unknown as RepertorioDoAluno
   })
 
+  const skillStates = readRecords(file, 'skillStates').map((item, index) => {
+    const where = `skillStates[${index}]`
+    readString(item, 'skillId', where)
+    readString(item, 'stage', where)
+    return item as unknown as SkillState
+  })
+
+  const planosDoDia = readRecords(file, 'planosDoDia').map((item, index) => {
+    const where = `planosDoDia[${index}]`
+    // `dateKey` é a CHAVE da store. Um plano sem ela seria gravado por cima do
+    // plano `undefined` — uma linha que nenhum dia consegue ler de volta.
+    readString(item, 'dateKey', where)
+    if (!Array.isArray(item['activities'])) {
+      throw invalid(`${where}.activities deveria ser uma lista.`)
+    }
+    return item as unknown as PlanoDoDia
+  })
+
   return {
     version,
     exportedAt,
@@ -396,6 +463,8 @@ export function validateBackupFile(file: unknown): BackupFile {
     reviewLogs,
     skillMastery,
     repertorios,
+    skillStates,
+    planosDoDia,
   }
 }
 

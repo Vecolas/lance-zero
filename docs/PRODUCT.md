@@ -27,10 +27,16 @@ tem três estados — sistema (padrão), claro e escuro.
 
 ## Princípios inegociáveis
 
-1. **Plano do dia primeiro.** A home de quem já usa é "Treino de hoje", não um menu.
+0. **Ensinar antes de cobrar.** O app nunca pede como conhecimento adquirido algo
+   que ele não ensinou. Única exceção: o diagnóstico, que se declara como tal.
+   Está no código como estágio por habilidade, não como intenção — ver ADR-0011.
+1. **Plano do dia primeiro.** A home de quem já usa é "Treino de hoje", não um
+   menu — e é uma LISTA de atividades independentes, feita em qualquer ordem,
+   sem botão global de "começar". O que você conclui fica marcado.
 2. **O usuário pensa antes da engine.** A revisão de partida começa com a engine escondida.
 3. **Erro vira treino futuro.** Um erro relevante gera card de revisão e sobe a prioridade da habilidade.
 4. **Habilidades, não só puzzles.** Toda tentativa atualiza um modelo de habilidades.
+   E **concluir não é dominar**: terminar uma atividade nunca depende de acertar.
 5. **Recuperação antes de explicação.** No modo misto, o tema não é revelado antes da resposta.
 6. **Revisão espaçada.** FSRS para posições, erros, finais, conceitos e nós de repertório.
 7. **A ajuda desaparece.** Exemplos resolvidos e dicas nas primeiras exposições; depois, nada.
@@ -40,21 +46,24 @@ tem três estados — sistema (padrão), claro e escuro.
 
 ## Superfícies
 
-| Rota          | Nome PT-BR     | Fase | Papel                                                   |
-| ------------- | -------------- | ---- | ------------------------------------------------------- |
-| `/`           | Landing        | 0    | Explica o ciclo e leva ao primeiro treino               |
-| `/onboarding` | Diagnóstico    | 10   | 12–20 posições, estimativa inicial, primeira semana     |
-| `/dashboard`  | Treino de hoje | 5    | Home autenticada/local; sessão pronta com justificativa |
-| `/train`      | Treinar        | 5    | Execução da sessão, um exercício por vez                |
-| `/puzzles`    | Puzzles        | 3    | Táticas com dicas graduais                              |
-| `/calculate`  | Cálculo        | 4    | Xeques, capturas, ameaças; candidatos; visualização     |
-| `/games`      | Partidas       | 6    | Importação, revisão humana, depois engine               |
-| `/openings`   | Aberturas      | 9    | Princípios + repertório enxuto + explorer               |
-| `/endgames`   | Finais         | 8    | Currículo básico + tablebase                            |
-| `/lessons`    | Biblioteca     | 10   | 30–40 microlições                                       |
-| `/progress`   | Progresso      | 5    | Forças, prioridades, retenção                           |
-| `/settings`   | Ajustes        | 4    | Backup, orçamento de engine, preferências               |
-| `/licenses`   | Licenças       | 0    | Obrigações de licença e fontes de dados                 |
+| Rota                     | Nome PT-BR     | Fase | Papel                                                   |
+| ------------------------ | -------------- | ---- | ------------------------------------------------------- |
+| `/`                      | Landing        | 0    | Explica o ciclo e leva ao primeiro treino               |
+| `/onboarding`            | Diagnóstico    | 10   | 12–20 posições, estimativa inicial, primeira semana     |
+| `/dashboard`             | Treino de hoje | 5    | Home local; atividades independentes, qualquer ordem, ✓ |
+| `/train`                 | Treinar        | 5    | Hub: Aprender, Praticar, Revisar, Currículo, Partidas   |
+| `/train/revisao`         | Revisar        | 5    | A fila de revisão espaçada, com endereço próprio        |
+| `/train/pratica/[skill]` | Praticar       | 5    | Prática da habilidade, no degrau em que ela está        |
+| `/lessons/[skill]`       | Lição          | 10   | As nove etapas, com a ajuda desvanecendo                |
+| `/puzzles`               | Puzzles        | 3    | Táticas com dicas graduais                              |
+| `/calculate`             | Cálculo        | 4    | Xeques, capturas, ameaças; candidatos; visualização     |
+| `/games`                 | Partidas       | 6    | Importação, revisão humana, depois engine               |
+| `/openings`              | Aberturas      | 9    | Princípios + repertório enxuto + explorer               |
+| `/endgames`              | Finais         | 8    | Currículo básico + tablebase                            |
+| `/lessons`               | Biblioteca     | 10   | 30–40 microlições                                       |
+| `/progress`              | Progresso      | 5    | Forças, prioridades, retenção                           |
+| `/settings`              | Ajustes        | 4    | Backup, orçamento de engine, preferências               |
+| `/licenses`              | Licenças       | 0    | Obrigações de licença e fontes de dados                 |
 
 Mobile: bottom navigation com Hoje, Treinar, Partidas e "Mais".
 
@@ -89,10 +98,18 @@ O ciclo central já fecha de ponta a ponta e tem teste e2e provando:
 
 O que funciona hoje:
 
-- `/dashboard` monta o treino do dia, com o motivo de cada bloco e orçamento respeitado;
-- `/puzzles` treina táticas sem revelar o tema antes da resposta, com dicas em três
-  níveis e a explicação só depois;
-- `/train` roda as revisões espaçadas com FSRS e move o modelo de habilidades;
+- `/dashboard` monta o treino do dia como uma LISTA de atividades independentes,
+  cada uma com o motivo de estar ali, feita em qualquer ordem, com ✓ persistente
+  e sem botão global de "começar";
+- `/lessons/[skill]` ensina em nove etapas com a ajuda desvanecendo, e é isso que
+  o plano oferece a quem nunca viu o conceito — em vez de perguntar o melhor lance;
+- `/puzzles` treina táticas sem revelar o tema antes da resposta, com dicas
+  graduais e a explicação só depois;
+- `/train` é um hub (Aprender, Praticar, Revisar, Currículo, Partidas): abrir a
+  aba não dispara mais um exercício;
+- `/train/revisao` roda as revisões espaçadas com FSRS e move o modelo de habilidades;
+- `/train/pratica/[skill]` só cobra sem apoio o que já foi ensinado; quando não
+  foi, manda aprender e diz por quê;
 - `/games` importa partidas por PGN, Lichess ou Chess.com, sem duplicar, e
   `/games/[id]` executa os dois passes da revisão: primeiro o usuário marca onde
   acha que a partida mudou e escreve o porquê; depois a engine confirma ou corrige
@@ -109,6 +126,17 @@ O núcleo das Fases 0 a 10 está disponível em tela e no domínio. A próxima f
 
 ### Dívidas registradas
 
+- **o catálogo de lições cobre 12 das 22 habilidades.** Como a prática sai do
+  catálogo — que é conteúdo verificado pelo portão —, as outras 10 ainda não têm
+  prática: elas caem num estado vazio que diz a verdade, em vez de oferecer um
+  exercício não conferido;
+- **o botão "já conheço este conceito" (plano §15) não existe.** É o que tornaria
+  barata a migração de quem já treinava, e é o principal débito do ADR-0011;
+- **o feedback explicativo específico por posição não existe.** A estrutura das
+  quatro perguntas é obrigatória no tipo, mas o texto entregue é o genérico, que
+  diz não saber em vez de inventar um motivo;
+- **a revisão de repertório escapa da regra de ensinar antes de cobrar** — ver o
+  ponto cego declarado no ADR-0011;
 - o conjunto de puzzles é um punhado gerado e verificado por nós, não o dump do Lichess;
 - o contrato do Opening Explorer real permanece limitado pela autorização do serviço;
 - páginas dinâmicas de partidas entram no cache quando visitadas; elas não são

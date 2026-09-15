@@ -219,6 +219,11 @@ describe('ida e volta do backup', () => {
       reviewLogs: 1,
       skillMastery: 1,
       repertorios: 1,
+      // Zero porque esta fixture não grava estágio nem plano; o que importa
+      // aqui é que as CHAVES existam. `toEqual` sobre o objeto inteiro é o que
+      // faz uma coleção nova esquecida na contagem cair neste teste.
+      skillStates: 0,
+      planosDoDia: 0,
     })
 
     const cardOriginal = (await origem.listReviewCards())[0]
@@ -270,6 +275,8 @@ describe('validacao na importacao', () => {
       reviewLogs: [],
       skillMastery: [],
       repertorios: [],
+      skillStates: [],
+      planosDoDia: [],
       ...overrides,
     }
   }
@@ -394,5 +401,106 @@ describe('validacao na importacao', () => {
 
   it('parseBackup recusa texto que nao e JSON', () => {
     expect(() => parseBackup('{')).toThrow(StorageError)
+  })
+
+  /**
+   * O estágio de aprendizagem e os planos concluídos na ida e volta.
+   *
+   * ESTE É O TESTE DE UMA PERDA SILENCIOSA. Um backup que esquecesse estas duas
+   * coleções restauraria um app que FUNCIONA — sem erro, sem aviso — e que
+   * simplesmente decidiu reensinar tudo ao aluno e esquecer todo ✓ que ele já
+   * tinha. O sintoma seria "o app resetou meu progresso", meses depois, sem
+   * pista nenhuma de onde olhar.
+   */
+  it('preserva o estagio de aprendizagem e os planos concluidos', async () => {
+    const origem = new MemoryTrainingRepository()
+    const agora = new Date('2026-03-10T12:00:00.000Z')
+
+    await origem.saveSkillStates([
+      {
+        skillId: 'tactics.fork',
+        stage: 'independent',
+        exposureCount: 2,
+        guidedAttempts: 4,
+        guidedSuccesses: 3,
+        independentAttempts: 5,
+        independentSuccesses: 4,
+        lastTaughtAt: agora.toISOString(),
+        lastPracticedAt: agora.toISOString(),
+        precisaDeReensino: false,
+        updatedAt: agora.toISOString(),
+      },
+    ])
+
+    await origem.savePlanoDoDia({
+      dateKey: '2026-03-10',
+      activities: [
+        {
+          id: '2026-03-10/curriculo-tactics.fork',
+          dateKey: '2026-03-10',
+          definition: {
+            id: 'curriculo-tactics.fork',
+            kind: 'licao',
+            title: 'Aprender: Garfo',
+            description: 'teste',
+            skillIds: ['tactics.fork'],
+            pedagogicalStage: 'unseen',
+            estimatedMinutes: 8,
+            contentVersion: 1,
+            completionRule: { tipo: 'etapas', total: 1 },
+            href: '/lessons/tactics.fork',
+          },
+          status: 'concluida',
+          generatedReason: 'motivo de teste com tamanho suficiente',
+          createdAt: agora.toISOString(),
+          startedAt: agora.toISOString(),
+          completedAt: agora.toISOString(),
+          progress: { stepIndex: 1, completedItemIds: ['a'], updatedAt: agora.toISOString() },
+        },
+      ],
+      generatedAt: agora.toISOString(),
+      plannerVersion: 2,
+      seed: '2026-03-10',
+    })
+
+    const arquivo = await exportBackup(origem, EXPORTADO_EM)
+    expect(arquivo.skillStates).toHaveLength(1)
+    expect(arquivo.planosDoDia).toHaveLength(1)
+
+    const destino = new MemoryTrainingRepository()
+    const resultado = await importBackup(destino, arquivo)
+    expect(resultado.imported.skillStates).toBe(1)
+    expect(resultado.imported.planosDoDia).toBe(1)
+
+    // O degrau sobrevive: o aluno não volta a ser ensinado do zero.
+    expect((await destino.getSkillStates())[0].stage).toBe('independent')
+    // E o ✓ sobrevive junto.
+    const plano = await destino.getPlanoDoDia('2026-03-10')
+    expect(plano?.activities[0].status).toBe('concluida')
+
+    // Ida e volta bit a bit, como o resto do arquivo.
+    expect(await exportBackup(destino, EXPORTADO_EM)).toEqual(arquivo)
+  })
+
+  it('arquivo antigo, sem estagio nem planos, ainda importa', async () => {
+    const repo = new MemoryTrainingRepository()
+    const antigo: Record<string, unknown> = { ...arquivoValido() }
+    delete antigo.skillStates
+    delete antigo.planosDoDia
+
+    const resultado = await importBackup(repo, antigo)
+    expect(resultado.imported.skillStates).toBe(0)
+    expect(resultado.imported.planosDoDia).toBe(0)
+    // Sem estágio é o estado CORRETO de quem exportou antes de o estágio
+    // existir — e a migração em `migrarHabilidadesSemEnsino` é quem trata isso
+    // depois, marcando para reensino em vez de presumir domínio.
+    expect(await repo.getSkillStates()).toEqual([])
+  })
+
+  it('recusa plano sem a chave do dia', async () => {
+    const repo = new MemoryTrainingRepository()
+    await expect(
+      importBackup(repo, arquivoValido({ planosDoDia: [{ activities: [] }] as never })),
+    ).rejects.toMatchObject({ code: 'formato-invalido' })
   })
 })

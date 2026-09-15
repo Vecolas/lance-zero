@@ -1,0 +1,340 @@
+.lista {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 48rem) {
+  .lista {
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  }
+}
+
+.cartao,
+.licao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card);
+}
+
+.habilidade {
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+.tituloCartao {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+
+.conceito,
+.texto {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.minutos {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+}
+
+.etapa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.etapaTitulo {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+.comTabuleiro {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 52rem) {
+  .comTabuleiro {
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  }
+}
+
+.tabuleiro {
+  min-width: 0;
+}
+
+.aoLado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.linha {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.linhaRotulo {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+.opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.opcao {
+  min-height: 2.75rem;
+  min-width: 4.5rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.opcao:hover {
+  border-color: var(--accent-strong);
+  background: var(--surface-sunken);
+}
+
+.opcao[aria-pressed='true'] {
+  border-color: var(--accent-strong);
+  background: var(--accent-soft);
+  color: var(--accent-readable);
+}
+
+.veredito {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.acertou,
+.errou {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.acertou {
+  color: var(--positive);
+}
+
+.errou {
+  color: var(--danger);
+}
+
+.primario,
+.ghost,
+.voltar {
+  align-self: flex-start;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.primario {
+  border: 1px solid transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.primario:hover {
+  background: var(--accent-hover);
+}
+
+.ghost {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.voltar {
+  padding-left: 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+}
+
+.vazio {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+/* --- leitor V2: as nove etapas ---------------------------------------- */
+
+.cabecalho {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.375rem;
+}
+
+.sumario {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+/* A trilha é decorativa: o texto acima já diz "Etapa 4 de 9". */
+.trilha {
+  display: flex;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.passo {
+  height: 0.25rem;
+  flex: 1;
+  border-radius: var(--radius-sm);
+  background: var(--border);
+}
+
+.passo[data-estado='feito'] {
+  background: var(--positive);
+}
+
+.passo[data-estado='atual'] {
+  background: var(--accent-strong);
+}
+
+.processo,
+.raciocinio {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  color: var(--text);
+  max-width: 60ch;
+}
+
+.raciocinioAtual {
+  font-weight: 650;
+}
+
+.resumo {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  max-width: 60ch;
+}
+
+.dicas {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.dicaDegrau {
+  font-weight: 650;
+  color: var(--text);
+}
+
+/*
+  A pergunta mental é o que o aluno leva embora. Ela ganha destaque tipográfico
+  porque é a única parte do feedback que vale para a próxima posição.
+*/
+.pergunta {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--accent-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  max-width: 60ch;
+}
+
+.nota {
+  margin: var(--space-2) 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  max-width: 60ch;
+}
+
+.opcao:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.contexto {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.state {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+
+.error {
+  border-color: var(--danger);
+  color: var(--danger);
+}

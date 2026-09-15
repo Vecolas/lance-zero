@@ -701,7 +701,14 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
             </p>
             {gravacao === 'na-revisao' ? (
               <p className={styles.fonteTexto}>
-                <Link href="/train">Ver no treino de hoje</Link>
+                {/*
+                  Aponta para a REVISÃO, e não mais para `/train`.
+                  `/train` virou o hub — abrir a aba deixou de disparar a fila de
+                  revisão, que é a correção que o Treino V2 trouxe. Um link
+                  prometendo "a posição está na sua revisão" que leva a um menu
+                  faria o aluno procurar sozinho o que o link dizia entregar.
+                */}
+                <Link href="/train/revisao">Revisar agora</Link>
               </p>
             ) : null}
           </div>

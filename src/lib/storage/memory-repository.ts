@@ -16,12 +16,14 @@
 import type {
   Game,
   GameQuery,
+  PlanoDoDia,
   PositionAnalysis,
   PuzzleAttempt,
   RepertorioDoAluno,
   ReviewCard,
   ReviewLog,
   SkillMastery,
+  SkillState,
   UserProfile,
 } from '@/domain/types'
 import type { BackupRepository } from './repository'
@@ -46,6 +48,8 @@ export class MemoryTrainingRepository implements BackupRepository {
   private readonly reviewLogs: ReviewLog[] = []
   private readonly skillMastery = new Map<string, SkillMastery>()
   private readonly repertorios = new Map<string, RepertorioDoAluno>()
+  private readonly skillStates = new Map<string, SkillState>()
+  private readonly planosDoDia = new Map<string, PlanoDoDia>()
 
   async getProfile(): Promise<UserProfile | null> {
     return this.profile ? cloneJson(this.profile) : null
@@ -143,6 +147,36 @@ export class MemoryTrainingRepository implements BackupRepository {
     this.repertorios.set(repertorio.definicao.id, cloneJson(repertorio))
   }
 
+  async getSkillStates(): Promise<SkillState[]> {
+    // Mesma ordem canônica do IndexedDB. Divergir aqui faria o teste de
+    // contrato passar e as duas implementações mentirem em produção.
+    return [...this.skillStates.values()]
+      .sort((a, b) => a.skillId.localeCompare(b.skillId))
+      .map((item) => cloneJson(item))
+  }
+
+  async saveSkillStates(states: SkillState[]): Promise<void> {
+    for (const estado of states) {
+      this.skillStates.set(estado.skillId, cloneJson(estado))
+    }
+  }
+
+  async getPlanoDoDia(dateKey: string): Promise<PlanoDoDia | null> {
+    const plano = this.planosDoDia.get(dateKey)
+    return plano ? cloneJson(plano) : null
+  }
+
+  async savePlanoDoDia(plano: PlanoDoDia): Promise<void> {
+    this.planosDoDia.set(plano.dateKey, cloneJson(plano))
+  }
+
+  async listPlanosDoDia(limit?: number): Promise<PlanoDoDia[]> {
+    const ordenados = [...this.planosDoDia.values()]
+      .sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+      .map((item) => cloneJson(item))
+    return limit === undefined ? ordenados : ordenados.slice(0, limit)
+  }
+
   /** Apaga tudo. Existe para os testes, não faz parte do contrato. */
   clear(): void {
     this.profile = null
@@ -153,5 +187,7 @@ export class MemoryTrainingRepository implements BackupRepository {
     this.reviewLogs.length = 0
     this.skillMastery.clear()
     this.repertorios.clear()
+    this.skillStates.clear()
+    this.planosDoDia.clear()
   }
 }
