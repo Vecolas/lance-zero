@@ -557,7 +557,12 @@ export function markOpeningLearned(
 ): OpeningProgress {
   const learnedNodeIds = [...progress.learnedNodeIds]
   mergeUnique(learnedNodeIds, [nodeId])
-  return { ...progress, status: 'learning', learnedNodeIds, lastPracticedAt: now }
+  return {
+    ...progress,
+    status: progress.status === 'active_repertoire' ? 'active_repertoire' : 'learning',
+    learnedNodeIds,
+    lastPracticedAt: now,
+  }
 }
 
 /** Ativa uma abertura no repertório guiado sem apagar o estado pedagógico. */
