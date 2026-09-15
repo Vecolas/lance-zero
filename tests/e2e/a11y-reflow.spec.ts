@@ -91,6 +91,9 @@ async function rolagemHorizontal(page: Page): Promise<{ scroll: number; visivel:
  */
 async function esperaConteudo(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 20_000 })
+  // O H1 pode aparecer antes da hidratação do shell terminar. Esperar o ciclo
+  // de rede estabilizar evita medir durante uma navegação de atualização do PWA.
+  await page.waitForLoadState('networkidle')
 }
 
 async function semRolagemHorizontal(page: Page, onde: string): Promise<void> {
