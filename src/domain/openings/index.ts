@@ -428,6 +428,18 @@ export function mergeOpeningProgress(local: OpeningProgress, remote: OpeningProg
   return { ...merged, confidence: openingConfidence(merged) }
 }
 
+export function mergeOpeningProgressList(
+  local: readonly OpeningProgress[],
+  remote: readonly OpeningProgress[],
+): OpeningProgress[] {
+  const byOpening = new Map(local.map((progress) => [progress.openingId, progress]))
+  for (const incoming of remote) {
+    const current = byOpening.get(incoming.openingId)
+    byOpening.set(incoming.openingId, current ? mergeOpeningProgress(current, incoming) : incoming)
+  }
+  return [...byOpening.values()]
+}
+
 /** Escada de ajuda: raciocínio primeiro, lance explícito somente sob pedido. */
 export function openingHint(opening: OpeningDefinition, nodeId: string, level: number): string | null {
   const node = opening.graph.get(nodeId)

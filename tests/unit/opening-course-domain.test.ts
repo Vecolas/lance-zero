@@ -8,6 +8,7 @@ import {
   emptyOpeningProgress,
   markOpeningLearned,
   mergeOpeningProgress,
+  mergeOpeningProgressList,
   openingHint,
   trainingNode,
   type OpeningDefinition,
@@ -119,5 +120,14 @@ describe('curso de aberturas como grafo pedagógico', () => {
     expect(openingHint(opening, opening.rootNodeId, 0)).toBeNull()
     expect(openingHint(opening, opening.rootNodeId, 1)).toMatch(/peça/i)
     expect(openingHint(opening, opening.rootNodeId, 4)).toMatch(/e4/i)
+  })
+
+  it('funde listas de progresso sem perder a cópia de nenhum aparelho', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const local = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, '2026-01-01T00:00:00.000Z')
+    const remote = completeOpeningActivity(emptyOpeningProgress(opening.id), 'opening:italiana:learn', '2026-01-02T00:00:00.000Z')
+    const merged = mergeOpeningProgressList([local], [remote])
+    expect(merged[0]?.learnedNodeIds).toContain(opening.rootNodeId)
+    expect(merged[0]?.completedActivities).toContain('opening:italiana:learn')
   })
 })

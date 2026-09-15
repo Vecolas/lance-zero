@@ -6,6 +6,7 @@ import { getBrowserSupabase } from '@/lib/auth/supabase-browser'
 import { deleteDatabase } from '@/lib/storage/indexeddb-repository'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { exportBackup, importBackup, parseBackup } from '@/lib/storage/backup'
+import { mergeOpeningProgressList } from '@/domain/openings'
 import styles from './AccountPanel.module.css'
 
 type Mode = 'login' | 'signup' | 'reset'
@@ -123,17 +124,27 @@ export function AccountPanel() {
         cache: 'no-store',
       })
       const remote = remoteResponse.ok ? await remoteResponse.json() : null
+      const remoteBackup = remote ? parseBackup(JSON.stringify(remote.payload)) : null
       if (
         remote &&
         !window.confirm('Já existe uma cópia na nuvem. Enviar substituirá essa cópia. Continuar?')
       )
         return
+      const mergedPayload = remoteBackup
+        ? {
+            ...local,
+            openingProgress: mergeOpeningProgressList(
+              local.openingProgress ?? [],
+              remoteBackup.openingProgress ?? [],
+            ),
+          }
+        : local
       const response = await fetch('/api/sync', {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          payload: local,
-          schemaVersion: local.version,
+          payload: mergedPayload,
+          schemaVersion: mergedPayload.version,
           deviceLabel: deviceLabel.trim() || null,
         }),
       })
@@ -167,7 +178,15 @@ export function AccountPanel() {
         )
       )
         return
-      await importBackup(repo, parseBackup(JSON.stringify(remote.payload)))
+      const remoteBackup = parseBackup(JSON.stringify(remote.payload))
+      const localBackup = await exportBackup(repo)
+      await importBackup(repo, {
+        ...remoteBackup,
+        openingProgress: mergeOpeningProgressList(
+          localBackup.openingProgress ?? [],
+          remoteBackup.openingProgress ?? [],
+        ),
+      })
       refresh()
       setFeedback({ ok: true, text: 'Progresso baixado e aplicado localmente.' })
     } catch {
