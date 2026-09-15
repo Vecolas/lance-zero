@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
-import { applyMove, legalMoves, type SquareName } from '@/lib/chess'
+import { ExplorerPanel } from '@/components/openings/ExplorerPanel'
+import { applyMove, identidadeDePosicao, legalMoves, type SquareName } from '@/lib/chess'
 import {
   chooseOpponentResponse,
   classifyOpeningAttempt,
@@ -110,6 +111,13 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
 }
 
 function Overview({ opening, onLearn }: { opening: OpeningDefinition; onLearn: () => void }) {
+  const explorerPositions = [
+    { identidade: identidadeDePosicao(opening.previewFen), fen: opening.previewFen, rotulo: 'Posição inicial' },
+    ...opening.mainline.slice(0, 8).map((move, index) => {
+      const fen = fenAtLessons(opening.mainline, index + 1)
+      return { identidade: identidadeDePosicao(fen), fen, rotulo: `${index + 1}. ${move.san}` }
+    }),
+  ].filter((position, index, all) => all.findIndex((item) => item.identidade === position.identidade) === index)
   return (
     <section className={styles.section}>
       <div className={styles.overviewGrid}>
@@ -146,6 +154,7 @@ function Overview({ opening, onLearn }: { opening: OpeningDefinition; onLearn: (
           </article>
         ))}
       </div>
+      <ExplorerPanel posicoes={explorerPositions} />
     </section>
   )
 }
