@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { DiagnosticoWizard } from '@/components/onboarding/DiagnosticoWizard'
 import { BANCO_DE_DIAGNOSTICO } from '@/content/diagnostic'
+import { PageHeader } from '@/components/ui/primitives'
 
 export const metadata: Metadata = { title: 'Diagnóstico' }
 
@@ -11,13 +12,10 @@ export default function OnboardingPage() {
 
   return (
     <>
-      <h1>Diagnóstico</h1>
-      <p>
-        {posicoes} posições para estimar de onde você parte e montar a sua primeira semana. Sem
-        conta, sem envio de dados: o resultado fica neste navegador. Leva poucos minutos, e no fim
-        você recebe uma faixa de rating — não um número exato, porque {posicoes} posições não
-        sustentam isso.
-      </p>
+      <PageHeader
+        title="Diagnóstico"
+        description={`${posicoes} posições para estimar de onde você parte e montar sua primeira semana. Sem conta ou envio de dados: o resultado fica neste navegador.`}
+      />
       <DiagnosticoWizard />
     </>
   )

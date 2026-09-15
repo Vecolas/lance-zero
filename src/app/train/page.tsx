@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { TreinoHub } from '@/components/training/TreinoHub'
+import { PageHeader } from '@/components/ui/primitives'
 
 export const metadata: Metadata = { title: 'Treinar' }
 
@@ -14,12 +15,10 @@ export const metadata: Metadata = { title: 'Treinar' }
 export default function TrainPage() {
   return (
     <>
-      <h1>Treinar</h1>
-      <p>
-        Quatro coisas diferentes, com nomes diferentes: aprender um conceito, praticar o que você já
-        viu, revisar o que já aprendeu e analisar as suas partidas. O LanceZero só cobra sem apoio
-        aquilo que já te ensinou.
-      </p>
+      <PageHeader
+        title="Treinar"
+        description="Aprender, praticar, revisar e analisar são atividades diferentes. O LanceZero só cobra sem apoio aquilo que já te ensinou."
+      />
       <TreinoHub />
     </>
   )

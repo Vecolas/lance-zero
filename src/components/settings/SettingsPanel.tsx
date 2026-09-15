@@ -91,6 +91,22 @@ export function SettingsPanel() {
     }
   }
 
+  async function salvarPreferencias(nextProfile: NonNullable<typeof profile>) {
+    setOcupado(true)
+    setFeedback(null)
+    try {
+      await saveProfile(nextProfile)
+      setFeedback({ tipo: 'ok', texto: 'Preferência salva.' })
+    } catch (e) {
+      setFeedback({
+        tipo: 'bad',
+        texto: e instanceof Error ? e.message : 'Não consegui salvar esta preferência.',
+      })
+    } finally {
+      setOcupado(false)
+    }
+  }
+
   return (
     <>
       <section className={styles.section} aria-labelledby="backup">
@@ -142,7 +158,8 @@ export function SettingsPanel() {
               type="button"
               className={styles.option}
               aria-pressed={profile.dailyBudgetMinutes === minutos}
-              onClick={() => void saveProfile({ ...profile, dailyBudgetMinutes: minutos })}
+              onClick={() => void salvarPreferencias({ ...profile, dailyBudgetMinutes: minutos })}
+              disabled={ocupado}
             >
               {minutos} min
             </button>
@@ -166,11 +183,12 @@ export function SettingsPanel() {
               className={styles.option}
               aria-pressed={profile.preferences.boardTheme === tema.name}
               onClick={() =>
-                void saveProfile({
+                void salvarPreferencias({
                   ...profile,
                   preferences: { ...profile.preferences, boardTheme: tema.name as BoardThemeName },
                 })
               }
+              disabled={ocupado}
             >
               {tema.label}
             </button>

@@ -4,6 +4,7 @@ import { RepositoryProvider } from '@/components/providers/RepositoryProvider'
 import { SiteBottomNav, SiteHeader } from '@/components/ui/SiteNav'
 import { PwaRegistration } from '@/components/ui/PwaRegistration'
 import { AppStatus } from '@/components/ui/AppStatus'
+import { PageContainer } from '@/components/ui/primitives'
 import styles from './AppShell.module.css'
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -16,7 +17,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <SiteHeader />
       <main id="conteudo" className={styles.main}>
-        <RepositoryProvider>{children}</RepositoryProvider>
+        <PageContainer>
+          <RepositoryProvider>{children}</RepositoryProvider>
+        </PageContainer>
       </main>
       <footer className={styles.footer}>
         <div className={styles.footerInner}>

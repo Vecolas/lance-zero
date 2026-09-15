@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { ChessWorkspace } from '@/components/chess/ChessWorkspace'
+import { ErrorState, LoadingState } from '@/components/ui/primitives'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { STARTER_PUZZLES_CSV } from '@/content/puzzles/starter'
 import {
@@ -13,7 +14,7 @@ import {
 import { parsePuzzleCsv, toSolvable } from '@/domain/puzzles'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
 import type { SkillMastery } from '@/domain/types'
-import { legalMoves, type SquareName } from '@/lib/chess'
+import { applyMove, legalMoves, type SquareName } from '@/lib/chess'
 import styles from './ForcingDrill.module.css'
 
 /** Posições vêm dos puzzles iniciais: já verificadas e cheias de lance forçante. */
@@ -29,9 +30,41 @@ export function ForcingDrill() {
   const [origem, setOrigem] = useState<SquareName | null>(null)
   const [selecionados, setSelecionados] = useState<string[]>([])
   const [nota, setNota] = useState<ForcingScore | null>(null)
+  const [respostaUci, setRespostaUci] = useState<string | null>(null)
+  const [linhaUci, setLinhaUci] = useState<string | null>(null)
 
   const fen = POSICOES[indice] ?? POSICOES[0]
   const resumo = useMemo(() => forcingMoves(fen), [fen])
+  const candidatoPrincipal = selecionados[0] ?? null
+  const depoisDoCandidato = useMemo(
+    () => (candidatoPrincipal ? aplicarUci(fen, candidatoPrincipal) : null),
+    [candidatoPrincipal, fen],
+  )
+  const respostas = useMemo(
+    () => (depoisDoCandidato ? legalMoves(depoisDoCandidato.fenAfter).slice(0, 4) : []),
+    [depoisDoCandidato],
+  )
+  const depoisDaResposta = useMemo(
+    () =>
+      respostaUci && depoisDoCandidato ? aplicarUci(depoisDoCandidato.fenAfter, respostaUci) : null,
+    [depoisDoCandidato, respostaUci],
+  )
+  const continuacoes = useMemo(
+    () => (depoisDaResposta ? legalMoves(depoisDaResposta.fenAfter).slice(0, 4) : []),
+    [depoisDaResposta],
+  )
+  const fenDaEtapa =
+    linhaUci && depoisDaResposta
+      ? (aplicarUci(depoisDaResposta.fenAfter, linhaUci)?.fenAfter ?? fen)
+      : (depoisDaResposta?.fenAfter ?? depoisDoCandidato?.fenAfter ?? fen)
+  const etapa =
+    nota === null
+      ? 'candidatos'
+      : respostaUci === null
+        ? 'resposta'
+        : linhaUci === null
+          ? 'linha'
+          : 'avaliacao'
   const alvos = useMemo(
     () => (origem ? legalMoves(fen, origem).map((m) => m.to) : []),
     [fen, origem],
@@ -58,6 +91,8 @@ export function ForcingDrill() {
   const conferir = useCallback(async () => {
     const resultado = scoreForcingSelection(resumo, selecionados)
     setNota(resultado)
+    setRespostaUci(null)
+    setLinhaUci(null)
     setOrigem(null)
     if (!repo) return
     try {
@@ -86,15 +121,19 @@ export function ForcingDrill() {
     setIndice((i) => (i + 1) % POSICOES.length)
     setSelecionados([])
     setNota(null)
+    setRespostaUci(null)
+    setLinhaUci(null)
     setOrigem(null)
   }, [])
 
-  if (status === 'carregando') return <p className={styles.state}>Abrindo seus dados locais…</p>
+  if (status === 'carregando') {
+    return (
+      <LoadingState title="Abrindo o treino de cálculo" description="Lendo seus dados locais." />
+    )
+  }
   if (status === 'erro') {
     return (
-      <p className={styles.state} role="alert">
-        {erro}
-      </p>
+      <ErrorState title="Não consegui abrir o treino de cálculo" description={erro ?? undefined} />
     )
   }
 
@@ -102,7 +141,7 @@ export function ForcingDrill() {
     <ChessWorkspace
       board={
         <ChessBoardView
-          fen={fen}
+          fen={fenDaEtapa}
           orientation={resumo.side}
           theme={profile?.preferences.boardTheme ?? 'claro'}
           selected={origem}
@@ -121,9 +160,34 @@ export function ForcingDrill() {
             as capturas.
           </p>
           <ol className={styles.workflow} aria-label="Etapas do cálculo">
-            <li className={styles.workflowActive}>1. Candidatos</li>
-            <li className={nota ? styles.workflowActive : styles.workflowPending}>2. Resposta</li>
-            <li className={nota ? styles.workflowActive : styles.workflowPending}>3. Avaliação</li>
+            <li className={etapa === 'candidatos' ? styles.workflowActive : styles.workflowDone}>
+              1. Candidatos
+            </li>
+            <li
+              className={
+                etapa === 'resposta'
+                  ? styles.workflowActive
+                  : etapa === 'candidatos'
+                    ? styles.workflowPending
+                    : styles.workflowDone
+              }
+            >
+              2. Resposta
+            </li>
+            <li
+              className={
+                etapa === 'linha'
+                  ? styles.workflowActive
+                  : etapa === 'candidatos' || etapa === 'resposta'
+                    ? styles.workflowPending
+                    : styles.workflowDone
+              }
+            >
+              3. Linha
+            </li>
+            <li className={etapa === 'avaliacao' ? styles.workflowActive : styles.workflowPending}>
+              4. Avaliação
+            </li>
           </ol>
           <p className={styles.explain}>
             Antes de calcular qualquer coisa, olhe o que é forçante. Clique na peça e depois na casa
@@ -198,6 +262,63 @@ export function ForcingDrill() {
                   </ul>
                 </>
               ) : null}
+              {candidatoPrincipal && respostaUci === null ? (
+                <section className={styles.workflowStep} aria-labelledby="resposta-titulo">
+                  <h3 id="resposta-titulo" className={styles.stageTitle}>
+                    Resposta do adversário
+                  </h3>
+                  <p className={styles.linha}>
+                    Escolha uma resposta legal para continuar calculando. Ela só aparece depois que
+                    você selecionou seus candidatos.
+                  </p>
+                  <div className={styles.choiceGrid}>
+                    {respostas.map((move) => (
+                      <button
+                        key={move.uci}
+                        type="button"
+                        className={styles.ghost}
+                        onClick={() => {
+                          setRespostaUci(move.uci)
+                          setLinhaUci(null)
+                        }}
+                      >
+                        {move.san}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+              {respostaUci && linhaUci === null ? (
+                <section className={styles.workflowStep} aria-labelledby="linha-titulo">
+                  <h3 id="linha-titulo" className={styles.stageTitle}>
+                    Sua linha
+                  </h3>
+                  <p className={styles.linha}>
+                    Encontre uma continuação antes de olhar qualquer avaliação.
+                  </p>
+                  <div className={styles.choiceGrid}>
+                    {continuacoes.map((move) => (
+                      <button
+                        key={move.uci}
+                        type="button"
+                        className={styles.ghost}
+                        onClick={() => setLinhaUci(move.uci)}
+                      >
+                        {move.san}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+              {linhaUci ? (
+                <p className={styles.workflowStep} role="status">
+                  <strong>Avaliação após o cálculo:</strong> você encontrou{' '}
+                  {nota.completo
+                    ? 'todos os candidatos forçantes.'
+                    : 'parte dos candidatos forçantes.'}{' '}
+                  A precisão é feedback do processo, não um rating.
+                </p>
+              ) : null}
               <div className={styles.actions}>
                 <button type="button" className={styles.primary} onClick={proxima}>
                   Próxima posição
@@ -209,4 +330,13 @@ export function ForcingDrill() {
       }
     />
   )
+}
+
+function aplicarUci(fen: string, uci: string) {
+  if (uci.length < 4) return null
+  return applyMove(fen, {
+    from: uci.slice(0, 2),
+    to: uci.slice(2, 4),
+    promotion: (uci.slice(4, 5) || 'q') as 'q' | 'r' | 'b' | 'n',
+  })
 }

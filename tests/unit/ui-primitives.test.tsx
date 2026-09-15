@@ -2,6 +2,9 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import {
   Card,
+  CompletedState,
+  EmptyState,
+  ErrorState,
   FilterBar,
   ModeLabel,
   PageHeader,
@@ -9,6 +12,7 @@ import {
   StatePanel,
   StatusBadge,
   Tabs,
+  LoadingState,
 } from '@/components/ui/primitives'
 
 describe('primitives do frontend', () => {
@@ -51,6 +55,20 @@ describe('primitives do frontend', () => {
     expect(screen.getByRole('article')).toHaveTextContent('Comentário longo')
     expect(screen.getByRole('alert')).toHaveTextContent('Tente novamente')
     expect(screen.getByLabelText('Filtros de abertura')).toHaveTextContent('Filtro')
+  })
+
+  it('expõe estados nomeados com o mesmo contrato acessível', () => {
+    render(
+      <>
+        <LoadingState title="Carregando" />
+        <EmptyState title="Vazio" />
+        <ErrorState title="Erro" />
+        <CompletedState title="Concluído" />
+      </>,
+    )
+    expect(screen.getAllByRole('status')).toHaveLength(3)
+    expect(screen.getByRole('alert')).toHaveTextContent('Erro')
+    expect(screen.getByText('Concluído')).toBeInTheDocument()
   })
 
   it('tabs anunciam a seleção sem exigir cor', () => {

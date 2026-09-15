@@ -132,6 +132,47 @@ export function StatePanel({
   )
 }
 
+/** Named state primitives keep page code readable while sharing one contract. */
+export function LoadingState({ title, description }: { title: string; description?: string }) {
+  return <StatePanel kind="loading" title={title} description={description} />
+}
+
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description?: string
+  action?: ReactNode
+}) {
+  return <StatePanel kind="empty" title={title} description={description} action={action} />
+}
+
+export function ErrorState({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description?: string
+  action?: ReactNode
+}) {
+  return <StatePanel kind="error" title={title} description={description} action={action} />
+}
+
+export function CompletedState({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description?: string
+  action?: ReactNode
+}) {
+  return <StatePanel kind="completed" title={title} description={description} action={action} />
+}
+
 export function Tabs({
   tabs,
   selected,

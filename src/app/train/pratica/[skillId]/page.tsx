@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { PraticaDeHabilidade } from '@/components/training/PraticaDeHabilidade'
 import { getSkill } from '@/domain/skills/catalog'
 import { SKILL_IDS, type SkillId } from '@/domain/types'
+import { PageHeader } from '@/components/ui/primitives'
 
 /**
  * Prática de uma habilidade, com endereço próprio.
@@ -39,8 +40,7 @@ export default async function PraticaPage({ params }: { params: Promise<{ skillI
 
   return (
     <>
-      <h1>{skill.label}</h1>
-      <p>{skill.description}</p>
+      <PageHeader title={skill.label} description={skill.description} />
       <PraticaDeHabilidade skillId={skillId as SkillId} />
     </>
   )

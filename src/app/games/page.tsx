@@ -1,16 +1,16 @@
 import type { Metadata } from 'next'
 import { GamesWorkbench } from '@/components/games/GamesWorkbench'
+import { PageHeader } from '@/components/ui/primitives'
 
 export const metadata: Metadata = { title: 'Partidas' }
 
 export default function GamesPage() {
   return (
     <>
-      <h1>Partidas</h1>
-      <p>
-        Importe suas partidas e revise você primeiro. A engine só entra depois que você disser onde
-        acha que a partida mudou — inverter essa ordem transforma revisão em leitura passiva.
-      </p>
+      <PageHeader
+        title="Partidas"
+        description="Importe suas partidas e revise primeiro com suas próprias perguntas. A engine só entra depois."
+      />
       <GamesWorkbench />
     </>
   )
