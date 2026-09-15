@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import { StatePanel } from '@/components/ui/primitives'
 import { BUDGET_OPTIONS } from '@/domain/profile'
 import { boardThemes, type BoardThemeName } from '@/lib/design/board'
 import { exportBackup, importBackup, parseBackup, serializeBackup } from '@/lib/storage/backup'
@@ -28,14 +29,22 @@ export function SettingsPanel() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   if (status === 'carregando') {
-    return <p className={styles.state}>Abrindo seus dados locais…</p>
+    return (
+      <StatePanel
+        kind="loading"
+        title="Abrindo seus ajustes"
+        description="Lendo suas preferências locais."
+      />
+    )
   }
 
   if (status === 'erro' || !repo || !profile) {
     return (
-      <p className={styles.state} role="alert">
-        {erro ?? 'Não consegui abrir o armazenamento local.'}
-      </p>
+      <StatePanel
+        kind="error"
+        title="Não consegui abrir seus ajustes"
+        description={erro ?? 'Não consegui abrir o armazenamento local.'}
+      />
     )
   }
 

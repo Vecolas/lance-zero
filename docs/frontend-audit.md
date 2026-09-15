@@ -1,56 +1,41 @@
 # Auditoria do frontend — baseline das fases 87–102
 
-Data da auditoria: 2026-09-15. Este documento é o inventário da issue 87; as
-imagens de referência são manuais e não são golden snapshots obrigatórios.
+Data da auditoria: 2026-09-15. As imagens geradas pelo teste visual são referências manuais e não golden snapshots obrigatórios.
 
-## Rotas reais
+## Rotas e composição
 
-| Área      | Rota                              | Estado atual                                | Risco visual principal                                 |
-| --------- | --------------------------------- | ------------------------------------------- | ------------------------------------------------------ |
-| Hoje      | `/dashboard`                      | lista local-first com conclusão persistente | estados locais ainda usam mensagens inline diferentes  |
-| Treino    | `/train`                          | hub pedagógico                              | hierarquia depende de CSS específico do hub            |
-| Aberturas | `/aberturas`, `/aberturas/[slug]` | catálogo e curso                            | tabs e mini-board precisam do mesmo workspace          |
-| Finais    | `/endgames`                       | currículo e treino                          | detalhe individual ainda não tem rota própria          |
-| Cálculo   | `/calculate`                      | exercício guiado                            | painel e board não compartilham composição             |
-| Partidas  | `/games`, `/games/[gameId]`       | importação e revisão                        | revisão de momentos precisa de timeline mais explícita |
-| Progresso | `/progress`                       | forças, prioridades e retenção              | cards de estado ainda têm estilos próprios             |
-| Conta     | `/account`                        | auth, sync, exportação e exclusão           | separar perfil, segurança e privacidade                |
-| Ajustes   | `/settings`                       | preferências e backup                       | feedback de salvar precisa de primitive comum          |
-| Segurança | `/licenses` e headers             | inventário e headers                        | manter regressão de CSP/RLS nos portões                |
+| Área | Rotas | Composição entregue |
+| --- | --- | --- |
+| Hoje | `/dashboard` | lista local-first, conclusão persistente e estados visuais |
+| Treino | `/train` | hub com continuar, praticar, revisar e cálculo |
+| Aberturas | `/aberturas`, `/aberturas/[slug]` | catálogo, mini-tabuleiros, curso, aprender, treinar, planos e variações |
+| Finais | `/endgames`, `/endgames/[slug]` | biblioteca, detalhe, posições treináveis e progresso |
+| Cálculo | `/calculate` | exercício guiado com board + painel e etapas explícitas |
+| Partidas | `/games`, `/games/[gameId]` | revisão humana, timeline de lances e análise secundária |
+| Progresso | `/progress` | atividade, prioridades, retenção e tabela por habilidade |
+| Conta | `/account` | autenticação, exportação, sincronização e exclusão |
+| Ajustes | `/settings` | backup, orçamento e preferências de tabuleiro |
 
 ## Inventário reutilizável
 
 - Shell: `AppShell`, `SiteHeader`, `SiteBottomNav`, `ThemeToggle`.
-- Xadrez: `ChessBoardView`, `GameViewer`, `MoveList`, `ChessWorkspace` em
-  consolidação progressiva.
+- Xadrez: `ChessBoardView`, `GameViewer`, `MoveList`, `ChessWorkspace`.
 - Treino: `DailyPlanView`, `TreinoHub`, `ReviewSession`, `FeedbackBanner`.
-- Conteúdo: `OpeningCatalog`, `OpeningCourse`, `EndgamesWorkbench`,
-  `EndgameTrainer`.
-- Primitives comuns: `PageContainer`, `PageHeader`, `SectionHeader`, `Card`,
-  `StatusBadge`, `ModeLabel`, `ProgressIndicator`, `StatePanel`, `Tabs` e
-  `FilterBar` em `src/components/ui/primitives.tsx`.
+- Conteúdo: `OpeningCatalog`, `OpeningCourse`, `EndgamesWorkbench`, `EndgameDetail`, `EndgameTrainer`.
+- Primitives: `PageContainer`, `PageHeader`, `SectionHeader`, `Card`, `StatusBadge`, `ModeLabel`, `ProgressIndicator`, `StatePanel`, `Tabs` e `FilterBar` em `src/components/ui/primitives.tsx`.
 
-## Baseline manual
+## Réguas obrigatórias
 
-As quatro réguas obrigatórias são 360×800, 768×1024, 1280×800 e 1440×900.
-Antes da fase 13, screenshots servem para comparação humana, não para bloquear
-por pixel. O portão automatizado deve procurar overflow horizontal, clipping,
-overlap, board ilegível e foco ausente.
+O teste `tests/e2e/frontend-visual.spec.ts` percorre as rotas principais em 360×800, 768×1024 e 1440×900. Ele captura screenshots para comparação humana, verifica ausência de overflow horizontal e exige `main` e H1 visíveis. Os testes de acessibilidade existentes cobrem 200% de zoom, foco, landmarks, contraste e alvos de toque.
 
-## Dívidas encontradas
+## Regras de layout
 
-1. Vários componentes têm estados loading/empty/error próprios e precisam migrar
-   para `StatePanel` sem perder o contexto pedagógico.
-2. `MoveList` tem um `max-height` válido para desktop, mas precisa de uma região
-   local rolável e alternativa de expansão em telas pequenas.
-3. Alguns `white-space: nowrap` são adequados para controles curtos; títulos,
-   feedback e comentários não podem herdá-lo.
-4. Finais ainda precisam de uma página individual para cumprir a composição da
-   issue 95.
-5. QA visual precisa de screenshots e ARIA snapshots controlados por fixture.
+- Conteúdo longo cresce; `overflow`, `nowrap`, alturas máximas e posicionamento absoluto são permitidos apenas em regiões locais justificadas.
+- Board é dominante em tarefas de xadrez. Em mobile, a ordem é board, ação, explicação e movelist; em desktop, board e painel usam duas colunas.
+- Mini-tabuleiros são prévias estáticas e não carregam engine, tablebase ou explorer.
+- Loading, empty, error e completed usam `StatePanel` quando a superfície tem dados assíncronos.
+- Status combina texto e símbolo; completion nunca é apresentada como mastery.
 
-## Evidência inicial
+## Pendências controladas
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` passam na baseline.
-- O app já tem rotas públicas offline e teste E2E existente.
-- Nenhuma mini-board chama engine ou explorer individualmente.
+`MoveList`, tabelas, barras de progresso e navegação possuem rolagem local ou dimensionamento próprio. O próximo trabalho visual deve preservar essa regra e não introduzir truncamento em instruções, feedback ou comentários pedagógicos.

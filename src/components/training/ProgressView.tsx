@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { SkillCard } from '@/components/progress/SkillCard'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import { StatePanel } from '@/components/ui/primitives'
 import { getSkill } from '@/domain/skills/catalog'
 import { buildWeeklyReport, type WeeklyReport } from '@/domain/progress/weekly-report'
 import type {
@@ -99,17 +100,29 @@ export function ProgressView() {
     }
   }, [repo, revision])
 
-  if (status === 'carregando') return <p className={styles.state}>Abrindo seus dados locais…</p>
-
-  if (status === 'erro' || falha) {
+  if (status === 'carregando') {
     return (
-      <p className={`${styles.state} ${styles.error}`} role="alert">
-        {falha ?? erro}
-      </p>
+      <StatePanel
+        kind="loading"
+        title="Abrindo seu progresso"
+        description="Lendo seus dados locais."
+      />
     )
   }
 
-  if (!mastery || !weeklyReport) return <p className={styles.state}>Lendo seu progresso…</p>
+  if (status === 'erro' || falha) {
+    return (
+      <StatePanel
+        kind="error"
+        title="Não consegui abrir seu progresso"
+        description={falha ?? erro ?? undefined}
+      />
+    )
+  }
+
+  if (!mastery || !weeklyReport) {
+    return <StatePanel kind="loading" title="Lendo seu progresso" />
+  }
 
   const resumoSemanal = (
     <section className={styles.card} aria-labelledby="resumo-semanal">
@@ -154,10 +167,11 @@ export function ProgressView() {
     return (
       <>
         {resumoSemanal}
-        <p className={styles.state}>
-          Ainda não há o que medir. Faça o treino de hoje ou importe uma partida — o progresso aqui
-          nasce das suas tentativas, não de um número inventado no começo.
-        </p>
+        <StatePanel
+          kind="empty"
+          title="Ainda não há o que medir"
+          description="Faça o treino de hoje ou importe uma partida. O progresso nasce das suas tentativas."
+        />
       </>
     )
   }

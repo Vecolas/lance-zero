@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import { FilterBar, StatePanel } from '@/components/ui/primitives'
 import { OPENING_COURSES } from '@/content/openings/course'
 import type {
   OpeningDefinition,
@@ -27,22 +28,48 @@ export function OpeningCatalog() {
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
   const [firstMoveFilter, setFirstMoveFilter] = useState<FirstMoveFilter>('all')
   const [progress, setProgress] = useState<Record<string, OpeningProgress>>({})
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [error, setError] = useState<string | null>(null)
   useEffect(() => {
     let cancelled = false
     if (!repo)
       return () => {
         cancelled = true
       }
-    void repo.listOpeningProgress().then((items) => {
-      window.setTimeout(() => {
+    void repo
+      .listOpeningProgress()
+      .then((items) => {
         if (cancelled) return
         setProgress(Object.fromEntries(items.map((item) => [item.openingId, item])))
-      }, 0)
-    })
+        setState('ready')
+      })
+      .catch((reason: unknown) => {
+        if (cancelled) return
+        setError(reason instanceof Error ? reason.message : 'Não consegui carregar seu progresso.')
+        setState('error')
+      })
     return () => {
       cancelled = true
     }
   }, [repo])
+  if (state === 'loading') {
+    return (
+      <StatePanel
+        kind="loading"
+        title="Carregando aberturas"
+        description="Preparando a biblioteca e seu progresso."
+      />
+    )
+  }
+  if (state === 'error') {
+    return (
+      <StatePanel
+        kind="error"
+        title="Não consegui carregar as aberturas"
+        description={error ?? undefined}
+      />
+    )
+  }
   const courses = OPENING_COURSES.filter((opening) => {
     const current = progress[opening.id]
     const status = current?.status ?? 'not_started'
@@ -58,7 +85,7 @@ export function OpeningCatalog() {
   })
   return (
     <section aria-labelledby="catalogo-aberturas">
-      <div className={styles.filters} aria-label="Filtrar aberturas">
+      <FilterBar label="Filtrar aberturas">
         {(
           [
             ['all', 'Todas'],
@@ -76,7 +103,7 @@ export function OpeningCatalog() {
             {label}
           </button>
         ))}
-      </div>
+      </FilterBar>
       <div className={styles.selectFilters} aria-label="Filtros detalhados">
         <label>
           Primeiro lance
@@ -126,7 +153,13 @@ export function OpeningCatalog() {
           <OpeningCard key={opening.id} opening={opening} progress={progress[opening.id]} />
         ))}
       </div>
-      {courses.length === 0 ? <p role="status">Nenhuma abertura corresponde aos filtros.</p> : null}
+      {courses.length === 0 ? (
+        <StatePanel
+          kind="empty"
+          title="Nenhuma abertura corresponde aos filtros"
+          description="Tente remover um filtro para ver mais cursos."
+        />
+      ) : null}
     </section>
   )
 }
