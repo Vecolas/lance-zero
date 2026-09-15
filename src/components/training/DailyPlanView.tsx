@@ -46,6 +46,7 @@ import {
 import { semearCardsDeRepertorio } from '@/lib/training/repertorio-no-treino'
 import { carregarSinaisDePartida } from '@/lib/training/sinais-de-partida'
 import { BUDGET_OPTIONS } from '@/domain/profile'
+import { carregarProgressoDeFinais } from '@/lib/training/endgame-progress'
 import styles from './DailyPlanView.module.css'
 
 /**
@@ -116,6 +117,7 @@ export function DailyPlanView() {
         partidasPorRevisar: partidas
           .filter((partida) => partida.humanReview === undefined)
           .map((partida) => ({ id: partida.id, rotulo: `${partida.white} x ${partida.black}` })),
+        endgameProgress: carregarProgressoDeFinais(),
         now: agora,
       }
     },
