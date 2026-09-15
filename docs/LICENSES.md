@@ -126,7 +126,7 @@ compatibilidade entre licenças.
 
 | ID                             | Pacote / dado                | Licença               | Motivo                                                                                                                                                                         | Fase | Fonte                   |
 | ------------------------------ | ---------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- | ----------------------- |
-| `lichess-api-opening-explorer` | Lichess Opening Explorer API | Termos da API Lichess | Estatísticas de abertura. O adapter existe (`src/lib/openings/explorer.ts`), mas nenhuma tela consulta o serviço ainda — passa para "Em uso" quando a tela de aberturas entrar | 9    | https://lichess.org/api |
+| `lichess-api-opening-explorer` | Lichess Opening Explorer API | Termos da API Lichess | Estatísticas opcionais no `ExplorerPanel` da rota `/aberturas/[slug]`; o curso continua funcionando com fallback quando o serviço falha | 9    | https://lichess.org/api |
 
 ## Stockfish e GPL-3.0 — a restrição que molda a arquitetura
 

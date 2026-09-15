@@ -16,6 +16,7 @@ import {
   markOpeningAttempt,
   markOpeningLearned,
   markOpeningLessonProgress,
+  openingDiagnosticQuestions,
   openingHint,
   type OpeningDefinition,
   type OpeningMoveLesson,
@@ -38,6 +39,7 @@ const tabs: readonly [Tab, string][] = [
 export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
   const { repo } = useRepository()
   const [tab, setTab] = useState<Tab>('overview')
+  const [diagnosticOpen, setDiagnosticOpen] = useState(false)
   const [progress, setProgress] = useState<OpeningProgress>(() => emptyOpeningProgress(opening.id))
   const [progressLoaded, setProgressLoaded] = useState(false)
   useEffect(() => {
@@ -47,16 +49,25 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
   }, [])
   useEffect(() => {
     let cancelled = false
-    if (!repo) return () => { cancelled = true }
+    if (!repo)
+      return () => {
+        cancelled = true
+      }
     void repo.getOpeningProgress(opening.id).then((saved) => {
       if (cancelled) return
       window.setTimeout(() => {
         if (cancelled) return
-        setProgress(saved ? { ...emptyOpeningProgress(opening.id), ...saved } : emptyOpeningProgress(opening.id))
+        setProgress(
+          saved
+            ? { ...emptyOpeningProgress(opening.id), ...saved }
+            : emptyOpeningProgress(opening.id),
+        )
         setProgressLoaded(true)
       }, 0)
     })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [opening.id, repo])
   useEffect(() => {
     if (!repo || !progressLoaded) return
@@ -77,6 +88,13 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
           <p>{opening.description}</p>
         </div>
         <div className={styles.heroActions}>
+          <button
+            type="button"
+            className={styles.secondary}
+            onClick={() => setDiagnosticOpen(true)}
+          >
+            Já conheço
+          </button>
           <button type="button" className={styles.primary} onClick={() => setTab('learn')}>
             Aprender
           </button>
@@ -108,19 +126,159 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
       {tab === 'variations' && <Variations opening={opening} />}
       {tab === 'plans' && <Plans opening={opening} />}
       {tab === 'mistakes' && <Mistakes opening={opening} />}
-      {tab === 'progress' && <Progress opening={opening} progress={progress} />}
+      {tab === 'progress' && !diagnosticOpen && <Progress opening={opening} progress={progress} />}
+      {diagnosticOpen && (
+        <DiagnosticMode
+          opening={opening}
+          onProgress={setProgress}
+          onLearn={() => {
+            setDiagnosticOpen(false)
+            setTab('learn')
+          }}
+          onClose={() => setDiagnosticOpen(false)}
+        />
+      )}
     </div>
+  )
+}
+
+function DiagnosticMode({
+  opening,
+  onProgress,
+  onLearn,
+  onClose,
+}: {
+  opening: OpeningDefinition
+  onProgress: (fn: (current: OpeningProgress) => OpeningProgress) => void
+  onLearn: () => void
+  onClose: () => void
+}) {
+  const questions = openingDiagnosticQuestions(opening)
+  const [index, setIndex] = useState(0)
+  const [answer, setAnswer] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const question = questions[index]
+
+  if (!question) {
+    return (
+      <section className={styles.section} aria-labelledby="diagnostic-title">
+        <div className={styles.infoCard}>
+          <p className={styles.kicker}>DIAGNÓSTICO</p>
+          <h2 id="diagnostic-title">Não há posições suficientes para testar ainda.</h2>
+          <p>Comece pelo modo Aprender para construir as primeiras posições do repertório.</p>
+          <button type="button" className={styles.primary} onClick={onLearn}>
+            Começar a aprender
+          </button>
+        </div>
+      </section>
+    )
+  }
+
+  const choose = (uci: string) => {
+    if (answer) return
+    const result = classifyOpeningAttempt(opening, question.nodeId, uci)
+    setAnswer(uci)
+    if (result.classification === 'preferred' || result.classification === 'acceptable') {
+      const now = new Date().toISOString()
+      onProgress((current) =>
+        markOpeningLessonProgress(
+          markOpeningLearned(current, question.nodeId, now),
+          question.ply,
+          now,
+        ),
+      )
+      setMessage(
+        result.classification === 'preferred'
+          ? 'Você reconheceu a decisão do repertório.'
+          : 'Boa decisão: este lance é jogável e pertence a uma variação estudada.',
+      )
+    } else {
+      setMessage(
+        'Ainda não vamos chamar isso de esquecimento. Esta posição será melhor entendida no modo Aprender.',
+      )
+    }
+  }
+
+  const next = () => {
+    if (index + 1 >= questions.length) {
+      setMessage(
+        'Diagnóstico concluído. Você pode pular direto para o treino ou revisar as posições não reconhecidas.',
+      )
+      return
+    }
+    setIndex((current) => current + 1)
+    setAnswer(null)
+    setMessage(null)
+  }
+
+  return (
+    <section className={styles.learning} aria-labelledby="diagnostic-title">
+      <div className={styles.boardPanel}>
+        <ChessBoardView
+          fen={question.fen}
+          orientation={opening.side === 'white' ? 'w' : 'b'}
+          interactive={false}
+        />
+      </div>
+      <aside className={styles.commentary}>
+        <p className={styles.kicker}>
+          DIAGNÓSTICO · {index + 1} DE {questions.length}
+        </p>
+        <h2 id="diagnostic-title">Já conhece esta abertura?</h2>
+        <p>{question.prompt}</p>
+        <div className={styles.cards}>
+          {question.moves.map((move) => (
+            <button
+              key={move.uci}
+              type="button"
+              className={styles.secondary}
+              onClick={() => choose(move.uci)}
+              disabled={answer !== null}
+            >
+              {move.san}
+            </button>
+          ))}
+        </div>
+        {message && (
+          <p className={styles.feedback} role="status">
+            {message}
+          </p>
+        )}
+        <div className={styles.controls}>
+          <button type="button" className={styles.secondary} onClick={onClose}>
+            Voltar ao progresso
+          </button>
+          {answer && index + 1 < questions.length && (
+            <button type="button" className={styles.primary} onClick={next}>
+              Próxima posição
+            </button>
+          )}
+          {answer && index + 1 >= questions.length && (
+            <button type="button" className={styles.primary} onClick={onLearn}>
+              Ir para Aprender
+            </button>
+          )}
+        </div>
+      </aside>
+    </section>
   )
 }
 
 function Overview({ opening, onLearn }: { opening: OpeningDefinition; onLearn: () => void }) {
   const explorerPositions = [
-    { identidade: identidadeDePosicao(opening.rootFen), fen: opening.rootFen, rotulo: 'Posição inicial' },
+    {
+      identidade: identidadeDePosicao(opening.rootFen),
+      fen: opening.rootFen,
+      rotulo: 'Posição inicial',
+    },
     ...opening.mainline.slice(0, 8).map((move, index) => {
       const fen = fenAtLessons(opening.mainline, index + 1)
       return { identidade: identidadeDePosicao(fen), fen, rotulo: `${index + 1}. ${move.san}` }
     }),
-  ].filter((position, index, all) => all.findIndex((item) => item.identidade === position.identidade) === index)
+  ].filter(
+    (position, index, all) =>
+      all.findIndex((item) => item.identidade === position.identidade) === index,
+  )
   return (
     <section className={styles.section}>
       <div className={styles.overviewGrid}>
@@ -203,7 +361,11 @@ function LearnMode({
               if (ply < opening.mainline.length)
                 onProgress((current) =>
                   markOpeningLessonProgress(
-                    markOpeningLearned(current, nodeAt(opening.mainline, ply + 1), new Date().toISOString()),
+                    markOpeningLearned(
+                      current,
+                      nodeAt(opening.mainline, ply + 1),
+                      new Date().toISOString(),
+                    ),
                     ply + 1,
                     new Date().toISOString(),
                   ),
@@ -266,7 +428,9 @@ function LearnMode({
               }
               onClick={() => {
                 setPly(index + 1)
-                onProgress((current) => markOpeningLessonProgress(current, index + 1, new Date().toISOString()))
+                onProgress((current) =>
+                  markOpeningLessonProgress(current, index + 1, new Date().toISOString()),
+                )
               }}
             >
               {formatPly(index, move.san)}

@@ -44,3 +44,12 @@ test('catálogo filtra por primeiro lance, nível e status', async ({ page }) =>
   await page.getByLabel('Status').selectOption('learning')
   await expect(page.getByText(/Nenhuma abertura corresponde aos filtros/)).toBeVisible()
 })
+
+test('usuário experiente pode fazer diagnóstico curto antes da aula', async ({ page }) => {
+  await page.goto('/aberturas/italiana')
+  await page.getByRole('button', { name: 'Já conheço' }).click()
+  await expect(page.getByText(/DIAGNÓSTICO/)).toBeVisible()
+  await expect(page.getByText(/Qual decisão você tomaria/)).toBeVisible()
+  await page.getByRole('button', { name: 'e4', exact: true }).click()
+  await expect(page.getByText('Você reconheceu a decisão do repertório.')).toBeVisible()
+})

@@ -11,11 +11,13 @@ import {
   markOpeningLessonProgress,
   mergeOpeningProgress,
   mergeOpeningProgressList,
+  openingDiagnosticQuestions,
   validateOpeningDefinition,
   openingHint,
   trainingNode,
   type OpeningDefinition,
 } from '@/domain/openings'
+import { openingAuthoringSchema } from '@/domain/openings/schema'
 import { openingReviewCards } from '@/domain/openings/review'
 import { registerOpeningGameEvidence, reviewOpeningGame } from '@/domain/openings/game-review'
 import { parsePgn } from '@/lib/chess'
@@ -63,6 +65,31 @@ describe('curso de aberturas como grafo pedagógico', () => {
     for (const opening of OPENING_COURSES) expect(validateOpeningDefinition(opening)).toEqual([])
   })
 
+  it('o contrato autorado valida cursos e rejeita comentário vazio', () => {
+    for (const opening of OPENING_COURSES)
+      expect(openingAuthoringSchema.safeParse(opening).success).toBe(true)
+    const opening = OPENING_COURSES[0]
+    const invalid = {
+      ...opening,
+      mainline: opening.mainline.map((move, index) =>
+        index === 0 ? { ...move, comment: '   ' } : move,
+      ),
+    }
+    expect(openingAuthoringSchema.safeParse(invalid).success).toBe(false)
+  })
+
+  it('diagnóstico distribui posições do lado do repertório sem revelar a preferida', () => {
+    for (const opening of OPENING_COURSES) {
+      const questions = openingDiagnosticQuestions(opening)
+      expect(questions.length).toBeGreaterThan(0)
+      expect(questions.length).toBeLessThanOrEqual(4)
+      for (const question of questions) {
+        expect(question.moves.length).toBeGreaterThan(0)
+        expect(question.moves.every((move) => move.role !== 'mistake')).toBe(true)
+      }
+    }
+  })
+
   it('o mesmo node é a posição, não o caminho textual', () => {
     const opening = OPENING_COURSES.find((item) => item.id === 'italiana')
     expect(opening).toBeDefined()
@@ -107,8 +134,16 @@ describe('curso de aberturas como grafo pedagógico', () => {
 
   it('funde progresso de dispositivos sem perder conclusões', () => {
     const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
-    const left = completeOpeningActivity(emptyOpeningProgress(opening.id), 'learn', '2026-01-01T00:00:00.000Z')
-    const right = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, '2026-01-02T00:00:00.000Z')
+    const left = completeOpeningActivity(
+      emptyOpeningProgress(opening.id),
+      'learn',
+      '2026-01-01T00:00:00.000Z',
+    )
+    const right = markOpeningLearned(
+      emptyOpeningProgress(opening.id),
+      opening.rootNodeId,
+      '2026-01-02T00:00:00.000Z',
+    )
     const merged = mergeOpeningProgress(left, right)
     expect(merged.completedActivities).toContain('learn')
     expect(merged.learnedNodeIds).toContain(opening.rootNodeId)
@@ -119,10 +154,18 @@ describe('curso de aberturas como grafo pedagógico', () => {
     const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
     const partida = parsePgn('[White "Aluno"]\n[Black "Oponente"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 *')
     const nodeBeforeDeviation = identidadeDePosicao(partida.plies[4]?.fenBefore ?? opening.rootFen)
-    const learned = markOpeningLearned(emptyOpeningProgress(opening.id), nodeBeforeDeviation, '2026-01-01T00:00:00.000Z')
+    const learned = markOpeningLearned(
+      emptyOpeningProgress(opening.id),
+      nodeBeforeDeviation,
+      '2026-01-01T00:00:00.000Z',
+    )
     const review = reviewOpeningGame(opening, partida, 'w', learned)
     expect(review.classification).toBe('repertoire_mistake')
-    const progress = markOpeningLearned(emptyOpeningProgress(opening.id), review.nodeId ?? opening.rootNodeId, '2026-01-01T00:00:00.000Z')
+    const progress = markOpeningLearned(
+      emptyOpeningProgress(opening.id),
+      review.nodeId ?? opening.rootNodeId,
+      '2026-01-01T00:00:00.000Z',
+    )
     const updated = registerOpeningGameEvidence(progress, review, '2026-01-02T00:00:00.000Z')
     expect(updated.weakNodeIds).toContain(review.nodeId)
   })
@@ -143,10 +186,20 @@ describe('curso de aberturas como grafo pedagógico', () => {
 
   it('oponente adaptativo só usa mainline, nodes ensinados ou discovery-safe', () => {
     const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
-    const progress = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, '2026-01-01T00:00:00.000Z')
+    const progress = markOpeningLearned(
+      emptyOpeningProgress(opening.id),
+      opening.rootNodeId,
+      '2026-01-01T00:00:00.000Z',
+    )
     const response = chooseOpeningTrainingOpponent(opening, opening.rootNodeId, progress, () => 0)
     expect(response).toBeDefined()
-    expect(opening.graph.get(opening.rootNodeId)?.outgoingMoves.some((edge) => edge.uci === response?.uci && (edge.role === 'main' || edge.discoverySafe))).toBe(true)
+    expect(
+      opening.graph
+        .get(opening.rootNodeId)
+        ?.outgoingMoves.some(
+          (edge) => edge.uci === response?.uci && (edge.role === 'main' || edge.discoverySafe),
+        ),
+    ).toBe(true)
   })
 
   it('checkpoint da aula avança e não volta ao recarregar', () => {
@@ -160,8 +213,16 @@ describe('curso de aberturas como grafo pedagógico', () => {
 
   it('funde listas de progresso sem perder a cópia de nenhum aparelho', () => {
     const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
-    const local = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, '2026-01-01T00:00:00.000Z')
-    const remote = completeOpeningActivity(emptyOpeningProgress(opening.id), 'opening:italiana:learn', '2026-01-02T00:00:00.000Z')
+    const local = markOpeningLearned(
+      emptyOpeningProgress(opening.id),
+      opening.rootNodeId,
+      '2026-01-01T00:00:00.000Z',
+    )
+    const remote = completeOpeningActivity(
+      emptyOpeningProgress(opening.id),
+      'opening:italiana:learn',
+      '2026-01-02T00:00:00.000Z',
+    )
     const merged = mergeOpeningProgressList([local], [remote])
     expect(merged[0]?.learnedNodeIds).toContain(opening.rootNodeId)
     expect(merged[0]?.completedActivities).toContain('opening:italiana:learn')
@@ -169,7 +230,11 @@ describe('curso de aberturas como grafo pedagógico', () => {
 
   it('semeia card de abertura sem reiniciar o FSRS existente', async () => {
     const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
-    const progress = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, '2026-01-01T00:00:00.000Z')
+    const progress = markOpeningLearned(
+      emptyOpeningProgress(opening.id),
+      opening.rootNodeId,
+      '2026-01-01T00:00:00.000Z',
+    )
     const repo = new MemoryTrainingRepository()
     const now = new Date('2026-01-01T00:00:00.000Z')
     expect(await seedOpeningReviewCards(repo, opening, progress, now)).toBe(1)
@@ -177,7 +242,9 @@ describe('curso de aberturas como grafo pedagógico', () => {
     if (!first) throw new Error('card não criado')
     const scheduled = applyReview(first, 'good', new Date('2026-01-02T00:00:00.000Z'))
     await repo.saveReviewCard(scheduled)
-    expect(await seedOpeningReviewCards(repo, opening, progress, new Date('2026-01-03T00:00:00.000Z'))).toBe(0)
+    expect(
+      await seedOpeningReviewCards(repo, opening, progress, new Date('2026-01-03T00:00:00.000Z')),
+    ).toBe(0)
     expect((await repo.listReviewCards())[0]?.dueAt).toBe(scheduled.dueAt)
   })
 })

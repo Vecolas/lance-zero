@@ -7,6 +7,9 @@
  * externos ficam fora desta fronteira.
  */
 import { applyMove, identidadeDePosicao, START_FEN, type SquareName } from '@/lib/chess'
+import { openingAuthoringSchema } from './schema'
+
+export * from './schema'
 
 export type OpeningSide = 'white' | 'black'
 export type OpeningStatus =
@@ -147,6 +150,14 @@ export interface OpeningTrainingNode {
   explanationAfterAttempt: string
 }
 
+export interface OpeningDiagnosticQuestion {
+  nodeId: string
+  fen: string
+  ply: number
+  prompt: string
+  moves: OpeningMoveEdge[]
+}
+
 export interface WeightedMove {
   uci: string
   san: string
@@ -251,33 +262,40 @@ export function buildOpeningDefinition(
     'graph' | 'rootNodeId' | 'previewFen' | 'rootFen' | 'mainLineId' | 'variationIds' | 'planIds'
   >,
 ): OpeningDefinition {
+  const parsed = openingAuthoringSchema.safeParse(definition)
+  if (!parsed.success) {
+    throw new Error(
+      `Conteúdo de abertura inválido: ${parsed.error.issues.map((issue) => issue.message).join('; ')}`,
+    )
+  }
+  const source = parsed.data
   const lines = [
-    { moves: definition.mainline, role: 'main' as const },
-    ...definition.variations.map((variation) => ({
+    { moves: source.mainline, role: 'main' as const },
+    ...source.variations.map((variation) => ({
       moves: variation.line,
       role: 'variation' as const,
     })),
   ]
   const { graph, rootNodeId } = buildOpeningGraph(lines)
-  const mainLineId = `${definition.id}:main`
-  const variations = definition.variations.map((variation) => ({
+  const mainLineId = `${source.id}:main`
+  const variations = source.variations.map((variation) => ({
     ...variation,
     rootNodeId,
   }))
-  const plans = definition.plans.map((plan) => {
+  const plans = source.plans.map((plan) => {
     const node = graph.get(plan.positionNodeId) ?? graph.get(rootNodeId)
     return { ...plan, positionNodeId: node?.id ?? rootNodeId }
   })
   let previewFen = graph.get(rootNodeId)?.fen ?? START_FEN
   let previewCursor = START_FEN
-  for (const lesson of definition.mainline.slice(0, 4)) {
+  for (const lesson of source.mainline.slice(0, 4)) {
     const applied = applyMove(previewCursor, lesson.san)
     if (!applied) break
     previewCursor = applied.fenAfter
     previewFen = previewCursor
   }
   const opening: OpeningDefinition = {
-    ...definition,
+    ...source,
     rootNodeId,
     rootFen: graph.get(rootNodeId)?.fen ?? START_FEN,
     previewFen,
@@ -290,7 +308,9 @@ export function buildOpeningDefinition(
   }
   const issues = validateOpeningDefinition(opening)
   if (issues.length > 0) {
-    throw new Error(`Abertura inválida: ${issues.map((issue) => `${issue.nodeId}: ${issue.message}`).join('; ')}`)
+    throw new Error(
+      `Abertura inválida: ${issues.map((issue) => `${issue.nodeId}: ${issue.message}`).join('; ')}`,
+    )
   }
   return opening
 }
@@ -328,7 +348,8 @@ export function validateOpeningDefinition(opening: OpeningDefinition): OpeningVa
     if (!reachable.has(nodeId)) issues.push({ nodeId, message: 'node órfão' })
   }
   for (const move of opening.mainline) {
-    if (move.comment.trim().length === 0) issues.push({ nodeId: opening.rootNodeId, message: `lance ${move.san} sem comentário` })
+    if (move.comment.trim().length === 0)
+      issues.push({ nodeId: opening.rootNodeId, message: `lance ${move.san} sem comentário` })
   }
   return issues
 }
@@ -363,6 +384,38 @@ export function trainingNode(
   }
 }
 
+/** Seleciona posições distribuídas na linha para quem já chega com repertório. */
+export function openingDiagnosticQuestions(
+  opening: OpeningDefinition,
+  limit = 4,
+): OpeningDiagnosticQuestion[] {
+  if (limit <= 0) return []
+  const candidates: OpeningDiagnosticQuestion[] = []
+  let fen = opening.rootFen
+  for (let index = 0; index < opening.mainline.length; index += 1) {
+    const nodeId = identidadeDePosicao(fen)
+    const node = opening.graph.get(nodeId)
+    const turn = fen.split(' ')[1]
+    if (node && turn === (opening.side === 'white' ? 'w' : 'b') && node.outgoingMoves.length > 0) {
+      candidates.push({
+        nodeId,
+        fen,
+        ply: node.ply,
+        prompt: 'Qual decisão você tomaria nesta posição sem consultar a linha?',
+        moves: node.outgoingMoves.filter((edge) => edge.role !== 'mistake'),
+      })
+    }
+    const applied = applyMove(fen, opening.mainline[index]?.san ?? '')
+    if (!applied) break
+    fen = applied.fenAfter
+  }
+  if (candidates.length <= limit) return candidates
+  return Array.from({ length: limit }, (_, index) => {
+    const position = Math.round((index * (candidates.length - 1)) / (limit - 1))
+    return candidates[position] as OpeningDiagnosticQuestion
+  })
+}
+
 export function chooseOpponentResponse(
   node: OpeningTrainingNode,
   random = Math.random,
@@ -391,11 +444,13 @@ export function chooseOpeningTrainingOpponent(
   const allowed = node.outgoingMoves.filter(
     (edge) => edge.role === 'main' || learned.has(edge.nextNodeId) || edge.discoverySafe === true,
   )
-  const candidates = allowed.length > 0 ? allowed : node.outgoingMoves.filter((edge) => edge.role === 'main')
+  const candidates =
+    allowed.length > 0 ? allowed : node.outgoingMoves.filter((edge) => edge.role === 'main')
   if (candidates.length === 0) return null
   const weighted = candidates.map((edge) => ({
     edge,
-    weight: Math.max(1, edge.frequency) *
+    weight:
+      Math.max(1, edge.frequency) *
       (weak.has(edge.nextNodeId) ? 2 : 1) *
       (edge.role === 'main' ? 1.2 : 1),
   }))
@@ -414,7 +469,12 @@ export function chooseOpeningTrainingOpponent(
   }
   const last = weighted[weighted.length - 1]?.edge
   return last
-    ? { uci: last.uci, san: last.san, weight: weighted.at(-1)?.weight ?? 1, nextNodeId: last.nextNodeId }
+    ? {
+        uci: last.uci,
+        san: last.san,
+        weight: weighted.at(-1)?.weight ?? 1,
+        nextNodeId: last.nextNodeId,
+      }
     : null
 }
 
@@ -502,16 +562,20 @@ export function openingConfidence(progress: OpeningProgress): number {
 }
 
 /** Funde duas cópias sem apagar ensino, treino ou posições fracas. */
-export function mergeOpeningProgress(local: OpeningProgress, remote: OpeningProgress): OpeningProgress {
+export function mergeOpeningProgress(
+  local: OpeningProgress,
+  remote: OpeningProgress,
+): OpeningProgress {
   const union = (left: string[], right: string[]) => [...new Set([...left, ...right])]
   const learnedNodeIds = union(local.learnedNodeIds, remote.learnedNodeIds)
   const trainedNodeIds = union(local.trainedNodeIds, remote.trainedNodeIds)
   const weakNodeIds = union(local.weakNodeIds, remote.weakNodeIds)
   const completedActivities = union(local.completedActivities, remote.completedActivities)
-  const lastPracticedAt = [local.lastPracticedAt, remote.lastPracticedAt]
-    .filter((value): value is string => value !== null)
-    .sort()
-    .at(-1) ?? null
+  const lastPracticedAt =
+    [local.lastPracticedAt, remote.lastPracticedAt]
+      .filter((value): value is string => value !== null)
+      .sort()
+      .at(-1) ?? null
   const statusRank: Record<OpeningStatus, number> = {
     not_started: 0,
     learning: 1,
@@ -519,15 +583,25 @@ export function mergeOpeningProgress(local: OpeningProgress, remote: OpeningProg
     consolidating: 3,
     active_repertoire: 4,
   }
-  const status = statusRank[local.status] >= statusRank[remote.status] ? local.status : remote.status
-  const merged = { ...local, status, learnedNodeIds, trainedNodeIds, weakNodeIds, completedActivities, lastPracticedAt }
+  const status =
+    statusRank[local.status] >= statusRank[remote.status] ? local.status : remote.status
+  const merged = {
+    ...local,
+    status,
+    learnedNodeIds,
+    trainedNodeIds,
+    weakNodeIds,
+    completedActivities,
+    lastPracticedAt,
+  }
   return {
     ...merged,
     confidence: openingConfidence(merged),
     lessonPly: Math.max(local.lessonPly ?? 0, remote.lessonPly ?? 0),
-    lastSection: (remote.lastPracticedAt ?? '') >= (local.lastPracticedAt ?? '')
-      ? remote.lastSection
-      : local.lastSection,
+    lastSection:
+      (remote.lastPracticedAt ?? '') >= (local.lastPracticedAt ?? '')
+        ? remote.lastSection
+        : local.lastSection,
   }
 }
 
@@ -536,7 +610,12 @@ export function markOpeningLessonProgress(
   ply: number,
   now: string,
 ): OpeningProgress {
-  return { ...progress, lessonPly: Math.max(progress.lessonPly ?? 0, ply), lastSection: 'learn', lastPracticedAt: now }
+  return {
+    ...progress,
+    lessonPly: Math.max(progress.lessonPly ?? 0, ply),
+    lastSection: 'learn',
+    lastPracticedAt: now,
+  }
 }
 
 export function mergeOpeningProgressList(
@@ -552,12 +631,23 @@ export function mergeOpeningProgressList(
 }
 
 /** Escada de ajuda: raciocínio primeiro, lance explícito somente sob pedido. */
-export function openingHint(opening: OpeningDefinition, nodeId: string, level: number): string | null {
+export function openingHint(
+  opening: OpeningDefinition,
+  nodeId: string,
+  level: number,
+): string | null {
   const node = opening.graph.get(nodeId)
-  const preferred = node?.outgoingMoves.find((edge) => edge.role === 'main') ?? node?.outgoingMoves[0]
+  const preferred =
+    node?.outgoingMoves.find((edge) => edge.role === 'main') ?? node?.outgoingMoves[0]
   if (!node || !preferred || level < 1) return null
   if (level === 1) return 'Qual peça ainda precisa ser desenvolvida para uma casa ativa?'
-  if (level === 2) return preferred.lesson?.resultingPlan ?? preferred.lesson?.strategicIdea ?? 'Pense no plano que esta posição prepara.'
-  if (level === 3) return `Procure uma casa ativa para a peça que ainda está fora do jogo; observe a pressão em ${preferred.lesson?.highlights?.[0] ?? 'uma casa central'}.`
+  if (level === 2)
+    return (
+      preferred.lesson?.resultingPlan ??
+      preferred.lesson?.strategicIdea ??
+      'Pense no plano que esta posição prepara.'
+    )
+  if (level === 3)
+    return `Procure uma casa ativa para a peça que ainda está fora do jogo; observe a pressão em ${preferred.lesson?.highlights?.[0] ?? 'uma casa central'}.`
   return `O lance candidato do repertório é ${preferred.san}.`
 }
