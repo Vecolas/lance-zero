@@ -1,0 +1,49 @@
+import type { EndgameDefinition, EndgameLesson, EndgamePosition, EndgamePositionSet, TechniqueDefinition } from '@/domain/endgames'
+
+const OPOSICAO_A: EndgamePosition = {
+  id: 'oposicao-biblioteca-a', fen: '4k3/8/8/4K3/4P3/8/8/8 b - - 0 1', sideToTrain: 'black',
+  objective: 'defend', conceptIds: ['opposition'], expectedResult: 'draw', validationSource: 'curated', difficulty: 1,
+}
+const OPOSICAO_B: EndgamePosition = {
+  id: 'oposicao-biblioteca-b', fen: '8/4k3/8/4K3/4P3/8/8/8 w - - 0 1', sideToTrain: 'white',
+  objective: 'promote', conceptIds: ['opposition', 'key-squares'], expectedResult: 'win', validationSource: 'curated', difficulty: 2,
+}
+
+export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
+  { id: 'king-activity', slug: 'atividade-do-rei', name: 'Atividade do rei', category: 'principle', description: 'No final, o rei é uma peça de combate: melhore sua atividade antes de correr com peões.', previewFen: '8/8/8/3k4/3p4/8/3K4/8 w - - 0 1', difficulty: 1, prerequisiteIds: [], lessonIds: ['lesson-king-activity'], drillIds: ['king-activity-set'], tags: ['Essenciais', 'Princípios'], level: 'essential', version: 1 },
+  { id: 'rule-of-square', slug: 'regra-do-quadrado', name: 'Regra do quadrado', category: 'pawn', description: 'Conte o quadrado para saber se o rei alcança o peão antes de calcular uma corrida.', previewFen: '7k/8/8/P7/8/8/8/7K w - - 0 1', difficulty: 1, prerequisiteIds: ['king-activity'], lessonIds: ['lesson-rule-square'], drillIds: ['rule-square-set'], tags: ['Essenciais', 'Peões'], level: 'essential', version: 1 },
+  { id: 'opposition', slug: 'oposicao', name: 'Oposição', category: 'pawn', description: 'Reconheça quando a posição relativa dos reis e um tempo decidem quem cede espaço.', previewFen: OPOSICAO_A.fen, difficulty: 2, prerequisiteIds: ['king-activity'], lessonIds: ['lesson-opposition'], drillIds: ['opposition-set'], tags: ['Essenciais', 'Peões', 'Defesa'], level: 'essential', version: 1 },
+  { id: 'key-squares', slug: 'casas-chave', name: 'Casas-chave', category: 'pawn', description: 'Encontre as casas que garantem a promoção e compare com as exceções do peão de torre.', previewFen: '8/8/4k3/8/4K3/4P3/8/8 w - - 0 1', difficulty: 2, prerequisiteIds: ['opposition'], lessonIds: ['lesson-key-squares'], drillIds: ['key-squares-set'], tags: ['Essenciais', 'Peões'], level: 'essential', version: 1 },
+  { id: 'king-pawn', slug: 'rei-peao-vs-rei', name: 'Rei + peão contra rei', category: 'pawn', description: 'Ative o rei, calcule tempos e converta — ou defenda — sem decorar uma linha.', previewFen: '8/8/4k3/8/4K3/4P3/8/8 w - - 0 1', difficulty: 2, prerequisiteIds: ['opposition', 'key-squares'], lessonIds: ['lesson-king-pawn'], drillIds: ['king-pawn-set'], tags: ['Essenciais', 'Peões', 'Conversão'], level: 'essential', version: 1 },
+  { id: 'queen-mate', slug: 'rei-dama-vs-rei', name: 'Rei + dama contra rei', category: 'queen', description: 'Restrinja, aproxime o rei, evite o afogamento e coordene o mate.', previewFen: '7k/8/6K1/8/8/8/8/1Q6 w - - 0 1', difficulty: 2, prerequisiteIds: ['king-activity'], lessonIds: ['lesson-queen-mate'], drillIds: ['queen-mate-set'], tags: ['Essenciais', 'Conversão'], level: 'essential', version: 1 },
+  { id: 'rook-mate', slug: 'rei-torre-vs-rei', name: 'Rei + torre contra rei', category: 'rook', description: 'Corte o rei, reduza a caixa, aproxime seu rei, empurre para a borda e dê mate.', previewFen: '7k/8/5K2/8/8/8/8/R7 w - - 0 1', difficulty: 2, prerequisiteIds: ['king-activity'], lessonIds: ['lesson-rook-mate'], drillIds: ['rook-mate-set'], tags: ['Essenciais', 'Torres', 'Conversão'], level: 'essential', version: 1 },
+  { id: 'passed-pawn', slug: 'peao-passado', name: 'Peão passado', category: 'pawn', description: 'Crie uma ameaça que obrigue o adversário a escolher e converta o peão passado.', previewFen: '7k/ppp5/8/PPP5/8/8/8/7K w - - 0 1', difficulty: 2, prerequisiteIds: ['rule-of-square'], lessonIds: ['lesson-passed-pawn'], drillIds: ['passed-pawn-set'], tags: ['Essenciais', 'Peões'], level: 'essential', version: 1 },
+  { id: 'lucena', slug: 'lucena', name: 'Lucena', category: 'rook', description: 'Aprenda a ponte: torre na quarta, rei sai da frente e a promoção fica segura.', previewFen: '2K5/2P1k3/8/8/8/8/r7/3R4 w - - 0 1', difficulty: 3, prerequisiteIds: ['rook-mate'], lessonIds: ['lesson-lucena'], drillIds: ['lucena-set'], tags: ['Fundamentais', 'Torres', 'Conversão'], level: 'fundamental', version: 1 },
+  { id: 'philidor', slug: 'philidor', name: 'Philidor', category: 'defense', description: 'Segure o empate com a torre ativa e o recurso do xeque na terceira fileira.', previewFen: '8/8/8/3k4/3P4/8/3K4/r7 w - - 0 1', difficulty: 3, prerequisiteIds: ['rook-mate'], lessonIds: ['lesson-philidor'], drillIds: ['philidor-set'], tags: ['Fundamentais', 'Torres', 'Defesa'], level: 'fundamental', version: 1 },
+  { id: 'two-bishops', slug: 'dois-bispos-vs-rei', name: 'Dois bispos contra rei', category: 'bishop', description: 'Coordene os bispos, restrinja o rei e construa a rede de mate.', previewFen: '7k/8/6K1/8/8/8/2B5/5B2 w - - 0 1', difficulty: 3, prerequisiteIds: ['rook-mate'], lessonIds: ['lesson-two-bishops'], drillIds: ['two-bishops-set'], tags: ['Fundamentais', 'Conversão'], level: 'fundamental', version: 1 },
+  { id: 'bishop-knight', slug: 'bispo-cavalo-vs-rei', name: 'Bispo + cavalo contra rei', category: 'knight', description: 'Técnica avançada e opcional: conduza o rei ao canto correto sem memorizar casas.', previewFen: '7k/8/6K1/8/8/8/2B5/5N2 w - - 0 1', difficulty: 5, prerequisiteIds: ['two-bishops'], lessonIds: ['lesson-bishop-knight'], drillIds: ['bishop-knight-set'], tags: ['Avançados', 'Conversão'], level: 'advanced', version: 1 },
+]
+
+export const ENDGAME_POSITION_SETS: readonly EndgamePositionSet[] = [
+  { id: 'opposition-set', endgameId: 'opposition', positions: [OPOSICAO_A, OPOSICAO_B] },
+  ...ENDGAME_DEFINITIONS.filter((d) => d.id !== 'opposition').map((d) => ({ id: d.drillIds[0], endgameId: d.id, positions: [{ id: `${d.id}-representative`, fen: d.previewFen, sideToTrain: 'white' as const, objective: 'win' as const, conceptIds: [d.id], validationSource: 'curated' as const, difficulty: d.difficulty }] })),
+]
+
+export const ENDGAME_TECHNIQUES: readonly TechniqueDefinition[] = [
+  { id: 'rook-mate-technique', name: 'Algoritmo do mate de torre', goals: ['Dar mate sem xeques aleatórios'], phases: ['Cortar o rei', 'Reduzir a caixa', 'Aproximar o próprio rei', 'Empurrar para a borda', 'Construir o mate'], failurePatterns: ['Dar xeques sem plano', 'Não aproximar o rei', 'Afogar o rei'] },
+  { id: 'queen-mate-technique', name: 'Algoritmo do mate de dama', goals: ['Dar mate com coordenação'], phases: ['Restringir', 'Aproximar o rei', 'Evitar afogamento', 'Dar mate'], failurePatterns: ['Afogamento', 'Dama desprotegida'] },
+]
+
+export const ENDGAME_LESSONS: readonly EndgameLesson[] = ENDGAME_DEFINITIONS.map((definition) => ({
+  id: definition.lessonIds[0], endgameId: definition.id, version: 1,
+  steps: [
+    { type: 'principle', title: 'O que importa nesta posição?', text: definition.description },
+    { type: 'recognition', question: 'Qual é o elemento crítico desta posição?', options: ['Atividade e relação dos reis', 'Desenvolvimento de abertura', 'Memorizar uma variante'], answer: 0, explanation: 'Finais começam pelo reconhecimento, não por uma sequência decorada.' },
+    { type: 'demonstration', title: 'Veja o princípio no tabuleiro', fen: definition.previewFen, text: 'A posição é um exemplo representativo; o treino usará posições equivalentes.' },
+    { type: 'play-out', positionSetId: definition.drillIds[0], objective: 'Aplicar o princípio até converter ou defender a posição.' },
+    { type: 'summary', title: 'Regra operacional', rules: ['Reconheça o tipo de final.', 'Identifique o elemento crítico.', 'Escolha o princípio antes de calcular.', 'Execute até o resultado.'] },
+  ],
+})))
+
+export const ENDGAME_BY_SLUG = new Map(ENDGAME_DEFINITIONS.map((definition) => [definition.slug, definition]))
+export const ENDGAME_LESSON_BY_ID = new Map(ENDGAME_LESSONS.map((lesson) => [lesson.id, lesson]))

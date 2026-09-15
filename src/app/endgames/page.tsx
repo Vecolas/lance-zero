@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { EndgamesWorkbench } from '@/components/endgames/EndgamesWorkbench'
 
 export const metadata: Metadata = { title: 'Finais' }
@@ -13,6 +14,7 @@ export default function EndgamesPage() {
         posição, o adversário joga a defesa perfeita — e quando ela não responde, a tela diz isso em
         vez de fingir.
       </p>
+      <p><Link href="/finais">Abrir biblioteca visual de finais</Link> — conceitos, técnicas e posições variadas.</p>
       <EndgamesWorkbench />
     </>
   )
