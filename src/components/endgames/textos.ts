@@ -203,6 +203,13 @@ export const APRESENTACAO_POR_FONTE: Record<FonteDaResposta, ApresentacaoDaFonte
     explicacao: 'O adversário escolheu uma resposta pelo Stockfish em worker. Ela é resistente, mas não substitui a prova objetiva da tablebase.',
     perfeita: false,
   },
+  scripted: {
+    tom: 'neutro',
+    icone: '◆',
+    rotulo: 'Demonstração guiada',
+    explicacao: 'O adversário está seguindo um roteiro técnico desta demonstração. Use-o para observar a ideia, não para decorar uma sequência fixa.',
+    perfeita: false,
+  },
   'linha-modelo': {
     tom: 'neutro',
     icone: '≡',

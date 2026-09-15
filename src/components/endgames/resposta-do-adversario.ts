@@ -41,7 +41,7 @@ import type { EndgameTrainingOpponent } from '@/domain/endgames/oponente'
  * As procedências possíveis. É a FONTE que a tela e o portão varrem: fonte
  * nova aqui sem apresentação em `textos.ts` não compila.
  */
-export const FONTES_DE_RESPOSTA = ['tablebase', 'stockfish', 'linha-modelo', 'lance-legal'] as const
+export const FONTES_DE_RESPOSTA = ['tablebase', 'stockfish', 'scripted', 'linha-modelo', 'lance-legal'] as const
 
 export type FonteDaResposta = (typeof FONTES_DE_RESPOSTA)[number]
 
@@ -103,7 +103,14 @@ export async function escolherRespostaDoAdversario(
   if (entrada.opponent) {
     try {
       const resposta = await entrada.opponent.getMove(entrada.fen, { moves: entrada.lancesJogados })
-      if (resposta && permitidos.has(normalizeUci(resposta.uci))) return { uci: normalizeUci(resposta.uci), fonte: resposta.source === 'stockfish' ? 'stockfish' : 'lance-legal' }
+      if (resposta && permitidos.has(normalizeUci(resposta.uci))) {
+        const fonte: FonteDaResposta = resposta.source === 'stockfish'
+          ? 'stockfish'
+          : resposta.source === 'scripted'
+            ? 'scripted'
+            : 'lance-legal'
+        return { uci: normalizeUci(resposta.uci), fonte }
+      }
     } catch { /* degrada para tablebase/roteiro */ }
   }
 
