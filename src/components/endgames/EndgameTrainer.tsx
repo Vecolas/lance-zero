@@ -524,6 +524,7 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe, opponent }: En
           lastMove={tentativa.ultimoLance}
           interactive={fase === 'jogando'}
           onMove={jogarDoTabuleiro}
+          onIllegalMove={(from, to) => setErroDeLance(`${from}${to} não é um lance legal nesta posição.`)}
         />
 
         <div className={styles.entrada}>

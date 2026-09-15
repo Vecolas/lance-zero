@@ -28,6 +28,8 @@ export interface ChessBoardViewProps {
   interactive?: boolean
   /** Devolve `true` se o lance foi aceito. */
   onMove?: (from: SquareName, to: SquareName, promotion?: PromotionPiece) => boolean
+  /** Informa a tela quando o arraste termina em uma casa sem lance legal. */
+  onIllegalMove?: (from: SquareName, to: SquareName) => void
   onSquareClick?: (square: SquareName) => void
 }
 
@@ -49,6 +51,7 @@ export function ChessBoardView({
   checkSquare = null,
   interactive = true,
   onMove,
+  onIllegalMove,
   onSquareClick,
 }: ChessBoardViewProps) {
   const palette = boardThemes[theme]
@@ -81,6 +84,10 @@ export function ChessBoardView({
 
   const drop = (from: SquareName, to: SquareName): boolean => {
     const possible = legalMoves(fen, from).filter((move) => move.to === to)
+    if (possible.length === 0) {
+      onIllegalMove?.(from, to)
+      return false
+    }
     if (possible.some((move) => move.promotion !== undefined)) {
       setPromotion({ from, to, fen })
       return false

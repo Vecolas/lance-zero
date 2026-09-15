@@ -697,6 +697,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
           theme={profile?.preferences.boardTheme ?? 'claro'}
           interactive={emAndamento}
           onMove={jogarDoTabuleiro}
+          onIllegalMove={(from, to) => setErroDeLance(`${from}${to} não é um lance legal nesta posição.`)}
         />
 
         {/* A alternativa ao arraste. Ela some junto com a interatividade do
