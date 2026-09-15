@@ -40,6 +40,7 @@ export const ENDGAME_LESSONS: readonly EndgameLesson[] = ENDGAME_DEFINITIONS.map
     { type: 'principle', title: 'O que importa nesta posição?', text: definition.description },
     { type: 'recognition', question: 'Qual é o elemento crítico desta posição?', options: ['Atividade e relação dos reis', 'Desenvolvimento de abertura', 'Memorizar uma variante'], answer: 0, explanation: 'Finais começam pelo reconhecimento, não por uma sequência decorada.' },
     { type: 'demonstration', title: 'Veja o princípio no tabuleiro', fen: definition.previewFen, text: 'A posição é um exemplo representativo; o treino usará posições equivalentes.' },
+    ...(definition.id === 'opposition' ? [{ type: 'contrast' as const, title: 'A regra muda com a vez de jogar', left: OPOSICAO_A, right: OPOSICAO_B, prompt: 'O que mudou além da posição dos reis?', explanation: 'Um tempo e a oposição podem transformar vitória em empate; por isso a FEN não é a resposta.' }] : []),
     { type: 'play-out', positionSetId: definition.drillIds[0], objective: 'Aplicar o princípio até converter ou defender a posição.' },
     { type: 'summary', title: 'Regra operacional', rules: ['Reconheça o tipo de final.', 'Identifique o elemento crítico.', 'Escolha o princípio antes de calcular.', 'Execute até o resultado.'] },
   ],

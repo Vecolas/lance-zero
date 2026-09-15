@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { ENDGAME_LESSON_BY_ID, ENDGAME_POSITION_SETS } from '@/content/endgames/biblioteca'
 import type { EndgameDefinition } from '@/domain/endgames'
@@ -13,6 +13,15 @@ export function EndgameLessonPage({ definition }: { definition: EndgameDefinitio
   const [tab, setTab] = useState<(typeof TABS)[number]>('Visão geral')
   const lesson = ENDGAME_LESSON_BY_ID.get(definition.lessonIds[0])
   const positionSet = ENDGAME_POSITION_SETS.find((set) => set.id === definition.drillIds[0])
+  useEffect(() => {
+    if (tab !== 'Aprender' && tab !== 'Praticar') return
+    try {
+      const key = 'lancezero:endgame-statuses'
+      const statuses = JSON.parse(window.localStorage.getItem(key) ?? '{}') as Record<string, string>
+      statuses[definition.id] = tab === 'Aprender' ? 'learning' : 'practicing'
+      window.localStorage.setItem(key, JSON.stringify(statuses))
+    } catch { /* progresso local é opcional */ }
+  }, [definition.id, tab])
   return <div className={styles.page}>
     <Link href="/finais" className={styles.back}>← Voltar à biblioteca</Link>
     <div className={styles.heading}><div><p className={styles.eyebrow}>{definition.level}</p><h1>{definition.name}</h1><p>{definition.description}</p></div><div className={styles.heroBoard}><ChessBoardView fen={definition.previewFen} orientation="w" interactive={false} /></div></div>
