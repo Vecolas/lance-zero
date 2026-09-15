@@ -9,13 +9,19 @@ export function generateStaticParams() {
 
 export const dynamicParams = false
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const licao = CURRICULO_FINAIS.find((item) => item.id === params.slug)
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const licao = CURRICULO_FINAIS.find((item) => item.id === slug)
   return { title: licao?.titulo ?? 'Final' }
 }
 
-export default function EndgameDetailPage({ params }: { params: { slug: string } }) {
-  const licao = CURRICULO_FINAIS.find((item) => item.id === params.slug)
+export default async function EndgameDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const licao = CURRICULO_FINAIS.find((item) => item.id === slug)
   if (!licao) notFound()
   return <EndgameDetail licao={licao} />
 }
