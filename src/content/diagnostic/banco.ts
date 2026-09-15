@@ -59,7 +59,17 @@ export const BANCO_DE_DIAGNOSTICO: readonly ItemDeDiagnostico[] = [
     objetivo: { tipo: 'ganha-material', saldoMinimo: 250 },
     enunciado: 'Pretas jogam. O cavalo avançado das brancas está atacando f7 — e está sozinho.',
     lancesAceitos: ['d6e5', 'c6e5'],
-    alternativas: ['c8g4', 'e8g8', 'g8f6'],
+    // Dd7 e não o roque: nesta posição o bispo de f8 e o cavalo de g8 ainda não
+    // saíram, então `e8g8` é ILEGAL — apesar de os direitos de roque no FEN
+    // dizerem `kq`. O item viveu assim desde que foi escrito, e passava porque
+    // um lance impossível "não cumpre o objetivo" exatamente como se esperava de
+    // uma alternativa errada. A checagem de legalidade em `verificarExercicio`
+    // nasceu deste caso.
+    //
+    // A troca ainda MELHORA o item: Dd7 é a defesa que o enunciado descreve —
+    // proteger f7 antes de conferir quem defende o cavalo — e é o erro que a
+    // explicação já nomeava sem ter uma opção correspondente na tela.
+    alternativas: ['c8g4', 'd8d7', 'g8f6'],
     explicacao:
       'O cavalo em e5 ataca f7, e a ameaça assusta o suficiente para muita gente defender antes ' +
       'de conferir quem defende o cavalo. Ninguém defende: nem peão, nem dama, nem bispo. As duas ' +

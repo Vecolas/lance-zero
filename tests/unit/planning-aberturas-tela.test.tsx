@@ -30,6 +30,7 @@
 
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { PLANNER_V2_CONFIG } from '@/domain/planning/planner-v2'
 import { ladoPorExtenso } from '@/domain/planning/aberturas'
 import { cardsDeRepertorio } from '@/domain/repertoire'
 import { createMastery } from '@/domain/skills/mastery'
@@ -148,12 +149,24 @@ describe('os cards do repertório entram na fila de revisão como qualquer outro
     const vencidos = await repo.getDueCards(new Date())
     expect(vencidos.filter((card) => card.kind === 'repertorio').length).toBe(cardsEsperados())
 
-    const revisao = blocos().find((texto) => texto.includes('revisões vencidas'))
+    // "Revisões vencidas" com maiúscula: no Hoje V2 o texto é o TÍTULO da
+    // atividade, e não mais a frase de justificativa do bloco antigo.
+    const revisao = blocos().find((texto) => texto.includes('Revisões vencidas'))
     expect(revisao).toBeDefined()
-    // Borda de DÍGITO, e não `\b`: o texto do bloco vem colado ("…5 itens17
-    // revisões…"), então `\b` não casaria; e um `toContain` de número curto
-    // aprovaria 170 quando o certo é 17.
-    expect(revisao).toMatch(new RegExp(`(?<!\\d)${cardsEsperados()}(?!\\d) revis`))
+
+    // O NÚMERO NÃO É MAIS CRAVADO, e a mudança é deliberada. A V1 punha todos
+    // os vencidos num bloco só; a V2 limita a revisão a uma fatia do dia
+    // (`fatiaMaximaDaRevisao`), então quantos cards entram depende do orçamento
+    // do aluno. Cravar 17 — ou 12 — reprovaria o código CERTO na primeira vez
+    // que qualquer um dos dois números mudasse.
+    //
+    // O que este teste tem de afirmar continua sendo o mesmo: o card de
+    // repertório CHEGA à revisão do plano, com uma contagem real e não zero.
+    const quantidade = Number(/(\d+)/.exec(revisao ?? '')?.[1] ?? 0)
+    expect(quantidade).toBeGreaterThan(0)
+    expect(quantidade).toBeLessThanOrEqual(
+      Math.min(cardsEsperados(), PLANNER_V2_CONFIG.maxCardsPorRevisao),
+    )
   })
 
   it('CONTROLE: sem a semeadura não há revisão nenhuma para mostrar', async () => {

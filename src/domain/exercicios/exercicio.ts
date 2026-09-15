@@ -25,7 +25,7 @@
  */
 
 import type { Side } from '@/domain/types'
-import { posicaoEhJogavel, positionStatus } from '@/lib/chess'
+import { legalMoves, normalizeUci, posicaoEhJogavel, positionStatus } from '@/lib/chess'
 import { avaliarLance, type ObjetivoDeDiagnostico } from './objetivo'
 
 /** Lista com pelo menos um elemento. */
@@ -78,9 +78,26 @@ export function verificarExercicio(item: ExercicioPosicional): FalhaDeItem[] {
     }
   }
 
+  // As opções LEGAIS da posição, para conferir as alternativas contra elas.
+  //
+  // ESTE PONTO CEGO ERA REAL e foi encontrado escrevendo conteúdo: `avaliarLance`
+  // devolve `cumpre: false` tanto para "é legal e não ganha" quanto para "não
+  // existe". Uma alternativa com um typo — `d8d4` virando `d8d9` — passava pelo
+  // portão em SILÊNCIO, porque não cumprir o objetivo era exatamente o que se
+  // esperava dela. O aluno então via, entre as opções, um lance impossível: a
+  // tela cai no `?? uci` da notação e mostra a string crua.
+  //
+  // O mesmo não precisa ser dito dos `lancesAceitos`: um aceito ilegal já
+  // reprova pelo outro lado, porque ilegal nunca cumpre objetivo nenhum.
+  const legais = new Set(legalMoves(item.fen).map((lance) => lance.uci))
+
   for (const uci of item.alternativas) {
     if (item.lancesAceitos.includes(uci)) {
       falhas.push(`${uci} está ao mesmo tempo entre os aceitos e entre as alternativas`)
+      continue
+    }
+    if (!legais.has(normalizeUci(uci))) {
+      falhas.push(`alternativa ${uci} não é um lance legal nesta posição`)
       continue
     }
     const veredito = avaliarLance(item.fen, item.ladoDoAluno, uci, item.objetivo)

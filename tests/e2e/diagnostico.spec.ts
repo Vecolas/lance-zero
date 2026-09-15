@@ -61,7 +61,20 @@ test('sem conta, o diagnóstico leva a um plano e a um perfil salvo', async ({ p
 
   // O orçamento escolhido no diagnóstico é o que o plano do dia usa. Sem isto o
   // diagnóstico seria uma tela bonita que não muda nada.
-  await expect(page.getByText('dentro do seu orçamento de 20 min.')).toBeVisible()
+  //
+  // A AFIRMAÇÃO MUDOU DE LUGAR, não de conteúdo: o Hoje V2 não escreve mais
+  // "dentro do seu orçamento de 20 min" no resumo — o resumo agora conta
+  // atividades concluídas. Quem carrega o orçamento é o seletor, e é nele que
+  // a escolha do diagnóstico tem de aparecer.
+  await expect(page.getByRole('button', { name: '20 min' })).toHaveAttribute('aria-pressed', 'true')
+
+  // E o plano cabe nele: a soma dos minutos dos cards não passa do orçamento.
+  const minutos = await page
+    .getByRole('listitem')
+    .getByText(/^\d+ min$/)
+    .allTextContents()
+  const soma = minutos.reduce((total, texto) => total + Number(/(\d+)/.exec(texto)?.[1] ?? 0), 0)
+  expect(soma).toBeLessThanOrEqual(20)
 })
 
 test('o tom não é de cassino e nada é enviado para fora', async ({ page }) => {
@@ -72,20 +85,40 @@ test('o tom não é de cassino e nada é enviado para fora', async ({ page }) =>
   await expect(corpo).not.toContainText(/sequência de dias/i)
 })
 
-test('a biblioteca mostra lições que terminam em exercício', async ({ page }) => {
+test('a lição ENSINA antes de cobrar, e a ordem das etapas é a do esquema', async ({ page }) => {
   await page.goto('/lessons')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Biblioteca')
 
   await page.getByRole('button', { name: 'Abrir lição' }).first().click()
 
-  // A ordem das etapas é a do esquema, e a última é a recuperação.
-  const etapas = page.getByRole('heading', { level: 3 })
-  await expect(etapas).toHaveText(['Conceito', 'Exemplo resolvido', 'Agora sem ajuda'])
+  /**
+   * A LIÇÃO TEM NOVE ETAPAS, e não mais três.
+   *
+   * O teste antigo afirmava `['Conceito', 'Exemplo resolvido', 'Agora sem
+   * ajuda']` — e aquela lista de três era exatamente a dívida pedagógica: entre
+   * ver a solução pronta e responder sem nenhuma ajuda havia um degrau que o
+   * aluno só conseguia vencer por tentativa e erro.
+   *
+   * O que se afirma agora é a MESMA regra, mais forte: as etapas são mostradas
+   * UMA DE CADA VEZ, na ordem do esquema, e as três primeiras não pedem lance
+   * nenhum. O app explica antes de perguntar.
+   */
+  await expect(page.getByText('Etapa 1 de 9 — O que você vai aprender')).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Lances possíveis' })).toHaveCount(0)
 
-  // O exercício final responde, e só então explica.
-  const recuperacao = page.getByRole('region', { name: 'Agora sem ajuda' })
-  const opcoes = recuperacao.getByRole('list', { name: 'Lances possíveis' })
-  await expect(opcoes.getByRole('button').first()).toBeVisible()
-  await opcoes.getByRole('button').first().click()
-  await expect(recuperacao.getByText(/objetivo/i).first()).toBeVisible()
+  await page.getByRole('button', { name: 'Continuar' }).click()
+  await expect(page.getByText('Etapa 2 de 9 — A ideia')).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Lances possíveis' })).toHaveCount(0)
+
+  // A terceira etapa é a pergunta reutilizável — o que o aluno leva para a
+  // partida, e a etapa que mais distingue ensinar de cobrar.
+  await page.getByRole('button', { name: 'Continuar' }).click()
+  await expect(
+    page.getByText('Etapa 3 de 9 — A pergunta que você leva para a partida'),
+  ).toBeVisible()
+  // A pergunta reutilizável tem PASSOS, e são eles que o aluno leva embora.
+  // Conta os itens em vez de casar texto: `\w{10,}` quebrava na primeira
+  // palavra acentuada e reprovava um conteúdo perfeitamente correto.
+  const passos = page.getByRole('listitem')
+  expect(await passos.count()).toBeGreaterThan(1)
 })

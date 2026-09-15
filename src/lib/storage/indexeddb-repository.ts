@@ -8,12 +8,14 @@
 import type {
   Game,
   GameQuery,
+  PlanoDoDia,
   PositionAnalysis,
   PuzzleAttempt,
   RepertorioDoAluno,
   ReviewCard,
   ReviewLog,
   SkillMastery,
+  SkillState,
   UserProfile,
 } from '@/domain/types'
 import { StorageError, type BackupRepository } from './repository'
@@ -37,6 +39,8 @@ export const STORES = {
   reviewLogs: 'reviewLogs',
   skillMastery: 'skillMastery',
   repertorios: 'repertorios',
+  skillStates: 'skillStates',
+  planosDoDia: 'planosDoDia',
 } as const
 
 export type StoreName = (typeof STORES)[keyof typeof STORES]
@@ -53,7 +57,7 @@ export const INDEXES = {
 export const INDEXEDDB_CONFIG = {
   databaseName: 'lance-zero',
   /** Versão do schema. Incrementar sempre junto de um novo `case` em `migrate`. */
-  schemaVersion: 2,
+  schemaVersion: 3,
 } as const
 
 export interface IndexedDbRepositoryOptions {
@@ -97,7 +101,10 @@ function migrate(db: IDBDatabase, oldVersion: number): void {
     // falls through
     case 1:
       createSchemaV2(db)
-    // Próximas versões entram como `case 2:` etc., também sem `break`.
+    // falls through
+    case 2:
+      createSchemaV3(db)
+    // Próximas versões entram como `case 3:` etc., também sem `break`.
   }
 }
 
@@ -137,6 +144,27 @@ function createSchemaV1(db: IDBDatabase): void {
  */
 function createSchemaV2(db: IDBDatabase): void {
   db.createObjectStore(STORES.repertorios, { keyPath: 'definicao.id' })
+}
+
+/**
+ * V3: o estágio de aprendizagem e o plano do dia.
+ *
+ * As duas stores que faltavam para o produto parar de cobrar o que nunca
+ * ensinou. `skillStates` guarda o degrau por habilidade; `planosDoDia` guarda o
+ * plano GERADO, que a partir daqui é fato e não valor derivado a cada
+ * renderização — ver `@/domain/aprendizado/plano`.
+ *
+ * Só ACRESCENTA. Nada do que já estava gravado é lido, reescrito ou apagado:
+ * um banco na versão 2 sobe para a 3 sem tocar em um único card, e o
+ * agendamento FSRS de quem já usa o app continua de pé.
+ *
+ * `planosDoDia` é chaveado por `dateKey`, que é o dia no fuso do ALUNO.
+ * Chavear por instante UTC faria o plano virar antes da meia-noite de quem
+ * treina à noite — o mesmo defeito de fuso que já mordeu este projeto uma vez.
+ */
+function createSchemaV3(db: IDBDatabase): void {
+  db.createObjectStore(STORES.skillStates, { keyPath: 'skillId' })
+  db.createObjectStore(STORES.planosDoDia, { keyPath: 'dateKey' })
 }
 
 export class IndexedDbTrainingRepository implements BackupRepository {
@@ -375,6 +403,48 @@ export class IndexedDbTrainingRepository implements BackupRepository {
     await this.run([STORES.repertorios], 'readwrite', async (tx) => {
       await requestToPromise(tx.objectStore(STORES.repertorios).put(repertorio))
     })
+  }
+
+  async getSkillStates(): Promise<SkillState[]> {
+    const estados = await this.readAll<SkillState>(STORES.skillStates)
+    // Ordem canônica pelo id: a tela do currículo e o planner leem daqui, e uma
+    // ordem que depende de como o IndexedDB devolveu faria a lista trocar de
+    // ordem entre navegadores sem nada mudar de verdade.
+    return estados.sort((a, b) => a.skillId.localeCompare(b.skillId))
+  }
+
+  async saveSkillStates(states: SkillState[]): Promise<void> {
+    if (states.length === 0) {
+      return
+    }
+    await this.run([STORES.skillStates], 'readwrite', async (tx) => {
+      const store = tx.objectStore(STORES.skillStates)
+      for (const estado of states) {
+        await requestToPromise(store.put(estado))
+      }
+    })
+  }
+
+  async getPlanoDoDia(dateKey: string): Promise<PlanoDoDia | null> {
+    const plano = await this.run([STORES.planosDoDia], 'readonly', (tx) =>
+      requestToPromise<PlanoDoDia | undefined>(
+        tx.objectStore(STORES.planosDoDia).get(dateKey) as IDBRequest<PlanoDoDia | undefined>,
+      ),
+    )
+    return plano ?? null
+  }
+
+  async savePlanoDoDia(plano: PlanoDoDia): Promise<void> {
+    await this.run([STORES.planosDoDia], 'readwrite', async (tx) => {
+      await requestToPromise(tx.objectStore(STORES.planosDoDia).put(plano))
+    })
+  }
+
+  async listPlanosDoDia(limit?: number): Promise<PlanoDoDia[]> {
+    const planos = await this.readAll<PlanoDoDia>(STORES.planosDoDia)
+    // `dateKey` é `YYYY-MM-DD`, então a comparação textual é cronológica.
+    const ordenados = planos.sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+    return limit === undefined ? ordenados : ordenados.slice(0, limit)
   }
 
   /** Fecha a conexão. Necessário antes de apagar o banco em testes. */

@@ -28,7 +28,11 @@ export const mainNav: NavItem[] = [
   {
     href: '/train',
     label: 'Treinar',
-    description: 'Táticas, cálculo e revisões espaçadas em uma sessão só.',
+    // "Sessão só" descrevia o desenho antigo, em que abrir a aba já jogava o
+    // aluno numa posição. Agora são quatro coisas com nomes diferentes, e a
+    // descrição precisa dizer isso — ela aparece na landing e nos estados
+    // vazios, que é onde o aluno forma a expectativa antes de clicar.
+    description: 'Aprender, praticar, revisar e analisar — cada coisa com o seu nome.',
     phase: 5,
     primaryMobile: true,
   },

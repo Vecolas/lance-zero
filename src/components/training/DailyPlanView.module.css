@@ -149,3 +149,134 @@
   font-size: 0.875rem;
   color: var(--text-muted);
 }
+
+/* --- Hoje V2: cards de atividade independentes ------------------------- */
+
+.progressTrack {
+  margin-top: var(--space-2);
+  width: min(22rem, 100%);
+  height: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken, var(--border));
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent-strong);
+  /* A barra acompanha a conclusão; quem pediu menos movimento não a vê animar. */
+  transition: width 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill {
+    transition: none;
+  }
+}
+
+.concluido {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--positive);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+/*
+  O card inteiro é o alvo. O `li` perde o padding porque quem o tem agora é o
+  link: um padding no `li` deixaria uma borda clicável que não navega, e o aluno
+  acertaria o card sem abrir nada.
+*/
+.block {
+  display: block;
+  padding: 0;
+  grid-template-columns: none;
+}
+
+.blockLink {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-2) var(--space-4);
+  align-items: start;
+  padding: var(--space-4) var(--space-5);
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-lg);
+}
+
+.blockLink:hover {
+  background: var(--surface-hover, var(--surface-raised));
+}
+
+.blockLink:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+.statusCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 4.5rem;
+}
+
+.statusSymbol {
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.statusLabel {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/*
+  Concluída muda COR, SÍMBOLO e TEXTO ao mesmo tempo. Os três, e não um:
+  mudar só a cor falha para quem não a distingue, e mudar só o símbolo falha
+  para quem usa leitor de tela.
+*/
+.block[data-status='concluida'] .statusSymbol,
+.block[data-status='concluida'] .statusLabel {
+  color: var(--positive);
+}
+
+.block[data-status='concluida'] .blockTitle {
+  color: var(--text-muted);
+}
+
+.blockBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.blockTitle {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* Em 360px o card empilha: o status vai para cima e o tempo para baixo. */
+@media (max-width: 30rem) {
+  .blockLink {
+    grid-template-columns: auto 1fr;
+  }
+
+  .statusCell {
+    flex-direction: row;
+    min-width: 0;
+  }
+
+  .minutes {
+    grid-column: 2;
+  }
+}

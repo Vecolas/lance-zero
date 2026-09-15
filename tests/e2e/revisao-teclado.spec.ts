@@ -81,7 +81,7 @@ async function semearCardDeRevisao(page: Page): Promise<void> {
   await page.getByLabel(/Lance em UCI/).fill(LANCE_QUE_FALHA)
   await page.getByRole('button', { name: 'Jogar lance' }).click()
   await expect(page.getByText(/já está vencida e aparece no treino de hoje/)).toBeVisible()
-  await page.goto('/train')
+  await page.goto('/train/revisao')
   await expect(page.getByText(/Jogue o primeiro lance da técnica/)).toBeVisible()
 }
 
@@ -100,8 +100,9 @@ test('responder um card de revisão SÓ pelo teclado, sem um clique de mouse', a
   await page.keyboard.press('Enter')
   await expect(page.getByText(/já está vencida e aparece no treino de hoje/)).toBeVisible()
 
-  // Troca de página pelo teclado: o link que a própria tela oferece.
-  const paraOTreino = page.getByRole('link', { name: 'Ver no treino de hoje' })
+  // Troca de página pelo teclado: o link que a própria tela oferece. Ele aponta
+  // para `/train/revisao` desde que `/train` virou hub — ver EndgameTrainer.
+  const paraOTreino = page.getByRole('link', { name: 'Revisar agora' })
   await tabAte(page, paraOTreino)
   await page.keyboard.press('Enter')
 

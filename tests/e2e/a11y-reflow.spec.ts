@@ -181,8 +181,10 @@ test.describe('zoom de 200% — onde o aluno passa o tempo', () => {
     await page.goto('/dashboard')
     await esperaConteudo(page)
     await semRolagemHorizontal(page, '/dashboard @200%')
-    // A ação principal não pode ter sido empurrada para fora do fluxo.
-    await expect(page.getByRole('link', { name: 'Começar o treino' })).toBeVisible()
+    // Não há mais uma "ação principal" única: o Hoje V2 é uma lista de
+    // atividades independentes, e cada CARD é o alvo. O que precisa sobreviver
+    // ao zoom é o primeiro card continuar clicável e dentro do fluxo.
+    await expect(page.getByRole('listitem').first().getByRole('link')).toBeVisible()
   })
 
   test('o puzzle continua utilizável com 200% de zoom', async ({ page }) => {

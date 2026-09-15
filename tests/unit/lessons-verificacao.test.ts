@@ -36,19 +36,62 @@ const GANHA_A_DAMA: ObjetivoGanhaMaterial = {
   saldoMinimo: PIECE_VALUES.q,
 }
 
+/**
+ * A MESMA posição com a dama DEFENDIDA pelo peão de c6.
+ *
+ * É o andaime do contraste: `COME_A_DAMA` continua legal aqui e deixa de
+ * ganhar, que é exatamente o que o portão do contraste tem de exigir.
+ */
+const DAMA_DEFENDIDA = '4k3/pp6/2p5/3q4/4B3/8/PP6/4K3 w - - 0 1'
+
 function licao(campos: Partial<EntradaDeLicao> = {}) {
   return definirLicao({
     id: 'sintetica',
     titulo: 'Peça sem defesa',
     habilidade: SKILL_IDS[0],
+    versao: 1,
+    objetivo: 'Reconhecer a peça sem defensor antes de procurar qualquer outra coisa.',
     conceito: 'Antes de qualquer coisa, procure a peça que ninguém está defendendo.',
+    processoMental: ['Quem eu alcanço?', 'Quem defende?', 'Se ninguém defende, é de graça.'],
     exemploResolvido: {
       fen: DAMA_PENDURADA,
       ladoDoAluno: 'w',
       objetivo: GANHA_A_DAMA,
       linhaModelo: [COME_A_DAMA, 'a7a6'],
+      raciocinio: ['O bispo alcança d5.', 'Nada defende d5.'],
       comentario: 'A dama está sem defesa: o bispo a captura de graça.',
     },
+    contraste: {
+      fen: DAMA_DEFENDIDA,
+      ladoDoAluno: 'w',
+      objetivo: GANHA_A_DAMA,
+      lanceQueFalha: COME_A_DAMA,
+      oQueMudou: 'Agora o peão de c6 defende d5, e a captura devolve a dama por um bispo.',
+    },
+    completion: {
+      id: 'sintetica-c',
+      fen: DAMA_PENDURADA,
+      ladoDoAluno: 'w',
+      objetivo: GANHA_A_DAMA,
+      lancesAceitos: [COME_A_DAMA],
+      alternativas: [ANDA_O_REI],
+      raciocinioJaFeito: ['O bispo de e4 alcança d5.', 'Nenhuma peça preta defende d5.'],
+      enunciado: 'Qual é o lance?',
+      explicacao: 'A captura não devolve nada.',
+    },
+    guiada: [
+      {
+        id: 'sintetica-g',
+        fen: DAMA_PENDURADA,
+        ladoDoAluno: 'w',
+        objetivo: GANHA_A_DAMA,
+        lancesAceitos: [COME_A_DAMA],
+        alternativas: [ANDA_O_REI],
+        enunciado: 'Brancas jogam. Procure material de graça.',
+        dicas: [{ degrau: 'direcao', texto: 'Comece pelas capturas disponíveis.' }],
+        explicacao: 'A dama preta não tinha defensor.',
+      },
+    ],
     recuperacao: [
       {
         id: 'sintetica-1',
@@ -61,6 +104,7 @@ function licao(campos: Partial<EntradaDeLicao> = {}) {
         explicacao: 'A dama preta não tinha defensor.',
       },
     ],
+    resumo: ['Antes de jogar: alguma peça dele está sem defensor?'],
     ...campos,
   })
 }
@@ -118,5 +162,75 @@ describe('verificação de lição', () => {
   it('lição com dois exercícios de mesmo id não chega a existir', () => {
     const [exercicio] = licao().recuperacao
     expect(() => licao({ recuperacao: [exercicio, exercicio] })).toThrow(/repete o id/)
+  })
+
+  it('id repetido ATRAVÉS das etapas também é recusado', () => {
+    // O progresso da atividade guarda `completedItemIds` numa lista só: um id
+    // repetido entre a guiada e a recuperação faria um marcar o outro como
+    // feito, e a atividade terminaria sem o aluno ter visto um dos dois.
+    const [guiado] = licao().guiada
+    expect(() => licao({ guiada: [{ ...guiado, id: 'sintetica-1' }] })).toThrow(/repete o id/)
+  })
+
+  it('lição sem prática guiada não chega a existir', () => {
+    // A guiada é o degrau entre ver a solução e resolver sem apoio. Sem ela a
+    // lição volta a ter o salto que produziu a dívida pedagógica.
+    expect(() => licao({ guiada: [] as unknown as EntradaDeLicao['guiada'] })).toThrow(
+      /prática guiada/,
+    )
+  })
+
+  it('lição sem processo mental não chega a existir', () => {
+    expect(() =>
+      licao({ processoMental: [] as unknown as EntradaDeLicao['processoMental'] }),
+    ).toThrow(/pergunta reutilizável/)
+  })
+})
+
+/**
+ * O contraste, e o lado do portão que morde para DENTRO.
+ *
+ * ESTE É O DEFEITO MAIS DIFÍCIL DE PERCEBER DE TODO O CONTEÚDO. Um contraste
+ * em que o lance análogo TAMBÉM ganha não quebra nada: a tela mostra as duas
+ * posições lado a lado, afirma que uma é diferente da outra, e o aluno aprende
+ * uma distinção que não existe. Nenhum erro aparece em lugar nenhum — e o aluno
+ * sai pior do que entrou, tendo passado por uma lição inteira.
+ */
+describe('verificação do contraste', () => {
+  it('acusa contraste em que o lance análogo também cumpre o objetivo', () => {
+    const texto = problemas({
+      // A posição do EXEMPLO como contraste: ali a captura ganha, então não há
+      // contraste nenhum.
+      contraste: { ...licao().contraste, fen: DAMA_PENDURADA },
+    })
+    expect(texto).toContain('TAMBÉM cumpre o objetivo')
+    expect(texto).toContain('sintetica/contraste')
+  })
+
+  it('acusa contraste com FEN impossível', () => {
+    expect(problemas({ contraste: { ...licao().contraste, fen: 'nao-e-um-fen' } })).toContain(
+      'FEN inválido',
+    )
+  })
+
+  it('acusa contraste na vez do lado errado', () => {
+    expect(
+      problemas({
+        contraste: { ...licao().contraste, ladoDoAluno: 'b' },
+      }),
+    ).toContain('não está na vez de b')
+  })
+
+  it('acusa contraste cujo lance análogo é ILEGAL ali', () => {
+    // Ilegal também reprova: o aluno veria uma posição com um lance que não
+    // existe, apresentado como "o mesmo lance do exemplo".
+    const texto = problemas({
+      contraste: { ...licao().contraste, lanceQueFalha: 'h1h8' },
+    })
+    expect(texto).toContain('sintetica/contraste')
+  })
+
+  it('contraste correto não gera falha', () => {
+    expect(verificarLicao(licao())).toEqual([])
   })
 })

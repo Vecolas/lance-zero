@@ -6,6 +6,19 @@
  * propriedade da integração — camadas individuais consomem, não redefinem.
  */
 
+// SÓ DE TIPO, e o `import type` não é estilo: `@/domain/aprendizado` importa
+// `SkillId` daqui, então um import de VALOR fecharia um ciclo em tempo de
+// execução. Como tipo, o import some na compilação e o ciclo não existe. As
+// duas formas de `SkillState` e `PlanoDoDia` continuam morando lá, onde as
+// funções que as movem também moram — aqui elas só aparecem no contrato.
+import type { PlanoDoDia } from '@/domain/aprendizado/plano'
+import type { SkillState } from '@/domain/aprendizado/skill-state'
+
+// Reexportados para que a persistência continue tendo UMA fronteira. Os
+// repositórios já importam todo o resto do contrato daqui; obrigá-los a
+// importar dois tipos de outro endereço criaria duas portas para a mesma sala.
+export type { PlanoDoDia, SkillState }
+
 // ---------------------------------------------------------------- habilidades
 
 export const SKILL_IDS = [
@@ -544,6 +557,30 @@ export interface TrainingRepository {
   listRepertorios(): Promise<RepertorioDoAluno[]>
   /** Grava (ou regrava) um repertório inteiro, pelo `definicao.id`. */
   saveRepertorio(repertorio: RepertorioDoAluno): Promise<void>
+
+  /**
+   * O estágio de aprendizagem por habilidade. Lista VAZIA é a resposta normal
+   * de quem nunca treinou — significa "tudo em `unseen`", e não "não sei".
+   *
+   * Separado de `getSkillMastery` de propósito, e a separação é a mesma que
+   * `@/domain/aprendizado/skill-state` explica: maestria é quanto o aluno
+   * acerta, estágio é se alguém chegou a ensinar. Uma store só, com os dois
+   * dentro, faria toda gravação de tentativa reescrever o estágio junto.
+   */
+  getSkillStates(): Promise<SkillState[]>
+  saveSkillStates(states: SkillState[]): Promise<void>
+
+  /**
+   * O plano de um dia, se ele já foi gerado.
+   *
+   * `null` significa "ainda não gerei o de hoje", e é o único gatilho de
+   * geração. Depois de gravado, o plano só é LIDO — ver a §9 do plano
+   * definitivo e o cabeçalho de `@/domain/aprendizado/plano`.
+   */
+  getPlanoDoDia(dateKey: string): Promise<PlanoDoDia | null>
+  savePlanoDoDia(plano: PlanoDoDia): Promise<void>
+  /** Os planos gravados, do mais recente para o mais antigo. Para backup e histórico. */
+  listPlanosDoDia(limit?: number): Promise<PlanoDoDia[]>
 }
 
 // ----------------------------------------------------------------- importação

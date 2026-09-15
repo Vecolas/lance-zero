@@ -232,7 +232,7 @@ test('a posição que o aluno não cumpriu aparece no treino de hoje', async ({ 
   await jogar(page, 'b1b2')
   await expect(page.getByText(/já está vencida e aparece no treino de hoje/)).toBeVisible()
 
-  await page.goto('/train')
+  await page.goto('/train/revisao')
 
   // O card de final entrou na fila de revisão vencida, com o enunciado da
   // posição como pergunta.
@@ -242,15 +242,23 @@ test('a posição que o aluno não cumpriu aparece no treino de hoje', async ({ 
   // E o plano do dia CONTA essa revisão: é o "Treino de hoje" da issue, não só
   // a fila de /train.
   await page.goto('/dashboard')
-  const bloco = page.getByRole('heading', { name: 'Revisões vencidas' })
-  await expect(bloco).toBeVisible()
+  // O card de revisão deixou de ser um `heading` de bloco e passou a ser uma
+  // ATIVIDADE da lista — a mudança do Hoje V2. O que o teste afirma continua
+  // sendo a mesma coisa: o card de final conta no plano do dia.
+  //
+  // A BUSCA É DENTRO DA LISTA, e não na página: o rodapé do Hoje também fala em
+  // "revisões vencidas" ao explicar como o plano é montado, e uma busca solta
+  // casava com os dois. Passaria a aprovar uma página que só tem o rodapé —
+  // isto é, um plano SEM o card, que é exatamente o que este teste existe para
+  // impedir.
+  const cards = page.getByRole('listitem')
+  await expect(cards.filter({ hasText: 'Revisões vencidas' })).toHaveCount(1)
 
   // Afirma a REGRA, e não o número. A versão anterior cravava "1 revisão
   // vencida esperando" e passou a reprovar no dia em que o planner começou a
   // semear cards de repertório — reprovando o código CERTO, que é o pior tipo
-  // de portão. O que a issue pede é que o card de final CONTE no plano do dia;
-  // quantos outros cards existem ao lado não é assunto deste teste.
-  await expect(page.getByText(/revis(ão|ões) vencidas? esperando/)).toBeVisible()
+  // de portão. Quantos outros cards existem ao lado não é assunto deste teste.
+  await expect(cards.filter({ hasText: /revis(ão|ões) vence(u|ram)/ })).toHaveCount(1)
 })
 
 test('cumprir sem dica não enche a fila de revisão', async ({ page }) => {
@@ -261,6 +269,6 @@ test('cumprir sem dica não enche a fila de revisão', async ({ page }) => {
   await expect(page.getByText(/Tentativa gravada/)).toBeVisible()
   await expect(page.getByText(/aparece no treino de hoje/)).toBeHidden()
 
-  await page.goto('/train')
+  await page.goto('/train/revisao')
   await expect(page.getByText(/Nada vencido agora/)).toBeVisible()
 })

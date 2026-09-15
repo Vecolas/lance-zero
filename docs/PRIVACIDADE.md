@@ -24,15 +24,17 @@ telemetria, não há analytics.
 
 ## O que fica no seu navegador
 
-| Coleção                     | Conteúdo                                                                                                                        | Some quando                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| `profile`                   | rating estimado, tempo de treino por dia, tema de tabuleiro, e os nomes de usuário do Lichess/Chess.com **se você os informar** | você limpa os dados do site |
-| `games`                     | PGN das partidas que você importou, mais suas anotações do passe humano                                                         | idem                        |
-| `puzzleAttempts`            | acertos, erros, dicas usadas e tempo de reflexão                                                                                | idem                        |
-| `positionAnalyses`          | avaliações da engine dos seus lances                                                                                            | idem                        |
-| `reviewCards`, `reviewLogs` | o que você tem para revisar e quando revisou                                                                                    | idem                        |
-| `skillMastery`              | seu modelo de habilidades                                                                                                       | idem                        |
-| `repertorios`               | o repertório de aberturas que você montou, com as ideias que você escreveu em cada lance                                        | idem                        |
+| Coleção                     | Conteúdo                                                                                                                         | Some quando                 |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `profile`                   | rating estimado, tempo de treino por dia, tema de tabuleiro, e os nomes de usuário do Lichess/Chess.com **se você os informar**  | você limpa os dados do site |
+| `games`                     | PGN das partidas que você importou, mais suas anotações do passe humano                                                          | idem                        |
+| `puzzleAttempts`            | acertos, erros, dicas usadas e tempo de reflexão                                                                                 | idem                        |
+| `positionAnalyses`          | avaliações da engine dos seus lances                                                                                             | idem                        |
+| `reviewCards`, `reviewLogs` | o que você tem para revisar e quando revisou                                                                                     | idem                        |
+| `skillMastery`              | seu modelo de habilidades                                                                                                        | idem                        |
+| `repertorios`               | o repertório de aberturas que você montou, com as ideias que você escreveu em cada lance                                         | idem                        |
+| `skillStates`               | em que ponto do aprendizado você está em cada habilidade: o que já te foi ensinado, o que você já resolveu com apoio e sem apoio | idem                        |
+| `planosDoDia`               | os planos de treino já montados, com o que você concluiu em cada dia                                                             | idem                        |
 
 Nada disso é enviado para lugar nenhum enquanto você não criar conta.
 
@@ -57,9 +59,9 @@ Não há Google Analytics, pixel de rastreamento, nem cookie de terceiro.
 
 ## O que muda quando houver conta
 
-O fluxo pÃºblico estÃ¡ disponÃ­vel em `/account`: cadastro, login, recuperaÃ§Ã£o,
-logout, exportaÃ§Ã£o e exclusÃ£o. O endpoint `/api/sync` usa JWT verificado,
-identidade derivada da sessÃ£o e confirmaÃ§Ã£o antes de substituir uma cÃ³pia.
+O fluxo público está disponível em `/account`: cadastro, login, recuperação,
+logout, exportação e exclusão. O endpoint `/api/sync` usa JWT verificado,
+identidade derivada da sessão e confirmação antes de substituir uma cópia.
 
 A camada de conta está sendo construída (ADR-0008 e ADR-0009). Quando existir:
 

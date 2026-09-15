@@ -15,10 +15,12 @@ import { describe, expect, it } from 'vitest'
 import { CATALOGO_DE_LICOES } from '@/content/lessons'
 import { opcoesDe } from '@/domain/diagnostic'
 import {
-  ETAPAS_DA_LICAO,
   definirLicao,
   estimarMinutos,
+  etapaCobraResposta,
   etapasDaLicao,
+  exerciciosDaLicao,
+  ultimaEtapaQueCobra,
   verificarLicao,
   type EntradaDeLicao,
 } from '@/domain/lessons'
@@ -51,12 +53,33 @@ const TOM_PROIBIDO = [
 /** Emoji e pictogramas: nenhum, em nenhuma lição. */
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u
 
+/**
+ * TODO texto que o aluno lê.
+ *
+ * A lista cresceu junto com o esquema V2, e tinha de crescer: o portão de tom
+ * que só olha três campos deixa passar a condescendência escrita no `objetivo`,
+ * na dica ou no `resumo` — que são exatamente os lugares novos onde ela caberia,
+ * porque são os que falam DIRETO com o aluno.
+ */
 function textosDe(licao: (typeof CATALOGO_DE_LICOES)[number]): string[] {
   return [
     licao.titulo,
+    licao.objetivo,
     licao.conceito,
+    ...licao.processoMental,
+    ...licao.exemploResolvido.raciocinio,
     licao.exemploResolvido.comentario,
+    licao.contraste.oQueMudou,
+    ...licao.completion.raciocinioJaFeito,
+    licao.completion.enunciado,
+    licao.completion.explicacao,
+    ...licao.guiada.flatMap((exercicio) => [
+      exercicio.enunciado,
+      exercicio.explicacao,
+      ...exercicio.dicas.map((dica) => dica.texto),
+    ]),
     ...licao.recuperacao.flatMap((exercicio) => [exercicio.enunciado, exercicio.explicacao]),
+    ...licao.resumo,
   ]
 }
 
@@ -71,10 +94,12 @@ describe('catálogo de lições', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('todo id de exercício é único no catálogo inteiro', () => {
-    const ids = CATALOGO_DE_LICOES.flatMap((licao) =>
-      licao.recuperacao.map((exercicio) => exercicio.id),
-    )
+  it('todo id de exercício é único no catálogo inteiro, em TODAS as etapas', () => {
+    // Varre `exerciciosDaLicao` e não só a recuperação: o progresso da
+    // atividade guarda `completedItemIds` numa lista só, e um id repetido entre
+    // a guiada de uma lição e a recuperação de outra faria um marcar o outro
+    // como feito — a atividade terminaria sem o aluno ter visto um deles.
+    const ids = CATALOGO_DE_LICOES.flatMap(exerciciosDaLicao).map((exercicio) => exercicio.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
 
@@ -84,15 +109,65 @@ describe('catálogo de lições', () => {
     }
   })
 
-  /** O critério de aceite, afirmado como REGRA e não como um número de etapas. */
-  it('a última etapa de toda lição é a recuperação ativa', () => {
-    expect(ETAPAS_DA_LICAO[ETAPAS_DA_LICAO.length - 1]).toBe('recuperacao')
+  /**
+   * O critério de aceite, afirmado como REGRA e não como um número de etapas.
+   *
+   * MUDOU DE FORMA NA V2, sem afrouxar. A recuperação não é mais literalmente a
+   * última etapa — depois dela vem o `resumo`, que é a lista de verificação para
+   * levar para a partida. O que o PEDAGOGY proíbe é a lição terminar RELENDO a
+   * explicação, e o que ele exige é que o aluno tente antes de sair. As duas
+   * coisas continuam valendo, e agora são medidas onde de fato moram: a última
+   * etapa que COBRA é a recuperação. Ver `ultimaEtapaQueCobra`.
+   */
+  it('a última etapa que cobra resposta é a recuperação sem ajuda', () => {
+    expect(ultimaEtapaQueCobra()).toBe('recuperacao')
+
+    // E nada que cobra vem depois dela na ordem real da tela.
+    const etapas = etapasDaLicao()
+    const indiceDaRecuperacao = etapas.indexOf('recuperacao')
+    for (const etapa of etapas.slice(indiceDaRecuperacao + 1)) {
+      expect(etapaCobraResposta(etapa), `${etapa} cobra resposta depois da recuperação`).toBe(false)
+    }
+
     for (const licao of CATALOGO_DE_LICOES) {
-      const etapas = etapasDaLicao()
-      expect(etapas[etapas.length - 1], `${licao.id} não termina em recuperação`).toBe(
-        'recuperacao',
-      )
-      expect(licao.recuperacao.length, `${licao.id} não tem exercício`).toBeGreaterThan(0)
+      expect(licao.recuperacao.length, `${licao.id} não tem exercício final`).toBeGreaterThan(0)
+    }
+  })
+
+  /** A ordem do guidance fading: apoio só diminui, nunca aumenta. */
+  it('a prática guiada vem ANTES da recuperação sem ajuda', () => {
+    const etapas = etapasDaLicao()
+    expect(etapas.indexOf('guiada')).toBeLessThan(etapas.indexOf('recuperacao'))
+    expect(etapas.indexOf('completion')).toBeLessThan(etapas.indexOf('guiada'))
+    expect(etapas.indexOf('exemplo')).toBeLessThan(etapas.indexOf('completion'))
+
+    for (const licao of CATALOGO_DE_LICOES) {
+      expect(licao.guiada.length, `${licao.id} não tem prática guiada`).toBeGreaterThan(0)
+      for (const exercicio of licao.guiada) {
+        expect(
+          exercicio.dicas.length,
+          `${exercicio.id} é "guiado" sem dica nenhuma`,
+        ).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('a recuperação NÃO oferece dica — é o degrau sem apoio', () => {
+    for (const licao of CATALOGO_DE_LICOES) {
+      for (const exercicio of licao.recuperacao) {
+        expect(
+          'dicas' in exercicio,
+          `${exercicio.id} oferece dica na etapa que existe para não oferecer`,
+        ).toBe(false)
+      }
+    }
+  })
+
+  it('toda lição ensina uma pergunta reutilizável e deixa um resumo', () => {
+    for (const licao of CATALOGO_DE_LICOES) {
+      expect(licao.processoMental.length, `${licao.id} sem processo mental`).toBeGreaterThan(0)
+      expect(licao.resumo.length, `${licao.id} sem resumo`).toBeGreaterThan(0)
+      expect(licao.objetivo.length, `${licao.id} sem objetivo`).toBeGreaterThan(20)
     }
   })
 
