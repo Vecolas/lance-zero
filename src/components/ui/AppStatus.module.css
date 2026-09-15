@@ -1,0 +1,39 @@
+.region {
+  position: fixed;
+  inset: auto var(--space-3) calc(var(--bottom-nav-height) + var(--space-3));
+  z-index: 30;
+  display: grid;
+  justify-items: center;
+  pointer-events: none;
+}
+
+.message {
+  max-width: 38rem;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+  font-size: 0.9rem;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.action {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--link);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (min-width: 60rem) {
+  .region {
+    bottom: var(--space-4);
+  }
+}
