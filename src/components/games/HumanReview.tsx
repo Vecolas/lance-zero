@@ -52,7 +52,13 @@ export function HumanReview({ gameId }: Props) {
         setLinha(parsePgn(alvo.pgn))
         setMarcados(alvo.humanReview?.markedPlies ?? [])
         setNotas(alvo.humanReview?.notes ?? '')
-        setAberturas(OPENING_COURSES.map((opening) => reviewOpeningGame(opening, parsePgn(alvo.pgn), alvo.userColor)))
+        const partida = parsePgn(alvo.pgn)
+        const reviews = await Promise.all(
+          OPENING_COURSES.map(async (opening) =>
+            reviewOpeningGame(opening, partida, alvo.userColor, (await repo.getOpeningProgress(opening.id)) ?? undefined),
+          ),
+        )
+        setAberturas(reviews)
       } catch (e) {
         if (!cancelado) {
           setFalha(e instanceof Error ? e.message : 'Não consegui abrir esta partida.')
@@ -89,7 +95,16 @@ export function HumanReview({ gameId }: Props) {
       await repo.saveGame(atualizado)
       const linhaDaPartida = linha
       const reviews = linhaDaPartida
-        ? OPENING_COURSES.map((opening) => reviewOpeningGame(opening, linhaDaPartida, game.userColor))
+        ? await Promise.all(
+            OPENING_COURSES.map(async (opening) =>
+              reviewOpeningGame(
+                opening,
+                linhaDaPartida,
+                game.userColor,
+                (await repo.getOpeningProgress(opening.id)) ?? undefined,
+              ),
+            ),
+          )
         : []
       for (const review of reviews) {
         if (review.classification !== 'repertoire_mistake') continue

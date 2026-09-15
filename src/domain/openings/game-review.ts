@@ -25,6 +25,7 @@ export function reviewOpeningGame(
   opening: OpeningDefinition,
   game: ChessGame,
   userColor: 'w' | 'b',
+  progress?: OpeningProgress,
 ): OpeningGameReview {
   if (game.startFen !== START_FEN || opening.side !== (userColor === 'w' ? 'white' : 'black')) {
     return {
@@ -43,7 +44,16 @@ export function reviewOpeningGame(
     if (!node || !edge) {
       const isUserMove = ply.color === userColor
       if (isUserMove && node) {
-        const known = opening.graph.has(node.id)
+        const known = progress === undefined || progress.learnedNodeIds.includes(node.id)
+        if (!known && node.outgoingMoves.length > 0) {
+          return {
+            openingId: opening.id,
+            classification: 'normal_transition',
+            ply: ply.index,
+            nodeId: node.id,
+            message: 'Essa resposta ainda não faz parte do seu repertório; não é tratada como esquecimento.',
+          }
+        }
         return {
           openingId: opening.id,
           classification: known && node.outgoingMoves.length > 0 ? 'repertoire_mistake' : 'opening_blunder',

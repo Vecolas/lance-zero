@@ -113,11 +113,20 @@ describe('curso de aberturas como grafo pedagógico', () => {
   it('game review separa desvio do adversário de erro de repertório', () => {
     const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
     const partida = parsePgn('[White "Aluno"]\n[Black "Oponente"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 *')
-    const review = reviewOpeningGame(opening, partida, 'w')
+    const nodeBeforeDeviation = identidadeDePosicao(partida.plies[4]?.fenBefore ?? opening.rootFen)
+    const learned = markOpeningLearned(emptyOpeningProgress(opening.id), nodeBeforeDeviation, '2026-01-01T00:00:00.000Z')
+    const review = reviewOpeningGame(opening, partida, 'w', learned)
     expect(review.classification).toBe('repertoire_mistake')
     const progress = markOpeningLearned(emptyOpeningProgress(opening.id), review.nodeId ?? opening.rootNodeId, '2026-01-01T00:00:00.000Z')
     const updated = registerOpeningGameEvidence(progress, review, '2026-01-02T00:00:00.000Z')
     expect(updated.weakNodeIds).toContain(review.nodeId)
+  })
+
+  it('desvio de node ainda não ensinado não vira esquecimento', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const partida = parsePgn('[White "Aluno"]\n[Black "Oponente"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 *')
+    const review = reviewOpeningGame(opening, partida, 'w', emptyOpeningProgress(opening.id))
+    expect(review.classification).not.toBe('repertoire_mistake')
   })
 
   it('dicas sobem do conceito ao lance explícito', () => {
