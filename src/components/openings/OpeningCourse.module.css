@@ -1,0 +1,223 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.back {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.hero {
+  display: flex;
+  gap: var(--space-5);
+  justify-content: space-between;
+  align-items: end;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+.hero h1,
+.hero p {
+  margin: 0;
+}
+.hero p {
+  max-width: 62ch;
+  color: var(--text-muted);
+}
+.kicker,
+.question {
+  color: var(--accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.heroActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+.primary,
+.secondary {
+  border: 1px solid var(--accent-strong);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+.primary {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+.secondary {
+  color: var(--text);
+  background: var(--surface);
+}
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+}
+.tab,
+.tabActive {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  padding: 0.7rem 0.6rem;
+  white-space: nowrap;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+}
+.tabActive {
+  color: var(--accent-strong);
+  border-color: var(--accent-strong);
+  font-weight: 700;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.overviewGrid,
+.structureGrid,
+.cards {
+  display: grid;
+  gap: var(--space-4);
+}
+.overviewGrid {
+  grid-template-columns: 1.2fr 0.8fr;
+}
+.structureGrid,
+.cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+.infoCard,
+.progress {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+.infoCard h3,
+.infoCard p {
+  margin-top: 0;
+}
+.note {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.mono {
+  font-family: var(--font-mono);
+}
+.learning {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+.boardPanel {
+  min-width: 0;
+}
+.commentary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+.commentary h2,
+.commentary p {
+  margin: 0;
+}
+.commentary ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.question {
+  margin: var(--space-3) 0 0 !important;
+}
+.warning {
+  color: var(--error-text);
+}
+.transition,
+.feedback {
+  padding: var(--space-3);
+  border-left: 3px solid var(--accent);
+  background: var(--surface-soft);
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.moveStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+}
+.move,
+.moveCurrent,
+.moveDone {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+.moveCurrent {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.moveDone {
+  color: var(--text-muted);
+}
+.trainingBadge {
+  margin-bottom: var(--space-2);
+  color: var(--accent-strong);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+.result {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+}
+.result h3 {
+  margin: 0;
+}
+.result p {
+  color: var(--text-muted);
+}
+@media (max-width: 48rem) {
+  .hero,
+  .learning,
+  .overviewGrid {
+    grid-template-columns: 1fr;
+    display: grid;
+    align-items: start;
+  }
+  .heroActions {
+    width: 100%;
+  }
+  .heroActions button {
+    flex: 1;
+  }
+  .commentary {
+    padding: var(--space-4);
+  }
+}

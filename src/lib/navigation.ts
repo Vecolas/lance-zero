@@ -44,9 +44,9 @@ export const mainNav: NavItem[] = [
     primaryMobile: true,
   },
   {
-    href: '/openings',
+    href: '/aberturas',
     label: 'Aberturas',
-    description: 'Princípios, repertório enxuto e as linhas que você realmente enfrenta.',
+    description: 'Ideias, planos, variações e treino de aberturas no tabuleiro.',
     phase: 9,
   },
   {

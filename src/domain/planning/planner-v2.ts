@@ -417,7 +417,7 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
         pedagogicalStage: estado?.stage ?? 'introduced',
         contentVersion: 1,
         completionRule: { tipo: 'itens', total: 3 },
-        href: '/openings',
+        href: '/aberturas',
       },
       // O lance PRESCRITO não aparece aqui de propósito: a mesma posição vira
       // card de repertório, e dizer a resposta no plano responderia o card
