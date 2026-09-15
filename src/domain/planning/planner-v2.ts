@@ -52,6 +52,7 @@ import type { ReviewCard, SkillId, SkillMastery, UserProfile } from '@/domain/ty
 import { createRng } from './rng'
 import { ladoPorExtenso, type DesvioDeRepertorio } from './aberturas'
 import type { RecentGameError } from './planner'
+import type { OpeningDefinition, OpeningProgress } from '@/domain/openings'
 
 /**
  * Parâmetros do planner.
@@ -164,6 +165,9 @@ export interface PlannerV2Context {
    * algo que aconteceu no tabuleiro, numa linha que o próprio aluno escreveu.
    */
   desviosDeRepertorio?: readonly DesvioDeRepertorio[]
+  /** Cursos curados e progresso por node para gerar cards de abertura. */
+  openingCourses?: readonly OpeningDefinition[]
+  openingProgress?: readonly OpeningProgress[]
   /** Partidas importadas e ainda não revisadas pelo aluno. */
   partidasPorRevisar?: readonly { id: string; rotulo: string }[]
   now: Date
@@ -235,6 +239,8 @@ const PRIORIDADE = {
   // é a mesma CLASSE de evidência — algo que aconteceu no tabuleiro numa linha
   // que o próprio aluno escreveu — e não uma fatia de currículo.
   desvioDeRepertorio: 750,
+  aberturaTreino: 520,
+  aberturaAprender: 450,
   reensino: 700,
   partidaPorRevisar: 600,
   habilidadeFracaConhecida: 500,
@@ -251,6 +257,62 @@ const PRIORIDADE = {
 function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candidata[] {
   const lista: Candidata[] = []
   const agora = contexto.now.getTime()
+
+  // --- 0. Cursos de abertura -------------------------------------------
+  // Aprender e Treinar são atividades diferentes, mas o treino só existe
+  // depois de alguma posição ter sido ensinada. A checagem contra o mesmo
+  // openingId em `podeEntrarCom` impede que os dois sejam colocados no mesmo
+  // plano em qualquer ordem de prioridade.
+  for (const opening of contexto.openingCourses ?? []) {
+    const progress = contexto.openingProgress?.find((item) => item.openingId === opening.id)
+    const learned = progress?.learnedNodeIds.length ?? 0
+    const needsLearning = learned < opening.mainline.length
+    const skills: SkillId[] = ['opening.development', 'opening.center', 'opening.king-safety']
+
+    if (needsLearning) {
+      lista.push({
+        definicao: {
+          id: `abertura-${opening.id}-learn`,
+          kind: 'licao',
+          title: `Aprender: ${opening.name}`,
+          description: 'Entender ideias, planos e lances no tabuleiro.',
+          skillIds: skills,
+          pedagogicalStage: 'unseen',
+          contentVersion: opening.version,
+          completionRule: { tipo: 'etapas', total: opening.mainline.length },
+          href: `/aberturas/${opening.slug}?mode=learn`,
+          openingId: opening.id,
+          openingMode: 'learn',
+        },
+        motivo: `Aprenda ${opening.name} antes de tentar recuperá-la sem dicas.`,
+        prioridade: PRIORIDADE.aberturaAprender,
+        itens: opening.mainline.length,
+        conceitoNovo: learned === 0,
+      })
+    }
+
+    if (learned > 0) {
+      lista.push({
+        definicao: {
+          id: `abertura-${opening.id}-train`,
+          kind: 'pratica-independente',
+          title: `Treinar: ${opening.name}`,
+          description: 'Recuperar as decisões sem dicas nem próximo lance.',
+          skillIds: skills,
+          pedagogicalStage: 'independent',
+          contentVersion: opening.version,
+          completionRule: { tipo: 'itens', total: Math.max(1, Math.min(8, learned)) },
+          href: `/aberturas/${opening.slug}?mode=train`,
+          openingId: opening.id,
+          openingMode: 'train',
+        },
+        motivo: `Você já estudou parte de ${opening.name}; agora recupere as decisões sem apoio.`,
+        prioridade: PRIORIDADE.aberturaTreino,
+        itens: Math.max(1, Math.min(8, learned)),
+        conceitoNovo: false,
+      })
+    }
+  }
 
   // --- 1. Revisões vencidas (R5) ---------------------------------------
   // Só entram cards cuja habilidade PODE ser cobrada. Um card vencido de
@@ -549,6 +611,15 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
  */
 function podeEntrarCom(candidata: Candidata, escolhidas: readonly Candidata[]): boolean {
   if (candidata.definicao.kind === 'revisao') return true
+
+  if (candidata.definicao.openingId && candidata.definicao.openingMode) {
+    const dependeDoMesmoCurso = escolhidas.some(
+      (outra) =>
+        outra.definicao.openingId === candidata.definicao.openingId &&
+        outra.definicao.openingMode !== candidata.definicao.openingMode,
+    )
+    if (dependeDoMesmoCurso) return false
+  }
 
   const conflita = (novas: readonly SkillId[], cobradas: readonly SkillId[]): boolean =>
     cobradas.some(

@@ -116,6 +116,9 @@ export interface ActivityDefinition {
   completionRule: CompletionRule
   /** Rota interna que abre a atividade. Deep link, refresh e E2E dependem dela. */
   href: string
+  /** Metadados opcionais para regras de dependência de cursos de abertura. */
+  openingId?: string
+  openingMode?: 'learn' | 'train'
 }
 
 export type ActivityStatus = 'pendente' | 'em-andamento' | 'concluida'

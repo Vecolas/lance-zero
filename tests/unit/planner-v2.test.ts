@@ -31,6 +31,8 @@ import {
 } from '@/domain/planning/planner-v2'
 import type { RecentGameError } from '@/domain/planning/planner'
 import { SKILL_IDS, type ReviewCard, type SkillId, type UserProfile } from '@/domain/types'
+import { OPENING_COURSES } from '@/content/openings/course'
+import { emptyOpeningProgress, markOpeningLearned } from '@/domain/openings'
 
 const AGORA = new Date('2026-03-10T12:00:00.000Z')
 
@@ -283,6 +285,25 @@ describe('R2 — nenhuma atividade depende de outra do mesmo plano', () => {
         }
       }
     }
+  })
+})
+
+describe('aberturas — aprender e treinar são cards independentes', () => {
+  it('aluno novo recebe Aprender, mas nunca Treinar a mesma abertura', () => {
+    const plano = buildDailyPlanV2(contexto({ openingCourses: [OPENING_COURSES[0]] }), 'aberturas')
+    const cards = plano.activities.filter((item) => item.definition.openingId === OPENING_COURSES[0].id)
+    expect(cards.map((item) => item.definition.openingMode)).toEqual(['learn'])
+  })
+
+  it('depois de ensinar, recebe Treinar sem duplicar Aprender no mesmo dia', () => {
+    const opening = OPENING_COURSES[0]
+    const progress = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, AGORA.toISOString())
+    const plano = buildDailyPlanV2(
+      contexto({ openingCourses: [opening], openingProgress: [progress] }),
+      'aberturas',
+    )
+    const cards = plano.activities.filter((item) => item.definition.openingId === opening.id)
+    expect(cards.map((item) => item.definition.openingMode)).toEqual(['train'])
   })
 })
 

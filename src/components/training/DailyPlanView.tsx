@@ -27,6 +27,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import { OPENING_COURSES } from '@/content/openings/course'
 import { ERROS_RECENTES_CONFIG } from '@/domain/planning/erros-recentes'
 import { aplicarRetencaoDePartida } from '@/domain/skills/retencao-de-partida'
 import {
@@ -90,11 +91,12 @@ export function DailyPlanView() {
       // script no banco local de alguém.
       await migrarHabilidadesSemEnsino(repo, agora)
 
-      const [sinais, partidas, dueCards, mastery] = await Promise.all([
+      const [sinais, partidas, dueCards, mastery, openingProgress] = await Promise.all([
         carregarSinaisDePartida(repo, { agora }),
         repo.listGames({ limit: 5 }),
         repo.getDueCards(agora),
         repo.getSkillMastery(),
+        repo.listOpeningProgress(),
       ])
 
       return {
@@ -116,6 +118,8 @@ export function DailyPlanView() {
         partidasPorRevisar: partidas
           .filter((partida) => partida.humanReview === undefined)
           .map((partida) => ({ id: partida.id, rotulo: `${partida.white} x ${partida.black}` })),
+        openingCourses: OPENING_COURSES,
+        openingProgress,
         now: agora,
       }
     },

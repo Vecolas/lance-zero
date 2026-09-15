@@ -39,6 +39,11 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
   const [progress, setProgress] = useState<OpeningProgress>(() => emptyOpeningProgress(opening.id))
   const [progressLoaded, setProgressLoaded] = useState(false)
   useEffect(() => {
+    const mode = new URLSearchParams(window.location.search).get('mode')
+    if (mode !== 'learn' && mode !== 'train') return
+    window.setTimeout(() => setTab(mode), 0)
+  }, [])
+  useEffect(() => {
     let cancelled = false
     if (!repo) return () => { cancelled = true }
     void repo.getOpeningProgress(opening.id).then((saved) => {
@@ -189,6 +194,11 @@ function LearnMode({
                     new Date().toISOString(),
                   ),
                 )
+              if (ply + 1 === opening.mainline.length) {
+                onProgress((current) =>
+                  completeOpeningActivity(current, `${opening.id}:learn`, new Date().toISOString()),
+                )
+              }
               setPly(Math.min(opening.mainline.length, ply + 1))
             }}
             disabled={ply === opening.mainline.length}
