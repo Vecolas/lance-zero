@@ -130,13 +130,13 @@ O núcleo das Fases 0 a 10 está disponível em tela e no domínio. A próxima f
   catálogo — que é conteúdo verificado pelo portão —, as outras 10 ainda não têm
   prática: elas caem num estado vazio que diz a verdade, em vez de oferecer um
   exercício não conferido;
-- **o botão "já conheço este conceito" (plano §15) não existe.** É o que tornaria
-  barata a migração de quem já treinava, e é o principal débito do ADR-0011;
-- **o feedback explicativo específico por posição não existe.** A estrutura das
-  quatro perguntas é obrigatória no tipo, mas o texto entregue é o genérico, que
-  diz não saber em vez de inventar um motivo;
-- **a revisão de repertório escapa da regra de ensinar antes de cobrar** — ver o
-  ponto cego declarado no ADR-0011;
+- o diagnóstico "Já conheço" agora testa posições distribuídas e permite pular a
+  repetição da aula básica; as posições não reconhecidas continuam disponíveis
+  para aprender;
+- o feedback do treino usa a explicação da edge quando ela existe e trata bons
+  desvios como jogáveis, sem transformar saída de repertório em blunder;
+- a revisão FSRS de abertura só nasce para nodes ensinados, e erros em partida
+  real só criam reforço para nodes já aprendidos;
 - o conjunto de puzzles é um punhado gerado e verificado por nós, não o dump do Lichess;
 - o contrato do Opening Explorer real permanece limitado pela autorização do serviço;
 - páginas dinâmicas de partidas entram no cache quando visitadas; elas não são
