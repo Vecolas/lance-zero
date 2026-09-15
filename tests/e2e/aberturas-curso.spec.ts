@@ -9,6 +9,7 @@ test('curso novo navega por Aprender e Treinar sem revelar a resposta', async ({
   await page.getByRole('link', { name: 'Abrir curso Abertura Italiana' }).click()
 
   await expect(page.getByRole('heading', { name: 'Abertura Italiana' })).toBeVisible()
+  await expect(page.locator('[aria-label="Glossário da abertura"]')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Aprender', exact: true }).first()).toBeVisible()
   await page.getByRole('button', { name: 'Aprender', exact: true }).first().click()
   await expect(page.getByText('MODO APRENDER')).toBeVisible()
@@ -52,4 +53,11 @@ test('usuário experiente pode fazer diagnóstico curto antes da aula', async ({
   await expect(page.getByText(/Qual decisão você tomaria/)).toBeVisible()
   await page.getByRole('button', { name: 'e4', exact: true }).click()
   await expect(page.getByText('Você reconheceu a decisão do repertório.')).toBeVisible()
+})
+
+test('usuário pode ativar a abertura no repertório guiado', async ({ page }) => {
+  await page.goto('/aberturas/italiana')
+  await page.getByRole('button', { name: 'Progresso', exact: true }).click()
+  await page.getByRole('button', { name: 'Adicionar ao meu repertório' }).click()
+  await expect(page.getByRole('button', { name: 'Repertório ativo' })).toBeVisible()
 })

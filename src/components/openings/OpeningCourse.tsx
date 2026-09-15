@@ -1,7 +1,7 @@
 'use client'
 
 /** Curso interativo: Aprender revela o raciocínio; Treinar só revela feedback
- * depois da tentativa. O componente não chama Stockfish nem Opening Explorer. */
+ * depois da tentativa. Engine e Explorer são enriquecimentos fora do caminho crítico. */
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
@@ -12,6 +12,7 @@ import {
   chooseOpeningTrainingOpponent,
   classifyOpeningAttempt,
   completeOpeningActivity,
+  activateOpeningRepertoire,
   emptyOpeningProgress,
   markOpeningAttempt,
   markOpeningLearned,
@@ -35,6 +36,16 @@ const tabs: readonly [Tab, string][] = [
   ['mistakes', 'Erros comuns'],
   ['progress', 'Progresso'],
 ]
+
+const GLOSSARY = [
+  ['Ruptura', 'Avanço de peão que desafia a estrutura e abre linhas para as peças.'],
+  ['Transposição', 'Ordens diferentes de lances que chegam à mesma posição relevante.'],
+  [
+    'Tempo',
+    'Uma jogada útil de desenvolvimento ou ameaça; perder tempos permite que o adversário avance.',
+  ],
+  ['Iniciativa', 'A capacidade de criar ameaças que obrigam o adversário a responder.'],
+] as const
 
 export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
   const { repo } = useRepository()
@@ -126,7 +137,9 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
       {tab === 'variations' && <Variations opening={opening} />}
       {tab === 'plans' && <Plans opening={opening} />}
       {tab === 'mistakes' && <Mistakes opening={opening} />}
-      {tab === 'progress' && !diagnosticOpen && <Progress opening={opening} progress={progress} />}
+      {tab === 'progress' && !diagnosticOpen && (
+        <Progress opening={opening} progress={progress} onProgress={setProgress} />
+      )}
       {diagnosticOpen && (
         <DiagnosticMode
           opening={opening}
@@ -313,6 +326,16 @@ function Overview({ opening, onLearn }: { opening: OpeningDefinition; onLearn: (
             <strong>Casas de atenção</strong>
             <p>{structure.weakSquares.join(' · ')}</p>
           </article>
+        ))}
+      </div>
+      <div className={styles.cards} aria-label="Glossário da abertura">
+        {GLOSSARY.map(([term, explanation]) => (
+          <details key={term} className={styles.infoCard}>
+            <summary>
+              <strong>{term}</strong>
+            </summary>
+            <p>{explanation}</p>
+          </details>
         ))}
       </div>
       <ExplorerPanel posicoes={explorerPositions} />
@@ -654,9 +677,11 @@ function Mistakes({ opening }: { opening: OpeningDefinition }) {
 function Progress({
   opening,
   progress,
+  onProgress,
 }: {
   opening: OpeningDefinition
   progress: OpeningProgress
+  onProgress: (fn: (current: OpeningProgress) => OpeningProgress) => void
 }) {
   return (
     <section className={styles.section}>
@@ -677,6 +702,17 @@ function Progress({
         </p>
       </div>
       <p>{opening.transitionToMiddlegame}</p>
+      <button
+        type="button"
+        className={styles.primary}
+        onClick={() =>
+          onProgress((current) => activateOpeningRepertoire(current, new Date().toISOString()))
+        }
+      >
+        {progress.status === 'active_repertoire'
+          ? 'Repertório ativo'
+          : 'Adicionar ao meu repertório'}
+      </button>
     </section>
   )
 }

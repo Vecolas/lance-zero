@@ -529,6 +529,11 @@ export function markOpeningLearned(
   return { ...progress, status: 'learning', learnedNodeIds, lastPracticedAt: now }
 }
 
+/** Ativa uma abertura no repertório guiado sem apagar o estado pedagógico. */
+export function activateOpeningRepertoire(progress: OpeningProgress, now: string): OpeningProgress {
+  return { ...progress, status: 'active_repertoire', lastPracticedAt: now }
+}
+
 export function markOpeningAttempt(
   progress: OpeningProgress,
   nodeId: string,
@@ -539,7 +544,12 @@ export function markOpeningAttempt(
   const weakNodeIds = [...progress.weakNodeIds]
   mergeUnique(trainedNodeIds, [nodeId])
   if (classification !== 'preferred') mergeUnique(weakNodeIds, [nodeId])
-  const status: OpeningStatus = weakNodeIds.length > 0 ? 'consolidating' : 'training'
+  const status: OpeningStatus =
+    progress.status === 'active_repertoire'
+      ? 'active_repertoire'
+      : weakNodeIds.length > 0
+        ? 'consolidating'
+        : 'training'
   const confidence =
     trainedNodeIds.length === 0 ? 0 : Math.max(0, 1 - weakNodeIds.length / trainedNodeIds.length)
   return { ...progress, status, trainedNodeIds, weakNodeIds, confidence, lastPracticedAt: now }

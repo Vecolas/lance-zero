@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { OPENING_COURSES } from '@/content/openings/course'
 import { applyMove, identidadeDePosicao } from '@/lib/chess'
 import {
+  activateOpeningRepertoire,
   classifyOpeningAttempt,
   chooseOpponentResponse,
   chooseOpeningTrainingOpponent,
   completeOpeningActivity,
   emptyOpeningProgress,
   markOpeningLearned,
+  markOpeningAttempt,
   markOpeningLessonProgress,
   mergeOpeningProgress,
   mergeOpeningProgressList,
@@ -88,6 +90,23 @@ describe('curso de aberturas como grafo pedagógico', () => {
         expect(question.moves.every((move) => move.role !== 'mistake')).toBe(true)
       }
     }
+  })
+
+  it('ativar repertório preserva nodes fracos e mantém o status ativo após treino', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const active = activateOpeningRepertoire(
+      emptyOpeningProgress(opening.id),
+      '2026-01-01T00:00:00.000Z',
+    )
+    expect(active.status).toBe('active_repertoire')
+    const trained = markOpeningAttempt(
+      active,
+      opening.rootNodeId,
+      'inaccurate',
+      '2026-01-02T00:00:00.000Z',
+    )
+    expect(trained.status).toBe('active_repertoire')
+    expect(trained.weakNodeIds).toContain(opening.rootNodeId)
   })
 
   it('o mesmo node é a posição, não o caminho textual', () => {
