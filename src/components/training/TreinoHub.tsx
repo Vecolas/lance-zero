@@ -33,6 +33,7 @@ import { getSkill } from '@/domain/skills/catalog'
 import { carregarSkillStates } from '@/lib/training/plano-do-dia'
 import type { SkillArea } from '@/domain/types'
 import styles from './TreinoHub.module.css'
+import { StatePanel } from '@/components/ui/primitives'
 
 const ROTULO_DA_AREA: Record<SkillArea, string> = {
   tactics: 'Tática',
@@ -88,17 +89,20 @@ export function TreinoHub() {
     }
   }, [repo, revision])
 
-  if (status === 'carregando') return <p className={styles.state}>Abrindo seus dados locais…</p>
+  if (status === 'carregando')
+    return <StatePanel kind="loading" title="Abrindo seus dados locais…" />
 
   if (status === 'erro' || falha) {
     return (
-      <p className={`${styles.state} ${styles.error}`} role="alert">
-        {falha ?? erro}
-      </p>
+      <StatePanel
+        kind="error"
+        title="Não consegui abrir o hub de treino"
+        description={falha ?? erro ?? undefined}
+      />
     )
   }
 
-  if (!dados) return <p className={styles.state}>Lendo seu progresso…</p>
+  if (!dados) return <StatePanel kind="loading" title="Lendo seu progresso…" />
 
   const porId = new Map(dados.visoes.map((visao) => [visao.skillId, visao]))
   const ordenadas = ordemDoCurriculo()
