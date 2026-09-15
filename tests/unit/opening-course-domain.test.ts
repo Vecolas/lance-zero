@@ -163,6 +163,14 @@ describe('curso de aberturas como grafo pedagógico', () => {
     expect(result.classification).not.toBe('blunder')
   })
 
+  it('desvio bom recebe o plano específico da posição quando existe', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const nodeId = positionAt(opening, 8)
+    const result = classifyOpeningAttempt(opening, nodeId, 'c2c3')
+    expect(result.classification).toBe('out_of_repertoire')
+    expect(result.message).toMatch(/Ruptura d4|Abrir o centro/i)
+  })
+
   it('só cria revisão depois de ensinar a posição', () => {
     const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
     const empty = emptyOpeningProgress(opening.id)

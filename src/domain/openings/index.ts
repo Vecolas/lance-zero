@@ -544,9 +544,13 @@ export function classifyOpeningAttempt(
     }
   const edge = node.outgoingMoves.find((candidate) => candidate.uci === uci)
   if (!edge) {
+    const plan = opening.plans.find((candidate) => candidate.positionNodeId === node.id)
+    const context = plan
+      ? ` Nesta posição, o plano estudado é “${plan.name}”: ${plan.objective}`
+      : ''
     return {
       classification: 'out_of_repertoire',
-      message: 'Esse lance pode ser jogável, mas sai do repertório que estamos treinando.',
+      message: `Esse lance pode ser jogável, mas sai do repertório que estamos treinando.${context}`,
       nextNodeId: null,
     }
   }
@@ -560,7 +564,9 @@ export function classifyOpeningAttempt(
   if (edge.role === 'variation' || edge.role === 'alternative') {
     return {
       classification: 'acceptable',
-      message: 'Esse lance é bom e pertence a uma variação estudada.',
+      message: edge.explanation
+        ? `Esse lance é bom e pertence a uma variação estudada. ${edge.explanation}`
+        : 'Esse lance é bom e pertence a uma variação estudada.',
       nextNodeId: edge.nextNodeId,
     }
   }

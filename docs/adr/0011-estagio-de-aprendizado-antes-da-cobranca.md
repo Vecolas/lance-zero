@@ -133,11 +133,11 @@ O plano do dia também deixa de ser derivado a cada renderização e passa a ser
   (`tests/e2e/treino.spec.ts`) como exceção nomeada — o teste continua proibindo
   qualquer PRÁTICA para aluno novo, sem exceção.
 
-- **O feedback explicativo específico por posição ainda não existe.** A estrutura
-  das quatro perguntas (§18) está no tipo e é obrigatória, mas o texto entregue
-  hoje é o genérico, que diz explicitamente que não sabe qual foi a falha em vez
-  de inventar uma. É pior que um feedback específico e melhor que um motivo
-  inventado — a regra do CLAUDE.md.
+- **No curso novo de aberturas, o feedback específico por posição foi entregue.**
+  A edge usa o comentário autorado e um desvio saudável recebe o plano da
+  posição quando existe; a resposta continua sem chamar a alternativa de erro
+  grave. A exceção descrita acima é do repertório de fábrica legado, que mantém
+  sua decisão de produto separada.
 
 ## Alternativas consideradas
 
