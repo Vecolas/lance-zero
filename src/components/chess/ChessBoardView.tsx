@@ -16,6 +16,8 @@ export interface ChessBoardViewProps {
   theme?: BoardThemeName
   /** Casas do último lance, destacadas em âmbar. */
   lastMove?: SquareName[]
+  /** Rotas pedagógicas desenhadas sobre a posição. */
+  arrows?: readonly { from: SquareName; to: SquareName }[]
   /** Casa que o usuário selecionou, destacada em coral. */
   selected?: SquareName | null
   /** Destinos legais a partir da casa selecionada. */
@@ -33,6 +35,7 @@ export function ChessBoardView({
   orientation,
   theme = DEFAULT_BOARD_THEME,
   lastMove = [],
+  arrows = [],
   selected = null,
   targets = [],
   checkSquare = null,
@@ -79,6 +82,11 @@ export function ChessBoardView({
             lightSquareStyle: { backgroundColor: palette.light },
             darkSquareStyle: { backgroundColor: palette.dark },
             squareStyles,
+            arrows: arrows.map((arrow) => ({
+              startSquare: arrow.from,
+              endSquare: arrow.to,
+              color: '#22d3ee',
+            })),
             onSquareClick: ({ square }) => onSquareClick?.(square),
             onPieceDrop: ({ sourceSquare, targetSquare }) => {
               if (!onMove || !targetSquare) return false

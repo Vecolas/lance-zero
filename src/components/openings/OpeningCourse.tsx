@@ -364,6 +364,7 @@ function LearnMode({
           orientation={opening.side === 'white' ? 'w' : 'b'}
           interactive={false}
           lastMove={lastMove}
+          arrows={lesson?.arrows}
         />
         <div className={styles.controls}>
           <button
@@ -635,6 +636,7 @@ function Plans({ opening }: { opening: OpeningDefinition }) {
               fen={opening.graph.get(plan.positionNodeId)?.fen ?? opening.rootFen}
               orientation={opening.side === 'white' ? 'w' : 'b'}
               interactive={false}
+              arrows={plan.arrows}
             />
             <p>
               <strong>Objetivo:</strong> {plan.objective}
@@ -642,6 +644,11 @@ function Plans({ opening }: { opening: OpeningDefinition }) {
             <p>
               <strong>Quando:</strong> {plan.when}
             </p>
+            {plan.arrows?.length ? (
+              <p className={styles.note}>
+                Rota visual: {plan.arrows.map((arrow) => `${arrow.from} → ${arrow.to}`).join(' · ')}
+              </p>
+            ) : null}
             <p className={styles.warning}>
               <strong>Cuidado:</strong> {plan.risk}
             </p>

@@ -61,3 +61,10 @@ test('usuário pode ativar a abertura no repertório guiado', async ({ page }) =
   await page.getByRole('button', { name: 'Adicionar ao meu repertório' }).click()
   await expect(page.getByRole('button', { name: 'Repertório ativo' })).toBeVisible()
 })
+
+test('planos exibem posição e rota pedagógica', async ({ page }) => {
+  await page.goto('/aberturas/italiana')
+  await page.getByRole('button', { name: 'Planos', exact: true }).click()
+  await expect(page.getByText('Rota visual: d3 → d4')).toBeVisible()
+  await expect(page.getByText('Ruptura d4')).toBeVisible()
+})
