@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { ENDGAME_DEFINITIONS } from '@/content/endgames/biblioteca'
 import type { EndgameCategory, EndgameDefinition, EndgameStatus } from '@/domain/endgames'
@@ -26,15 +26,14 @@ const STATUS: Record<EndgameStatus, string> = {
 export function EndgameLibrary() {
   const [filter, setFilter] = useState('all')
   const [status, setStatus] = useState<EndgameStatus | 'all'>('all')
-  const [statuses, setStatuses] = useState<Record<string, EndgameStatus>>({})
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem('lancezero:endgame-statuses')
-      if (stored) setStatuses(JSON.parse(stored) as Record<string, EndgameStatus>)
-    } catch { /* local-first: catálogo continua disponível sem storage */ }
-  }, [])
-  const predicate = FILTERS.find(([id]) => id === filter)?.[2] ?? (() => true)
-  const definitions = useMemo(() => ENDGAME_DEFINITIONS.filter((definition) => predicate(definition) && (status === 'all' || (statuses[definition.id] ?? 'not-started') === status)), [predicate, status, statuses])
+  const [statuses] = useState<Record<string, EndgameStatus>>(() => {
+    if (typeof window === 'undefined') return {}
+    try { return JSON.parse(window.localStorage.getItem('lancezero:endgame-statuses') ?? '{}') as Record<string, EndgameStatus> } catch { return {} }
+  })
+  const definitions = useMemo(() => {
+    const predicate = FILTERS.find(([id]) => id === filter)?.[2] ?? (() => true)
+    return ENDGAME_DEFINITIONS.filter((definition) => predicate(definition) && (status === 'all' || (statuses[definition.id] ?? 'not-started') === status))
+  }, [filter, status, statuses])
   return (
     <section aria-labelledby="biblioteca-finais">
       <div className={styles.toolbar}>
