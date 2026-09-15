@@ -66,6 +66,22 @@ describe('curso de aberturas como grafo pedagógico', () => {
     }
   })
 
+  it('planos e erros comuns apontam para a posição pedagógica correta', () => {
+    for (const opening of OPENING_COURSES) {
+      for (const plan of opening.plans) {
+        const node = opening.graph.get(plan.positionNodeId)
+        expect(node, `${opening.id}:${plan.id} sem node`).toBeDefined()
+        if (node && plan.positionPly !== undefined) expect(node.ply).toBe(plan.positionPly)
+      }
+      for (const mistake of opening.mistakes) {
+        const node = opening.graph.get(mistake.nodeId)
+        expect(node, `${opening.id}:${mistake.id} sem node`).toBeDefined()
+        if (node)
+          expect(applyMove(node.fen, mistake.moveSan), `${opening.id}:${mistake.id}`).not.toBeNull()
+      }
+    }
+  })
+
   it('todos os grafos publicados passam pelo portão de nodes e edges', () => {
     for (const opening of OPENING_COURSES) expect(validateOpeningDefinition(opening)).toEqual([])
   })
@@ -155,8 +171,14 @@ describe('curso de aberturas como grafo pedagógico', () => {
     expect(openingReviewCards(opening, learned, new Date('2026-01-01T00:00:00.000Z'))[0]?.id).toBe(
       `opening:${opening.id}:${opening.rootNodeId}`,
     )
+    const planNode = positionAt(opening, 8)
+    const planProgress = markOpeningLearned(
+      emptyOpeningProgress(opening.id),
+      planNode,
+      '2026-01-01T00:00:00.000Z',
+    )
     expect(
-      new Set(openingReviewCards(opening, learned, new Date()).map((card) => card.kind)),
+      new Set(openingReviewCards(opening, planProgress, new Date()).map((card) => card.kind)),
     ).toContain('conceito')
   })
 
@@ -263,9 +285,14 @@ describe('curso de aberturas como grafo pedagógico', () => {
       opening.rootNodeId,
       '2026-01-01T00:00:00.000Z',
     )
+    const withPlan = markOpeningLearned(
+      progress,
+      positionAt(opening, 8),
+      '2026-01-01T00:00:00.000Z',
+    )
     const repo = new MemoryTrainingRepository()
     const now = new Date('2026-01-01T00:00:00.000Z')
-    expect(await seedOpeningReviewCards(repo, opening, progress, now)).toBeGreaterThan(1)
+    expect(await seedOpeningReviewCards(repo, opening, withPlan, now)).toBeGreaterThan(1)
     const first = (await repo.listReviewCards()).find(
       (card) => card.id === `opening:${opening.id}:${opening.rootNodeId}`,
     )
@@ -273,7 +300,7 @@ describe('curso de aberturas como grafo pedagógico', () => {
     const scheduled = applyReview(first, 'good', new Date('2026-01-02T00:00:00.000Z'))
     await repo.saveReviewCard(scheduled)
     expect(
-      await seedOpeningReviewCards(repo, opening, progress, new Date('2026-01-03T00:00:00.000Z')),
+      await seedOpeningReviewCards(repo, opening, withPlan, new Date('2026-01-03T00:00:00.000Z')),
     ).toBe(0)
     expect((await repo.listReviewCards()).find((card) => card.id === first.id)?.dueAt).toBe(
       scheduled.dueAt,

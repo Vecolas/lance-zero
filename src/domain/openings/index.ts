@@ -84,6 +84,8 @@ export interface OpeningPlan {
   when: string
   risk: string
   arrows?: BoardArrow[]
+  /** Posição semântica na linha principal para conteúdo autorado. */
+  positionPly?: number
 }
 
 export interface OpeningStructure {
@@ -100,6 +102,8 @@ export interface OpeningMistake {
   moveSan: string
   explanation: string
   principle: string
+  /** Posição semântica na linha principal para conteúdo autorado. */
+  positionPly?: number
 }
 
 export interface OpeningDefinition {
@@ -312,9 +316,25 @@ export function buildOpeningDefinition(
     rootNodeId,
     line: variationLines[index] ?? [],
   }))
+  const nodeAtMainlinePly = (ply: number | undefined) => {
+    if (ply === undefined || ply < 0) return undefined
+    let fen = START_FEN
+    for (const lesson of mainline.slice(0, ply)) {
+      const applied = applyMove(fen, lesson.san)
+      if (!applied) return undefined
+      fen = applied.fenAfter
+    }
+    return graph.get(stableId(fen))
+  }
   const plans = source.plans.map((plan) => {
-    const node = graph.get(plan.positionNodeId) ?? graph.get(rootNodeId)
+    const node =
+      nodeAtMainlinePly(plan.positionPly) ?? graph.get(plan.positionNodeId) ?? graph.get(rootNodeId)
     return { ...plan, positionNodeId: node?.id ?? rootNodeId }
+  })
+  const mistakes = source.mistakes.map((mistake) => {
+    const node =
+      nodeAtMainlinePly(mistake.positionPly) ?? graph.get(mistake.nodeId) ?? graph.get(rootNodeId)
+    return { ...mistake, nodeId: node?.id ?? rootNodeId }
   })
   let previewFen = graph.get(rootNodeId)?.fen ?? START_FEN
   let previewCursor = START_FEN
@@ -335,6 +355,7 @@ export function buildOpeningDefinition(
     planIds: plans.map((plan) => plan.id),
     variations,
     plans,
+    mistakes,
     graph,
   }
   const issues = validateOpeningDefinition(opening)

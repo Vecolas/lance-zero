@@ -45,6 +45,7 @@ const plan = z.object({
   when: z.string().trim().min(1),
   risk: z.string().trim().min(1),
   arrows: z.array(boardArrow).optional(),
+  positionPly: z.number().int().nonnegative().optional(),
 })
 
 const structure = z.object({
@@ -61,6 +62,7 @@ const mistake = z.object({
   moveSan: z.string().min(1),
   explanation: z.string().trim().min(1),
   principle: z.string().trim().min(1),
+  positionPly: z.number().int().nonnegative().optional(),
 })
 
 /** Contrato dos arquivos autorados antes de construir o grafo derivado. */
