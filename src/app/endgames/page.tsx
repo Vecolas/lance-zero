@@ -4,7 +4,8 @@ import { EndgamesWorkbench } from '@/components/endgames/EndgamesWorkbench'
 
 export const metadata: Metadata = { title: 'Finais' }
 
-export default function EndgamesPage() {
+export default async function EndgamesPage({ searchParams }: { searchParams: Promise<{ position?: string }> }) {
+  const params = await searchParams
   return (
     <>
       <h1>Finais</h1>
@@ -15,7 +16,7 @@ export default function EndgamesPage() {
         vez de fingir.
       </p>
       <p><Link href="/finais">Abrir biblioteca visual de finais</Link> — conceitos, técnicas e posições variadas.</p>
-      <EndgamesWorkbench />
+      <EndgamesWorkbench initialPositionId={params.position ?? null} />
     </>
   )
 }
