@@ -25,6 +25,7 @@ import type {
   SkillMastery,
   SkillState,
   UserProfile,
+  OpeningProgress,
 } from '@/domain/types'
 import type { BackupRepository } from './repository'
 import {
@@ -50,6 +51,7 @@ export class MemoryTrainingRepository implements BackupRepository {
   private readonly repertorios = new Map<string, RepertorioDoAluno>()
   private readonly skillStates = new Map<string, SkillState>()
   private readonly planosDoDia = new Map<string, PlanoDoDia>()
+  private readonly openingProgress = new Map<string, OpeningProgress>()
 
   async getProfile(): Promise<UserProfile | null> {
     return this.profile ? cloneJson(this.profile) : null
@@ -177,6 +179,19 @@ export class MemoryTrainingRepository implements BackupRepository {
     return limit === undefined ? ordenados : ordenados.slice(0, limit)
   }
 
+  async getOpeningProgress(openingId: string): Promise<OpeningProgress | null> {
+    const progress = this.openingProgress.get(openingId)
+    return progress ? cloneJson(progress) : null
+  }
+
+  async listOpeningProgress(): Promise<OpeningProgress[]> {
+    return [...this.openingProgress.values()].map((progress) => cloneJson(progress))
+  }
+
+  async saveOpeningProgress(progress: OpeningProgress): Promise<void> {
+    this.openingProgress.set(progress.openingId, cloneJson(progress))
+  }
+
   /** Apaga tudo. Existe para os testes, não faz parte do contrato. */
   clear(): void {
     this.profile = null
@@ -189,5 +204,6 @@ export class MemoryTrainingRepository implements BackupRepository {
     this.repertorios.clear()
     this.skillStates.clear()
     this.planosDoDia.clear()
+    this.openingProgress.clear()
   }
 }

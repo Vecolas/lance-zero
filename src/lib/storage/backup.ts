@@ -19,6 +19,7 @@ import type {
   SkillMastery,
   SkillState,
   UserProfile,
+  OpeningProgress,
 } from '@/domain/types'
 import { idDeRepertorioEhUsavel } from '@/domain/repertoire'
 import { StorageError, UnsupportedBackupVersionError, type BackupRepository } from './repository'
@@ -82,6 +83,7 @@ export interface BackupFile {
    * devolveria um histórico em que o aluno nunca concluiu nada.
    */
   planosDoDia: PlanoDoDia[]
+  openingProgress?: OpeningProgress[]
 }
 
 export interface ImportCounts {
@@ -95,6 +97,7 @@ export interface ImportCounts {
   repertorios: number
   skillStates: number
   planosDoDia: number
+  openingProgress: number
 }
 
 export interface ImportResult {
@@ -119,6 +122,7 @@ export async function exportBackup(
     repertorios,
     skillStates,
     planosDoDia,
+    openingProgress,
   ] = await Promise.all([
     repo.getProfile(),
     repo.listGames(),
@@ -133,6 +137,7 @@ export async function exportBackup(
     // longo do tempo, e um `limit` aqui cortaria em silêncio os dias mais
     // antigos de um backup que o aluno acha completo.
     repo.listPlanosDoDia(),
+    repo.listOpeningProgress(),
   ])
 
   return {
@@ -148,6 +153,7 @@ export async function exportBackup(
     repertorios,
     skillStates,
     planosDoDia,
+    openingProgress,
   }
 }
 
@@ -189,6 +195,9 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
     // vivas. Quem quer fundir usa sync; quem importa backup quer o arquivo.
     await repo.savePlanoDoDia(plano)
   }
+  for (const progress of parsed.openingProgress ?? []) {
+    await repo.saveOpeningProgress(progress)
+  }
 
   return {
     version: parsed.version,
@@ -204,6 +213,7 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
       repertorios: parsed.repertorios.length,
       skillStates: parsed.skillStates.length,
       planosDoDia: parsed.planosDoDia.length,
+      openingProgress: parsed.openingProgress?.length ?? 0,
     },
   }
 }
@@ -452,6 +462,17 @@ export function validateBackupFile(file: unknown): BackupFile {
     return item as unknown as PlanoDoDia
   })
 
+  const openingProgress = readRecords(file, 'openingProgress').map((item, index) => {
+    const where = `openingProgress[${index}]`
+    readString(item, 'openingId', where)
+    readString(item, 'status', where)
+    readString(item, 'lastPracticedAt', where)
+    if (!Array.isArray(item['learnedNodeIds']) || !Array.isArray(item['trainedNodeIds']) || !Array.isArray(item['weakNodeIds'])) {
+      throw invalid(`${where} deveria conter listas de nodes.`)
+    }
+    return item as unknown as OpeningProgress
+  })
+
   return {
     version,
     exportedAt,
@@ -465,6 +486,7 @@ export function validateBackupFile(file: unknown): BackupFile {
     repertorios,
     skillStates,
     planosDoDia,
+    openingProgress,
   }
 }
 

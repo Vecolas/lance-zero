@@ -4,9 +4,14 @@ import { applyMove, identidadeDePosicao } from '@/lib/chess'
 import {
   classifyOpeningAttempt,
   chooseOpponentResponse,
+  completeOpeningActivity,
+  emptyOpeningProgress,
+  markOpeningLearned,
+  mergeOpeningProgress,
   trainingNode,
   type OpeningDefinition,
 } from '@/domain/openings'
+import { openingReviewCards } from '@/domain/openings/review'
 
 function positionAt(opening: OpeningDefinition, ply: number): string {
   let fen = opening.previewFen
@@ -74,5 +79,25 @@ describe('curso de aberturas como grafo pedagógico', () => {
     expect(result.classification).toBe('out_of_repertoire')
     expect(result.message).toMatch(/jogável|bom/i)
     expect(result.classification).not.toBe('blunder')
+  })
+
+  it('só cria revisão depois de ensinar a posição', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const empty = emptyOpeningProgress(opening.id)
+    expect(openingReviewCards(opening, empty, new Date('2026-01-01T00:00:00.000Z'))).toHaveLength(0)
+    const learned = markOpeningLearned(empty, opening.rootNodeId, '2026-01-01T00:00:00.000Z')
+    expect(openingReviewCards(opening, learned, new Date('2026-01-01T00:00:00.000Z'))[0]?.id).toBe(
+      `opening:${opening.id}:${opening.rootNodeId}`,
+    )
+  })
+
+  it('funde progresso de dispositivos sem perder conclusões', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const left = completeOpeningActivity(emptyOpeningProgress(opening.id), 'learn', '2026-01-01T00:00:00.000Z')
+    const right = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, '2026-01-02T00:00:00.000Z')
+    const merged = mergeOpeningProgress(left, right)
+    expect(merged.completedActivities).toContain('learn')
+    expect(merged.learnedNodeIds).toContain(opening.rootNodeId)
+    expect(merged.lastPracticedAt).toBe('2026-01-02T00:00:00.000Z')
   })
 })

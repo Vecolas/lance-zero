@@ -17,6 +17,7 @@ import type {
   SkillMastery,
   SkillState,
   UserProfile,
+  OpeningProgress,
 } from '@/domain/types'
 import { StorageError, type BackupRepository } from './repository'
 import {
@@ -41,6 +42,7 @@ export const STORES = {
   repertorios: 'repertorios',
   skillStates: 'skillStates',
   planosDoDia: 'planosDoDia',
+  openingProgress: 'openingProgress',
 } as const
 
 export type StoreName = (typeof STORES)[keyof typeof STORES]
@@ -57,7 +59,7 @@ export const INDEXES = {
 export const INDEXEDDB_CONFIG = {
   databaseName: 'lance-zero',
   /** Versão do schema. Incrementar sempre junto de um novo `case` em `migrate`. */
-  schemaVersion: 3,
+  schemaVersion: 4,
 } as const
 
 export interface IndexedDbRepositoryOptions {
@@ -104,7 +106,9 @@ function migrate(db: IDBDatabase, oldVersion: number): void {
     // falls through
     case 2:
       createSchemaV3(db)
-    // Próximas versões entram como `case 3:` etc., também sem `break`.
+    // falls through
+    case 3:
+      createSchemaV4(db)
   }
 }
 
@@ -165,6 +169,11 @@ function createSchemaV2(db: IDBDatabase): void {
 function createSchemaV3(db: IDBDatabase): void {
   db.createObjectStore(STORES.skillStates, { keyPath: 'skillId' })
   db.createObjectStore(STORES.planosDoDia, { keyPath: 'dateKey' })
+}
+
+/** V4: progresso de cursos de abertura por posição. */
+function createSchemaV4(db: IDBDatabase): void {
+  db.createObjectStore(STORES.openingProgress, { keyPath: 'openingId' })
 }
 
 export class IndexedDbTrainingRepository implements BackupRepository {
@@ -445,6 +454,25 @@ export class IndexedDbTrainingRepository implements BackupRepository {
     // `dateKey` é `YYYY-MM-DD`, então a comparação textual é cronológica.
     const ordenados = planos.sort((a, b) => b.dateKey.localeCompare(a.dateKey))
     return limit === undefined ? ordenados : ordenados.slice(0, limit)
+  }
+
+  async getOpeningProgress(openingId: string): Promise<OpeningProgress | null> {
+    const progress = await this.run([STORES.openingProgress], 'readonly', (tx) =>
+      requestToPromise<OpeningProgress | undefined>(
+        tx.objectStore(STORES.openingProgress).get(openingId) as IDBRequest<OpeningProgress | undefined>,
+      ),
+    )
+    return progress ?? null
+  }
+
+  async listOpeningProgress(): Promise<OpeningProgress[]> {
+    return this.readAll<OpeningProgress>(STORES.openingProgress)
+  }
+
+  async saveOpeningProgress(progress: OpeningProgress): Promise<void> {
+    await this.run([STORES.openingProgress], 'readwrite', async (tx) => {
+      await requestToPromise(tx.objectStore(STORES.openingProgress).put(progress))
+    })
   }
 
   /** Fecha a conexão. Necessário antes de apagar o banco em testes. */

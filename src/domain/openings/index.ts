@@ -388,3 +388,32 @@ export function completeOpeningActivity(
   mergeUnique(completedActivities, [activityId])
   return { ...progress, completedActivities, lastPracticedAt: now }
 }
+
+/** Confiança é uma leitura dos fatos, não uma segunda fonte de verdade. */
+export function openingConfidence(progress: OpeningProgress): number {
+  if (progress.trainedNodeIds.length === 0) return 0
+  return Math.max(0, 1 - progress.weakNodeIds.length / progress.trainedNodeIds.length)
+}
+
+/** Funde duas cópias sem apagar ensino, treino ou posições fracas. */
+export function mergeOpeningProgress(local: OpeningProgress, remote: OpeningProgress): OpeningProgress {
+  const union = (left: string[], right: string[]) => [...new Set([...left, ...right])]
+  const learnedNodeIds = union(local.learnedNodeIds, remote.learnedNodeIds)
+  const trainedNodeIds = union(local.trainedNodeIds, remote.trainedNodeIds)
+  const weakNodeIds = union(local.weakNodeIds, remote.weakNodeIds)
+  const completedActivities = union(local.completedActivities, remote.completedActivities)
+  const lastPracticedAt = [local.lastPracticedAt, remote.lastPracticedAt]
+    .filter((value): value is string => value !== null)
+    .sort()
+    .at(-1) ?? null
+  const statusRank: Record<OpeningStatus, number> = {
+    not_started: 0,
+    learning: 1,
+    training: 2,
+    consolidating: 3,
+    active_repertoire: 4,
+  }
+  const status = statusRank[local.status] >= statusRank[remote.status] ? local.status : remote.status
+  const merged = { ...local, status, learnedNodeIds, trainedNodeIds, weakNodeIds, completedActivities, lastPracticedAt }
+  return { ...merged, confidence: openingConfidence(merged) }
+}

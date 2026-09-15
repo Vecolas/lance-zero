@@ -13,11 +13,13 @@
 // funções que as movem também moram — aqui elas só aparecem no contrato.
 import type { PlanoDoDia } from '@/domain/aprendizado/plano'
 import type { SkillState } from '@/domain/aprendizado/skill-state'
+import type { OpeningProgress } from '@/domain/openings'
 
 // Reexportados para que a persistência continue tendo UMA fronteira. Os
 // repositórios já importam todo o resto do contrato daqui; obrigá-los a
 // importar dois tipos de outro endereço criaria duas portas para a mesma sala.
 export type { PlanoDoDia, SkillState }
+export type { OpeningProgress }
 
 // ---------------------------------------------------------------- habilidades
 
@@ -581,6 +583,11 @@ export interface TrainingRepository {
   savePlanoDoDia(plano: PlanoDoDia): Promise<void>
   /** Os planos gravados, do mais recente para o mais antigo. Para backup e histórico. */
   listPlanosDoDia(limit?: number): Promise<PlanoDoDia[]>
+
+  /** Progresso por abertura; a posição é a unidade de aprendizagem. */
+  getOpeningProgress(openingId: string): Promise<OpeningProgress | null>
+  listOpeningProgress(): Promise<OpeningProgress[]>
+  saveOpeningProgress(progress: OpeningProgress): Promise<void>
 }
 
 // ----------------------------------------------------------------- importação

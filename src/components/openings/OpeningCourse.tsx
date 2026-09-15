@@ -4,6 +4,7 @@
  * depois da tentativa. O componente não chama Stockfish nem Opening Explorer. */
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRepository } from '@/components/providers/RepositoryProvider'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { applyMove, legalMoves, type SquareName } from '@/lib/chess'
 import {
@@ -18,6 +19,7 @@ import {
   type OpeningMoveLesson,
   type OpeningProgress,
 } from '@/domain/openings'
+import { openingReviewCards } from '@/domain/openings/review'
 import styles from './OpeningCourse.module.css'
 
 type Tab = 'overview' | 'learn' | 'train' | 'variations' | 'plans' | 'mistakes' | 'progress'
@@ -32,28 +34,28 @@ const tabs: readonly [Tab, string][] = [
 ]
 
 export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
+  const { repo } = useRepository()
   const [tab, setTab] = useState<Tab>('overview')
-  const [progress, setProgress] = useState<OpeningProgress>(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const saved = window.localStorage.getItem(`lancezero:opening-progress:${opening.id}`)
-        if (saved) return JSON.parse(saved) as OpeningProgress
-      }
-    } catch {
-      // O curso continua local-first mesmo quando o armazenamento do navegador está bloqueado.
-    }
-    return emptyOpeningProgress(opening.id)
-  })
+  const [progress, setProgress] = useState<OpeningProgress>(() => emptyOpeningProgress(opening.id))
+  const [progressLoaded, setProgressLoaded] = useState(false)
   useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        `lancezero:opening-progress:${opening.id}`,
-        JSON.stringify(progress),
-      )
-    } catch {
-      // Falha de persistência não pode impedir a sessão corrente.
-    }
-  }, [opening.id, progress])
+    let cancelled = false
+    if (!repo) return () => { cancelled = true }
+    void repo.getOpeningProgress(opening.id).then((saved) => {
+      if (cancelled) return
+      window.setTimeout(() => {
+        if (cancelled) return
+        setProgress(saved ?? emptyOpeningProgress(opening.id))
+        setProgressLoaded(true)
+      }, 0)
+    })
+    return () => { cancelled = true }
+  }, [opening.id, repo])
+  useEffect(() => {
+    if (!repo || !progressLoaded) return
+    void repo.saveOpeningProgress(progress)
+    for (const card of openingReviewCards(opening, progress, new Date())) void repo.saveReviewCard(card)
+  }, [opening, progress, progressLoaded, repo])
   return (
     <div className={styles.page}>
       <Link href="/aberturas" className={styles.back}>

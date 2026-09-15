@@ -224,6 +224,7 @@ describe('ida e volta do backup', () => {
       // faz uma coleção nova esquecida na contagem cair neste teste.
       skillStates: 0,
       planosDoDia: 0,
+      openingProgress: 0,
     })
 
     const cardOriginal = (await origem.listReviewCards())[0]
