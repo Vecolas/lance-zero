@@ -164,7 +164,6 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
   const [dicasReveladas, setDicasReveladas] = useState(0)
   const [erroDeLance, setErroDeLance] = useState<string | null>(null)
   const [falhaDoSistema, setFalhaDoSistema] = useState<string | null>(null)
-  const [lanceDigitado, setLanceDigitado] = useState('')
   const [recomecos, setRecomecos] = useState(0)
   const [inicio, setInicio] = useState(() => Date.now())
   const [gravacao, setGravacao] = useState<EstadoDaGravacao | null>(null)
@@ -219,7 +218,6 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
     setDicasReveladas(0)
     setErroDeLance(null)
     setFalhaDoSistema(null)
-    setLanceDigitado('')
     setRecomecos((n) => n + 1)
     setInicio(Date.now())
     setGravacao(null)
@@ -525,39 +523,14 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
           onMove={jogarDoTabuleiro}
         />
 
-        <form
-          className={styles.entrada}
-          onSubmit={(evento) => {
-            evento.preventDefault()
-            if (jogar(lanceDigitado)) {
-              setLanceDigitado('')
-            }
-          }}
-        >
-          <label className={styles.label} htmlFor="lance-uci">
-            Lance em UCI, alternativa ao arraste (ex.: b1b8)
-          </label>
-          <div className={styles.entradaLinha}>
-            <input
-              id="lance-uci"
-              className={styles.input}
-              value={lanceDigitado}
-              onChange={(evento) => setLanceDigitado(evento.target.value)}
-              disabled={fase !== 'jogando'}
-              autoComplete="off"
-              spellCheck={false}
-              inputMode="text"
-            />
-            <button type="submit" className={styles.ghost} disabled={fase !== 'jogando'}>
-              Jogar lance
-            </button>
-          </div>
+        <div className={styles.entrada}>
+          <p className={styles.meta}>Jogue diretamente no tabuleiro arrastando a peça.</p>
           {erroDeLance ? (
             <p className={`${styles.aviso} ${styles.ruim}`} role="status">
               <span aria-hidden="true">✕</span> {erroDeLance}
             </p>
           ) : null}
-        </form>
+        </div>
       </div>
 
       <div className={styles.panel}>

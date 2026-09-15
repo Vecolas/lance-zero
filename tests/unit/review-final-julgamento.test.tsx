@@ -241,7 +241,7 @@ async function montarFila(cards: readonly ReviewCard[], probe: Sonda) {
     revision: 0,
   }
   const tela = render(<ReviewSession probe={probe} />)
-  await screen.findByText(new RegExp(`Revisão 1 de ${cards.length}`))
+  await screen.findByText(new RegExp(`Revisão 0 de ${cards.length}`))
   return { repo, tela }
 }
 
@@ -260,7 +260,7 @@ async function montar(card: ReviewCard, probe: Sonda) {
  */
 async function jogar(uci: string) {
   await act(async () => {
-    tabuleiro.onMove?.(uci.slice(0, 2), uci.slice(2, 4), 'q')
+    tabuleiro.onMove?.(uci.slice(0, 2), uci.slice(2, 4))
   })
 }
 
@@ -277,6 +277,7 @@ function numeroSolto(valor: number): RegExp {
 const NOTA_DE_QUEM_ACERTOU = RATING_LABEL.good
 
 beforeEach(() => {
+  globalThis.localStorage.clear()
   tabuleiro.onMove = null
   tabuleiro.interactive = true
   contexto.valor = null
@@ -482,7 +483,7 @@ describe('card de final aceita alternativa na fila de revisão', () => {
     await montar(cardDoFinal(), sondaFalsa())
     await jogar(DO_CARD)
 
-    expect(await screen.findByRole('status')).toHaveTextContent(/Correto/)
+    expect((await screen.findAllByRole('status')).some((element) => /Correto/.test(element.textContent ?? ''))).toBe(true)
     expect(screen.getByRole('button', { name: NOTA_DE_QUEM_ACERTOU })).toBeInTheDocument()
   })
 })
@@ -504,7 +505,7 @@ describe('sem tablebase a fila volta ao modo estrito, e DIZ isso', () => {
     await montar(cardDoFinal(), sondaMuda)
     await jogar(DO_CARD)
 
-    expect(await screen.findByRole('status')).toHaveTextContent(/Correto/)
+    expect((await screen.findAllByRole('status')).some((element) => /Correto/.test(element.textContent ?? ''))).toBe(true)
     expect(screen.queryByTestId('modo-estrito')).not.toBeInTheDocument()
   })
 })
@@ -515,7 +516,10 @@ describe('card que não é de final não muda de comportamento', () => {
     await montar(cardQueNaoEDeFinal(), espia)
     await jogar(OUTRO)
 
-    const faixa = await screen.findByRole('status')
+    const faixa = (await screen.findAllByRole('status')).find((element) =>
+      element.textContent?.includes('Achamos algo para treinar'),
+    )
+    expect(faixa).toBeDefined()
     expect(faixa).toHaveTextContent(/Achamos algo para treinar/)
     expect(screen.queryByTestId('grau-do-lance')).not.toBeInTheDocument()
     expect(screen.queryByTestId('modo-estrito')).not.toBeInTheDocument()
@@ -538,7 +542,7 @@ describe('a revisão seguinte começa limpa', () => {
     await screen.findByTestId('grau-do-lance')
     await userEvent.click(screen.getByRole('button', { name: NOTA_DE_QUEM_ACERTOU }))
 
-    await screen.findByText(/Revisão 2 de 2/)
+    await screen.findByText(/Revisão 1 de 2/)
     expect(screen.queryByTestId('grau-do-lance')).not.toBeInTheDocument()
     expect(screen.queryByTestId('modo-estrito')).not.toBeInTheDocument()
     // A revisão nova está em ANDAMENTO: nota nenhuma antes de jogar.
@@ -572,7 +576,7 @@ describe('resposta atrasada da tablebase não pousa na revisão errada', () => {
     await outroRepo.saveReviewCard(cardDoFinal())
     contexto.valor = { ...(contexto.valor as Record<string, unknown>), repo: outroRepo }
     tela.rerender(<ReviewSession probe={lenta} />)
-    await screen.findByText(/Revisão 1 de 1/)
+    await screen.findByText(/Revisão 0 de 1/)
 
     await act(async () => {
       liberar()

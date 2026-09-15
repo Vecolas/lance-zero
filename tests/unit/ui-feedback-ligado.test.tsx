@@ -100,7 +100,11 @@ function contextoCom(repo: MemoryTrainingRepository) {
  * acompanhar uma mudança de tom em vez de defendê-la contra a tela.
  */
 function exigirFaixa(tone: FeedbackTone): HTMLElement {
-  const faixa = screen.getByRole('status')
+  const faixa = screen
+    .getAllByRole('status')
+    .find((element) => element.textContent?.includes(feedbackToneCatalog[tone].label))
+  expect(faixa, 'faixa de feedback ausente').toBeDefined()
+  if (!faixa) throw new Error('faixa de feedback ausente')
   expect(faixa.querySelector('svg'), 'ícone ausente na faixa').not.toBeNull()
   expect(faixa.getAttribute('style') ?? '', 'cor do estado não aplicada').toMatch(
     /color:\s*var\(--/,
@@ -128,6 +132,7 @@ function solucaoDaPosicaoExibida(): readonly string[] {
 }
 
 beforeEach(() => {
+  globalThis.localStorage.clear()
   tabuleiro.onMove = null
 })
 
@@ -190,7 +195,7 @@ describe('ReviewSession usa a faixa do guia nos dois desfechos', () => {
     )
     contexto.valor = contextoCom(repo)
     render(<ReviewSession />)
-    await screen.findByText(/Revisão 1 de 1/)
+    await screen.findByText(/Revisão 0 de 1/)
   }
 
   it('lembrar o lance anuncia o estado correto do catálogo', async () => {

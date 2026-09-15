@@ -9,3 +9,42 @@
   overflow: hidden;
   box-shadow: var(--shadow-card);
 }
+
+.promotion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.promotionLabel {
+  flex-basis: 100%;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.promotionButton,
+.promotionCancel {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.promotionButton:hover,
+.promotionButton:focus-visible {
+  border-color: var(--accent);
+}
+
+.promotionCancel {
+  color: var(--text-muted);
+}
