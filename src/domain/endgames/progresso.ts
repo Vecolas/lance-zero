@@ -11,6 +11,37 @@ export interface EndgameSkillState {
   lastPracticedAt: string | null
 }
 
+export const ENDGAME_PROGRESS_VERSION = 1
+
+export function serializarProgressoDeFinais(states: readonly EndgameSkillState[]): string {
+  return JSON.stringify({ version: ENDGAME_PROGRESS_VERSION, states })
+}
+
+export function desserializarProgressoDeFinais(raw: string | null): EndgameSkillState[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw) as { version?: number; states?: unknown }
+    if (parsed.version !== ENDGAME_PROGRESS_VERSION || !Array.isArray(parsed.states)) return []
+    return parsed.states.filter((state): state is EndgameSkillState => {
+      if (!state || typeof state !== 'object') return false
+      const item = state as Partial<EndgameSkillState>
+      return typeof item.endgameId === 'string' && [item.recognition, item.principleSelection, item.calculation, item.conversion, item.defense, item.hintDependence].every((value) => typeof value === 'number' && value >= 0 && value <= 1)
+    })
+  } catch { return [] }
+}
+
+export function registrarResultadoDeFinais(state: EndgameSkillState, resultado: { recognized: boolean; chosePrinciple: boolean; calculated: boolean; converted: boolean; defended: boolean; hints: number; maxHints: number }): EndgameSkillState {
+  const sample = (old: number, good: boolean) => old * 0.7 + (good ? 1 : 0) * 0.3
+  return atualizarProgresso(state, {
+    recognition: sample(state.recognition, resultado.recognized),
+    principleSelection: sample(state.principleSelection, resultado.chosePrinciple),
+    calculation: sample(state.calculation, resultado.calculated),
+    conversion: sample(state.conversion, resultado.converted),
+    defense: sample(state.defense, resultado.defended),
+    hintDependence: sample(state.hintDependence, resultado.maxHints > 0 && resultado.hints === 0),
+  })
+}
+
 export function estadoInicialDeFinal(endgameId: string): EndgameSkillState {
   return { endgameId, recognition: 0, principleSelection: 0, calculation: 0, conversion: 0, defense: 0, hintDependence: 0, lastPracticedAt: null }
 }
