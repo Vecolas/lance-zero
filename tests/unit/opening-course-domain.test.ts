@@ -11,6 +11,7 @@ import {
   markOpeningLessonProgress,
   mergeOpeningProgress,
   mergeOpeningProgressList,
+  validateOpeningDefinition,
   openingHint,
   trainingNode,
   type OpeningDefinition,
@@ -56,6 +57,10 @@ describe('curso de aberturas como grafo pedagógico', () => {
         fen = applied?.fenAfter ?? fen
       }
     }
+  })
+
+  it('todos os grafos publicados passam pelo portão de nodes e edges', () => {
+    for (const opening of OPENING_COURSES) expect(validateOpeningDefinition(opening)).toEqual([])
   })
 
   it('o mesmo node é a posição, não o caminho textual', () => {

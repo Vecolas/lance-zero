@@ -31,6 +31,7 @@ telemetria, não há analytics.
 | `puzzleAttempts`            | acertos, erros, dicas usadas e tempo de reflexão                                                                                 | idem                        |
 | `positionAnalyses`          | avaliações da engine dos seus lances                                                                                             | idem                        |
 | `reviewCards`, `reviewLogs` | o que você tem para revisar e quando revisou                                                                                     | idem                        |
+| `openingProgress`           | progresso local dos cursos de abertura, nodes aprendidos/treinados e posições fracas                                             | idem                        |
 | `skillMastery`              | seu modelo de habilidades                                                                                                        | idem                        |
 | `repertorios`               | o repertório de aberturas que você montou, com as ideias que você escreveu em cada lance                                         | idem                        |
 | `skillStates`               | em que ponto do aprendizado você está em cada habilidade: o que já te foi ensinado, o que você já resolveu com apoio e sem apoio | idem                        |

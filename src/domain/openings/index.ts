@@ -160,6 +160,11 @@ export interface OpeningAttemptResult {
   nextNodeId: string | null
 }
 
+export interface OpeningValidationIssue {
+  nodeId: string
+  message: string
+}
+
 export function emptyOpeningProgress(openingId: string): OpeningProgress {
   return {
     openingId,
@@ -271,7 +276,7 @@ export function buildOpeningDefinition(
     previewCursor = applied.fenAfter
     previewFen = previewCursor
   }
-  return {
+  const opening: OpeningDefinition = {
     ...definition,
     rootNodeId,
     rootFen: graph.get(rootNodeId)?.fen ?? START_FEN,
@@ -283,6 +288,49 @@ export function buildOpeningDefinition(
     plans,
     graph,
   }
+  const issues = validateOpeningDefinition(opening)
+  if (issues.length > 0) {
+    throw new Error(`Abertura inválida: ${issues.map((issue) => `${issue.nodeId}: ${issue.message}`).join('; ')}`)
+  }
+  return opening
+}
+
+/** Portão de publicação: toda edge precisa ser legal, alcançável e apontar para o filho correto. */
+export function validateOpeningDefinition(opening: OpeningDefinition): OpeningValidationIssue[] {
+  const issues: OpeningValidationIssue[] = []
+  const reachable = new Set<string>()
+  const pending = [opening.rootNodeId]
+  while (pending.length > 0) {
+    const nodeId = pending.pop()
+    if (!nodeId || reachable.has(nodeId)) continue
+    reachable.add(nodeId)
+    const node = opening.graph.get(nodeId)
+    if (!node) {
+      issues.push({ nodeId, message: 'node raiz/filho ausente' })
+      continue
+    }
+    for (const edge of node.outgoingMoves) {
+      const child = opening.graph.get(edge.nextNodeId)
+      if (!child) {
+        issues.push({ nodeId, message: `edge ${edge.uci} aponta para filho ausente` })
+        continue
+      }
+      const applied = applyMove(node.fen, edge.san)
+      if (!applied) {
+        issues.push({ nodeId, message: `edge ${edge.san} ilegal` })
+      } else if (identidadeDePosicao(applied.fenAfter) !== child.id) {
+        issues.push({ nodeId, message: `edge ${edge.san} aponta para FEN incorreto` })
+      }
+      pending.push(child.id)
+    }
+  }
+  for (const nodeId of opening.graph.keys()) {
+    if (!reachable.has(nodeId)) issues.push({ nodeId, message: 'node órfão' })
+  }
+  for (const move of opening.mainline) {
+    if (move.comment.trim().length === 0) issues.push({ nodeId: opening.rootNodeId, message: `lance ${move.san} sem comentário` })
+  }
+  return issues
 }
 
 export function trainingNode(
