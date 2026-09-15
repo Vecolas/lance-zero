@@ -417,3 +417,14 @@ export function mergeOpeningProgress(local: OpeningProgress, remote: OpeningProg
   const merged = { ...local, status, learnedNodeIds, trainedNodeIds, weakNodeIds, completedActivities, lastPracticedAt }
   return { ...merged, confidence: openingConfidence(merged) }
 }
+
+/** Escada de ajuda: raciocínio primeiro, lance explícito somente sob pedido. */
+export function openingHint(opening: OpeningDefinition, nodeId: string, level: number): string | null {
+  const node = opening.graph.get(nodeId)
+  const preferred = node?.outgoingMoves.find((edge) => edge.role === 'main') ?? node?.outgoingMoves[0]
+  if (!node || !preferred || level < 1) return null
+  if (level === 1) return 'Qual peça ainda precisa ser desenvolvida para uma casa ativa?'
+  if (level === 2) return preferred.lesson?.resultingPlan ?? preferred.lesson?.strategicIdea ?? 'Pense no plano que esta posição prepara.'
+  if (level === 3) return `Procure uma casa ativa para a peça que ainda está fora do jogo; observe a pressão em ${preferred.lesson?.highlights?.[0] ?? 'uma casa central'}.`
+  return `O lance candidato do repertório é ${preferred.san}.`
+}

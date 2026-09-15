@@ -8,6 +8,7 @@ import {
   emptyOpeningProgress,
   markOpeningLearned,
   mergeOpeningProgress,
+  openingHint,
   trainingNode,
   type OpeningDefinition,
 } from '@/domain/openings'
@@ -111,5 +112,12 @@ describe('curso de aberturas como grafo pedagógico', () => {
     const progress = markOpeningLearned(emptyOpeningProgress(opening.id), review.nodeId ?? opening.rootNodeId, '2026-01-01T00:00:00.000Z')
     const updated = registerOpeningGameEvidence(progress, review, '2026-01-02T00:00:00.000Z')
     expect(updated.weakNodeIds).toContain(review.nodeId)
+  })
+
+  it('dicas sobem do conceito ao lance explícito', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    expect(openingHint(opening, opening.rootNodeId, 0)).toBeNull()
+    expect(openingHint(opening, opening.rootNodeId, 1)).toMatch(/peça/i)
+    expect(openingHint(opening, opening.rootNodeId, 4)).toMatch(/e4/i)
   })
 })

@@ -15,6 +15,7 @@ import {
   emptyOpeningProgress,
   markOpeningAttempt,
   markOpeningLearned,
+  openingHint,
   trainingNode,
   type OpeningDefinition,
   type OpeningMoveLesson,
@@ -290,6 +291,7 @@ function TrainMode({
   const [selected, setSelected] = useState<SquareName | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const [hintLevel, setHintLevel] = useState(0)
   const userColor = opening.side === 'white' ? 'w' : 'b'
   const targets = selected ? legalMoves(fen, selected).map((move) => move.to) : []
   useEffect(() => {
@@ -383,10 +385,25 @@ function TrainMode({
             setNodeId(opening.rootNodeId)
             setFeedback(null)
             setDone(false)
+            setHintLevel(0)
           }}
         >
           Recomeçar
         </button>
+        {!done ? (
+          <button
+            type="button"
+            className={styles.secondary}
+            onClick={() => setHintLevel((current) => Math.min(4, current + 1))}
+          >
+            {hintLevel === 0 ? 'Pedir uma dica' : 'Pedir próxima dica'}
+          </button>
+        ) : null}
+        {hintLevel > 0 ? (
+          <p className={styles.note} role="status">
+            Dica {hintLevel}: {openingHint(opening, nodeId, hintLevel)}
+          </p>
+        ) : null}
       </aside>
     </section>
   )
