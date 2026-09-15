@@ -1,6 +1,16 @@
 import { expect, test } from '@playwright/test'
 
-const ROTAS = ['/dashboard', '/train', '/aberturas', '/endgames', '/progress', '/settings'] as const
+const ROTAS = [
+  '/dashboard',
+  '/train',
+  '/aberturas',
+  '/aberturas/italiana?mode=learn',
+  '/aberturas/italiana?mode=train',
+  '/endgames',
+  '/endgames/mate-de-dama',
+  '/progress',
+  '/settings',
+] as const
 const VIEWPORTS = [
   { nome: 'mobile', width: 360, height: 800 },
   { nome: 'tablet', width: 768, height: 1024 },
@@ -22,8 +32,9 @@ test.describe('QA visual do frontend', () => {
         }))
         expect(layout.overflow, `${rota} em ${viewport.nome} ultrapassa a viewport`).toBe(false)
         await expect(page.locator('main')).toBeVisible()
+        const arquivo = rota.slice(1).replace(/[/?&=]/g, '-') || 'home'
         await page.screenshot({
-          path: testInfo.outputPath(`frontend-${viewport.nome}-${rota.slice(1).replace('/', '-') || 'home'}.png`),
+          path: testInfo.outputPath(`frontend-${viewport.nome}-${arquivo}.png`),
           fullPage: true,
         })
       }
