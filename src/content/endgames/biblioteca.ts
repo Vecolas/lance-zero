@@ -1,5 +1,5 @@
 import type { EndgameDefinition, EndgameLesson, EndgamePosition, EndgamePositionSet, TechniqueDefinition } from '@/domain/endgames'
-import { validarPosicaoDeFinal } from '@/domain/endgames'
+import { espelharHorizontalmenteFen, validarPosicaoDeFinal } from '@/domain/endgames'
 
 const OPOSICAO_A: EndgamePosition = {
   id: 'oposicao-biblioteca-a', fen: '4k3/8/8/4K3/4P3/8/8/8 b - - 0 1', sideToTrain: 'black',
@@ -35,7 +35,10 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
 
 export const ENDGAME_POSITION_SETS: readonly EndgamePositionSet[] = [
   { id: 'opposition-set', endgameId: 'opposition', positions: [OPOSICAO_A, OPOSICAO_B] },
-  ...ENDGAME_DEFINITIONS.filter((d) => d.id !== 'opposition').map((d) => ({ id: d.drillIds[0], endgameId: d.id, positions: [{ id: `${d.id}-representative`, fen: d.previewFen, sideToTrain: 'white' as const, objective: 'win' as const, conceptIds: [d.id], validationSource: 'curated' as const, difficulty: d.difficulty }] })),
+  ...ENDGAME_DEFINITIONS.filter((d) => d.id !== 'opposition').map((d) => ({ id: d.drillIds[0], endgameId: d.id, positions: [
+    { id: `${d.id}-representative`, fen: d.previewFen, sideToTrain: 'white' as const, objective: 'win' as const, conceptIds: [d.id], validationSource: 'curated' as const, difficulty: d.difficulty },
+    { id: `${d.id}-mirror`, fen: espelharHorizontalmenteFen(d.previewFen), sideToTrain: 'white' as const, objective: 'win' as const, conceptIds: [d.id], validationSource: 'curated' as const, difficulty: d.difficulty },
+  ] })),
 ]
 
 export const ENDGAME_TECHNIQUES: readonly TechniqueDefinition[] = [

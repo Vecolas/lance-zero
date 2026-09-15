@@ -5,7 +5,7 @@ import type { EndgamePosition } from './catalogo'
 export function espelharHorizontalmenteFen(fen: string): string {
   const fields = fen.trim().split(/\s+/)
   const ranks = (fields[0] ?? '').split('/').map((rank) => rank.split('').reverse().join(''))
-  return [...ranks, ...fields.slice(1)].join(' ')
+  return [ranks.join('/'), ...fields.slice(1)].join(' ')
 }
 
 export function validarPosicaoDeFinal(position: EndgamePosition): { ok: true } | { ok: false; reason: string } {

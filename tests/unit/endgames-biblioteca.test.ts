@@ -7,6 +7,7 @@ describe('biblioteca pedagógica de finais', () => {
     expect(validarBibliotecaDeFinais()).toEqual([])
     expect(ENDGAME_DEFINITIONS.length).toBeGreaterThanOrEqual(15)
     expect(ENDGAME_POSITION_SETS.length).toBe(ENDGAME_DEFINITIONS.length)
+    for (const set of ENDGAME_POSITION_SETS) expect(set.positions.length).toBeGreaterThanOrEqual(2)
   })
 
   it('começa não iniciado e evolui para consolidado por competência', () => {
