@@ -34,3 +34,13 @@ test('curso novo oferece Explorer como enriquecimento sob demanda', async ({ pag
   await expect(page.getByText(/Não consegui falar com o explorador/)).toBeVisible()
   expect(consultas).toBe(1)
 })
+
+test('catálogo filtra por primeiro lance, nível e status', async ({ page }) => {
+  await page.goto('/aberturas')
+  await expect(page.getByRole('link', { name: 'Abrir curso Abertura Italiana' })).toBeVisible()
+  await page.getByLabel('Primeiro lance').selectOption('d4')
+  await expect(page.getByRole('link', { name: 'Abrir curso Sistema Londres' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir curso Abertura Italiana' })).toBeHidden()
+  await page.getByLabel('Status').selectOption('learning')
+  await expect(page.getByText(/Nenhuma abertura corresponde aos filtros/)).toBeVisible()
+})

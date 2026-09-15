@@ -7,14 +7,20 @@ import { useEffect, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { OPENING_COURSES } from '@/content/openings/course'
-import type { OpeningDefinition, OpeningProgress, OpeningSide } from '@/domain/openings'
+import type { OpeningDefinition, OpeningProgress, OpeningSide, OpeningStatus } from '@/domain/openings'
 import styles from './OpeningCatalog.module.css'
 
 type Filter = 'all' | OpeningSide
+type StatusFilter = 'all' | OpeningStatus
+type DifficultyFilter = 'all' | 'beginner' | 'intermediate' | 'advanced'
+type FirstMoveFilter = 'all' | 'e4' | 'd4' | 'c4' | 'Nf3'
 
 export function OpeningCatalog() {
   const { repo } = useRepository()
   const [filter, setFilter] = useState<Filter>('all')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
+  const [firstMoveFilter, setFirstMoveFilter] = useState<FirstMoveFilter>('all')
   const [progress, setProgress] = useState<Record<string, OpeningProgress>>({})
   useEffect(() => {
     let cancelled = false
@@ -27,7 +33,18 @@ export function OpeningCatalog() {
     })
     return () => { cancelled = true }
   }, [repo])
-  const courses = OPENING_COURSES.filter((opening) => filter === 'all' || opening.side === filter)
+  const courses = OPENING_COURSES.filter((opening) => {
+    const current = progress[opening.id]
+    const status = current?.status ?? 'not_started'
+    const difficulty = opening.difficulty <= 1 ? 'beginner' : opening.difficulty === 2 ? 'intermediate' : 'advanced'
+    const firstMove = opening.mainline[0]?.san
+    return (
+      (filter === 'all' || opening.side === filter) &&
+      (statusFilter === 'all' || status === statusFilter) &&
+      (difficultyFilter === 'all' || difficulty === difficultyFilter) &&
+      (firstMoveFilter === 'all' || firstMove === firstMoveFilter)
+    )
+  })
   return (
     <section aria-labelledby="catalogo-aberturas">
       <div className={styles.filters} aria-label="Filtrar aberturas">
@@ -49,6 +66,38 @@ export function OpeningCatalog() {
           </button>
         ))}
       </div>
+      <div className={styles.selectFilters} aria-label="Filtros detalhados">
+        <label>
+          Primeiro lance
+          <select value={firstMoveFilter} onChange={(event) => setFirstMoveFilter(event.target.value as FirstMoveFilter)}>
+            <option value="all">Todos</option>
+            <option value="e4">1.e4</option>
+            <option value="d4">1.d4</option>
+            <option value="c4">1.c4</option>
+            <option value="Nf3">1.Cf3</option>
+          </select>
+        </label>
+        <label>
+          Nível
+          <select value={difficultyFilter} onChange={(event) => setDifficultyFilter(event.target.value as DifficultyFilter)}>
+            <option value="all">Todos</option>
+            <option value="beginner">Iniciante</option>
+            <option value="intermediate">Intermediária</option>
+            <option value="advanced">Avançada</option>
+          </select>
+        </label>
+        <label>
+          Status
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
+            <option value="all">Todos</option>
+            <option value="not_started">Não iniciadas</option>
+            <option value="learning">Aprendendo</option>
+            <option value="training">Treinando</option>
+            <option value="consolidating">Consolidando</option>
+            <option value="active_repertoire">Repertório ativo</option>
+          </select>
+        </label>
+      </div>
       <h2 id="catalogo-aberturas" className="sr-only">
         Cursos de abertura
       </h2>
@@ -57,6 +106,7 @@ export function OpeningCatalog() {
           <OpeningCard key={opening.id} opening={opening} progress={progress[opening.id]} />
         ))}
       </div>
+      {courses.length === 0 ? <p role="status">Nenhuma abertura corresponde aos filtros.</p> : null}
     </section>
   )
 }
