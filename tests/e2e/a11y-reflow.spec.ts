@@ -67,29 +67,6 @@ const ROTAS_360 = [
   '/licenses',
 ] as const
 
-/**
- * Transbordo MEDIDO que esta frente não pode consertar, porque o arquivo é de
- * outra fronteira. Declarado com o número, com o dono e com o conserto, para o
- * portão poder ficar verde sem MENTIR que a tela cabe.
- *
- * Não é perdão: o caso do transbordo declarado reprova quando a tela PARA de
- * transbordar. Assim a lista encolhe sozinha quando o dono consertar, em vez de
- * virar sedimento — e uma tela consertada não fica coberta por uma peneira
- * aberta esperando o próximo defeito.
- */
-const TRANSBORDOS_DECLARADOS: Record<string, { dono: string; causa: string; conserto: string }> = {
-  '/openings': {
-    dono: 'src/components/openings/** (fora da fronteira desta frente)',
-    causa:
-      'o cartão de repertório é item de grade com `min-width: auto`, então a menor largura ' +
-      'possível do conteúdo vaza para fora da tela; quem manda nela é o <select> do explorador, ' +
-      'cuja opção mais longa é "Depois de 1. e4 e5 2. Nf3 Nc6"',
-    conserto:
-      '`min-width: 0` em `.card` de RepertorioCard.module.css — medido no navegador: leva a ' +
-      'largura de rolagem de 486 px de volta para 360 px',
-  },
-}
-
 const PGN_REVISAO = `[Event "Refluxo"]
 [White "Alice"]
 [Black "Bruno"]
@@ -139,30 +116,10 @@ test.describe('360 px — a régua escrita no CLAUDE.md', () => {
   test.use({ viewport: VIEWPORT_360 })
 
   for (const rota of ROTAS_360) {
-    const declarado = TRANSBORDOS_DECLARADOS[rota]
-
-    if (!declarado) {
-      test(`${rota} cabe em 360 px sem rolar na horizontal`, async ({ page }) => {
-        await page.goto(rota)
-        await esperaConteudo(page)
-        await semRolagemHorizontal(page, rota)
-      })
-      continue
-    }
-
-    test(`${rota} transborda em 360 px — defeito declarado, não corrigido aqui`, async ({
-      page,
-    }) => {
+    test(`${rota} cabe em 360 px sem rolar na horizontal`, async ({ page }) => {
       await page.goto(rota)
       await esperaConteudo(page)
-      const { scroll, visivel } = await rolagemHorizontal(page)
-      expect(
-        scroll,
-        `${rota} parou de transbordar em 360 px (${scroll} <= ${visivel}). ` +
-          `Se o dono (${declarado.dono}) consertou, APAGUE a entrada de ` +
-          `TRANSBORDOS_DECLARADOS e deixe a rota entrar no caso normal. ` +
-          `Causa medida: ${declarado.causa}. Conserto esperado: ${declarado.conserto}`,
-      ).toBeGreaterThan(visivel + 1)
+      await semRolagemHorizontal(page, rota)
     })
   }
 

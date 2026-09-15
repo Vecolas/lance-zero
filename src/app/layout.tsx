@@ -1,14 +1,7 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
 import { AppShell } from '@/components/ui/AppShell'
 import { THEME_INIT_SCRIPT } from '@/lib/design/theme'
 import './globals.css'
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-})
 
 export const metadata: Metadata = {
   title: {
@@ -31,7 +24,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         {/* Aplica o tema salvo antes da primeira pintura, para a tela não piscar. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

@@ -51,7 +51,7 @@ O critério "chega ao bundle do cliente" foi considerado e recusado: além dos
 A ligação entre lockfile e documento é o **nome npm**, lido da coluna `Pacote`.
 Não existe segunda tabela de-para: o nome já está escrito aqui, e derivar é
 melhor que duplicar. Célula que não é nome npm (`Lichess puzzle database`,
-`Inter (via next/font/google)`) não contribui nome nenhum — este portão fala
+`Inter (preferência tipográfica do sistema)`) não contribui nome nenhum — este portão fala
 sobre pacotes npm, e dado aberto ou serviço de terceiro está fora do alcance
 dele por construção.
 
@@ -119,7 +119,7 @@ compatibilidade entre licenças.
 | `supabase-js`                | `@supabase/supabase-js`        | 2.116.0                   | MIT                     | Cliente do Supabase; a autorização fica no Postgres, via RLS                                                        | https://github.com/supabase/supabase-js                  |
 | `server-only`                | `server-only`                  | 0.0.1                     | MIT                     | Quebra o build se um módulo de servidor for importado no cliente                                                    | https://www.npmjs.com/package/server-only                |
 | `supabase-agent-skills`      | `supabase/agent-skills`        | ver `skills-lock.json`    | MIT                     | Instruções de agente para trabalhar com Supabase. Conteúdo vendorizado NÃO é versionado; o lockfile guarda o hash   | https://github.com/supabase/agent-skills                 |
-| `inter`                      | Inter (via `next/font/google`) | —                         | SIL OFL 1.1             | Tipografia de interface, servida localmente                                                                         | https://github.com/rsms/inter                            |
+| `inter`                      | Inter (preferência do sistema) | —                         | SIL OFL 1.1             | Referência tipográfica do guia; o app usa fontes locais e fallback de sistema, sem download no build                | https://github.com/rsms/inter                            |
 | `chess-openings`             | `lichess-org/chess-openings`   | recorte de 2026-09-09     | CC0-1.0                 | Nomes e códigos ECO. Recorte curado em `src/content/openings/eco-fixture.ts`; o dump completo NÃO é versionado aqui | https://github.com/lichess-org/chess-openings            |
 
 ## Previstos (entram junto com a fase que os exige)

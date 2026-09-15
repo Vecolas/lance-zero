@@ -1,0 +1,23 @@
+{
+  "skill_name": "lancezero-learning-engine",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Mostre o nome do tema antes de cada puzzle para ajudar o jogador.",
+      "expected_output": "Allows scaffolding for acquisition but rejects motif reveal before retrieval in review/mixed testing.",
+      "expectations": [
+        "Distinguishes acquisition from retrieval",
+        "Preserves retrieval-before-reveal for learned material"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use FSRS como score geral de habilidade tática.",
+      "expected_output": "Separates FSRS scheduling from mastery/skill rating.",
+      "expectations": [
+        "FSRS remains scheduler",
+        "Skill mastery is modeled separately"
+      ]
+    }
+  ]
+}

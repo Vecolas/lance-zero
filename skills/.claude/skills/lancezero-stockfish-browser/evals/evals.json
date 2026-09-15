@@ -1,0 +1,24 @@
+{
+  "skill_name": "lancezero-stockfish-browser",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Coloque Stockfish no componente React e rode análise a cada render.",
+      "expected_output": "Reject main-thread/component coupling; require Worker + EngineProvider + cancellation/stale result protection.",
+      "expectations": [
+        "Uses Web Worker",
+        "Uses engine abstraction",
+        "Addresses stale/cancelled analysis"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Quero trocar para Stockfish multi-thread agora.",
+      "expected_output": "Evaluates whether extra strength is needed and calls out SharedArrayBuffer/cross-origin isolation and COOP/COEP implications.",
+      "expectations": [
+        "Mentions cross-origin isolation",
+        "Does not assume multi-thread is automatically better for MVP"
+      ]
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { mainNav, mobilePrimaryNav, type NavItem } from '@/lib/navigation'
+import { mainNav, mobilePrimaryNav, secondaryNav, type NavItem } from '@/lib/navigation'
 import styles from './SiteNav.module.css'
 
 function isActive(pathname: string, href: string): boolean {
@@ -63,6 +63,7 @@ export function SiteHeader() {
           {mainNav.map((item) => navLink(item, pathname, styles.link, styles.linkActive))}
         </nav>
         <div className={styles.tools}>
+          {navLink(secondaryNav[0], pathname, styles.link, styles.linkActive)}
           <ThemeToggle />
         </div>
       </div>

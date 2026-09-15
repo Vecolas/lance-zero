@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { SkillCard } from '@/components/progress/SkillCard'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { getSkill } from '@/domain/skills/catalog'
+import { buildWeeklyReport, type WeeklyReport } from '@/domain/progress/weekly-report'
 import type {
   PuzzleAttempt,
   RetencaoDeHabilidade,
@@ -57,6 +58,7 @@ export function ProgressView() {
   const { status, repo, erro, revision } = useRepository()
   const [mastery, setMastery] = useState<SkillMastery[] | null>(null)
   const [attempts, setAttempts] = useState<PuzzleAttempt[]>([])
+  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null)
   const [retencoes, setRetencoes] = useState<Map<SkillId, RetencaoDeHabilidade>>(new Map())
   const [falha, setFalha] = useState<string | null>(null)
 
@@ -71,14 +73,19 @@ export function ProgressView() {
         // Reescrever a sequência de leituras aqui criaria uma segunda janela de
         // recência, e as duas telas mostrariam números diferentes sobre o mesmo
         // aluno sem nada acusar.
-        const [m, a, sinais] = await Promise.all([
+        const [m, a, gamesRecentes, sinais] = await Promise.all([
           repo.getSkillMastery(),
-          repo.listPuzzleAttempts(200),
+          repo.listPuzzleAttempts(),
+          // A partida pode ter sido importada antes da semana e revisada agora.
+          // O recorte é responsabilidade do relatório, não da consulta: filtrar
+          // por importedAt aqui apagaria silenciosamente essa revisão.
+          repo.listGames(),
           carregarSinaisDePartida(repo, { agora: new Date() }),
         ])
         if (!cancelado) {
           setMastery(m)
           setAttempts(a)
+          setWeeklyReport(buildWeeklyReport({ now: new Date(), attempts: a, games: gamesRecentes }))
           setRetencoes(sinais.retencoes)
         }
       } catch (e) {
@@ -102,16 +109,56 @@ export function ProgressView() {
     )
   }
 
-  if (!mastery) return <p className={styles.state}>Lendo seu progresso…</p>
+  if (!mastery || !weeklyReport) return <p className={styles.state}>Lendo seu progresso…</p>
+
+  const resumoSemanal = (
+    <section className={styles.card} aria-labelledby="resumo-semanal">
+      <h2 id="resumo-semanal" className={styles.cardTitle}>
+        Últimos 7 dias
+      </h2>
+      {weeklyReport.hasActivity ? (
+        <dl className={styles.weeklyGrid}>
+          <div>
+            <dt>Puzzles resolvidos</dt>
+            <dd>{weeklyReport.puzzlesSolved}</dd>
+          </div>
+          <div>
+            <dt>De primeira</dt>
+            <dd>{weeklyReport.firstTrySolved}</dd>
+          </div>
+          <div>
+            <dt>Partidas importadas</dt>
+            <dd>{weeklyReport.gamesImported}</dd>
+          </div>
+          <div>
+            <dt>Partidas revisadas</dt>
+            <dd>{weeklyReport.gamesReviewed}</dd>
+          </div>
+          <div>
+            <dt>Minutos pensando</dt>
+            <dd>{weeklyReport.practiceMinutes}</dd>
+          </div>
+        </dl>
+      ) : (
+        <p className={styles.weeklyEmpty}>
+          Ainda não há atividade registrada nesta semana. O resumo nasce do que você realmente
+          treinou e importou, não de uma meta inventada.
+        </p>
+      )}
+    </section>
+  )
 
   const comDados = mastery.filter((m) => m.attempts > 0)
 
   if (comDados.length === 0) {
     return (
-      <p className={styles.state}>
-        Ainda não há o que medir. Faça o treino de hoje ou importe uma partida — o progresso aqui
-        nasce das suas tentativas, não de um número inventado no começo.
-      </p>
+      <>
+        {resumoSemanal}
+        <p className={styles.state}>
+          Ainda não há o que medir. Faça o treino de hoje ou importe uma partida — o progresso aqui
+          nasce das suas tentativas, não de um número inventado no começo.
+        </p>
+      </>
     )
   }
 
@@ -122,6 +169,7 @@ export function ProgressView() {
 
   return (
     <>
+      {resumoSemanal}
       <div className={styles.columns}>
         <section className={styles.card} aria-labelledby="fortes">
           <h2 id="fortes" className={styles.cardTitle}>

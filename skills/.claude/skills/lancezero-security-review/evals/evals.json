@@ -1,0 +1,24 @@
+{
+  "skill_name": "lancezero-security-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Crie uma rota PATCH /api/profile que recebe userId e displayName do frontend.",
+      "expected_output": "Reject trusting client userId; derive identity from verified session, validate input, use RLS-aware data access and minimal DTO.",
+      "expectations": [
+        "Does not authorize with client-supplied userId",
+        "Mentions runtime validation",
+        "Preserves RLS/authorization defense in depth"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Posso proteger /admin somente no proxy.ts?",
+      "expected_output": "Explains proxy is not sufficient and requires server/data-layer authorization as well.",
+      "expectations": [
+        "Rejects proxy-only authorization",
+        "Places authorization close to privileged operation"
+      ]
+    }
+  ]
+}

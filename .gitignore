@@ -57,3 +57,7 @@ playwright-report/
 # git tratam mal.
 .agents/
 .claude/skills/
+
+# Estado local gerado pelo Supabase CLI (link, versões e pooler temporário).
+supabase/.branches/
+supabase/.temp/

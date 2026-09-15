@@ -2,11 +2,13 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { RepositoryProvider } from '@/components/providers/RepositoryProvider'
 import { SiteBottomNav, SiteHeader } from '@/components/ui/SiteNav'
+import { PwaRegistration } from '@/components/ui/PwaRegistration'
 import styles from './AppShell.module.css'
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className={styles.shell}>
+      <PwaRegistration />
       <a className="skip-link" href="#conteudo">
         Pular para o conteúdo
       </a>

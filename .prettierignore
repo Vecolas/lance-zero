@@ -2,7 +2,10 @@
 node_modules
 pnpm-lock.yaml
 public/engine
+skills/
 LanceZero_Pesquisa_PRD_Plano_Desenvolvimento.md
 docs/RESEARCH.md
 CLAUDE.md
 LanceZero_Plano_Seguranca_Cadastro_Perfil_Vercel.md
+.claude/
+docs/LanceZero_Plano_Definitivo_Logica_Aprendizado.md
