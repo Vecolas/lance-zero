@@ -51,6 +51,8 @@ export interface OpeningMoveEdge {
   role: OpeningMoveRole
   explanation?: string
   lesson?: OpeningMoveLesson
+  /** Branch explicitamente seguro para diagnóstico antes de ser ensinado. */
+  discoverySafe?: boolean
 }
 
 export interface OpeningNode {
@@ -225,6 +227,7 @@ export function buildOpeningGraph(
           role: line.role,
           explanation: lesson.comment,
           lesson,
+          discoverySafe: line.role === 'variation',
         })
       }
       fen = applied.fenAfter
@@ -320,6 +323,47 @@ export function chooseOpponentResponse(
     if (cursor <= 0) return move
   }
   return node.opponentResponses[node.opponentResponses.length - 1] ?? null
+}
+
+/** Oponente do treino: grafo permitido + frequência + adaptação ao progresso. */
+export function chooseOpeningTrainingOpponent(
+  opening: OpeningDefinition,
+  nodeId: string,
+  progress: OpeningProgress,
+  random = Math.random,
+): WeightedMove | null {
+  const node = opening.graph.get(nodeId)
+  if (!node) return null
+  const learned = new Set(progress.learnedNodeIds)
+  const weak = new Set(progress.weakNodeIds)
+  const allowed = node.outgoingMoves.filter(
+    (edge) => edge.role === 'main' || learned.has(edge.nextNodeId) || edge.discoverySafe === true,
+  )
+  const candidates = allowed.length > 0 ? allowed : node.outgoingMoves.filter((edge) => edge.role === 'main')
+  if (candidates.length === 0) return null
+  const weighted = candidates.map((edge) => ({
+    edge,
+    weight: Math.max(1, edge.frequency) *
+      (weak.has(edge.nextNodeId) ? 2 : 1) *
+      (edge.role === 'main' ? 1.2 : 1),
+  }))
+  const total = weighted.reduce((sum, item) => sum + item.weight, 0)
+  let cursor = random() * total
+  for (const item of weighted) {
+    cursor -= item.weight
+    if (cursor <= 0) {
+      return {
+        uci: item.edge.uci,
+        san: item.edge.san,
+        weight: item.weight,
+        nextNodeId: item.edge.nextNodeId,
+      }
+    }
+  }
+  const last = weighted[weighted.length - 1]?.edge
+  return last
+    ? { uci: last.uci, san: last.san, weight: weighted.at(-1)?.weight ?? 1, nextNodeId: last.nextNodeId }
+    : null
 }
 
 export function classifyOpeningAttempt(

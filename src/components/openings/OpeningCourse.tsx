@@ -9,14 +9,13 @@ import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { ExplorerPanel } from '@/components/openings/ExplorerPanel'
 import { applyMove, identidadeDePosicao, legalMoves, type SquareName } from '@/lib/chess'
 import {
-  chooseOpponentResponse,
+  chooseOpeningTrainingOpponent,
   classifyOpeningAttempt,
   completeOpeningActivity,
   emptyOpeningProgress,
   markOpeningAttempt,
   markOpeningLearned,
   openingHint,
-  trainingNode,
   type OpeningDefinition,
   type OpeningMoveLesson,
   type OpeningProgress,
@@ -298,15 +297,7 @@ function TrainMode({
   useEffect(() => {
     if (done || (fen.split(' ')[1] ?? 'w') === userColor) return
     const timer = window.setTimeout(() => {
-      const response = chooseOpponentResponse(
-        trainingNode(opening, nodeId) ?? {
-          fen,
-          preferredMoves: [],
-          acceptableMoves: [],
-          opponentResponses: [],
-          explanationAfterAttempt: '',
-        },
-      )
+      const response = chooseOpeningTrainingOpponent(opening, nodeId, progress)
       if (!response) return
       const applied = applyUci(fen, response.uci)
       if (!applied) return
@@ -315,7 +306,7 @@ function TrainMode({
       setPly((current) => current + 1)
     }, 0)
     return () => window.clearTimeout(timer)
-  }, [done, fen, nodeId, opening, userColor])
+  }, [done, fen, nodeId, opening, progress, userColor])
   const tryMove = (from: SquareName, to: SquareName) => {
     if ((fen.split(' ')[1] ?? 'w') !== userColor || done) return false
     const applied = applyMove(fen, { from, to, promotion: 'q' })

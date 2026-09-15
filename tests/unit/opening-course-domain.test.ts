@@ -4,6 +4,7 @@ import { applyMove, identidadeDePosicao } from '@/lib/chess'
 import {
   classifyOpeningAttempt,
   chooseOpponentResponse,
+  chooseOpeningTrainingOpponent,
   completeOpeningActivity,
   emptyOpeningProgress,
   markOpeningLearned,
@@ -123,6 +124,14 @@ describe('curso de aberturas como grafo pedagógico', () => {
     expect(openingHint(opening, opening.rootNodeId, 0)).toBeNull()
     expect(openingHint(opening, opening.rootNodeId, 1)).toMatch(/peça/i)
     expect(openingHint(opening, opening.rootNodeId, 4)).toMatch(/e4/i)
+  })
+
+  it('oponente adaptativo só usa mainline, nodes ensinados ou discovery-safe', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const progress = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, '2026-01-01T00:00:00.000Z')
+    const response = chooseOpeningTrainingOpponent(opening, opening.rootNodeId, progress, () => 0)
+    expect(response).toBeDefined()
+    expect(opening.graph.get(opening.rootNodeId)?.outgoingMoves.some((edge) => edge.uci === response?.uci && (edge.role === 'main' || edge.discoverySafe))).toBe(true)
   })
 
   it('funde listas de progresso sem perder a cópia de nenhum aparelho', () => {
