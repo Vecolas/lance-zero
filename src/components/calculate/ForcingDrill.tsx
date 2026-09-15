@@ -120,6 +120,11 @@ export function ForcingDrill() {
             {resumo.side === 'w' ? 'Brancas jogam.' : 'Pretas jogam.'} Ache todos os xeques e todas
             as capturas.
           </p>
+          <ol className={styles.workflow} aria-label="Etapas do cálculo">
+            <li className={styles.workflowActive}>1. Candidatos</li>
+            <li className={nota ? styles.workflowActive : styles.workflowPending}>2. Resposta</li>
+            <li className={nota ? styles.workflowActive : styles.workflowPending}>3. Avaliação</li>
+          </ol>
           <p className={styles.explain}>
             Antes de calcular qualquer coisa, olhe o que é forçante. Clique na peça e depois na casa
             de destino para marcar um lance — nada é jogado no tabuleiro.
@@ -160,6 +165,7 @@ export function ForcingDrill() {
             </div>
           ) : (
             <div className={styles.resultado}>
+              <p className={styles.stageTitle}>Avaliação pedagógica</p>
               <span className={`${styles.nota} ${nota.completo ? styles.bom : styles.parcial}`}>
                 {nota.completo
                   ? '✓ Lista completa'

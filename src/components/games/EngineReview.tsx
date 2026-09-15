@@ -5,6 +5,7 @@ import { useRepository } from '@/components/providers/RepositoryProvider'
 import { adaptarEngine } from '@/components/games/engine-adapter'
 import { EvaluationBar } from '@/components/ui/EvaluationBar'
 import { MoveQualityBadge } from '@/components/ui/MoveQualityBadge'
+import { StatePanel } from '@/components/ui/primitives'
 import { moveQualityFromSeverity } from '@/lib/design/move-quality'
 import {
   analyzeGame,
@@ -266,6 +267,14 @@ export function EngineReview({
                 )
               })}
             </ul>
+          ) : null}
+
+          {momentosOrdenados.length === 0 ? (
+            <StatePanel
+              kind="completed"
+              title="Nenhum momento crítico encontrado"
+              description="A análise não encontrou uma mudança que mereça virar exercício. Isso não é uma nota: é um convite para seguir jogando e revisar com suas próprias perguntas."
+            />
           ) : null}
 
           {comparacao.semConfirmacao.length > 0 ? (
