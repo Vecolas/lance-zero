@@ -1,26 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import styles from './AppStatus.module.css'
 
 export function AppStatus() {
-  const [offline, setOffline] = useState(
-    () => typeof navigator !== 'undefined' && !navigator.onLine,
+  const online = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener('online', onChange)
+      window.addEventListener('offline', onChange)
+      return () => {
+        window.removeEventListener('online', onChange)
+        window.removeEventListener('offline', onChange)
+      }
+    },
+    () => navigator.onLine,
+    () => true,
   )
+  const offline = !online
   const [updateReady, setUpdateReady] = useState(false)
 
   useEffect(() => {
-    const onOnline = () => setOffline(false)
-    const onOffline = () => setOffline(true)
     const onUpdate = () => setUpdateReady(true)
 
-    window.addEventListener('online', onOnline)
-    window.addEventListener('offline', onOffline)
     window.addEventListener('lancezero:pwa-update', onUpdate)
 
     return () => {
-      window.removeEventListener('online', onOnline)
-      window.removeEventListener('offline', onOffline)
       window.removeEventListener('lancezero:pwa-update', onUpdate)
     }
   }, [])
