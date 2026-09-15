@@ -68,7 +68,7 @@ const italianaMain = [
 function course(
   definition: Omit<
     OpeningDefinition,
-    'graph' | 'rootNodeId' | 'previewFen' | 'mainLineId' | 'variationIds' | 'planIds'
+    'graph' | 'rootNodeId' | 'previewFen' | 'rootFen' | 'mainLineId' | 'variationIds' | 'planIds'
   >,
 ): OpeningDefinition {
   return buildOpeningDefinition(definition)

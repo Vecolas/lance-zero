@@ -113,7 +113,7 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
 
 function Overview({ opening, onLearn }: { opening: OpeningDefinition; onLearn: () => void }) {
   const explorerPositions = [
-    { identidade: identidadeDePosicao(opening.previewFen), fen: opening.previewFen, rotulo: 'Posição inicial' },
+    { identidade: identidadeDePosicao(opening.rootFen), fen: opening.rootFen, rotulo: 'Posição inicial' },
     ...opening.mainline.slice(0, 8).map((move, index) => {
       const fen = fenAtLessons(opening.mainline, index + 1)
       return { identidade: identidadeDePosicao(fen), fen, rotulo: `${index + 1}. ${move.san}` }
@@ -285,8 +285,9 @@ function TrainMode({
   progress: OpeningProgress
   onProgress: (fn: (current: OpeningProgress) => OpeningProgress) => void
 }) {
+  const rootFen = opening.rootFen
   const [ply, setPly] = useState(0)
-  const [fen, setFen] = useState(opening.previewFen)
+  const [fen, setFen] = useState(rootFen)
   const [nodeId, setNodeId] = useState(opening.rootNodeId)
   const [selected, setSelected] = useState<SquareName | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -381,7 +382,7 @@ function TrainMode({
           className={styles.secondary}
           onClick={() => {
             setPly(0)
-            setFen(opening.previewFen)
+            setFen(rootFen)
             setNodeId(opening.rootNodeId)
             setFeedback(null)
             setDone(false)

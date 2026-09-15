@@ -106,6 +106,7 @@ export interface OpeningDefinition {
   description: string
   philosophy: string
   previewFen: string
+  rootFen: string
   rootNodeId: string
   mainLineId: string
   variationIds: string[]
@@ -235,7 +236,7 @@ export function buildOpeningGraph(
 export function buildOpeningDefinition(
   definition: Omit<
     OpeningDefinition,
-    'graph' | 'rootNodeId' | 'previewFen' | 'mainLineId' | 'variationIds' | 'planIds'
+    'graph' | 'rootNodeId' | 'previewFen' | 'rootFen' | 'mainLineId' | 'variationIds' | 'planIds'
   >,
 ): OpeningDefinition {
   const lines = [
@@ -255,10 +256,19 @@ export function buildOpeningDefinition(
     const node = graph.get(plan.positionNodeId) ?? graph.get(rootNodeId)
     return { ...plan, positionNodeId: node?.id ?? rootNodeId }
   })
+  let previewFen = graph.get(rootNodeId)?.fen ?? START_FEN
+  let previewCursor = START_FEN
+  for (const lesson of definition.mainline.slice(0, 4)) {
+    const applied = applyMove(previewCursor, lesson.san)
+    if (!applied) break
+    previewCursor = applied.fenAfter
+    previewFen = previewCursor
+  }
   return {
     ...definition,
     rootNodeId,
-    previewFen: graph.get(rootNodeId)?.fen ?? START_FEN,
+    rootFen: graph.get(rootNodeId)?.fen ?? START_FEN,
+    previewFen,
     mainLineId,
     variationIds: variations.map((variation) => variation.id),
     planIds: plans.map((plan) => plan.id),

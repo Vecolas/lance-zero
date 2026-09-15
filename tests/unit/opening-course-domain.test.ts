@@ -17,7 +17,7 @@ import { registerOpeningGameEvidence, reviewOpeningGame } from '@/domain/opening
 import { parsePgn } from '@/lib/chess'
 
 function positionAt(opening: OpeningDefinition, ply: number): string {
-  let fen = opening.previewFen
+  let fen = opening.rootFen
   for (let index = 0; index < ply; index += 1) {
     const applied = applyMove(fen, opening.mainline[index].san)
     if (!applied) throw new Error(`linha ilegal no teste: ${opening.mainline[index].san}`)
@@ -43,7 +43,7 @@ describe('curso de aberturas como grafo pedagógico', () => {
       for (const move of opening.mainline) {
         expect(move.comment.trim(), `${opening.id}:${move.san}`).not.toBe('')
       }
-      let fen = opening.previewFen
+      let fen = opening.rootFen
       for (const move of opening.mainline) {
         const applied = applyMove(fen, move.san)
         expect(applied, `${opening.id}:${move.san}`).not.toBeNull()
