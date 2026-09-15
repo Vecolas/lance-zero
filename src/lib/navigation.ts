@@ -50,9 +50,9 @@ export const mainNav: NavItem[] = [
     phase: 9,
   },
   {
-    href: '/endgames',
+    href: '/finais',
     label: 'Finais',
-    description: 'Currículo básico de finais com posições treináveis.',
+    description: 'Reconheça princípios, pratique posições variadas e converta finais.',
     phase: 8,
   },
   {
