@@ -1,0 +1,45 @@
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 23rem);
+  gap: var(--space-5);
+  align-items: start;
+  min-width: 0;
+}
+
+.boardColumn,
+.panel,
+.below {
+  min-width: 0;
+}
+
+.boardColumn {
+  display: grid;
+  justify-items: center;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.below {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 59.99rem) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .panel,
+  .below {
+    width: 100%;
+  }
+}
+
+@media (max-height: 42rem) and (min-width: 60rem) {
+  .workspace {
+    gap: var(--space-4);
+  }
+}

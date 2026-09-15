@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { ChessWorkspace } from '@/components/chess/ChessWorkspace'
 import { EngineReview } from '@/components/games/EngineReview'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { OPENING_COURSES } from '@/content/openings/course'
@@ -150,143 +151,148 @@ export function HumanReview({ gameId }: Props) {
 
   return (
     <>
-      <div className={styles.layout}>
-        <div>
-          <ChessBoardView
-            fen={fenAtPly(linha, ply)}
-            orientation={game.userColor}
-            theme={profile?.preferences.boardTheme ?? 'claro'}
-            lastMove={highlightedSquares(linha, ply)}
-            interactive={false}
-          />
-          <div className={styles.controls}>
-            <button
-              type="button"
-              className={styles.button}
-              onClick={() => passo('primeiro')}
-              disabled={ply === 0}
-              aria-label="Primeiro lance"
-            >
-              &#8676;
-            </button>
-            <button
-              type="button"
-              className={styles.button}
-              onClick={() => passo('anterior')}
-              disabled={ply === 0}
-              aria-label="Lance anterior"
-            >
-              &#8592;
-            </button>
-            <button
-              type="button"
-              className={styles.button}
-              onClick={() => passo('proximo')}
-              disabled={ply === linha.plies.length}
-              aria-label="Próximo lance"
-            >
-              &#8594;
-            </button>
-            <button
-              type="button"
-              className={styles.button}
-              onClick={() => passo('ultimo')}
-              disabled={ply === linha.plies.length}
-              aria-label="Último lance"
-            >
-              &#8677;
-            </button>
-            <button
-              type="button"
-              className={styles.button}
-              onClick={() => alternarMarca(ply)}
-              disabled={ply === 0}
-            >
-              {marcados.includes(ply) ? 'Desmarcar este lance' : 'Marcar este lance'}
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.side}>
-          <div className={styles.card}>
-            <p className={styles.question}>Onde você acha que a partida mudou?</p>
-            <p className={styles.explain}>
-              Nenhuma avaliação aparece aqui. Marque os lances que você suspeita e escreva o porquê
-              — depois a engine confirma ou corrige. Pensar antes é o que faz a revisão ensinar
-              alguma coisa.
-            </p>
-          </div>
-
-          <div className={styles.moves}>
-            <table className={styles.table}>
-              <caption className="sr-only">
-                Lances da partida. Clique para ir até o lance; use o botão de marcar para sinalizar
-                um momento suspeito.
-              </caption>
-              <tbody>
-                {pares.map((par, i) => (
-                  <tr key={`${par.moveNumber}-${i}`}>
-                    <th scope="row" className={styles.number}>
-                      {par.moveNumber}.
-                    </th>
-                    {[par.white, par.black].map((meio, coluna) => (
-                      <td key={coluna} className={styles.cell}>
-                        {meio ? (
-                          <button
-                            type="button"
-                            className={
-                              meio.index === ply ? `${styles.move} ${styles.current}` : styles.move
-                            }
-                            aria-current={meio.index === ply ? 'step' : undefined}
-                            onClick={() => setPly(meio.index)}
-                          >
-                            {meio.san}
-                            {marcados.includes(meio.index) ? (
-                              <span className={styles.marca} aria-label="marcado por você">
-                                ⚑
-                              </span>
-                            ) : null}
-                          </button>
-                        ) : null}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className={styles.card}>
-            <label className={styles.label} htmlFor="notas">
-              Suas anotações
-            </label>
-            <textarea
-              id="notas"
-              className={styles.textarea}
-              value={notas}
-              onChange={(e) => {
-                setNotas(e.target.value)
-                setSalvo(false)
-              }}
-              placeholder="O que você acha que deu errado?"
+      <ChessWorkspace
+        board={
+          <div>
+            <ChessBoardView
+              fen={fenAtPly(linha, ply)}
+              orientation={game.userColor}
+              theme={profile?.preferences.boardTheme ?? 'claro'}
+              lastMove={highlightedSquares(linha, ply)}
+              interactive={false}
             />
             <div className={styles.controls}>
-              <button type="button" className={styles.primary} onClick={() => void salvar()}>
-                Salvar minha análise
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => passo('primeiro')}
+                disabled={ply === 0}
+                aria-label="Primeiro lance"
+              >
+                &#8676;
               </button>
-              <Link href="/games" className={styles.button}>
-                Voltar
-              </Link>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => passo('anterior')}
+                disabled={ply === 0}
+                aria-label="Lance anterior"
+              >
+                &#8592;
+              </button>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => passo('proximo')}
+                disabled={ply === linha.plies.length}
+                aria-label="Próximo lance"
+              >
+                &#8594;
+              </button>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => passo('ultimo')}
+                disabled={ply === linha.plies.length}
+                aria-label="Último lance"
+              >
+                &#8677;
+              </button>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => alternarMarca(ply)}
+                disabled={ply === 0}
+              >
+                {marcados.includes(ply) ? 'Desmarcar este lance' : 'Marcar este lance'}
+              </button>
             </div>
-            {salvo ? (
-              <p className={styles.feedback} role="status">
-                Salvo: {marcados.length}{' '}
-                {marcados.length === 1 ? 'lance marcado' : 'lances marcados'}.
-              </p>
-            ) : null}
           </div>
-        </div>
-      </div>
+        }
+        panel={
+          <div className={styles.side}>
+            <div className={styles.card}>
+              <p className={styles.question}>Onde você acha que a partida mudou?</p>
+              <p className={styles.explain}>
+                Nenhuma avaliação aparece aqui. Marque os lances que você suspeita e escreva o
+                porquê — depois a engine confirma ou corrige. Pensar antes é o que faz a revisão
+                ensinar alguma coisa.
+              </p>
+            </div>
+
+            <div className={styles.moves}>
+              <table className={styles.table}>
+                <caption className="sr-only">
+                  Lances da partida. Clique para ir até o lance; use o botão de marcar para
+                  sinalizar um momento suspeito.
+                </caption>
+                <tbody>
+                  {pares.map((par, i) => (
+                    <tr key={`${par.moveNumber}-${i}`}>
+                      <th scope="row" className={styles.number}>
+                        {par.moveNumber}.
+                      </th>
+                      {[par.white, par.black].map((meio, coluna) => (
+                        <td key={coluna} className={styles.cell}>
+                          {meio ? (
+                            <button
+                              type="button"
+                              className={
+                                meio.index === ply
+                                  ? `${styles.move} ${styles.current}`
+                                  : styles.move
+                              }
+                              aria-current={meio.index === ply ? 'step' : undefined}
+                              onClick={() => setPly(meio.index)}
+                            >
+                              {meio.san}
+                              {marcados.includes(meio.index) ? (
+                                <span className={styles.marca} aria-label="marcado por você">
+                                  ⚑
+                                </span>
+                              ) : null}
+                            </button>
+                          ) : null}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={styles.card}>
+              <label className={styles.label} htmlFor="notas">
+                Suas anotações
+              </label>
+              <textarea
+                id="notas"
+                className={styles.textarea}
+                value={notas}
+                onChange={(e) => {
+                  setNotas(e.target.value)
+                  setSalvo(false)
+                }}
+                placeholder="O que você acha que deu errado?"
+              />
+              <div className={styles.controls}>
+                <button type="button" className={styles.primary} onClick={() => void salvar()}>
+                  Salvar minha análise
+                </button>
+                <Link href="/games" className={styles.button}>
+                  Voltar
+                </Link>
+              </div>
+              {salvo ? (
+                <p className={styles.feedback} role="status">
+                  Salvo: {marcados.length}{' '}
+                  {marcados.length === 1 ? 'lance marcado' : 'lances marcados'}.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        }
+      />
 
       {aberturas.some((item) => item.classification !== 'normal_transition') ? (
         <div className={styles.card} role="status">

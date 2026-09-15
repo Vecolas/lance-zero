@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { ChessWorkspace } from '@/components/chess/ChessWorkspace'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { STARTER_PUZZLES_CSV } from '@/content/puzzles/starter'
 import {
@@ -98,105 +99,108 @@ export function ForcingDrill() {
   }
 
   return (
-    <div className={styles.layout}>
-      <ChessBoardView
-        fen={fen}
-        orientation={resumo.side}
-        theme={profile?.preferences.boardTheme ?? 'claro'}
-        selected={origem}
-        targets={alvos}
-        interactive={false}
-        onSquareClick={clicar}
-      />
+    <ChessWorkspace
+      board={
+        <ChessBoardView
+          fen={fen}
+          orientation={resumo.side}
+          theme={profile?.preferences.boardTheme ?? 'claro'}
+          selected={origem}
+          targets={alvos}
+          interactive={false}
+          onSquareClick={clicar}
+        />
+      }
+      panel={
+        <div className={styles.panel}>
+          <p className={styles.counter}>
+            Posição {indice + 1} de {POSICOES.length}
+          </p>
+          <p className={styles.prompt}>
+            {resumo.side === 'w' ? 'Brancas jogam.' : 'Pretas jogam.'} Ache todos os xeques e todas
+            as capturas.
+          </p>
+          <p className={styles.explain}>
+            Antes de calcular qualquer coisa, olhe o que é forçante. Clique na peça e depois na casa
+            de destino para marcar um lance — nada é jogado no tabuleiro.
+          </p>
 
-      <div className={styles.panel}>
-        <p className={styles.counter}>
-          Posição {indice + 1} de {POSICOES.length}
-        </p>
-        <p className={styles.prompt}>
-          {resumo.side === 'w' ? 'Brancas jogam.' : 'Pretas jogam.'} Ache todos os xeques e todas as
-          capturas.
-        </p>
-        <p className={styles.explain}>
-          Antes de calcular qualquer coisa, olhe o que é forçante. Clique na peça e depois na casa
-          de destino para marcar um lance — nada é jogado no tabuleiro.
-        </p>
-
-        <div className={styles.chips}>
-          {selecionados.length === 0 ? (
-            <p className={styles.vazio}>Nenhum lance marcado ainda.</p>
-          ) : (
-            selecionados.map((uci) => (
-              <button
-                key={uci}
-                type="button"
-                className={styles.chip}
-                disabled={nota !== null}
-                onClick={() => setSelecionados((atual) => atual.filter((u) => u !== uci))}
-                aria-label={`Remover ${uci}`}
-              >
-                {uci} ✕
-              </button>
-            ))
-          )}
-        </div>
-
-        {nota === null ? (
-          <div className={styles.actions}>
-            <button type="button" className={styles.primary} onClick={() => void conferir()}>
-              Conferir
-            </button>
-            <button
-              type="button"
-              className={styles.ghost}
-              onClick={() => setSelecionados([])}
-              disabled={selecionados.length === 0}
-            >
-              Limpar
-            </button>
+          <div className={styles.chips}>
+            {selecionados.length === 0 ? (
+              <p className={styles.vazio}>Nenhum lance marcado ainda.</p>
+            ) : (
+              selecionados.map((uci) => (
+                <button
+                  key={uci}
+                  type="button"
+                  className={styles.chip}
+                  disabled={nota !== null}
+                  onClick={() => setSelecionados((atual) => atual.filter((u) => u !== uci))}
+                  aria-label={`Remover ${uci}`}
+                >
+                  {uci} ✕
+                </button>
+              ))
+            )}
           </div>
-        ) : (
-          <div className={styles.resultado}>
-            <span className={`${styles.nota} ${nota.completo ? styles.bom : styles.parcial}`}>
-              {nota.completo
-                ? '✓ Lista completa'
-                : `· ${Math.round(nota.precisao * 100)}% da lista`}
-            </span>
-            <p className={styles.linha}>
-              {resumo.forcantes.length}{' '}
-              {resumo.forcantes.length === 1 ? 'lance forçante' : 'lances forçantes'} nesta posição:{' '}
-              {resumo.xeques.length} de xeque, {resumo.capturas.length} de captura.
-            </p>
-            {nota.esquecidos.length > 0 ? (
-              <>
-                <p className={styles.linha}>Passaram batido:</p>
-                <ul className={styles.lista}>
-                  {nota.esquecidos.map((f) => (
-                    <li key={f.move.uci}>
-                      {f.move.san} ({f.kind})
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : null}
-            {nota.falsosPositivos.length > 0 ? (
-              <>
-                <p className={styles.linha}>Marcados sem ser forçantes:</p>
-                <ul className={styles.lista}>
-                  {nota.falsosPositivos.map((m) => (
-                    <li key={m.uci}>{m.san}</li>
-                  ))}
-                </ul>
-              </>
-            ) : null}
+
+          {nota === null ? (
             <div className={styles.actions}>
-              <button type="button" className={styles.primary} onClick={proxima}>
-                Próxima posição
+              <button type="button" className={styles.primary} onClick={() => void conferir()}>
+                Conferir
+              </button>
+              <button
+                type="button"
+                className={styles.ghost}
+                onClick={() => setSelecionados([])}
+                disabled={selecionados.length === 0}
+              >
+                Limpar
               </button>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+          ) : (
+            <div className={styles.resultado}>
+              <span className={`${styles.nota} ${nota.completo ? styles.bom : styles.parcial}`}>
+                {nota.completo
+                  ? '✓ Lista completa'
+                  : `· ${Math.round(nota.precisao * 100)}% da lista`}
+              </span>
+              <p className={styles.linha}>
+                {resumo.forcantes.length}{' '}
+                {resumo.forcantes.length === 1 ? 'lance forçante' : 'lances forçantes'} nesta
+                posição: {resumo.xeques.length} de xeque, {resumo.capturas.length} de captura.
+              </p>
+              {nota.esquecidos.length > 0 ? (
+                <>
+                  <p className={styles.linha}>Passaram batido:</p>
+                  <ul className={styles.lista}>
+                    {nota.esquecidos.map((f) => (
+                      <li key={f.move.uci}>
+                        {f.move.san} ({f.kind})
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              {nota.falsosPositivos.length > 0 ? (
+                <>
+                  <p className={styles.linha}>Marcados sem ser forçantes:</p>
+                  <ul className={styles.lista}>
+                    {nota.falsosPositivos.map((m) => (
+                      <li key={m.uci}>{m.san}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              <div className={styles.actions}>
+                <button type="button" className={styles.primary} onClick={proxima}>
+                  Próxima posição
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      }
+    />
   )
 }

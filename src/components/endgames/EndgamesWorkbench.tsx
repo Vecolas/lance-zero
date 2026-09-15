@@ -41,6 +41,7 @@ import {
 import { getSkill } from '@/domain/skills/catalog'
 import { CURRICULO_FINAIS } from '@/content/endgames'
 import { EndgameTrainer } from './EndgameTrainer'
+import Link from 'next/link'
 import { descreverHistorico, descreverObjetivo } from './textos'
 import styles from './EndgamesWorkbench.module.css'
 
@@ -129,7 +130,9 @@ export function EndgamesWorkbench() {
       <ol className={styles.licoes}>
         {CURRICULO_FINAIS.map((licao) => (
           <li key={licao.id} className={styles.licao}>
-            <h2 className={styles.titulo}>{licao.titulo}</h2>
+            <h2 className={styles.titulo}>
+              <Link href={`/endgames/${licao.id}`}>{licao.titulo}</Link>
+            </h2>
             <p className={styles.meta}>
               {licao.posicoes.length}{' '}
               {licao.posicoes.length === 1 ? 'posição treinável' : 'posições treináveis'} · cerca de{' '}
