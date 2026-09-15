@@ -18,7 +18,6 @@
  */
 
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LicaoDeFinal, PosicaoDeFinal } from '@/domain/endgames'
 import {
@@ -33,8 +32,18 @@ vi.mock('@/components/providers/RepositoryProvider', () => ({
   useRepository: () => contexto.valor,
 }))
 
+const tabuleiro = vi.hoisted(() => ({
+  onMove: null as null | ((from: string, to: string, promotion?: string) => boolean),
+}))
+
 vi.mock('@/components/chess/ChessBoardView', () => ({
-  ChessBoardView: ({ fen }: { fen: string }) => <div data-testid="tabuleiro" data-fen={fen} />,
+  ChessBoardView: (props: {
+    fen: string
+    onMove?: (from: string, to: string, promotion?: string) => boolean
+  }) => {
+    tabuleiro.onMove = props.onMove ?? null
+    return <div data-testid="tabuleiro" data-fen={props.fen} />
+  },
 }))
 
 const { EndgameTrainer } = await import('@/components/endgames/EndgameTrainer')
@@ -97,9 +106,7 @@ function chipComRotulo(rotulo: string): HTMLElement | undefined {
 }
 
 async function jogar(uci: string) {
-  const campo = screen.getByLabelText(/Lance em UCI/)
-  await userEvent.type(campo, uci)
-  await userEvent.click(screen.getByRole('button', { name: 'Jogar lance' }))
+  tabuleiro.onMove?.(uci.slice(0, 2), uci.slice(2, 4))
 }
 
 beforeEach(() => {
@@ -120,7 +127,7 @@ describe('a tela diz por que o empate valeu', () => {
     // Uma volta só: a posição apareceu duas vezes, e duas não é repetição.
     for (const uci of LANCES_DO_ALUNO.slice(0, 1)) {
       await jogar(uci)
-      await waitFor(() => expect(screen.getByLabelText(/Lance em UCI/)).toBeEnabled())
+      await waitFor(() => expect(screen.getByText(/O adversário está escolhendo|É a sua vez/)).toBeInTheDocument())
     }
     expect(screen.queryByTestId('regra-do-empate')).toBeNull()
     expect(chipComRotulo(APRESENTACAO_POR_ESTADO['em-andamento'].rotulo)).toBeTruthy()
@@ -133,7 +140,7 @@ describe('a tela diz por que o empate valeu', () => {
     for (const [indice, uci] of LANCES_DO_ALUNO.entries()) {
       await jogar(uci)
       if (indice < LANCES_DO_ALUNO.length - 1) {
-        await waitFor(() => expect(screen.getByLabelText(/Lance em UCI/)).toBeEnabled())
+        await waitFor(() => expect(screen.getByText(/O adversário está escolhendo|É a sua vez/)).toBeInTheDocument())
       }
     }
 

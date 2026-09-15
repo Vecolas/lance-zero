@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Chessboard } from 'react-chessboard'
 import {
   boardHighlights,
@@ -7,7 +8,7 @@ import {
   DEFAULT_BOARD_THEME,
   type BoardThemeName,
 } from '@/lib/design/board'
-import type { PieceColor, PromotionPiece, SquareName } from '@/lib/chess'
+import { legalMoves, type PieceColor, type PromotionPiece, type SquareName } from '@/lib/chess'
 import styles from './ChessBoardView.module.css'
 
 export interface ChessBoardViewProps {
@@ -30,6 +31,13 @@ export interface ChessBoardViewProps {
   onSquareClick?: (square: SquareName) => void
 }
 
+const PROMOTION_OPTIONS: readonly { piece: PromotionPiece; label: string }[] = [
+  { piece: 'q', label: 'Dama' },
+  { piece: 'r', label: 'Torre' },
+  { piece: 'b', label: 'Bispo' },
+  { piece: 'n', label: 'Cavalo' },
+]
+
 export function ChessBoardView({
   fen,
   orientation,
@@ -44,6 +52,9 @@ export function ChessBoardView({
   onSquareClick,
 }: ChessBoardViewProps) {
   const palette = boardThemes[theme]
+  const [promotion, setPromotion] = useState<
+    { from: SquareName; to: SquareName; fen: string } | null
+  >(null)
 
   const squareStyles: Record<string, React.CSSProperties> = {}
   for (const square of lastMove) {
@@ -66,6 +77,15 @@ export function ChessBoardView({
       ...squareStyles[checkSquare],
       boxShadow: `inset 0 0 0 3px ${boardHighlights.check}`,
     }
+  }
+
+  const drop = (from: SquareName, to: SquareName): boolean => {
+    const possible = legalMoves(fen, from).filter((move) => move.to === to)
+    if (possible.some((move) => move.promotion !== undefined)) {
+      setPromotion({ from, to, fen })
+      return false
+    }
+    return onMove?.(from, to) ?? false
   }
 
   return (
@@ -91,11 +111,32 @@ export function ChessBoardView({
             onPieceDrop: ({ sourceSquare, targetSquare }) => {
               if (!onMove || !targetSquare) return false
               // A promoção padrão é dama; escolher outra peça é assunto da Fase 3.
-              return onMove(sourceSquare, targetSquare, 'q')
+              return drop(sourceSquare, targetSquare)
             },
           }}
         />
       </div>
+      {promotion?.fen === fen ? (
+        <div className={styles.promotion} role="group" aria-label="Escolha a peça da promoção">
+          <span className={styles.promotionLabel}>Promover para</span>
+          {PROMOTION_OPTIONS.map((option) => (
+            <button
+              key={option.piece}
+              type="button"
+              className={styles.promotionButton}
+              onClick={() => {
+                const accepted = onMove?.(promotion.from, promotion.to, option.piece) ?? false
+                if (accepted) setPromotion(null)
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+          <button type="button" className={styles.promotionCancel} onClick={() => setPromotion(null)}>
+            Cancelar
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }

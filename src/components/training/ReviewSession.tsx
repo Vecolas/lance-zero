@@ -85,9 +85,14 @@ import {
   submitReviewMove,
   type ReviewSessionState,
 } from '@/domain/review/session'
+import {
+  createReviewSessionV2,
+  reviewItemLabel,
+  type ReviewItem,
+} from '@/domain/review/planner-v2'
 import { getSkill } from '@/domain/skills/catalog'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
-import type { ReviewCard, ReviewRating, SkillMastery } from '@/domain/types'
+import type { ReviewRating, SkillMastery } from '@/domain/types'
 import {
   applyMove,
   normalizeUci,
@@ -304,14 +309,15 @@ export interface ReviewSessionProps {
 
 export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const { status, repo, profile, erro, refresh } = useRepository()
-  const [fila, setFila] = useState<ReviewCard[]>([])
+  const reviewStorageKey = profile?.id ? `lancezero-review-v2:${profile.id}` : 'lancezero-review-v2:local'
+  const [fila, setFila] = useState<ReviewItem[]>([])
   const [indice, setIndice] = useState(0)
+  const [passoInterno, setPassoInterno] = useState(0)
   const [sessao, setSessao] = useState<ReviewSessionState | null>(null)
   const [fase, setFase] = useState<Fase>('carregando')
   const [falha, setFalha] = useState<string | null>(null)
   const [feitas, setFeitas] = useState(0)
   const [julgamento, setJulgamento] = useState<EstadoDoJulgamento>(SEM_JUIZ)
-  const [lanceDigitado, setLanceDigitado] = useState('')
   const [erroDeLance, setErroDeLance] = useState<string | null>(null)
 
   /**
@@ -350,16 +356,53 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         // jogado em outra posição. Recarregar sem virar a geração é o mesmo
         // furo que avançar sem virá-la — só que mais difícil de ver.
         geracao.current += 1
-        setFila(cards)
-        setIndice(0)
+        const salvo = (() => {
+          try {
+            const raw = globalThis.localStorage.getItem(reviewStorageKey)
+            if (!raw) return null
+            const parsed = JSON.parse(raw) as {
+              items?: ReviewItem[]
+              plannerVersion?: number
+              indice?: number
+              passoInterno?: number
+              feitas?: number
+              sessao?: ReviewSessionState
+            }
+            return parsed.plannerVersion === 2 && Array.isArray(parsed.items) ? parsed : null
+          } catch {
+            return null
+          }
+        })()
+        const idsDisponiveis = new Set(cards.map((card) => card.id))
+        const salvoCompatível = salvo?.items?.every((item) =>
+          item.steps.every((step) => idsDisponiveis.has(step.card.id)),
+        )
+        const plano = salvoCompatível && salvo?.items && salvo.items.length > 0
+          ? salvo.items
+          : createReviewSessionV2(cards, { now: new Date() }).items
+        const indiceSalvo = salvo?.indice ?? 0
+        const indiceInicial = Math.min(Math.max(0, indiceSalvo), Math.max(0, plano.length - 1))
+        const passoInicial = Math.min(
+          Math.max(0, salvo?.passoInterno ?? 0),
+          Math.max(0, (plano[indiceInicial]?.steps.length ?? 1) - 1),
+        )
+        setFila(plano)
+        setIndice(indiceInicial)
+        setPassoInterno(passoInicial)
+        setFeitas(salvo?.feitas ?? 0)
         setJulgamento(SEM_JUIZ)
         // A recusa e o rascunho pertencem à revisão que estava na tela. Fila
         // nova com a frase antiga faria a tela recusar um lance que ninguém
         // jogou nesta posição.
-        setLanceDigitado('')
         setErroDeLance(null)
-        setSessao(cards.length > 0 ? createReviewSession(cards[0]) : null)
-        setFase(cards.length > 0 ? 'revisando' : 'concluida')
+        setSessao(
+          salvo?.sessao?.card && plano[indiceInicial]?.steps[passoInicial]?.card.id === salvo.sessao.card.id
+            ? salvo.sessao
+            : plano[indiceInicial]?.steps[passoInicial]
+              ? createReviewSession(plano[indiceInicial].steps[passoInicial].card)
+            : null,
+        )
+        setFase(plano.length > 0 ? 'revisando' : 'concluida')
       } catch (e) {
         if (!cancelado) {
           setFalha(e instanceof Error ? e.message : 'Não consegui ler suas revisões.')
@@ -372,25 +415,51 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
     return () => {
       cancelado = true
     }
-  }, [repo])
+  }, [repo, reviewStorageKey])
+
+  const itemAtual = fila[indice] ?? null
+
+  useEffect(() => {
+    if (fase !== 'revisando' || fila.length === 0) return
+    try {
+      globalThis.localStorage.setItem(
+        reviewStorageKey,
+        JSON.stringify({ plannerVersion: 2, items: fila, indice, passoInterno, feitas, sessao }),
+      )
+    } catch {
+      // A revisão continua local-first mesmo quando o navegador bloqueia storage.
+    }
+  }, [fase, fila, indice, passoInterno, feitas, sessao, reviewStorageKey])
 
   const avancar = useCallback(() => {
-    const proximo = indice + 1
     geracao.current += 1
     setJulgamento(SEM_JUIZ)
     // Mesma razão do recarregar: a recusa é da revisão anterior.
-    setLanceDigitado('')
     setErroDeLance(null)
+    const proximoPasso = passoInterno + 1
+    if (itemAtual && proximoPasso < itemAtual.steps.length) {
+      setPassoInterno(proximoPasso)
+      setSessao(createReviewSession(itemAtual.steps[proximoPasso].card))
+      return
+    }
+
+    const proximo = indice + 1
     setFeitas((f) => f + 1)
     if (proximo >= fila.length) {
+      try {
+        globalThis.localStorage.removeItem(reviewStorageKey)
+      } catch {
+        // Sem storage, o encerramento ainda vale nesta aba.
+      }
       setSessao(null)
       setFase('concluida')
       refresh()
       return
     }
     setIndice(proximo)
-    setSessao(createReviewSession(fila[proximo]))
-  }, [fila, indice, refresh])
+    setPassoInterno(0)
+    setSessao(createReviewSession(fila[proximo].steps[0].card))
+  }, [fila, indice, itemAtual, passoInterno, refresh, reviewStorageKey])
 
   const registrar = useCallback(
     async (rating: ReviewRating) => {
@@ -529,6 +598,10 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
       const doCard = sessao.card.solutionUci[sessao.step]
       const exato = formasDoLance(uci, entrada, aplicado.move.uci).find((forma) => forma === doCard)
       if (exato !== undefined) {
+        // O acerto do final continua avançando imediatamente, mas a tablebase
+        // ainda pode explicar se a escolha foi a melhor. O feedback é auxiliar;
+        // não deve transformar um card correto em uma segunda tentativa.
+        if (sessao.card.kind === 'final') void julgarNaTablebase(sessao, exato)
         setSessao(submitReviewMove(sessao, exato))
         return 'aceita-e-avancou'
       }
@@ -551,7 +624,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
    */
   const jogarDoTabuleiro = useCallback(
     (from: SquareName, to: SquareName, promotion?: PromotionPiece): boolean =>
-      jogar(`${from}${to}${promotion ?? ''}`) === 'aceita-e-avancou',
+      jogar(`${from}${to}${promotion ?? ''}`) !== 'recusada',
     [jogar],
   )
 
@@ -629,36 +702,10 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         {/* A alternativa ao arraste. Ela some junto com a interatividade do
             tabuleiro: campo habilitado depois do veredito prometeria um segundo
             lance que a sessão não aceita. */}
-        <form
-          className={styles.entrada}
-          onSubmit={(evento) => {
-            evento.preventDefault()
-            if (jogar(lanceDigitado) !== 'recusada') {
-              setLanceDigitado('')
-            }
-          }}
-        >
-          <label className={styles.label} htmlFor="lance-da-revisao">
-            Lance em UCI
-          </label>
-          <p id="ajuda-do-lance-da-revisao" className={styles.ajuda}>
-            {AJUDA_DO_LANCE}
-          </p>
+        <div className={styles.entrada}>
+          <p className={styles.hint}>Jogue o lance diretamente no tabuleiro.</p>
           <div className={styles.entradaLinha}>
-            <input
-              id="lance-da-revisao"
-              className={styles.input}
-              aria-describedby="ajuda-do-lance-da-revisao"
-              value={lanceDigitado}
-              onChange={(evento) => setLanceDigitado(evento.target.value)}
-              disabled={!emAndamento}
-              autoComplete="off"
-              spellCheck={false}
-              inputMode="text"
-            />
-            <button type="submit" className={styles.ghost} disabled={!emAndamento}>
-              Jogar lance
-            </button>
+            <span className={styles.hint}>Arraste a peça e solte na casa de destino.</span>
           </div>
           {/* `role="status"` e não `alert`: a recusa é informação, não
               interrupção — mesma decisão de tom da faixa de erro (#61). Sem
@@ -669,14 +716,22 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
               <span aria-hidden="true">✕</span> {erroDeLance}
             </p>
           ) : null}
-        </form>
+        </div>
       </div>
 
       <div className={styles.panel}>
         <p className={styles.counter}>
-          Revisão {indice + 1} de {fila.length}
+          Revisão {feitas} de {fila.length}
         </p>
+        <p className={styles.eyebrow}>{itemAtual ? reviewItemLabel(itemAtual.kind) : 'Revisão'}</p>
         <p className={styles.prompt}>{sessao.card.prompt}</p>
+        {itemAtual ? (
+          <p className={styles.hint} data-testid="progresso-interno">
+            {itemAtual.steps.length > 1
+              ? `Parte ${passoInterno + 1} de ${itemAtual.steps.length} nesta unidade`
+              : 'Uma unidade pedagógica'}
+          </p>
+        ) : null}
 
         {emAndamento ? (
           <>

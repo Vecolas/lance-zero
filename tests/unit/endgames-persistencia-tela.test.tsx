@@ -46,10 +46,20 @@ vi.mock('@/components/providers/RepositoryProvider', () => ({
   useRepository: () => contexto.valor,
 }))
 
-// O tabuleiro é dependência de terceiros com arraste: fora do escopo aqui. Os
-// lances entram pelo campo de UCI, que é a alternativa acessível de verdade.
+// O tabuleiro é dependência de terceiros com arraste; o duplo expõe a mesma
+// callback que a implementação real recebe no drop.
+const tabuleiro = vi.hoisted(() => ({
+  onMove: null as null | ((from: string, to: string, promotion?: string) => boolean),
+}))
+
 vi.mock('@/components/chess/ChessBoardView', () => ({
-  ChessBoardView: ({ fen }: { fen: string }) => <div data-testid="tabuleiro" data-fen={fen} />,
+  ChessBoardView: (props: {
+    fen: string
+    onMove?: (from: string, to: string, promotion?: string) => boolean
+  }) => {
+    tabuleiro.onMove = props.onMove ?? null
+    return <div data-testid="tabuleiro" data-fen={props.fen} />
+  },
 }))
 
 const { EndgameTrainer } = await import('@/components/endgames/EndgameTrainer')
@@ -105,8 +115,7 @@ function montar(probe?: Sonda) {
 }
 
 async function jogar(uci: string) {
-  await userEvent.type(screen.getByLabelText(/Lance em UCI/), uci)
-  await userEvent.click(screen.getByRole('button', { name: 'Jogar lance' }))
+  tabuleiro.onMove?.(uci.slice(0, 2), uci.slice(2, 4))
 }
 
 beforeEach(() => {
