@@ -141,6 +141,14 @@ describe('curso de aberturas como grafo pedagógico', () => {
     expect(new Set([...italiana.graph.keys()]).size).toBe(italiana.graph.size)
   })
 
+  it('variações apontam para o ponto de divergência compartilhado', () => {
+    const italiana = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const doisCavalos = italiana.variations.find((item) => item.id === 'italiana-dois-cavalos')
+    expect(doisCavalos).toBeDefined()
+    expect(doisCavalos?.rootNodeId).not.toBe(italiana.rootNodeId)
+    expect(italiana.graph.get(doisCavalos?.rootNodeId ?? '')?.ply).toBe(5)
+  })
+
   it('o opponent só escolhe respostas que saem do node e são legais', () => {
     for (const opening of OPENING_COURSES) {
       for (const node of opening.graph.values()) {

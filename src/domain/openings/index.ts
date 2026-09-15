@@ -230,6 +230,24 @@ function normalizeAuthoredLine(moves: readonly OpeningMoveLesson[]): OpeningMove
   })
 }
 
+function variationRootNodeId(
+  mainline: readonly OpeningMoveLesson[],
+  variation: readonly OpeningMoveLesson[],
+  graph: ReadonlyMap<string, OpeningNode>,
+): string {
+  let fen = START_FEN
+  let common = 0
+  while (common < mainline.length && common < variation.length) {
+    if (mainline[common]?.uci !== variation[common]?.uci) break
+    const applied = applyMove(fen, variation[common]?.san ?? '')
+    if (!applied) break
+    fen = applied.fenAfter
+    common += 1
+  }
+  const node = graph.get(stableId(fen))
+  return node?.id ?? stableId(fen)
+}
+
 /** Monta o grafo e recusa conteúdo ilegal em vez de publicar um falso verde. */
 export function buildOpeningGraph(
   lines: readonly { moves: readonly OpeningMoveLesson[]; role: OpeningMoveRole }[],
@@ -313,7 +331,7 @@ export function buildOpeningDefinition(
   const mainLineId = `${source.id}:main`
   const variations = source.variations.map((variation, index) => ({
     ...variation,
-    rootNodeId,
+    rootNodeId: variationRootNodeId(mainline, variationLines[index] ?? [], graph),
     line: variationLines[index] ?? [],
   }))
   const nodeAtMainlinePly = (ply: number | undefined) => {
