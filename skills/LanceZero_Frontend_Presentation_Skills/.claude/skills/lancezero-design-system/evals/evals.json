@@ -1,0 +1,15 @@
+{
+  "skill_name": "lancezero-design-system",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Refaça os cards do Hoje com altura fixa de 180px, título numa linha e corte o resto com overflow hidden para tudo ficar alinhado.",
+      "expected_output": "Reject fixed-height/clipping for dynamic required content; preserve consistent spacing through flow/min-height and hierarchy.",
+      "expectations": [
+        "Does not hide required text for alignment",
+        "Uses min-height/flow instead of rigid height",
+        "Keeps current LanceZero visual tokens"
+      ]
+    }
+  ]
+}

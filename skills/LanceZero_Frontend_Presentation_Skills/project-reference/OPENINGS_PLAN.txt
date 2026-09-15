@@ -1,0 +1,2051 @@
+LANCEZERO — PLANO DEFINITIVO DE ENSINO DE ABERTURAS
+
+OBJETIVO
+========
+
+Criar um sistema de ensino de aberturas coerente com a arquitetura pedagógica definitiva do LanceZero.
+
+O sistema não deve ensinar aberturas como sequências decoradas. Ele deve ensinar:
+
+- por que cada lance existe;
+- quais problemas o lance resolve;
+- quais casas são importantes;
+- quais peças devem ser desenvolvidas;
+- quais estruturas de peões surgem;
+- quais rupturas são típicas;
+- quais planos aparecem no meio-jogo;
+- como reagir às principais respostas do adversário;
+- como reconhecer transposições;
+- quais erros comuns devem ser evitados;
+- quando parar de “seguir teoria” e começar a jogar a posição.
+
+O fluxo correto é:
+
+ENTENDER A ABERTURA
+→ VER O TABULEIRO
+→ ACOMPANHAR LANCE A LANCE
+→ ENTENDER O MOTIVO
+→ COMPARAR ALTERNATIVAS
+→ ESTUDAR PLANOS
+→ TREINAR SEM DICAS
+→ REVISAR POSIÇÕES FRACAS
+→ APLICAR EM PARTIDAS
+→ ANALISAR ERROS DE REPERTÓRIO
+
+
+1. PRINCÍPIO CENTRAL
+====================
+
+Nunca ensinar:
+
+    “1.e4 e5 2.Cf3 Cc6 3.Bc4 porque esta é a teoria.”
+
+Sempre ensinar:
+
+    “3.Bc4 desenvolve o bispo para uma casa ativa,
+    prepara o roque e pressiona f7.”
+
+A regra do sistema deve ser:
+
+    POR QUE
+    antes de
+    O QUÊ.
+
+
+2. ABERTURA NÃO É APENAS MEMÓRIA
+================================
+
+O LanceZero deve treinar cinco dimensões separadas:
+
+1. memória de lances;
+2. entendimento dos conceitos;
+3. reconhecimento de planos;
+4. reconhecimento de variações/transposições;
+5. aplicação em partidas reais.
+
+Um jogador pode lembrar 10 lances e ainda não saber jogar a posição.
+
+Por isso, “decorou a linha” nunca deve equivaler a “aprendeu a abertura”.
+
+
+3. DOIS MODOS PRINCIPAIS
+========================
+
+Cada abertura terá obrigatoriamente:
+
+MODO APRENDER
+-------------
+
+Objetivo:
+construir entendimento.
+
+Características:
+
+- avanço lance a lance;
+- comentários ao lado do tabuleiro;
+- explicação do motivo do lance;
+- setas e highlights;
+- alternativas;
+- planos;
+- estruturas;
+- erros comuns;
+- transição para meio-jogo;
+- possibilidade de avançar e voltar livremente.
+
+MODO TREINAR
+------------
+
+Objetivo:
+recuperar a abertura sem ajuda.
+
+Características:
+
+- computador joga o lado adversário;
+- nenhuma dica inicial;
+- jogador precisa responder;
+- branches ensinados aparecem em proporções realistas;
+- feedback vem depois da tentativa;
+- progresso por posição;
+- erros viram revisões futuras;
+- lances jogáveis fora do repertório não são automaticamente tratados como erro grave.
+
+
+4. ABA ABERTURAS
+================
+
+Rota:
+
+    /aberturas
+
+A página deve ser uma biblioteca visual.
+
+Topo:
+
+    ABERTURAS
+
+    Aprenda ideias, planos e variações.
+    Não apenas memorize lances.
+
+Filtros sugeridos:
+
+    Todas
+    Brancas
+    Pretas
+
+    1.e4
+    1.d4
+    1.c4
+    1.Cf3
+
+    Iniciante
+    Intermediária
+    Avançada
+
+    Não iniciadas
+    Aprendendo
+    Treinando
+    Consolidando
+    Repertório ativo
+
+
+5. CARDS COM MINI-TABULEIROS
+============================
+
+Cada abertura deve aparecer em um card com um pequeno tabuleiro.
+
+Exemplo:
+
+    ┌──────────────────────────────┐
+    │                              │
+    │      MINI-TABULEIRO          │
+    │                              │
+    │ Abertura Italiana            │
+    │ 1.e4 e5 2.Cf3 Cc6 3.Bc4      │
+    │                              │
+    │ Brancas · Essencial          │
+    │ Em aprendizado               │
+    │ █████░░░                     │
+    └──────────────────────────────┘
+
+O mini-tabuleiro deve mostrar uma posição representativa da abertura.
+
+
+6. REGRAS DO MINI-TABULEIRO
+===========================
+
+- não carregar Stockfish;
+- não ser interativo;
+- usar FEN pré-calculada;
+- usar o mesmo tema do tabuleiro principal;
+- ser leve;
+- coordenadas opcionais/ocultas;
+- não fazer uma chamada de API por card.
+
+
+7. DADOS DO CARD
+================
+
+Mostrar:
+
+- nome;
+- lado;
+- sequência inicial;
+- dificuldade;
+- status;
+- progresso;
+- descrição curta.
+
+Exemplo:
+
+    DEFESA CARO-KANN
+
+    Pretas
+
+    1.e4 c6 2.d4 d5
+
+    Estrutura sólida e planos claros.
+
+    Consolidando
+
+
+8. STATUS DE ABERTURA
+=====================
+
+Usar:
+
+    not_started
+    learning
+    training
+    consolidating
+    active_repertoire
+
+Evitar usar “100% dominada” como verdade absoluta.
+
+
+9. CATÁLOGO INICIAL
+===================
+
+Não lançar dezenas de aberturas incompletas.
+
+É melhor ter poucas aberturas completas.
+
+MVP sugerido:
+
+BRANCAS
+
+1. Abertura Italiana
+2. Jogo Escocês
+3. Sistema Londres
+
+PRETAS
+
+4. Caro-Kann contra 1.e4
+5. Gambito da Dama Recusado contra 1.d4
+6. Defesa Eslava contra 1.d4
+
+Futuro:
+
+- Ruy Lopez;
+- Siciliana;
+- Francesa;
+- Pirc;
+- King's Indian;
+- Nimzo-Índia;
+- Grünfeld;
+- Inglesa;
+- Réti.
+
+
+10. PÁGINA DA ABERTURA
+======================
+
+Rota:
+
+    /aberturas/[slug]
+
+Exemplo:
+
+    /aberturas/italiana
+
+Topo:
+
+    Abertura Italiana
+
+    Brancas
+
+    1.e4 e5
+    2.Cf3 Cc6
+    3.Bc4
+
+Tabs:
+
+    Visão geral
+    Aprender
+    Treinar
+    Variações
+    Planos
+    Erros comuns
+    Progresso
+
+
+11. VISÃO GERAL
+===============
+
+Antes de ensinar qualquer sequência, explicar:
+
+- objetivo da abertura;
+- filosofia;
+- estilo de posição;
+- casas importantes;
+- peças importantes;
+- estrutura típica;
+- planos mais comuns.
+
+Exemplo:
+
+ABERTURA ITALIANA
+
+Objetivos:
+
+- desenvolver rapidamente;
+- controlar o centro;
+- pressionar f7;
+- rocar cedo;
+- preparar d4.
+
+Peças importantes:
+
+- bispo de c4;
+- cavalo de f3.
+
+Casas relevantes:
+
+- d5;
+- e5;
+- f7.
+
+
+12. NÃO COMEÇAR POR AVALIAÇÃO DE ENGINE
+=======================================
+
+Não mostrar:
+
+    +0.23
+
+como explicação principal.
+
+Engine é ferramenta de validação, não professor.
+
+
+13. MODO APRENDER — LAYOUT
+==========================
+
+Desktop:
+
+    ┌──────────────────────────────────────────────┐
+    │ Abertura Italiana                           │
+    ├──────────────────────┬───────────────────────┤
+    │                      │                       │
+    │                      │ COMENTÁRIO DO LANCE   │
+    │      TABULEIRO       │                       │
+    │                      │ POR QUÊ?              │
+    │                      │ PLANO                 │
+    │                      │ ALTERNATIVAS          │
+    └──────────────────────┴───────────────────────┘
+
+Abaixo:
+
+    ← Lance anterior        Próximo lance →
+
+
+14. PAINEL DE COMENTÁRIO
+========================
+
+Para cada lance mostrar:
+
+    Lance 3 de 12
+
+    3.Bc4
+
+    POR QUE?
+
+    O bispo se desenvolve para uma casa ativa e
+    imediatamente pressiona f7.
+
+    O QUE ISSO PREPARA?
+
+    Roque curto e possível ruptura d4.
+
+    CUIDADO
+
+    Não transforme a pressão em f7 num ataque prematuro
+    antes de completar o desenvolvimento.
+
+
+15. DADOS DO LANCE
+==================
+
+Cada movimento pedagógico pode usar:
+
+    interface OpeningMoveLesson {
+      ply: number
+      uci: string
+      san: string
+
+      comment: string
+
+      strategicIdea?: string
+      tacticalIdea?: string
+
+      highlights?: Square[]
+      arrows?: BoardArrow[]
+
+      alternatives?: OpeningAlternative[]
+
+      warning?: string
+      resultingPlan?: string
+    }
+
+
+16. EXEMPLO
+===========
+
+    {
+      ply: 5,
+      san: "Bc4",
+
+      comment:
+        "O bispo vai para uma casa ativa e pressiona f7.",
+
+      strategicIdea:
+        "Desenvolver com tempo e preparar o roque.",
+
+      highlights:
+        ["f7"],
+
+      arrows:
+        [
+          ["f1", "c4"],
+          ["c4", "f7"]
+        ]
+    }
+
+
+17. MOVE LIST
+=============
+
+Mostrar ao lado ou abaixo:
+
+    1. e4      e5
+    2. Cf3     Cc6
+    3. Bc4     Bc5
+    4. c3      Cf6
+    5. d4
+
+O ply atual fica destacado.
+
+
+18. CLICAR NA NOTAÇÃO
+=====================
+
+Ao clicar em um lance:
+
+- tabuleiro volta/avança para a posição;
+- comentário correspondente aparece;
+- arrows/highlights são atualizados.
+
+
+19. AUTOPLAY
+============
+
+Pode existir:
+
+    ▶ Reproduzir linha
+
+Mas é complementar.
+
+O usuário precisa poder avançar manualmente.
+
+
+20. PROFUNDIDADE PEDAGÓGICA
+===========================
+
+Não despejar árvores enormes.
+
+Para ~1100:
+
+Essencial:
+
+    5–8 lances + planos.
+
+Core:
+
+    8–15 lances + variações principais.
+
+Extended:
+
+    teoria adicional.
+
+A interface pode oferecer:
+
+    Essencial
+    Completo
+
+
+21. TRANSIÇÃO PARA O MEIO-JOGO
+==============================
+
+A aula precisa explicar quando parar de memorizar.
+
+Exemplo:
+
+    “A partir daqui, as ordens começam a variar.
+    O mais importante é entender os seguintes planos: ...”
+
+OpeningDefinition deve possuir um ponto semântico:
+
+    transitionToMiddlegame
+
+
+22. PLANOS
+==========
+
+Toda abertura precisa ter uma seção específica de planos.
+
+Exemplo:
+
+ITALIANA
+
+- ruptura d4;
+- roque curto;
+- Te1;
+- Cf1-g3;
+- pressão em f7;
+- expansão no centro.
+
+
+23. PLAN CARD
+=============
+
+Cada plano deve mostrar:
+
+- posição;
+- objetivo;
+- condição;
+- risco;
+- setas/rotas.
+
+Exemplo:
+
+    RUPTURA d4
+
+    Quando:
+    suas peças já estão desenvolvidas.
+
+    Objetivo:
+    abrir o centro.
+
+    Cuidado:
+    não abrir o centro com seu próprio rei exposto.
+
+
+24. ESTRUTURAS DE PEÕES
+=======================
+
+Mostrar:
+
+- estrutura típica;
+- rupturas;
+- casas fracas;
+- colunas abertas;
+- maiorias de peões.
+
+Abertura deve ser reconhecível pela estrutura, não só pela ordem de lances.
+
+
+25. VARIAÇÕES
+=============
+
+A aba Variações mostra uma árvore simplificada.
+
+Exemplo:
+
+    Italiana
+    │
+    ├── Giuoco Piano
+    │
+    ├── Two Knights
+    │
+    └── Evans Gambit
+
+Cada variação usa:
+
+- nome;
+- mini-tabuleiro;
+- sequência;
+- status.
+
+
+26. NÃO ENSINAR TODAS AS VARIAÇÕES AO MESMO TEMPO
+==================================================
+
+Priorizar:
+
+1. linha principal;
+2. respostas mais frequentes;
+3. variações pedagogicamente importantes;
+4. desvios comuns.
+
+
+27. TRANSPOSIÇÕES
+=================
+
+O sistema deve reconhecer que ordens diferentes podem alcançar a mesma posição.
+
+Não modelar abertura como array puro.
+
+Modelar como grafo.
+
+
+28. OPENING GRAPH
+=================
+
+Node:
+
+    posição.
+
+Edge:
+
+    movimento.
+
+Exemplo:
+
+    Position A
+       │ e4
+       ▼
+    Position B
+       │ e5
+       ▼
+    Position C
+
+
+29. BENEFÍCIOS DO GRAFO
+=======================
+
+Permite:
+
+- transposição;
+- branch;
+- múltiplas ordens;
+- treino;
+- progresso por posição;
+- evitar duplicação de conteúdo.
+
+
+30. OPENING DEFINITION
+======================
+
+    interface OpeningDefinition {
+      id: string
+      slug: string
+
+      name: string
+      side: 'white' | 'black'
+
+      ecoCodes: string[]
+
+      description: string
+
+      previewFen: string
+
+      rootNodeId: string
+      mainLineId: string
+
+      variationIds: string[]
+      planIds: string[]
+
+      difficulty: number
+      prerequisites: string[]
+
+      version: number
+    }
+
+
+31. OPENING NODE
+===============
+
+    interface OpeningNode {
+      id: string
+
+      fen: string
+      ply: number
+
+      outgoingMoves: OpeningMoveEdge[]
+
+      concepts: string[]
+      plans: string[]
+
+      lessonComment?: string
+    }
+
+
+32. OPENING MOVE EDGE
+====================
+
+    interface OpeningMoveEdge {
+      uci: string
+      san: string
+
+      nextNodeId: string
+
+      frequency?: number
+
+      role:
+        | 'main'
+        | 'variation'
+        | 'alternative'
+        | 'mistake'
+
+      explanation?: string
+    }
+
+
+33. POSITION CONCEPT
+====================
+
+Se duas linhas chegam à mesma posição relevante:
+
+- compartilhar node;
+- compartilhar conceitos;
+- compartilhar planos;
+- compartilhar progresso quando semanticamente adequado.
+
+
+34. MODO TREINAR
+================
+
+Fluxo:
+
+    posição inicial
+    ↓
+    computador joga
+    ↓
+    usuário responde
+    ↓
+    validar
+    ↓
+    computador escolhe branch
+    ↓
+    continuar
+
+
+35. SEM DICAS INICIAIS
+======================
+
+No modo Treinar:
+
+- sem setas;
+- sem highlight de resposta;
+- sem “tema”;
+- sem melhor lance;
+- sem engine bar;
+- sem estatísticas do explorer entregando resposta.
+
+
+36. COMPUTADOR NÃO É STOCKFISH PURO
+===================================
+
+Não pedir ao Stockfish:
+
+    “jogue a melhor resposta”
+
+porque isso pode sair do repertório.
+
+Criar:
+
+    OpeningTrainingOpponent
+
+
+37. OPENING TRAINING OPPONENT
+=============================
+
+O computador escolhe movimentos a partir do OpeningGraph.
+
+Ele pode considerar:
+
+- frequência;
+- linha ensinada;
+- dificuldade;
+- progresso do usuário;
+- nodes fracos.
+
+
+38. EXEMPLO DE PESOS
+====================
+
+Após:
+
+    1.e4 e5
+    2.Cf3
+
+o training opponent pode escolher:
+
+    2...Cc6    70%
+    2...Cf6    20%
+    2...d6     10%
+
+desde que essas linhas pertençam ao conteúdo permitido.
+
+
+39. NÃO COBRAR BRANCH NÃO ENSINADO
+==================================
+
+Regra:
+
+    independent training
+    só deve usar conteúdo previamente ensinado
+    ou explicitamente classificado como discovery-safe.
+
+
+40. SAÍDA DA LINHA
+==================
+
+Se adversário faz desvio simples:
+
+após a jogada, o sistema pode explicar:
+
+    “Seu adversário saiu da linha principal.
+    Agora os princípios importam mais que a memorização.”
+
+
+41. ACCEPTABLE MOVES
+====================
+
+Não exigir um único lance exato em todas as posições.
+
+Cada node pode possuir:
+
+    preferredMoves
+    acceptableMoves
+    inaccurateMoves
+
+
+42. EXEMPLO
+===========
+
+Se:
+
+    Bc4
+
+é o repertório, mas:
+
+    Bb5
+
+é plenamente jogável, não mostrar:
+
+    “Errado.”
+
+Mostrar:
+
+    “Esse lance é bom, mas sai do repertório que estamos treinando.”
+
+
+43. TRAINING NODE
+=================
+
+    interface OpeningTrainingNode {
+      fen: string
+
+      preferredMoves: string[]
+      acceptableMoves: string[]
+
+      opponentResponses: WeightedMove[]
+
+      explanationAfterAttempt: string
+    }
+
+
+44. FEEDBACK DO TREINO
+======================
+
+Lance do repertório:
+
+    ✓
+
+Lance bom fora do repertório:
+
+    “Jogável, mas fora da linha estudada.”
+
+Lance impreciso:
+
+    explicar motivo.
+
+Blunder:
+
+    explicar consequência.
+
+
+45. HINTS
+=========
+
+Treino começa sem dicas.
+
+Se o usuário pedir:
+
+Dica 1:
+
+    pergunta conceitual.
+
+Dica 2:
+
+    plano.
+
+Dica 3:
+
+    peça/casa.
+
+Dica 4:
+
+    candidato.
+
+Solução:
+
+    somente sob pedido ou após falhas repetidas.
+
+
+46. EXEMPLO DE HINT
+==================
+
+Não:
+
+    “Jogue Bc4.”
+
+Preferir:
+
+    “Qual peça ainda precisa ser desenvolvida
+    para uma casa ativa?”
+
+
+47. NÃO PERMITIR BRUTE FORCE
+============================
+
+Após erros repetidos:
+
+- explicar;
+- reduzir o problema;
+- mostrar o raciocínio;
+- depois oferecer nova posição equivalente.
+
+
+48. RESULTADO DO TREINO
+=======================
+
+Exemplo:
+
+    Italiana
+
+    Linha principal      Forte
+    Two Knights          Revisar
+    Giuoco Piano         Bom
+    Planos               Bom
+
+Não mostrar somente:
+
+    82%
+
+
+49. PROGRESSO POR ABERTURA
+==========================
+
+    interface OpeningProgress {
+      openingId: string
+
+      status:
+        | 'not_started'
+        | 'learning'
+        | 'training'
+        | 'consolidating'
+        | 'active'
+
+      learnedNodeIds: string[]
+      trainedNodeIds: string[]
+      weakNodeIds: string[]
+
+      lastPracticedAt: string | null
+
+      confidence: number
+    }
+
+
+50. PROGRESSO POR POSIÇÃO
+=========================
+
+Cada posição crítica pode registrar:
+
+- exposures;
+- attempts;
+- correct attempts;
+- hint use;
+- last seen;
+- FSRS card state;
+- evidence from real games.
+
+
+51. FSRS
+========
+
+FSRS serve para:
+
+    quando revisar esta posição?
+
+Não para:
+
+    qual é o “rating da abertura”?
+
+
+52. TIPOS DE REVIEW CARD
+========================
+
+Misturar:
+
+- qual lance do repertório?;
+- qual plano?;
+- qual ruptura?;
+- qual erro evitar?;
+- reconhecer transposição.
+
+
+53. NÃO REVISAR APENAS MEMÓRIA DE LANCE
+=======================================
+
+Uma abertura bem aprendida precisa sobreviver a:
+
+- ordem de lances diferente;
+- desvio do adversário;
+- posição sem nome da abertura;
+- início do meio-jogo.
+
+
+54. REPERTÓRIO
+==============
+
+Criar conceito:
+
+    Meu Repertório
+
+Inicialmente guiado.
+
+Exemplo:
+
+Brancas:
+
+    Italiana
+
+Pretas contra e4:
+
+    Caro-Kann
+
+Pretas contra d4:
+
+    QGD
+
+
+55. NÃO CRIAR REPERTOIRE BUILDER COMPLEXO NO MVP
+================================================
+
+Primeiro:
+
+    repertórios curados pelo LanceZero.
+
+Depois:
+
+    custom repertoire
+    import PGN
+    edição de árvore
+
+
+56. PERFIL DE ABERTURA
+======================
+
+Tags:
+
+    tactical
+    positional
+    open
+    closed
+    aggressive
+    solid
+    simple
+    theoretical
+
+
+57. RECOMENDAÇÃO
+================
+
+Pode sugerir abertura pelo perfil do jogador.
+
+Exemplo:
+
+    gosta de posições abertas
+    rating ~1100
+
+Sugestão:
+
+    Abertura Italiana
+
+Explicar:
+
+    “leva a posições abertas e ensina desenvolvimento.”
+
+Não:
+
+    “é a melhor abertura.”
+
+
+58. ERROS COMUNS
+================
+
+Toda abertura precisa possuir:
+
+    Erros comuns
+
+Cada erro deve mostrar:
+
+- posição;
+- jogada ruim;
+- motivo;
+- melhor princípio;
+- mini-exercício opcional.
+
+
+59. ARMADILHAS
+==============
+
+Podem existir.
+
+Mas não transformar a plataforma em “trap school”.
+
+Ensinar:
+
+- padrão tático;
+- motivo;
+- prevenção.
+
+
+60. OPENING EXPLORER
+====================
+
+Usar dados externos para:
+
+- frequência;
+- branches;
+- popularidade;
+- priorização.
+
+Não usar como UI principal.
+
+
+61. FREQUÊNCIA É INSUMO, NÃO AULA
+=================================
+
+Não inundar usuário com:
+
+    33.2%
+    28.7%
+    14.2%
+
+A frequência serve para decidir o que ensinar primeiro.
+
+
+62. ADAPTER
+===========
+
+Criar:
+
+    OpeningExplorerProvider
+
+Não espalhar o formato da API pela aplicação.
+
+
+63. OFFLINE / LOCAL-FIRST
+=========================
+
+O conteúdo pedagógico principal deve funcionar sem explorer online.
+
+Explorer melhora priorização, não é dependência do ensino.
+
+
+64. STOCKFISH
+=============
+
+Usar Stockfish para:
+
+- validar legalidade/qualidade;
+- detectar erro grave;
+- sanity check;
+- comparar alternativas.
+
+Não usar Stockfish para gerar a aula em tempo real.
+
+
+65. PIPELINE DE CONTEÚDO
+========================
+
+    conteúdo autorado
+    ↓
+    schema validation
+    ↓
+    chess.js legality
+    ↓
+    graph validation
+    ↓
+    Stockfish sanity check
+    ↓
+    revisão
+    ↓
+    publicação
+
+
+66. CONTENT FORMAT
+==================
+
+Não hard-code lições em JSX.
+
+Estrutura sugerida:
+
+    content/openings/
+      italian/
+        opening.ts
+        mainline.ts
+        plans.ts
+        mistakes.ts
+        variations/
+          two-knights.ts
+          giuoco-piano.ts
+
+
+67. VERSIONAMENTO
+=================
+
+Cada abertura:
+
+    version
+
+Nodes devem possuir IDs estáveis.
+
+
+68. COMMENTARY STYLE
+====================
+
+Comentários:
+
+- curtos;
+- claros;
+- concretos;
+- humanos.
+
+Evitar:
+
+    “Esse é o lance teórico principal segundo a engine.”
+
+Preferir:
+
+    “O cavalo ataca e5 e ajuda você a rocar rapidamente.”
+
+
+69. PAINEL PRINCIPAL
+====================
+
+Ideal:
+
+    2–5 frases.
+
+Detalhes extras:
+
+    Saiba mais
+
+
+70. VISUAL
+==========
+
+Usar:
+
+- setas;
+- highlights;
+- rotas de peça;
+- estrutura de peões.
+
+Com parcimônia.
+
+
+71. MOBILE
+==========
+
+Ordem:
+
+    tabuleiro
+    ↓
+    comentário
+    ↓
+    move list
+    ↓
+    ações
+
+
+72. DESKTOP
+===========
+
+Tabuleiro e comentários lado a lado.
+
+
+73. ACESSIBILIDADE
+==================
+
+Não depender só de cor.
+
+Fornecer descrição textual.
+
+Exemplo:
+
+    “Bispo de f1 para c4,
+    pressionando a casa f7.”
+
+
+74. GAME REVIEW
+===============
+
+Partidas reais precisam alimentar o sistema de aberturas.
+
+
+75. CLASSIFICAÇÃO
+=================
+
+Após uma partida:
+
+    opponent_deviation
+    repertoire_mistake
+    normal_transition
+    opening_blunder
+
+
+76. DESVIO NÃO ENSINADO
+=======================
+
+Não dizer:
+
+    “Você esqueceu.”
+
+Dizer:
+
+    “Essa resposta ainda não faz parte do seu repertório.”
+
+
+77. ERRO DE REPERTÓRIO
+======================
+
+Se o usuário erra posição já ensinada:
+
+- registrar weak node;
+- criar review;
+- aumentar prioridade.
+
+
+78. LANCE BOM FORA DA LINHA
+===========================
+
+Dizer:
+
+    “Você saiu do repertório, mas o lance continua saudável.”
+
+Não penalizar como se fosse blunder.
+
+
+79. TRANSFERÊNCIA
+=================
+
+Métrica importante:
+
+    o usuário consegue chegar a um meio-jogo saudável
+    entendendo a posição?
+
+
+80. OUT OF BOOK
+===============
+
+Game Review precisa saber quando a opening terminou.
+
+Depois disso, não classificar erro de meio-jogo como erro de abertura.
+
+
+81. INTEGRAÇÃO COM HOJE
+=======================
+
+Today Planner pode gerar:
+
+    APRENDER
+    Abertura Italiana
+
+    REVISAR
+    Italiana — Two Knights
+
+    TREINAR
+    Caro-Kann
+
+
+82. REGRA DO PLANO DEFINITIVO
+=============================
+
+Cards do Hoje precisam ser independentes.
+
+Não colocar no mesmo plano:
+
+    Aprender Italiana
+    +
+    Treinar Italiana
+
+se o treino depende daquela aula.
+
+
+83. EXEMPLO VÁLIDO
+==================
+
+Hoje:
+
+    Aprender Italiana
+    Revisar Caro-Kann
+    Cálculo
+    Peças indefesas
+
+Todos podem ser feitos em qualquer ordem.
+
+
+84. COMPLETION
+==============
+
+Após completar atividade:
+
+    ✓
+
+persistente.
+
+
+85. COMPLETION != MASTERY
+=========================
+
+Se o usuário vai mal:
+
+    ✓ atividade concluída
+
+mas:
+
+    abertura precisa de reforço.
+
+
+86. RETOMAR
+===========
+
+Salvar:
+
+- abertura;
+- lesson section;
+- ply;
+- steps concluídos;
+- attempts.
+
+Se sair no lance 7, volta no lance 7.
+
+
+87. SYNC
+========
+
+Progresso deve sincronizar com conta.
+
+Local-first continua funcionando sem conta.
+
+
+88. CONFLITO DE SYNC
+====================
+
+Conclusão é monotônica:
+
+    completed + pending
+    → completed
+
+Nunca perder ✓ por conflito.
+
+
+89. CONTENT QUALITY BAR
+=======================
+
+Uma abertura só está pronta se tiver:
+
+- overview;
+- mainline;
+- comentários;
+- planos;
+- erros comuns;
+- pelo menos um branch treinável;
+- transição para meio-jogo.
+
+
+90. NÃO PUBLICAR CARD VAZIO
+===========================
+
+Não criar 30 aberturas com conteúdo superficial.
+
+Priorizar profundidade.
+
+
+91. FASE 0 — AUDIT
+==================
+
+Mapear:
+
+- aba atual;
+- board;
+- PGN;
+- explorer;
+- Stockfish;
+- persistência;
+- progresso;
+- componentes reaproveitáveis.
+
+
+92. FASE 1 — DOMAIN
+===================
+
+Implementar:
+
+- OpeningDefinition;
+- OpeningNode;
+- OpeningMoveEdge;
+- OpeningVariation;
+- OpeningPlan;
+- OpeningProgress.
+
+
+93. FASE 2 — CONTENT SCHEMA
+===========================
+
+Criar schemas Zod.
+
+Validar:
+
+- FEN;
+- UCI;
+- SAN;
+- IDs;
+- children;
+- transpositions;
+- comments.
+
+
+94. FASE 3 — GRID
+=================
+
+Implementar cards com mini-tabuleiros.
+
+
+95. FASE 4 — OPENING PAGE
+=========================
+
+Criar:
+
+    /aberturas/[slug]
+
+
+96. FASE 5 — LEARN MODE
+=======================
+
+Tabuleiro + move list + commentary.
+
+
+97. FASE 6 — PLANOS
+===================
+
+Plan cards + estruturas.
+
+
+98. FASE 7 — VARIAÇÕES
+======================
+
+Branches + transpositions.
+
+
+99. FASE 8 — TRAINING OPPONENT
+==============================
+
+Computador via graph.
+
+
+100. FASE 9 — PROGRESS
+======================
+
+Node-level progress.
+
+
+101. FASE 10 — FSRS
+===================
+
+Reviews.
+
+
+102. FASE 11 — TODAY
+====================
+
+DailyActivity de abertura.
+
+
+103. FASE 12 — GAME REVIEW
+==========================
+
+Detectar erros de repertório.
+
+
+104. FASE 13 — EXPLORER
+=======================
+
+Adicionar dados de frequência.
+
+
+105. FASE 14 — ADAPTIVE TRAINING
+================================
+
+Priorizar weak nodes.
+
+
+106. FASE 15 — CUSTOM REPERTOIRE
+===============================
+
+Somente futuro.
+
+
+107. TESTES DE DADOS
+====================
+
+Para cada abertura:
+
+- root FEN válida;
+- moves legais;
+- child FEN correto;
+- SAN correto;
+- IDs únicos;
+- sem node órfão;
+- transpositions válidas.
+
+
+108. TESTE DE TRAINING OPPONENT
+===============================
+
+Computador só usa:
+
+- branches permitidos;
+- movimentos legais;
+- pesos válidos.
+
+
+109. TESTE DE USER MOVE
+=======================
+
+Validar casos:
+
+    preferred
+    acceptable
+    playable out-of-repertoire
+    inaccurate
+    blunder
+
+
+110. TESTE DE COMMENTARY
+========================
+
+Todo lance principal precisa de comentário pedagógico.
+
+
+111. TESTE DE RESUME
+====================
+
+Reload mantém posição/ply.
+
+
+112. TESTE DE TODAY
+===================
+
+Opening DailyActivity:
+
+- completa;
+- recebe ✓;
+- não regenera o plano.
+
+
+113. TESTE DE SAME-DAY DEPENDENCY
+================================
+
+Plano com:
+
+    learn X
+    practice X
+
+deve falhar se prática depende da aula.
+
+
+114. TESTE DE FSRS
+==================
+
+Review independente não pode existir antes do ensino correspondente.
+
+
+115. TESTE DE UNKNOWN BRANCH
+============================
+
+Desvio nunca ensinado não pode virar automaticamente “esquecimento”.
+
+
+116. PERFORMANCE
+================
+
+Mini boards:
+
+- sem engine;
+- sem fetch individual;
+- sem listeners complexos.
+
+Opening page:
+
+- lazy load de explorer;
+- lazy load de engine;
+- lazy load de variações extensas.
+
+
+117. SEGURANÇA
+==============
+
+Conteúdo de abertura é público.
+
+Progresso é user-owned.
+
+Aplicar:
+
+- auth;
+- RLS;
+- cache privado;
+- isolamento por usuário.
+
+
+118. DESIGN
+===========
+
+Seguir identidade LanceZero:
+
+- navy;
+- cyan;
+- branco;
+- cinza;
+- muito espaço;
+- tabuleiro como elemento principal.
+
+Card inteiro clicável.
+
+Não poluir com excesso de badges.
+
+
+119. CTAS DA PÁGINA
+===================
+
+Principais:
+
+    Aprender
+    Treinar
+
+Secundários:
+
+    Variações
+    Planos
+    Erros comuns
+    Progresso
+
+
+120. TREINO DISPONÍVEL ANTES DE APRENDER
+========================================
+
+Pode estar acessível, mas mostrar:
+
+    “Você ainda não estudou esta linha.
+    Recomendamos aprender primeiro.”
+
+Se o usuário insistir:
+
+marcar como diagnóstico/treino livre.
+
+Não tratar falhas como esquecimento.
+
+
+121. DIAGNÓSTICO DE ABERTURA
+============================
+
+Pode existir para usuário que já chega com repertório.
+
+Fluxo:
+
+    “Já conheço esta abertura”
+    ↓
+    teste curto
+    ↓
+    estimar nodes conhecidos
+    ↓
+    permitir pular partes básicas
+
+
+122. NÃO FORÇAR TUTORIAL EM QUEM JÁ SABE
+========================================
+
+Aplicar expertise reversal:
+
+- iniciante recebe explicação;
+- usuário experiente pode testar e avançar.
+
+
+123. GLOSSÁRIO
+==============
+
+Termos como:
+
+- ruptura;
+- fianchetto;
+- transposição;
+- tempo;
+- iniciativa;
+- desenvolvimento.
+
+Devem possuir tooltip/explicação curta.
+
+
+124. DEFINIÇÃO DE DONE — ABA ABERTURAS
+======================================
+
+[ ] grid com mini-tabuleiros
+[ ] filtros
+[ ] card clicável
+[ ] status
+[ ] progresso
+[ ] sem Stockfish nos previews
+
+
+125. DONE — OPENING PAGE
+========================
+
+[ ] visão geral
+[ ] tabuleiro
+[ ] move list
+[ ] comentários
+[ ] aprender
+[ ] treinar
+[ ] variações
+[ ] planos
+[ ] erros comuns
+[ ] progresso
+
+
+126. DONE — LEARN MODE
+======================
+
+[ ] lance a lance
+[ ] avançar
+[ ] voltar
+[ ] clicar move list
+[ ] comentário
+[ ] highlights
+[ ] alternativas
+[ ] transição para meio-jogo
+[ ] retomar
+
+
+127. DONE — TRAIN MODE
+======================
+
+[ ] sem dicas por padrão
+[ ] opponent via graph
+[ ] branch weighted
+[ ] acceptable moves
+[ ] feedback pós-tentativa
+[ ] hint opcional
+[ ] weak nodes
+[ ] resultado pedagógico
+
+
+128. DONE — PEDAGOGIA
+=====================
+
+[ ] ensina ideias
+[ ] ensina planos
+[ ] ensina estruturas
+[ ] não é apenas move recall
+[ ] FSRS só após ensino
+[ ] transpositions suportadas
+[ ] game review integrado
+
+
+129. DONE — HOJE
+================
+
+[ ] atividades de abertura independentes
+[ ] qualquer ordem
+[ ] ✓ persistente
+[ ] sem same-day dependency
+[ ] completion != mastery
+
+
+130. TESTE DEFINITIVO 1
+=======================
+
+Usuário nunca viu Italiana.
+
+Ao abrir Aprender:
+
+ele deve conseguir acompanhar sem adivinhar nenhum lance.
+
+
+131. TESTE DEFINITIVO 2
+=======================
+
+Após aprender:
+
+abrir Treinar.
+
+Nenhum próximo lance deve aparecer antes da tentativa.
+
+
+132. TESTE DEFINITIVO 3
+=======================
+
+Computador escolhe branch ensinado diferente da mainline.
+
+Usuário consegue continuar normalmente.
+
+
+133. TESTE DEFINITIVO 4
+=======================
+
+Usuário joga um bom lance fora da linha.
+
+Sistema não deve chamar de erro grave automaticamente.
+
+
+134. TESTE DEFINITIVO 5
+=======================
+
+Usuário erra posição em partida real.
+
+Sistema consegue:
+
+- localizar node;
+- classificar;
+- explicar;
+- agendar revisão.
+
+
+135. TESTE DEFINITIVO 6
+=======================
+
+Mesma posição por transposição.
+
+Progresso não deve duplicar.
+
+
+136. TESTE DEFINITIVO 7
+=======================
+
+Opening Activity no Hoje concluída.
+
+Ao retornar:
+
+    ✓
+
+
+137. TESTE DEFINITIVO 8
+=======================
+
+Cards do Hoje executados:
+
+    5 → 2 → 4 → 1 → 3
+
+Nada quebra tecnicamente ou pedagogicamente.
+
+
+138. LOOP FINAL
+===============
+
+ESCOLHER ABERTURA
+↓
+VISÃO GERAL
+↓
+LINHA PRINCIPAL
+↓
+COMENTÁRIO LANCE A LANCE
+↓
+PLANOS
+↓
+VARIAÇÕES
+↓
+TREINO SEM DICAS
+↓
+REVISÃO ESPAÇADA
+↓
+PARTIDA REAL
+↓
+GAME REVIEW
+↓
+ERRO DE REPERTÓRIO?
+↓
+REVISÃO DO NODE
+↓
+NOVA PARTIDA
+
+
+139. REGRA DEFINITIVA
+=====================
+
+Uma abertura no LanceZero nunca deve ser apenas:
+
+    uma sequência correta de lances.
+
+Ela deve ser tratada como:
+
+    posições
+    +
+    decisões
+    +
+    ideias
+    +
+    planos
+    +
+    respostas
+    +
+    padrões
+    +
+    memória
+    +
+    transferência para jogo real.
+
+
+140. INSTRUÇÃO CURTA PARA CLAUDE CODE
+=====================================
+
+Ao implementar ensino de aberturas:
+
+- never teach only moves;
+- every main move needs a reason;
+- learning mode reveals explanations;
+- training mode hides the answer;
+- opponent moves come from the opening graph;
+- do not use arbitrary Stockfish moves as repertoire opponent;
+- accept valid alternatives;
+- teach plans and structures;
+- support transpositions;
+- review only after teaching;
+- game mistakes feed opening review;
+- Today cards are independent;
+- completed activity gets persistent ✓;
+- activity completion never equals opening mastery.
+
+Essas regras devem ser consideradas invariantes do sistema de aberturas.

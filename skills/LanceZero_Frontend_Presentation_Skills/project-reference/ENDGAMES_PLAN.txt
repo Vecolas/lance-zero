@@ -1,0 +1,2622 @@
+
+LANCEZERO — PLANO DEFINITIVO DE ENSINO DE FINAIS
+
+OBJETIVO
+========
+
+Construir um sistema de ensino de finais coerente com a arquitetura pedagógica definitiva do LanceZero, mas respeitando uma diferença essencial:
+
+ABERTURAS
+---------
+Muitas vezes possuem:
+- ordens de lances recorrentes;
+- posições conhecidas;
+- variantes;
+- linhas principais;
+- respostas teóricas;
+- repertório.
+
+FINAIS
+------
+São muito mais dependentes da posição concreta.
+
+Mesmo dois finais com o mesmo material podem exigir planos completamente diferentes por causa de:
+
+- atividade dos reis;
+- estrutura de peões;
+- peões passados;
+- casas de promoção;
+- oposição;
+- zugzwang;
+- posição das torres;
+- distância dos reis;
+- tempo;
+- peões em ambos os flancos;
+- possibilidade de simplificação.
+
+Portanto, finais NÃO devem ser ensinados como:
+
+    memorize esta sequência de 12 lances
+
+O sistema deve ensinar:
+
+    reconhecer o tipo de final
+    ↓
+    identificar os elementos importantes
+    ↓
+    escolher o princípio correto
+    ↓
+    aplicar a técnica
+    ↓
+    converter a vantagem
+    ↓
+    defender posições inferiores
+    ↓
+    resolver posições variadas
+
+
+1. PRINCÍPIO CENTRAL
+====================
+
+O ensino de finais deve responder principalmente:
+
+    “O que importa nesta posição?”
+
+e depois:
+
+    “Qual plano ou técnica devo aplicar?”
+
+Em finais, o usuário precisa aprender a reconhecer padrões e princípios, não decorar uma linha específica.
+
+
+2. EXCEÇÃO IMPORTANTE: FINAIS TEÓRICOS
+======================================
+
+Existem finais em que uma técnica precisa ser aprendida de forma bastante precisa.
+
+Exemplos:
+
+- rei + dama contra rei;
+- rei + torre contra rei;
+- rei + dois bispos contra rei;
+- rei + bispo + cavalo contra rei;
+- rei + peão contra rei;
+- oposição;
+- regra do quadrado;
+- Lucena;
+- Philidor;
+- certos finais básicos de torre;
+- alguns finais de peões completamente calculáveis.
+
+Nesses casos, o LanceZero pode ensinar uma SEQUÊNCIA DE TÉCNICA.
+
+Mas mesmo aqui a regra continua:
+
+    não decorar lances absolutos
+
+e sim:
+
+    decorar/entender o método.
+
+Exemplo:
+
+REI + TORRE CONTRA REI
+
+Não ensinar:
+
+    1.Ta5 Rc6
+    2.Ra6 ...
+
+Ensinar:
+
+    1. cortar o rei;
+    2. reduzir a caixa;
+    3. aproximar o próprio rei;
+    4. empurrar o rei adversário para a borda;
+    5. construir a posição de mate.
+
+
+3. QUATRO PILARES DO ENSINO DE FINAIS
+=====================================
+
+O módulo de finais deve ser dividido em quatro grandes tipos de aprendizado.
+
+A. RECONHECIMENTO
+-----------------
+
+Identificar:
+
+- tipo de final;
+- objetivo;
+- condição crítica;
+- princípio relevante.
+
+B. PRINCÍPIOS
+-------------
+
+Exemplos:
+
+- rei ativo;
+- criar peão passado;
+- oposição;
+- torre atrás do peão passado;
+- não avançar peões sem necessidade;
+- atividade acima de material em certos finais;
+- duas fraquezas;
+- simplificar quando favorece a conversão;
+- evitar troca errada.
+
+C. TÉCNICAS DE CONVERSÃO
+------------------------
+
+Exemplos:
+
+- mate de torre;
+- mate de dama;
+- mate de dois bispos;
+- promoção de peão;
+- Lucena;
+- técnica de Philidor.
+
+D. CÁLCULO CONCRETO
+-------------------
+
+Finais exigem cálculo preciso.
+
+Por isso o sistema também deve treinar:
+
+- corrida de peões;
+- triangulação;
+- tempos;
+- zugzwang;
+- cálculo até promoção;
+- transições.
+
+
+4. ABA FINAIS
+=============
+
+Rota:
+
+    /finais
+
+A página deve funcionar como uma biblioteca visual.
+
+Visualmente pode reaproveitar a lógica da aba Aberturas:
+
+- vários pequenos tabuleiros;
+- cards;
+- progresso;
+- categorias;
+- status.
+
+Mas a organização semântica é diferente.
+
+
+5. ESTRUTURA DA ABA
+===================
+
+Topo:
+
+    FINAIS
+
+    Aprenda a reconhecer posições,
+    encontrar planos e converter vantagens.
+
+Filtros:
+
+    Essenciais
+    Peões
+    Torres
+    Damas
+    Bispos
+    Cavalos
+    Material extra
+    Defesa
+    Conversão
+
+Status:
+
+    Não iniciado
+    Aprendendo
+    Praticando
+    Revisar
+    Consolidado
+
+
+6. CARDS COM MINI-TABULEIRO
+===========================
+
+Cada card representa um TIPO DE FINAL ou UMA TÉCNICA.
+
+Exemplos:
+
+    Rei + Torre contra Rei
+
+    Oposição
+
+    Regra do Quadrado
+
+    Rei + Peão contra Rei
+
+    Torre + Peão contra Torre
+
+    Lucena
+
+    Philidor
+
+    Bispo bom vs bispo ruim
+
+    Cavalo contra peões
+
+    Peão passado distante
+
+    Dois bispos contra rei
+
+
+7. O MINI-TABULEIRO
+===================
+
+Deve mostrar uma posição representativa.
+
+Não precisa mostrar a posição exata usada em treino.
+
+O objetivo é comunicar visualmente a categoria.
+
+
+8. EXEMPLO DE CARD
+==================
+
+    ┌──────────────────────────────┐
+    │       mini tabuleiro         │
+    │                              │
+    │ REI + TORRE CONTRA REI       │
+    │                              │
+    │ Conversão básica             │
+    │ Essencial                    │
+    │ Aprendendo                   │
+    │ █████░░░                     │
+    └──────────────────────────────┘
+
+
+9. NÃO ORGANIZAR FINAIS POR “LINHAS”
+===================================
+
+Não usar:
+
+    Linha principal
+    Variante A
+    Variante B
+
+como em aberturas.
+
+Usar:
+
+    Conceito
+    Técnica
+    Casos típicos
+    Exceções
+    Exercícios
+    Conversão
+    Defesa
+
+
+10. PÁGINA DO FINAL
+===================
+
+Rota:
+
+    /finais/[slug]
+
+Exemplos:
+
+    /finais/oposicao
+    /finais/rei-torre-vs-rei
+    /finais/lucena
+    /finais/peao-passado
+
+
+11. TABS RECOMENDADAS
+=====================
+
+    Visão geral
+    Aprender
+    Praticar
+    Posições típicas
+    Erros comuns
+    Progresso
+
+Para finais teóricos:
+
+    Visão geral
+    Técnica
+    Praticar
+    Variações de posição
+    Erros comuns
+    Progresso
+
+
+12. VISÃO GERAL
+===============
+
+Deve responder:
+
+- que tipo de posição é esta?;
+- o que o jogador quer alcançar?;
+- quando essa técnica é relevante?;
+- quais sinais ajudam a reconhecer a posição?;
+- qual erro mais comum?
+
+
+13. EXEMPLO — OPOSIÇÃO
+======================
+
+Objetivo:
+
+    controlar casas críticas com o rei.
+
+Reconheça quando:
+
+    os reis estão frente a frente
+    e um tempo decide quem cede espaço.
+
+Pergunta-chave:
+
+    “Quem será obrigado a sair da casa primeiro?”
+
+
+14. EXEMPLO — MATE DE TORRE
+===========================
+
+Objetivo:
+
+    reduzir o espaço do rei adversário
+    até a borda.
+
+Processo:
+
+    cortar
+    ↓
+    aproximar
+    ↓
+    reduzir
+    ↓
+    empurrar
+    ↓
+    mate
+
+
+15. MODO APRENDER
+=================
+
+O modo Aprender NÃO deve avançar apenas lance a lance.
+
+Ele deve usar BLOCOS DE RACIOCÍNIO.
+
+
+16. BLOCOS POSSÍVEIS
+====================
+
+A. posição
+B. pergunta
+C. princípio
+D. demonstração
+E. microdecisão
+F. variação da posição
+G. resumo
+
+
+17. EXEMPLO — REI + TORRE
+=========================
+
+TELA 1
+
+    Qual é o objetivo?
+
+    Não é dar xeques aleatórios.
+
+    É reduzir o espaço do rei adversário.
+
+
+TELA 2
+
+Mostrar tabuleiro.
+
+Destacar linha da torre.
+
+    “A torre cria uma parede.”
+
+
+TELA 3
+
+Mover torre.
+
+    “Agora o rei adversário possui uma área menor.”
+
+
+TELA 4
+
+Mostrar papel do rei.
+
+    “Sua torre não consegue concluir sozinha.
+    O rei precisa se aproximar.”
+
+
+TELA 5
+
+Usuário escolhe:
+
+    aproximar o rei
+    dar xeque lateral
+    mover a torre sem objetivo
+
+
+18. O TABULEIRO É O CENTRO
+==========================
+
+Toda explicação de final deve acontecer sobre uma posição.
+
+Evitar longos textos fora do tabuleiro.
+
+A posição precisa ilustrar:
+
+- princípio;
+- técnica;
+- erro;
+- exceção.
+
+
+19. MODO APRENDER NÃO É PASSIVO
+===============================
+
+Mesmo durante ensino:
+
+fazer pequenas perguntas.
+
+Exemplo:
+
+    “Qual rei está mais ativo?”
+
+    “Qual peão está mais próximo da promoção?”
+
+    “Quem possui oposição?”
+
+    “Qual lado tem um peão passado?”
+
+
+20. PERGUNTAS INTERMEDIÁRIAS
+============================
+
+Preferir:
+
+    identificar
+    classificar
+    escolher plano
+
+antes de pedir:
+
+    melhor lance.
+
+
+21. EXEMPLO
+===========
+
+Errado:
+
+    “Qual é o melhor lance?”
+
+Correto:
+
+    “Antes de calcular, qual é o elemento
+    mais importante desta posição?”
+
+Opções:
+
+    a) atividade do rei
+    b) desenvolvimento
+    c) segurança do rei
+    d) estrutura de abertura
+
+
+22. APÓS RECONHECER
+===================
+
+Aí sim perguntar:
+
+    “Que lance melhora esse objetivo?”
+
+
+23. MODELO PEDAGÓGICO
+=====================
+
+Para finais:
+
+    RECONHECER
+    ↓
+    ESCOLHER PRINCÍPIO
+    ↓
+    ENCONTRAR PLANO
+    ↓
+    CALCULAR
+    ↓
+    EXECUTAR
+
+
+24. CONTRASTE
+=============
+
+Muito importante.
+
+Mostrar duas posições parecidas em que a regra muda.
+
+Exemplo:
+
+    posição A:
+    oposição ganha.
+
+    posição B:
+    mesmo material,
+    mas posição do rei muda e empata.
+
+
+25. ISSO EVITA
+==============
+
+Memorizar superficialmente:
+
+    “rei na frente do peão = ganha”
+
+quando nem sempre é verdade.
+
+
+26. VARIAÇÕES DE POSIÇÃO
+========================
+
+Em vez de “variações de linha”:
+
+usar:
+
+    variações de posição.
+
+
+27. EXEMPLO
+===========
+
+Tema:
+
+    Rei + Peão contra Rei
+
+Variar:
+
+- coluna do peão;
+- lado do rei;
+- distância;
+- vez de jogar;
+- peão de torre;
+- sexta fileira.
+
+
+28. RANDOMIZAÇÃO CONTROLADA
+===========================
+
+Depois do aprendizado:
+
+gerar/selecionar posições equivalentes.
+
+Objetivo:
+
+    técnica transferível.
+
+
+29. NÃO RANDOMIZAR SEM VALIDAÇÃO
+================================
+
+Toda posição precisa ser:
+
+- legal;
+- classificada;
+- validada;
+- ter resultado conhecido;
+- possuir objetivo pedagógico.
+
+
+30. TABLEBASE
+=============
+
+Para finais com poucas peças, usar tablebase como fonte de verdade quando disponível.
+
+Ela pode validar:
+
+    vitória
+    empate
+    derrota
+
+e, quando necessário:
+
+    distância para conversão.
+
+
+31. TABLEBASE NÃO É PROFESSOR
+=============================
+
+Não mostrar apenas:
+
+    WDL = win
+    DTZ = 23
+
+A explicação pedagógica continua sendo humana.
+
+
+32. USO DA TABLEBASE
+====================
+
+Pode servir para:
+
+- validar exercícios;
+- detectar se um lance mantém vitória;
+- encontrar posições instrutivas;
+- verificar defesa correta;
+- classificar erro técnico.
+
+
+33. MODO PRATICAR
+=================
+
+O usuário recebe uma posição.
+
+Antes do primeiro lance:
+
+não mostrar solução.
+
+
+34. DIFERENÇA PARA ABERTURAS
+============================
+
+Na abertura:
+
+computador segue OpeningGraph.
+
+No final:
+
+computador deve oferecer resistência adequada à posição.
+
+
+35. ENDGAME TRAINING OPPONENT
+=============================
+
+Criar abstração:
+
+    EndgameTrainingOpponent
+
+
+36. FONTES DE MOVIMENTO
+=======================
+
+Dependendo da posição:
+
+- tablebase;
+- Stockfish;
+- script técnico;
+- regras específicas.
+
+
+37. PRIORIDADE
+==============
+
+Se posição está coberta por tablebase:
+
+usar tablebase para verdade objetiva.
+
+Engine pode auxiliar na seleção de resistência natural.
+
+
+38. TREINO DE CONVERSÃO
+=======================
+
+Exemplo:
+
+    Rei + Torre vs Rei.
+
+Usuário deve jogar até:
+
+    mate.
+
+
+39. NÃO TERMINAR APÓS PRIMEIRO LANCE
+====================================
+
+Diferente de muitos puzzles.
+
+Converter exige execução contínua.
+
+
+40. TREINO DE FINAIS DEVE SER “PLAY-OUT”
+========================================
+
+Quando apropriado:
+
+    posição
+    ↓
+    jogar até objetivo
+    ↓
+    vitória/empate/falha
+
+
+41. OBJETIVOS POSSÍVEIS
+=======================
+
+    mate
+    promover
+    alcançar posição teórica ganha
+    segurar empate
+    impedir promoção
+    ativar rei
+    criar peão passado
+    converter vantagem
+
+
+42. EXEMPLO — MATE DE TORRE
+===========================
+
+Não concluir:
+
+    após encontrar primeiro lance correto.
+
+Concluir:
+
+    ao dar mate.
+
+
+43. EXEMPLO — OPOSIÇÃO
+======================
+
+Pode concluir quando:
+
+    usuário atinge posição de vitória clara
+    ou promove,
+    dependendo do exercício.
+
+
+44. DEFESA
+==========
+
+Não ensinar apenas conversão.
+
+Também treinar:
+
+    segurar empate.
+
+
+45. EXEMPLOS
+============
+
+- Philidor;
+- oposição defensiva;
+- fortaleza simples;
+- sacrificar peça pelo último peão;
+- rei na zona correta.
+
+
+46. MODO TREINO SEM DICAS
+=========================
+
+Começa limpo:
+
+- sem arrows;
+- sem highlights;
+- sem nome da técnica se for revisão;
+- sem engine bar;
+- sem tablebase result.
+
+
+47. HINT LADDER
+===============
+
+Dica 1:
+
+    objetivo.
+
+Dica 2:
+
+    princípio.
+
+Dica 3:
+
+    região/casa importante.
+
+Dica 4:
+
+    candidato.
+
+Solução/demonstração:
+
+    somente após pedido ou falhas repetidas.
+
+
+48. EXEMPLO — FINAL DE PEÃO
+===========================
+
+Dica 1:
+
+    “Pense em quem controla as casas à frente do peão.”
+
+Dica 2:
+
+    “Observe a oposição.”
+
+Dica 3:
+
+    “Seu rei precisa entrar em e6.”
+
+Não:
+
+    “Jogue Re6.”
+
+
+49. ERRO
+========
+
+Não dizer apenas:
+
+    incorreto.
+
+
+50. CLASSIFICAR ERRO
+====================
+
+Exemplos:
+
+    lost_opposition
+    king_too_passive
+    pushed_pawn_too_early
+    missed_pawn_race
+    wrong_rook_placement
+    failed_cutoff
+    allowed_counterplay
+    wrong_trade
+    missed_zugzwang
+    conversion_technique_error
+
+
+51. FEEDBACK
+============
+
+Exemplo:
+
+    “Você avançou o peão antes de melhorar o rei.
+
+    Neste tipo de final, o rei é a peça principal.
+    Ative-o primeiro e só depois avance.”
+
+
+52. NÃO REPETIR MESMA POSIÇÃO INFINITAMENTE
+===========================================
+
+Depois do erro:
+
+    explicar
+    ↓
+    mostrar microexemplo
+    ↓
+    apresentar posição semelhante
+
+
+53. GENERALIZAÇÃO
+=================
+
+O usuário precisa demonstrar:
+
+    “eu aprendi a técnica”
+
+e não:
+
+    “eu decorei esta FEN”.
+
+
+54. CURRÍCULO DE FINAIS
+=======================
+
+Organizar por camadas.
+
+
+55. CAMADA 1 — FUNDAMENTOS ABSOLUTOS
+====================================
+
+1. atividade do rei
+2. regra do quadrado
+3. oposição
+4. casas-chave
+5. peão passado
+6. tempos
+7. zugzwang básico
+
+
+56. CAMADA 2 — CONVERSÕES BÁSICAS
+=================================
+
+1. rei + dama vs rei
+2. rei + torre vs rei
+3. rei + dois bispos vs rei
+4. rei + bispo + cavalo vs rei (posterior/avançado)
+5. promoção segura
+
+
+57. CAMADA 3 — FINAIS DE PEÕES
+==============================
+
+1. rei + peão vs rei
+2. oposição
+3. peão de torre
+4. peões conectados
+5. peões separados
+6. corrida de peões
+7. triangulação
+8. peão passado distante
+9. maioria no flanco
+
+
+58. CAMADA 4 — FINAIS DE TORRE
+==============================
+
+1. torre ativa
+2. torre atrás do peão passado
+3. cortar o rei
+4. Lucena
+5. Philidor
+6. atividade vs material
+7. peões em ambos os flancos
+
+
+59. CAMADA 5 — FINAIS DE PEÇAS MENORES
+======================================
+
+1. bispo bom vs bispo ruim
+2. bispos de cores opostas
+3. cavalo vs bispo
+4. cavalo contra peões
+5. casas fortes
+6. rei + peça menor + peões
+
+
+60. CAMADA 6 — FINAIS DE DAMAS
+==============================
+
+1. segurança do rei
+2. checks perpétuos
+3. centralização
+4. promoção
+5. atividade da dama
+
+
+61. CAMADA 7 — CONVERSÃO DE VANTAGEM
+====================================
+
+1. peça a mais
+2. qualidade a mais
+3. dois peões a mais
+4. simplificação correta
+5. criação de segunda fraqueza
+6. troca para final ganho
+
+
+62. MATERIAL A MAIS
+===================
+
+Criar módulos específicos.
+
+Exemplo:
+
+    “Como converter uma torre a mais?”
+
+Não basta:
+
+    “troque peças.”
+
+
+63. ENSINAR CONDIÇÕES
+======================
+
+Exemplo:
+
+Com material a mais:
+
+- reduza contra-jogo;
+- troque peças quando isso ajuda;
+- evite trocar todos os peões se isso cria fortaleza;
+- ative o rei;
+- não relaxe na segurança.
+
+
+64. DOIS BISPOS
+===============
+
+Ensinar método:
+
+1. restringir rei;
+2. aproximar o próprio rei;
+3. coordenar os bispos;
+4. empurrar rei para borda;
+5. construir mate.
+
+
+65. BISPO + CAVALO
+==================
+
+Deve ser classificado como:
+
+    avançado.
+
+Não precisa ser prioridade para ~1100.
+
+
+66. MATE DE DAMA
+================
+
+Ensinar:
+
+- restringir;
+- aproximar rei;
+- evitar afogamento;
+- dar mate com coordenação.
+
+
+67. MATE DE TORRE
+=================
+
+Ensinar:
+
+- caixa;
+- oposição dos reis;
+- redução gradual;
+- borda;
+- mate.
+
+
+68. FINAIS DE PEÃO
+==================
+
+São prioridade muito alta.
+
+Porque ensinam:
+
+- cálculo;
+- tempos;
+- atividade do rei;
+- promoção;
+- oposição;
+- zugzwang.
+
+
+69. NÃO ENSINAR “REGRA” SEM EXCEÇÃO
+===================================
+
+Sempre que regra possuir exceções comuns:
+
+mostrar contraste.
+
+
+70. EXEMPLO
+===========
+
+“Rei na frente do peão é bom.”
+
+Depois mostrar:
+
+- peão de torre;
+- rei mal posicionado;
+- lado a mover.
+
+
+71. PÁGINA DE UM TEMA
+=====================
+
+Exemplo:
+
+    /finais/oposicao
+
+Tabs:
+
+    Visão geral
+    Aprender
+    Praticar
+    Posições típicas
+    Erros comuns
+    Progresso
+
+
+72. MODELO DE DADOS
+===================
+
+    interface EndgameDefinition {
+      id: string
+      slug: string
+      name: string
+
+      category:
+        | 'pawn'
+        | 'rook'
+        | 'queen'
+        | 'bishop'
+        | 'knight'
+        | 'conversion'
+        | 'defense'
+        | 'principle'
+
+      description: string
+
+      previewFen: string
+
+      difficulty: number
+
+      prerequisiteIds: string[]
+
+      lessonIds: string[]
+      drillIds: string[]
+
+      version: number
+    }
+
+
+73. LESSON STRUCTURE
+====================
+
+    type EndgameLessonStep =
+      | PrincipleStep
+      | RecognitionStep
+      | DemonstrationStep
+      | DecisionStep
+      | ContrastStep
+      | PlayOutStep
+      | SummaryStep
+
+
+74. PRINCIPLE STEP
+==================
+
+Explica uma ideia.
+
+Exemplo:
+
+    “No final, o rei deixa de ser uma peça a proteger
+    e vira uma peça de combate.”
+
+
+75. RECOGNITION STEP
+====================
+
+Pergunta:
+
+    “Qual rei está mais ativo?”
+
+
+76. DEMONSTRATION STEP
+======================
+
+Sistema executa técnica sobre tabuleiro.
+
+Comentários explicam cada decisão.
+
+
+77. DECISION STEP
+=================
+
+Usuário escolhe plano.
+
+Não necessariamente lance exato.
+
+
+78. CONTRAST STEP
+=================
+
+Duas posições semelhantes.
+
+Usuário precisa explicar diferença.
+
+
+79. PLAYOUT STEP
+================
+
+Usuário assume a posição e precisa concluir.
+
+
+80. SUMMARY STEP
+================
+
+Resumo em regras operacionais.
+
+Exemplo:
+
+    FINAL DE PEÕES
+
+    □ Ative o rei
+    □ Conte tempos
+    □ Verifique oposição
+    □ Calcule corrida
+    □ Só avance quando isso ajudar
+
+
+81. MODO PRATICAR — TIPOS
+=========================
+
+A. reconhecer
+B. escolher plano
+C. encontrar lance
+D. converter
+E. defender
+F. play-out completo
+
+
+82. RECONHECER
+==============
+
+Pergunta:
+
+    “Quem está melhor e por quê?”
+
+
+83. ESCOLHER PLANO
+==================
+
+Pergunta:
+
+    “Qual plano é prioritário?”
+
+
+84. ENCONTRAR LANCE
+===================
+
+Só depois do entendimento.
+
+
+85. CONVERTER
+=============
+
+Jogar até atingir objetivo.
+
+
+86. DEFENDER
+============
+
+Jogar até segurar empate ou eliminar ameaça.
+
+
+87. PLAY-OUT
+============
+
+Jogar posição até resultado.
+
+
+88. ENDGAME TRAINING OPPONENT
+=============================
+
+Interface sugerida:
+
+    interface EndgameTrainingOpponent {
+      getMove(position, trainingContext): Promise<Move>
+    }
+
+
+89. IMPLEMENTAÇÕES
+==================
+
+    TablebaseOpponent
+    StockfishOpponent
+    ScriptedTechniqueOpponent
+
+
+90. TABLEBASE OPPONENT
+======================
+
+Para posições cobertas:
+
+- garantir resultado objetivo;
+- escolher defesas resistentes;
+- evitar linhas absurdas se possível.
+
+
+91. STOCKFISH OPPONENT
+======================
+
+Para posições não cobertas:
+
+- força limitada/adequada;
+- evitar jogadas artificiais;
+- priorizar resistência realista.
+
+
+92. SCRIPTED TECHNIQUE
+=====================
+
+Útil quando o exercício precisa demonstrar situação específica.
+
+
+93. NÃO TREINAR CONTRA COMPUTADOR “BURRO” SEM CONTROLE
+=====================================================
+
+Se computador entrega a posição:
+
+usuário não aprende conversão real.
+
+
+94. DIFICULDADE
+===============
+
+Pode variar:
+
+- distância do objetivo;
+- número de decisões críticas;
+- nível de resistência;
+- complexidade;
+- material.
+
+
+95. PROGRESSO
+=============
+
+Não medir só:
+
+    win/loss.
+
+
+96. MÉTRICAS
+============
+
+Separar:
+
+- recognition;
+- principle selection;
+- calculation;
+- conversion;
+- defense;
+- hint dependence;
+- transfer.
+
+
+97. EXEMPLO
+===========
+
+    Finais de peão
+
+    Reconhecimento     Forte
+    Oposição           Bom
+    Corridas           Revisar
+    Conversão          Bom
+
+
+98. FSRS
+========
+
+Criar cards para:
+
+- reconhecer princípio;
+- lembrar técnica;
+- classificar posição;
+- recordar condição de vitória.
+
+
+99. NÃO USAR FSRS PARA PLAY-OUT COMPLETO
+========================================
+
+FSRS agenda revisão.
+
+O drill completo pode ser selecionado pelo planner.
+
+
+100. POSIÇÕES VARIADAS
+======================
+
+Cada conceito precisa de múltiplas posições.
+
+Ideal:
+
+- exemplos centrais;
+- casos limítrofes;
+- exceções;
+- posições espelhadas;
+- cores invertidas;
+- lado a mover alterado.
+
+
+101. SIMETRIA
+=============
+
+Quando possível:
+
+usar transformações seguras:
+
+- espelhar horizontalmente;
+- trocar cores;
+- trocar lado.
+
+Sempre validar resultado.
+
+
+102. GERADOR DE POSIÇÕES
+========================
+
+Pode existir futuramente.
+
+Mas só gerar posições se:
+
+- legalidade confirmada;
+- classificação confirmada;
+- resultado confirmado;
+- propósito pedagógico conhecido.
+
+
+103. TABLEBASE-VALIDATED DRILLS
+===============================
+
+Excelente para:
+
+- king+pawn;
+- rook endings simples;
+- conversões;
+- defesa.
+
+
+104. CONTEÚDO CURADO
+====================
+
+Mesmo com geração:
+
+manter biblioteca curada de posições canônicas.
+
+
+105. POSIÇÕES TEÓRICAS
+======================
+
+Exemplos:
+
+- Lucena;
+- Philidor;
+- oposição;
+- peão de torre;
+- triangulação.
+
+Essas posições precisam ser reconhecíveis.
+
+
+106. NÃO EXIGIR NOME
+====================
+
+Usuário não precisa saber:
+
+    “isso se chama Lucena”
+
+para jogar corretamente.
+
+Nome ajuda organização, não é objetivo final.
+
+
+107. PODE ENSINAR O NOME DEPOIS
+===============================
+
+Primeiro:
+
+    reconhecer técnica.
+
+Depois:
+
+    nome.
+
+
+108. ERROS COMUNS
+=================
+
+Cada tema precisa ter erros típicos.
+
+Exemplo:
+
+REI + TORRE VS REI
+
+- dar xeques aleatórios;
+- afastar torre demais;
+- não aproximar rei;
+- permitir ataques na torre;
+- afogamento em casos específicos.
+
+
+109. EXEMPLO — PEÃO
+===================
+
+- avançar cedo demais;
+- perder oposição;
+- calcular corrida errado;
+- ignorar peão de torre;
+- colocar rei do lado errado.
+
+
+110. PÁGINA “POSIÇÕES TÍPICAS”
+===============================
+
+Mostrar mini-tabuleiros.
+
+Exemplo:
+
+    Oposição direta
+    Oposição distante
+    Peão na sexta
+    Peão de torre
+    Rei na frente
+
+
+111. CLICAR
+===========
+
+Abre:
+
+- explicação;
+- pequena demonstração;
+- treino.
+
+
+112. HOJE
+=========
+
+O Today Planner pode incluir:
+
+    APRENDER
+    Oposição
+
+    PRATICAR
+    Rei + Torre vs Rei
+
+    REVISAR
+    Regra do Quadrado
+
+
+113. MESMA REGRA DO SISTEMA GLOBAL
+==================================
+
+Não colocar no mesmo dia:
+
+    aprender oposição
+    +
+    treino independente de oposição
+
+se segundo depender do primeiro.
+
+
+114. QUALQUER ORDEM
+===================
+
+Todos os cards do Hoje precisam ser pedagogicamente independentes.
+
+
+115. COMPLETION
+==============
+
+Ao terminar:
+
+    ✓
+
+
+116. COMPLETION != MASTERY
+==========================
+
+Se o usuário não consegue converter:
+
+    atividade concluída
+    habilidade fraca
+    reforço futuro
+
+
+117. PLAY-OUT E CONCLUSÃO
+========================
+
+Uma atividade pode ser considerada concluída mesmo com falha.
+
+Exemplo:
+
+    usuário tentou converter
+    não conseguiu
+
+Resultado:
+
+    ✓ atividade realizada
+
+Mas:
+
+    “Conversão precisa de reforço.”
+
+
+118. NÃO PRENDER USUÁRIO
+========================
+
+Nunca obrigar:
+
+    vencer 5 vezes seguidas
+
+para marcar atividade como concluída.
+
+
+119. RETENTATIVA
+===============
+
+Pode oferecer:
+
+    Tentar novamente
+
+mas opcional.
+
+
+120. “VER COMO CONVERTER”
+=========================
+
+Após falha:
+
+oferecer demonstração comentada.
+
+
+121. GAME REVIEW
+===============
+
+Partidas reais devem alimentar finais.
+
+
+122. DETECTAR TRANSIÇÃO
+=======================
+
+Game Review pode detectar:
+
+    opening
+    middlegame
+    endgame
+
+
+123. CLASSIFICAR FINAL
+======================
+
+Exemplos:
+
+    pawn_endgame
+    rook_endgame
+    queen_endgame
+    minor_piece_endgame
+    material_advantage_conversion
+
+
+124. MAPEAR ERRO
+===============
+
+Exemplo:
+
+    perdeu oposição
+
+→ skill:
+
+    opposition
+
+
+125. OUTRO EXEMPLO
+==================
+
+    torre passiva atrás dos próprios peões
+
+→ skill:
+
+    rook_activity
+
+
+126. NÃO GERAR EXERCÍCIO CEGO
+=============================
+
+Se habilidade nunca foi ensinada:
+
+    lesson first.
+
+
+127. SE JÁ FOI ENSINADA
+========================
+
+    review/practice.
+
+
+128. TRANSFERÊNCIA
+==================
+
+Métrica importante:
+
+    consegue aplicar técnica em partida real?
+
+
+129. EXEMPLO
+===========
+
+Usuário aprendeu oposição.
+
+Depois joga final de peões real.
+
+Sistema verifica:
+
+- reconheceu?;
+- escolheu rota correta?;
+- perdeu oposição?.
+
+
+130. NÃO USAR UMA PARTIDA COMO PROVA DEFINITIVA
+===============================================
+
+Usar evidência acumulada.
+
+
+131. CURRÍCULO PARA ~1100
+=========================
+
+Prioridade recomendada:
+
+NÍVEL ESSENCIAL
+
+1. atividade do rei
+2. regra do quadrado
+3. oposição
+4. casas-chave
+5. rei + peão vs rei
+6. mate com dama
+7. mate com torre
+8. peão passado
+9. corrida de peões
+10. simplificação com material a mais
+
+
+132. NÍVEL FUNDAMENTAL
+======================
+
+11. triangulação
+12. peões conectados
+13. peão passado distante
+14. torre ativa
+15. torre atrás do peão passado
+16. cortar rei
+17. Lucena
+18. Philidor
+19. bispo bom vs ruim
+20. bispos de cores opostas
+
+
+133. NÍVEL INTERMEDIÁRIO
+========================
+
+21. cavalo vs bispo
+22. conversão de qualidade
+23. finais com peões em dois flancos
+24. duas fraquezas
+25. finais de dama
+26. fortaleza
+27. sacrifícios defensivos
+
+
+134. NÍVEL AVANÇADO
+===================
+
+- bispo + cavalo vs rei;
+- finais teóricos complexos;
+- estudos;
+- tablebase positions difíceis.
+
+
+135. MATE DE DOIS BISPOS
+========================
+
+Pode ficar em:
+
+    Fundamental/Intermediário
+
+Ensinar coordenação.
+
+Não prioridade máxima, mas deve existir.
+
+
+136. MATE BISPO + CAVALO
+========================
+
+Existir como:
+
+    Avançado / opcional.
+
+Não desperdiçar tempo inicial de um jogador 1100 nisso.
+
+
+137. ABERTURA VS FINAL — DIFERENÇA NA UI
+=======================================
+
+ABERTURA — APRENDER
+
+    lance
+    → explicação
+    → próximo lance
+    → branch
+
+FINAL — APRENDER
+
+    posição
+    → princípio
+    → decisão
+    → demonstração
+    → variação da posição
+    → play-out
+
+
+138. DIFERENÇA NO MODO TREINO
+=============================
+
+ABERTURA
+
+    recall do repertório.
+
+FINAL
+
+    resolver/convert/defender posição.
+
+
+139. NÃO COPIAR COMPONENTE DE ABERTURAS SEM ADAPTAÇÃO
+=====================================================
+
+Pode reutilizar:
+
+- ChessBoard;
+- layout;
+- cards;
+- progress;
+- tabs;
+- comment panel.
+
+Não reutilizar como conceito:
+
+- opening graph;
+- mainline;
+- variation tree baseada em teoria.
+
+
+140. ENDGAME POSITION SET
+=========================
+
+Em vez de OpeningGraph:
+
+usar:
+
+    EndgamePositionSet
+
+
+141. MODELO
+===========
+
+    interface EndgamePositionSet {
+      id: string
+      endgameId: string
+
+      positions: EndgamePosition[]
+    }
+
+
+142. ENDGAME POSITION
+=====================
+
+    interface EndgamePosition {
+      id: string
+      fen: string
+
+      sideToTrain: 'white' | 'black'
+
+      objective:
+        | 'win'
+        | 'draw'
+        | 'promote'
+        | 'mate'
+        | 'reach-target'
+        | 'defend'
+
+      conceptIds: string[]
+
+      expectedResult?: 'win' | 'draw' | 'loss'
+
+      validationSource:
+        | 'tablebase'
+        | 'engine'
+        | 'curated'
+
+      difficulty: number
+    }
+
+
+143. ENDGAME LESSON
+===================
+
+    interface EndgameLesson {
+      id: string
+      endgameId: string
+
+      steps: EndgameLessonStep[]
+
+      version: number
+    }
+
+
+144. TÉCNICA CANÔNICA
+=====================
+
+Para conversões conhecidas:
+
+criar:
+
+    TechniqueDefinition
+
+
+145. EXEMPLO
+===========
+
+    interface TechniqueDefinition {
+      id: string
+      name: string
+
+      goals: string[]
+      phases: TechniquePhase[]
+
+      failurePatterns: string[]
+    }
+
+
+146. REI + TORRE
+===============
+
+Phases:
+
+    cutOff
+    bringKing
+    shrinkBox
+    forceEdge
+    mate
+
+
+147. REI + DOIS BISPOS
+======================
+
+Phases:
+
+    coordinate
+    restrict
+    approach
+    forceEdge
+    matingNet
+
+
+148. REI + DAMA
+==============
+
+Phases:
+
+    restrict
+    approach
+    avoidStalemate
+    mate
+
+
+149. PEÃO
+=========
+
+Phases podem variar por position class.
+
+Não forçar modelo único.
+
+
+150. ENDGAME EVALUATION
+=======================
+
+Para finais, usar mais:
+
+    WDL
+
+do que centipawn loss quando apropriado.
+
+
+151. POR QUÊ?
+=============
+
+Em final teórico:
+
+    +5.0
+
+não importa tanto quanto:
+
+    win → draw.
+
+
+152. ERRO CRÍTICO
+=================
+
+Se lance muda:
+
+    win
+    → draw
+
+é erro técnico grave.
+
+
+153. DEFESA
+===========
+
+Se usuário encontra único lance que mantém:
+
+    draw
+
+isso é sinal importante.
+
+
+154. TABLEBASE FEEDBACK
+=======================
+
+Pode dizer:
+
+    “A posição era ganha antes deste lance.
+    Depois dele, o adversário consegue empatar.”
+
+Isso é muito mais pedagógico que:
+
+    “-4.7”
+
+
+155. PROGRESS MODEL
+===================
+
+    interface EndgameSkillState {
+      endgameId: string
+
+      recognition: number
+      principleSelection: number
+      calculation: number
+      conversion: number
+      defense: number
+      hintDependence: number
+
+      lastPracticedAt: string | null
+    }
+
+
+156. UI DE PROGRESSO
+====================
+
+Não mostrar números falsamente precisos.
+
+Usar:
+
+    Aprendendo
+    Praticando
+    Consolidando
+    Forte
+    Revisar
+
+
+157. POSIÇÕES ALEATÓRIAS
+========================
+
+Treino deve variar posição.
+
+Exemplo:
+
+mate de torre:
+
+- rei em centro;
+- rei perto da borda;
+- torre em diferentes casas;
+- lado a mover.
+
+
+158. OBJETIVO
+=============
+
+Técnica precisa funcionar independentemente da FEN memorizada.
+
+
+159. PERFORMANCE
+===============
+
+Mini-tabuleiros:
+
+- sem Stockfish;
+- sem tablebase request.
+
+Abrir página:
+
+- carregar conteúdo;
+- engine/tablebase apenas quando necessário.
+
+
+160. CACHE
+=========
+
+Posições públicas podem ser cacheadas.
+
+Progresso de usuário não.
+
+
+161. LOCAL-FIRST
+================
+
+Conteúdo e treino básico devem funcionar sem login.
+
+Conta sincroniza progresso.
+
+
+162. TABLEBASE OFFLINE/ONLINE
+============================
+
+Se tablebase externa estiver indisponível:
+
+- exercícios curados continuam;
+- validações pré-computadas continuam;
+- treinamento não deve quebrar inteiro.
+
+
+163. PRECOMPUTE
+==============
+
+Para exercícios conhecidos:
+
+persistir resultado validado.
+
+Não depender de API ao vivo em cada lance.
+
+
+164. STOCKFISH
+=============
+
+Usar Worker.
+
+Nunca bloquear UI.
+
+
+165. CONTENT AUTHORING
+======================
+
+Estrutura sugerida:
+
+    content/endgames/
+      opposition/
+        definition.ts
+        lessons.ts
+        positions.ts
+        mistakes.ts
+
+      king-rook-vs-king/
+        definition.ts
+        technique.ts
+        positions.ts
+
+
+166. BUILD VALIDATION
+=====================
+
+Validar:
+
+- FEN;
+- side to move;
+- legal moves;
+- objective;
+- expected result;
+- IDs;
+- prerequisite;
+- tablebase/engine result quando necessário.
+
+
+167. NÃO GERAR CONTEÚDO SEM VALIDAÇÃO
+=====================================
+
+Qualquer conteúdo gerado por IA:
+
+    schema
+    → chess.js
+    → tablebase/engine
+    → revisão
+
+
+168. ERROS COMUNS DEVEM SER CURADOS
+===================================
+
+Não confiar apenas em centipawn loss.
+
+
+169. PLANO DE MIGRAÇÃO
+======================
+
+Se já existe aba Finais:
+
+mapear:
+
+- páginas;
+- puzzles;
+- dados;
+- progress;
+- components.
+
+
+170. CLASSIFICAR CONTEÚDO ATUAL
+===============================
+
+Perguntar para cada atividade:
+
+    ensina princípio?
+    testa princípio?
+    treina conversão?
+    é apenas “qual o melhor lance?”
+
+
+171. CONTEÚDO CEGO
+==================
+
+Se for apenas:
+
+    “qual o melhor lance?”
+
+sem ensino prévio:
+
+migrar para:
+
+    practice/review
+
+e criar lesson correspondente.
+
+
+172. FASE 0 — AUDIT
+===================
+
+Mapear implementação atual.
+
+
+173. FASE 1 — ENDGAME DOMAIN
+============================
+
+Criar:
+
+- EndgameDefinition;
+- EndgamePosition;
+- EndgameLesson;
+- TechniqueDefinition;
+- EndgameSkillState.
+
+
+174. FASE 2 — CURRICULUM
+=======================
+
+Criar categorias e pré-requisitos.
+
+
+175. FASE 3 — LIBRARY UI
+========================
+
+Cards com mini-tabuleiros.
+
+
+176. FASE 4 — ENDGAME PAGE
+==========================
+
+Criar:
+
+    /finais/[slug]
+
+
+177. FASE 5 — LESSON ENGINE
+===========================
+
+Adicionar steps específicos de final.
+
+
+178. FASE 6 — POSITION SETS
+===========================
+
+Variações de posições.
+
+
+179. FASE 7 — PLAY-OUT TRAINING
+===============================
+
+Jogar até objetivo.
+
+
+180. FASE 8 — TABLEBASE/ENGINE ADAPTER
+=====================================
+
+Validar e gerar resistência.
+
+
+181. FASE 9 — PROGRESS
+======================
+
+Persistir estado.
+
+
+182. FASE 10 — FSRS
+===================
+
+Revisões conceituais.
+
+
+183. FASE 11 — TODAY
+====================
+
+Cards independentes.
+
+
+184. FASE 12 — GAME REVIEW
+==========================
+
+Erros reais → final skill.
+
+
+185. FASE 13 — ADAPTIVE TRAINING
+================================
+
+Weak positions.
+
+
+186. TESTES — CONTEÚDO
+======================
+
+Para cada posição:
+
+[ ] FEN válida
+[ ] lado correto
+[ ] objetivo válido
+[ ] resultado confirmado
+[ ] moves legais
+
+
+187. TESTE DE PLAY-OUT
+======================
+
+Treino não termina após primeiro lance quando objetivo é converter.
+
+
+188. TESTE DE TABLEBASE
+=======================
+
+Se posição é conhecida como ganha:
+
+lance ruim que vira draw deve ser detectado.
+
+
+189. TESTE DE DEFESA
+===================
+
+Usuário pode “vencer” atividade segurando empate.
+
+
+190. TESTE DE RANDOMIZAÇÃO
+==========================
+
+Posições diferentes da mesma técnica continuam válidas.
+
+
+191. TESTE DE MEMORIZAÇÃO
+=========================
+
+Usuário que decorou uma FEN não deve passar automaticamente em variações equivalentes.
+
+
+192. TESTE DE HOJE
+=================
+
+Atividade concluída:
+
+    ✓
+
+reload mantém.
+
+
+193. TESTE DE SAME-DAY DEPENDENCY
+================================
+
+Não gerar:
+
+    aprender oposição
+    +
+    revisar oposição
+
+no mesmo plano se há dependência.
+
+
+194. TESTE DE GAME REVIEW
+=========================
+
+Erro real classificado como:
+
+    lost_opposition
+
+deve alimentar:
+
+    opposition skill.
+
+
+195. TESTE DEFINITIVO 1
+=======================
+
+Usuário nunca estudou oposição.
+
+Ao abrir Aprender:
+
+não precisa adivinhar melhor lance para descobrir o conceito.
+
+
+196. TESTE DEFINITIVO 2
+=======================
+
+Após aprender oposição:
+
+recebe posições diferentes.
+
+Consegue identificar princípio.
+
+
+197. TESTE DEFINITIVO 3
+=======================
+
+Rei + torre vs rei.
+
+Treino só termina:
+
+    ao converter/mate
+    ou ao encerrar tentativa.
+
+
+198. TESTE DEFINITIVO 4
+=======================
+
+Usuário joga lance que mantém vitória,
+mas não é a linha “esperada”.
+
+Não marcar como erro se tablebase/engine valida.
+
+
+199. TESTE DEFINITIVO 5
+=======================
+
+Usuário transforma vitória em empate.
+
+Feedback explica:
+
+    técnica/princípio perdido.
+
+
+200. TESTE DEFINITIVO 6
+=======================
+
+Posição equivalente diferente.
+
+Usuário ainda consegue aplicar método.
+
+
+201. TESTE DEFINITIVO 7
+=======================
+
+Final aparece no Hoje.
+
+Pode ser feito antes ou depois de qualquer outro card.
+
+
+202. DEFINIÇÃO DE DONE — ABA FINAIS
+===================================
+
+[ ] biblioteca visual
+[ ] mini-tabuleiros
+[ ] categorias
+[ ] status
+[ ] progresso
+
+
+203. DONE — PÁGINA
+==================
+
+[ ] visão geral
+[ ] aprender
+[ ] praticar
+[ ] posições típicas
+[ ] erros comuns
+[ ] progresso
+
+
+204. DONE — APRENDER
+====================
+
+[ ] princípio antes de lance
+[ ] demonstração no tabuleiro
+[ ] microdecisões
+[ ] contrastes
+[ ] variações de posição
+[ ] resumo operacional
+
+
+205. DONE — PRATICAR
+====================
+
+[ ] sem dicas por padrão
+[ ] recognition drills
+[ ] plan drills
+[ ] move drills
+[ ] conversion play-out
+[ ] defense play-out
+[ ] feedback pedagógico
+
+
+206. DONE — PEDAGOGIA
+=====================
+
+[ ] não ensina finais como linhas
+[ ] ensina reconhecimento
+[ ] ensina princípios
+[ ] ensina conversão
+[ ] ensina defesa
+[ ] varia posições
+[ ] usa tablebase/engine como validação
+[ ] integra partidas reais
+
+
+207. DONE — HOJE
+================
+
+[ ] atividade independente
+[ ] qualquer ordem
+[ ] ✓ persistente
+[ ] completion != mastery
+[ ] sem same-day dependency
+
+
+208. REGRA MAIS IMPORTANTE
+==========================
+
+ABERTURA:
+
+    “Qual repertório e quais planos surgem desta posição?”
+
+FINAL:
+
+    “Que tipo de posição é esta,
+    qual princípio governa a posição,
+    e como eu converto ou defendo?”
+
+
+209. LOOP FINAL DE ENSINO
+========================
+
+RECONHECER TIPO DE FINAL
+↓
+IDENTIFICAR ELEMENTO CRÍTICO
+↓
+APRENDER PRINCÍPIO
+↓
+VER DEMONSTRAÇÃO
+↓
+TOMAR MICRODECISÕES
+↓
+PRATICAR POSIÇÕES VARIADAS
+↓
+JOGAR ATÉ O RESULTADO
+↓
+REVISAR
+↓
+APLICAR EM PARTIDA REAL
+↓
+GAME REVIEW
+↓
+ATUALIZAR FRAQUEZAS
+
+
+210. INSTRUÇÃO CURTA PARA CLAUDE CODE
+=====================================
+
+Ao implementar finais no LanceZero:
+
+- do not model endgames as opening lines;
+- teach position recognition first;
+- teach principles before exact moves;
+- use canonical technique phases for basic conversions;
+- use multiple position variants;
+- training must support play-out until objective;
+- tablebase/engine validates, but does not teach by itself;
+- win/draw/loss transitions matter more than raw centipawn numbers in theoretical endings;
+- teach defense as well as conversion;
+- activity completion is separate from mastery;
+- Today cards must remain independent and any-order;
+- completed cards keep a persistent ✓;
+- game-review errors must feed the appropriate endgame skill.
+
+Essa lógica deve ser considerada a arquitetura definitiva do ensino de finais do LanceZero.
