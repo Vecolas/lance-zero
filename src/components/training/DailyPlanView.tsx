@@ -48,6 +48,7 @@ import { semearCardsDeRepertorio } from '@/lib/training/repertorio-no-treino'
 import { carregarSinaisDePartida } from '@/lib/training/sinais-de-partida'
 import { BUDGET_OPTIONS } from '@/domain/profile'
 import styles from './DailyPlanView.module.css'
+import { StatePanel } from '@/components/ui/primitives'
 
 /**
  * Cor por tipo — mas o RÓTULO em texto é que carrega o significado, e o símbolo
@@ -173,27 +174,25 @@ export function DailyPlanView() {
   }
 
   if (status === 'carregando') {
-    return <p className={styles.state}>Abrindo seus dados locais…</p>
+    return <StatePanel kind="loading" title="Abrindo seus dados locais…" />
   }
 
   if (status === 'erro') {
     return (
-      <p className={`${styles.state} ${styles.error}`} role="alert">
-        {erro}
-      </p>
+      <StatePanel
+        kind="error"
+        title="Não consegui abrir seus dados locais"
+        description={erro ?? undefined}
+      />
     )
   }
 
   if (falha) {
-    return (
-      <p className={`${styles.state} ${styles.error}`} role="alert">
-        {falha}
-      </p>
-    )
+    return <StatePanel kind="error" title="Não consegui montar seu treino" description={falha} />
   }
 
   if (!plano || !profile) {
-    return <p className={styles.state}>Montando seu treino…</p>
+    return <StatePanel kind="loading" title="Montando seu treino…" />
   }
 
   const progresso = progressoDoDia(plano)
@@ -250,17 +249,19 @@ export function DailyPlanView() {
       </div>
 
       {progresso.tudoConcluido ? (
-        <p className={styles.concluido} role="status">
-          <span aria-hidden="true">{SIMBOLO_DO_STATUS.concluida}</span> Plano de hoje concluído. O
-          que vier agora é extra — e extra é escolha, não obrigação.
-        </p>
+        <StatePanel
+          kind="completed"
+          title={`${SIMBOLO_DO_STATUS.concluida} Plano de hoje concluído`}
+          description="O que vier agora é extra — e extra é escolha, não obrigação."
+        />
       ) : null}
 
       {plano.activities.length === 0 ? (
-        <p className={styles.empty}>
-          Nada para hoje. Aumente o tempo disponível ou importe uma partida para o LanceZero ter o
-          que analisar.
-        </p>
+        <StatePanel
+          kind="empty"
+          title="Nada para hoje"
+          description="Aumente o tempo disponível ou importe uma partida para o LanceZero ter o que analisar."
+        />
       ) : (
         /*
           `ul` e não `ol`: numerar a lista afirmaria uma ordem, e a ordem é do
