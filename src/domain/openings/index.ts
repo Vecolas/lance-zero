@@ -135,6 +135,8 @@ export interface OpeningProgress {
   completedActivities: string[]
   lastPracticedAt: string | null
   confidence: number
+  lessonPly: number
+  lastSection: 'learn' | 'train' | null
 }
 
 export interface OpeningTrainingNode {
@@ -168,6 +170,8 @@ export function emptyOpeningProgress(openingId: string): OpeningProgress {
     completedActivities: [],
     lastPracticedAt: null,
     confidence: 0,
+    lessonPly: 0,
+    lastSection: null,
   }
 }
 
@@ -469,7 +473,22 @@ export function mergeOpeningProgress(local: OpeningProgress, remote: OpeningProg
   }
   const status = statusRank[local.status] >= statusRank[remote.status] ? local.status : remote.status
   const merged = { ...local, status, learnedNodeIds, trainedNodeIds, weakNodeIds, completedActivities, lastPracticedAt }
-  return { ...merged, confidence: openingConfidence(merged) }
+  return {
+    ...merged,
+    confidence: openingConfidence(merged),
+    lessonPly: Math.max(local.lessonPly ?? 0, remote.lessonPly ?? 0),
+    lastSection: (remote.lastPracticedAt ?? '') >= (local.lastPracticedAt ?? '')
+      ? remote.lastSection
+      : local.lastSection,
+  }
+}
+
+export function markOpeningLessonProgress(
+  progress: OpeningProgress,
+  ply: number,
+  now: string,
+): OpeningProgress {
+  return { ...progress, lessonPly: Math.max(progress.lessonPly ?? 0, ply), lastSection: 'learn', lastPracticedAt: now }
 }
 
 export function mergeOpeningProgressList(

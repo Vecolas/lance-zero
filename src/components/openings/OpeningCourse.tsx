@@ -15,6 +15,7 @@ import {
   emptyOpeningProgress,
   markOpeningAttempt,
   markOpeningLearned,
+  markOpeningLessonProgress,
   openingHint,
   type OpeningDefinition,
   type OpeningMoveLesson,
@@ -51,7 +52,7 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
       if (cancelled) return
       window.setTimeout(() => {
         if (cancelled) return
-        setProgress(saved ?? emptyOpeningProgress(opening.id))
+        setProgress(saved ? { ...emptyOpeningProgress(opening.id), ...saved } : emptyOpeningProgress(opening.id))
         setProgressLoaded(true)
       }, 0)
     })
@@ -98,7 +99,9 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
         ))}
       </nav>
       {tab === 'overview' && <Overview opening={opening} onLearn={() => setTab('learn')} />}
-      {tab === 'learn' && <LearnMode opening={opening} onProgress={setProgress} />}
+      {tab === 'learn' && (
+        <LearnMode opening={opening} initialPly={progress.lessonPly} onProgress={setProgress} />
+      )}
       {tab === 'train' && (
         <TrainMode opening={opening} progress={progress} onProgress={setProgress} />
       )}
@@ -161,12 +164,14 @@ function Overview({ opening, onLearn }: { opening: OpeningDefinition; onLearn: (
 
 function LearnMode({
   opening,
+  initialPly,
   onProgress,
 }: {
   opening: OpeningDefinition
+  initialPly: number
   onProgress: (fn: (current: OpeningProgress) => OpeningProgress) => void
 }) {
-  const [ply, setPly] = useState(0)
+  const [ply, setPly] = useState(initialPly)
   const lesson = opening.mainline[ply - 1]
   const fen = fenAtLessons(opening.mainline, ply)
   const lastMove = lesson ? moveSquares(opening.mainline, ply) : []
@@ -197,9 +202,9 @@ function LearnMode({
             onClick={() => {
               if (ply < opening.mainline.length)
                 onProgress((current) =>
-                  markOpeningLearned(
-                    current,
-                    nodeAt(opening.mainline, ply + 1),
+                  markOpeningLessonProgress(
+                    markOpeningLearned(current, nodeAt(opening.mainline, ply + 1), new Date().toISOString()),
+                    ply + 1,
                     new Date().toISOString(),
                   ),
                 )
@@ -259,7 +264,10 @@ function LearnMode({
               className={
                 index < ply ? styles.moveDone : index === ply ? styles.moveCurrent : styles.move
               }
-              onClick={() => setPly(index + 1)}
+              onClick={() => {
+                setPly(index + 1)
+                onProgress((current) => markOpeningLessonProgress(current, index + 1, new Date().toISOString()))
+              }}
             >
               {formatPly(index, move.san)}
             </button>

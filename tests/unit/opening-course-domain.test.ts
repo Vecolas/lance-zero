@@ -8,6 +8,7 @@ import {
   completeOpeningActivity,
   emptyOpeningProgress,
   markOpeningLearned,
+  markOpeningLessonProgress,
   mergeOpeningProgress,
   mergeOpeningProgressList,
   openingHint,
@@ -132,6 +133,15 @@ describe('curso de aberturas como grafo pedagógico', () => {
     const response = chooseOpeningTrainingOpponent(opening, opening.rootNodeId, progress, () => 0)
     expect(response).toBeDefined()
     expect(opening.graph.get(opening.rootNodeId)?.outgoingMoves.some((edge) => edge.uci === response?.uci && (edge.role === 'main' || edge.discoverySafe))).toBe(true)
+  })
+
+  it('checkpoint da aula avança e não volta ao recarregar', () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const base = emptyOpeningProgress(opening.id)
+    const avancado = markOpeningLessonProgress(base, 4, '2026-01-01T00:00:00.000Z')
+    const voltou = markOpeningLessonProgress(avancado, 2, '2026-01-02T00:00:00.000Z')
+    expect(voltou.lessonPly).toBe(4)
+    expect(voltou.lastSection).toBe('learn')
   })
 
   it('funde listas de progresso sem perder a cópia de nenhum aparelho', () => {
