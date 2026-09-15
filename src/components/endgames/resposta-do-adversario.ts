@@ -35,12 +35,13 @@ import { normalizeUci, parseUci } from '@/lib/chess'
 import { legalMoves } from '@/lib/chess'
 import type { TablebaseResult } from '@/domain/types'
 import { melhorLanceDe } from '@/lib/tablebase'
+import type { EndgameTrainingOpponent } from '@/domain/endgames/oponente'
 
 /**
  * As procedências possíveis. É a FONTE que a tela e o portão varrem: fonte
  * nova aqui sem apresentação em `textos.ts` não compila.
  */
-export const FONTES_DE_RESPOSTA = ['tablebase', 'linha-modelo', 'lance-legal'] as const
+export const FONTES_DE_RESPOSTA = ['tablebase', 'stockfish', 'linha-modelo', 'lance-legal'] as const
 
 export type FonteDaResposta = (typeof FONTES_DE_RESPOSTA)[number]
 
@@ -61,6 +62,7 @@ export interface EntradaDaResposta {
   /** UCIs já jogados desde o FEN inicial, dos dois lados, em ordem. */
   lancesJogados: readonly string[]
   probe: Sonda
+  opponent?: EndgameTrainingOpponent
 }
 
 /**
@@ -97,6 +99,13 @@ export async function escolherRespostaDoAdversario(
     return null
   }
   const permitidos = new Set(legais.map((lance) => normalizeUci(lance.uci)))
+
+  if (entrada.opponent) {
+    try {
+      const resposta = await entrada.opponent.getMove(entrada.fen, { moves: entrada.lancesJogados })
+      if (resposta && permitidos.has(normalizeUci(resposta.uci))) return { uci: normalizeUci(resposta.uci), fonte: resposta.source === 'stockfish' ? 'stockfish' : 'lance-legal' }
+    } catch { /* degrada para tablebase/roteiro */ }
+  }
 
   const daTablebase = await consultarTablebase(entrada)
   if (daTablebase !== null && permitidos.has(daTablebase)) {

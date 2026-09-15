@@ -196,6 +196,13 @@ export const APRESENTACAO_POR_FONTE: Record<FonteDaResposta, ApresentacaoDaFonte
       'O adversário está jogando pela tablebase Syzygy: nesta posição não existe defesa melhor que a dele.',
     perfeita: true,
   },
+  stockfish: {
+    tom: 'neutro',
+    icone: '♟',
+    rotulo: 'Resistência do Stockfish',
+    explicacao: 'O adversário escolheu uma resposta pelo Stockfish em worker. Ela é resistente, mas não substitui a prova objetiva da tablebase.',
+    perfeita: false,
+  },
   'linha-modelo': {
     tom: 'neutro',
     icone: '≡',
