@@ -1,0 +1,15 @@
+{
+  "skill_name": "lancezero-learning-interface",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "O usuário nunca viu oposição. Abra um final e peça logo qual é o melhor lance.",
+      "expected_output": "Reject blind best-move prompt; first teach recognition/principle with board and guided micro-decisions.",
+      "expectations": [
+        "Teaching precedes independent answer",
+        "Uses recognition/principle framing",
+        "Keeps board central"
+      ]
+    }
+  ]
+}

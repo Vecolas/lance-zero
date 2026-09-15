@@ -1,0 +1,15 @@
+{
+  "skill_name": "lancezero-visual-quality-gate",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A página está pronta porque o lint passou. Pode marcar o frontend de Aberturas como concluído.",
+      "expected_output": "Requires rendered viewport checks, long-content/overlap checks, visual regression and accessibility structure review.",
+      "expectations": [
+        "Does not equate lint with visual completion",
+        "Checks multiple viewports",
+        "Checks overlap/clipping"
+      ]
+    }
+  ]
+}

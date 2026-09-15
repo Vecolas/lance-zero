@@ -1,0 +1,25 @@
+{
+  "skill_name": "lancezero-page-composition",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Na aba Hoje coloque um botão grande Começar treino e depois abra os cards em sequência.",
+      "expected_output": "Reject global Start Training gate; Today is an independent activity playlist with clickable cards and persistent status.",
+      "expectations": [
+        "No global start button",
+        "Activities remain individually clickable",
+        "Completed cards remain visible"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Monte a página da Abertura Italiana com tabuleiro, comentários, lista de lances, tabs e treino.",
+      "expected_output": "Creates page hierarchy with board as primary canvas, learn/train distinction, responsive tabs and commentary outside the board.",
+      "expectations": [
+        "Board has visual priority",
+        "Comments do not overlay board",
+        "Training hides answer-leading UI"
+      ]
+    }
+  ]
+}

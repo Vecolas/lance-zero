@@ -1,0 +1,14 @@
+{
+  "skill_name": "lancezero-responsive-accessibility",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "No celular deixe as sete tabs espremidas em uma linha de 320px para não precisar rolar.",
+      "expected_output": "Reject squeezed/overlapping tabs; use controlled horizontal scroll or alternate compact navigation.",
+      "expectations": [
+        "No overlap or tiny labels",
+        "Maintains accessible target sizes"
+      ]
+    }
+  ]
+}

@@ -47,6 +47,7 @@ import {
 import { semearCardsDeRepertorio } from '@/lib/training/repertorio-no-treino'
 import { carregarSinaisDePartida } from '@/lib/training/sinais-de-partida'
 import { BUDGET_OPTIONS } from '@/domain/profile'
+import { carregarProgressoDeFinais } from '@/lib/training/endgame-progress'
 import styles from './DailyPlanView.module.css'
 import { StatePanel } from '@/components/ui/primitives'
 
@@ -121,6 +122,7 @@ export function DailyPlanView() {
           .map((partida) => ({ id: partida.id, rotulo: `${partida.white} x ${partida.black}` })),
         openingCourses: OPENING_COURSES,
         openingProgress,
+        endgameProgress: carregarProgressoDeFinais(),
         now: agora,
       }
     },

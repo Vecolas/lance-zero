@@ -50,6 +50,7 @@ import {
   type DetectorResult,
 } from './detectors'
 import { explainMistake, skillsForExplanation, unknownRate, UNKNOWN_CODE } from './explain'
+import { skillDeFinal } from './endgame-classifier'
 import {
   SEVERITY_CONFIG,
   classifySeverity,
@@ -329,7 +330,10 @@ function explicar(
   }
 
   const explicacao = explainMistake(analise, deteccoes, config.detectors)
-  return { explicacao, skillIds: skillsForExplanation(explicacao) }
+  const skills = skillsForExplanation(explicacao)
+  const endgameSkill = skillDeFinal(analise.fenBefore)
+  if (endgameSkill !== null && !skills.includes(endgameSkill)) skills.push(endgameSkill)
+  return { explicacao, skillIds: skills }
 }
 
 // ---------------------------------------------------------------- pipeline

@@ -103,6 +103,7 @@ import {
   type EstadoDaGravacao,
 } from './textos'
 import styles from './EndgameTrainer.module.css'
+import type { EndgameTrainingOpponent } from '@/domain/endgames/oponente'
 
 interface Tentativa {
   fen: string
@@ -155,9 +156,10 @@ export interface EndgameTrainerProps {
    * comportamento de produção, não porque alguém pode esquecê-lo.
    */
   probe?: Sonda
+  opponent?: EndgameTrainingOpponent
 }
 
-export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrainerProps) {
+export function EndgameTrainer({ licao, posicao, onVoltar, probe, opponent }: EndgameTrainerProps) {
   const { profile, repo, refresh, status: statusDoArmazenamento } = useRepository()
   const [tentativa, setTentativa] = useState<Tentativa>(() => tentativaInicial(posicao))
   const [fase, setFase] = useState<Fase>('jogando')
@@ -237,6 +239,7 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
         linhaModelo: posicao.linhaModelo,
         lancesJogados: estado.lancesJogados,
         probe: sonda,
+        opponent,
       })
       if (minhaGeracao !== geracao.current) {
         return
@@ -267,7 +270,7 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe }: EndgameTrain
       })
       setFase(resultado.estado === 'em-andamento' ? 'jogando' : 'encerrada')
     },
-    [posicao, sonda],
+    [opponent, posicao, sonda],
   )
 
   /**
