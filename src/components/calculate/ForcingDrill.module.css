@@ -1,16 +1,3 @@
-.layout {
-  display: grid;
-  gap: var(--space-5);
-  grid-template-columns: 1fr;
-  align-items: start;
-}
-
-@media (min-width: 60rem) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) 23rem;
-  }
-}
-
 .panel {
   display: flex;
   flex-direction: column;
@@ -64,6 +51,11 @@
 .workflowActive {
   border-color: var(--accent) !important;
   color: var(--accent-strong);
+}
+
+.workflowDone {
+  border-color: var(--positive) !important;
+  color: var(--positive);
 }
 
 .workflowPending {
@@ -149,6 +141,21 @@
 .stageTitle {
   margin: 0;
   font-weight: 700;
+}
+
+.workflowStep {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.choiceGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .nota {

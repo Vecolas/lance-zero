@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ReviewSession } from '@/components/training/ReviewSession'
+import { PageHeader } from '@/components/ui/primitives'
 
 export const metadata: Metadata = { title: 'Revisar' }
 
@@ -17,11 +18,10 @@ export const metadata: Metadata = { title: 'Revisar' }
 export default function RevisaoPage() {
   return (
     <>
-      <h1>Revisar</h1>
-      <p>
-        A revisão começa pelas vencidas, porque o que você já errou uma vez vale mais que conteúdo
-        novo. Aqui você tenta ANTES de ver a resposta — é a tentativa que fixa, não a leitura.
-      </p>
+      <PageHeader
+        title="Revisar"
+        description="A revisão começa pelas vencidas. Tente antes de ver a resposta: é a recuperação que fixa."
+      />
       <ReviewSession />
     </>
   )

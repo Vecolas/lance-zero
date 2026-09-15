@@ -33,7 +33,7 @@ import { getSkill } from '@/domain/skills/catalog'
 import { carregarSkillStates } from '@/lib/training/plano-do-dia'
 import type { SkillArea } from '@/domain/types'
 import styles from './TreinoHub.module.css'
-import { StatePanel } from '@/components/ui/primitives'
+import { ModeLabel, StatePanel, type Mode } from '@/components/ui/primitives'
 
 const ROTULO_DA_AREA: Record<SkillArea, string> = {
   tactics: 'Tática',
@@ -121,6 +121,7 @@ export function TreinoHub() {
       {aprendendo.length > 0 ? (
         <Secao
           titulo="Continuar aprendendo"
+          mode="learn"
           descricao="Conceitos que o LanceZero já te apresentou e que ainda vêm com apoio."
         >
           {aprendendo.slice(0, 4).map((visao) => (
@@ -140,6 +141,7 @@ export function TreinoHub() {
 
       <Secao
         titulo="Praticar"
+        mode="practice"
         descricao={
           praticavel.length > 0
             ? 'Habilidades que você já pode treinar sem apoio na tela.'
@@ -159,6 +161,7 @@ export function TreinoHub() {
 
       <Secao
         titulo="Revisar"
+        mode="review"
         descricao="Recuperação espaçada do que você já aprendeu. Só entra aqui o que já foi ensinado."
       >
         <Cartao
@@ -177,7 +180,20 @@ export function TreinoHub() {
       </Secao>
 
       <Secao
+        titulo="Diagnóstico"
+        mode="diagnostic"
+        descricao="Calibre o ponto de partida sem receber feedback durante as respostas."
+      >
+        <Cartao
+          href="/onboarding"
+          titulo="Medir meu ponto de partida"
+          nota="O resultado orienta o plano; não é uma nota definitiva."
+        />
+      </Secao>
+
+      <Secao
         titulo="Currículo"
+        mode="learn"
         descricao="O mapa inteiro. Nada aqui é bloqueado: o grafo de pré-requisitos serve ao plano do dia, não à sua navegação."
       >
         {areas.map((area) => (
@@ -192,6 +208,7 @@ export function TreinoHub() {
 
       <Secao
         titulo="Minhas partidas"
+        mode="review"
         descricao="Os seus erros reais, virando treino. A revisão começa por você, sem a engine à vista."
       >
         <Cartao
@@ -215,15 +232,20 @@ export function TreinoHub() {
 function Secao({
   titulo,
   descricao,
+  mode,
   children,
 }: {
   titulo: string
   descricao: string
+  mode: Mode
   children: React.ReactNode
 }) {
   return (
     <section className={styles.secao}>
-      <h2 className={styles.secaoTitulo}>{titulo}</h2>
+      <div className={styles.secaoTituloLinha}>
+        <h2 className={styles.secaoTitulo}>{titulo}</h2>
+        <ModeLabel mode={mode} />
+      </div>
       <p className={styles.secaoDescricao}>{descricao}</p>
       <ul className={styles.cartoes}>{children}</ul>
     </section>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { HumanReview } from '@/components/games/HumanReview'
+import { PageHeader } from '@/components/ui/primitives'
 
 export const metadata: Metadata = { title: 'Revisar partida' }
 
@@ -7,7 +8,10 @@ export default async function GameReviewPage({ params }: { params: Promise<{ gam
   const { gameId } = await params
   return (
     <>
-      <h1>Revisar partida</h1>
+      <PageHeader
+        title="Revisar partida"
+        description="Marque primeiro onde a partida mudou; a análise entra depois."
+      />
       <HumanReview gameId={decodeURIComponent(gameId)} />
     </>
   )

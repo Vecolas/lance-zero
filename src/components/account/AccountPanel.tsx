@@ -222,7 +222,8 @@ export function AccountPanel() {
     return (
       <div>
         <section className={styles.section}>
-          <h2>Você está conectado</h2>
+          <h2>Perfil</h2>
+          <p>Você está conectado como:</p>
           <p>{session.email ?? 'Conta autenticada'}</p>
           <div className={styles.actions}>
             <button className={styles.primary} onClick={() => void exportar()} disabled={busy}>
@@ -263,8 +264,9 @@ export function AccountPanel() {
             </button>
           </div>
         </section>
-        <section className={styles.danger}>
-          <h2>Excluir conta</h2>
+        <section className={styles.danger} aria-labelledby="seguranca-privacidade">
+          <h2 id="seguranca-privacidade">Segurança e privacidade</h2>
+          <h3>Excluir conta</h3>
           <p>Esta ação remove a conta, os dados sincronizados e o banco local deste aparelho.</p>
           <label htmlFor="delete-confirmation">Digite APAGAR CONTA</label>
           <input

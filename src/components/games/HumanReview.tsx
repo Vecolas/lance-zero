@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { ChessWorkspace } from '@/components/chess/ChessWorkspace'
+import { ErrorState, LoadingState } from '@/components/ui/primitives'
 import { EngineReview } from '@/components/games/EngineReview'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { OPENING_COURSES } from '@/content/openings/course'
@@ -135,17 +136,20 @@ export function HumanReview({ gameId }: Props) {
 
   const pares = useMemo(() => (linha ? toMovePairs(linha) : []), [linha])
 
-  if (status === 'carregando') return <p className={styles.state}>Abrindo seus dados locais…</p>
+  if (status === 'carregando') {
+    return <LoadingState title="Abrindo a partida" description="Lendo seus dados locais." />
+  }
 
   if (falha || status === 'erro') {
     return (
-      <p className={styles.state} role="alert">
-        {falha ?? erro}
-      </p>
+      <ErrorState
+        title="Não consegui abrir esta partida"
+        description={falha ?? erro ?? undefined}
+      />
     )
   }
 
-  if (!game || !linha) return <p className={styles.state}>Carregando a partida…</p>
+  if (!game || !linha) return <LoadingState title="Carregando a partida" />
 
   const passo = (direcao: NavigationStep) => setPly((atual) => navigate(linha, atual, direcao))
 

@@ -4,6 +4,7 @@ import { BibliotecaDeLicoes } from '@/components/lessons/BibliotecaDeLicoes'
 import { CATALOGO_DE_LICOES } from '@/content/lessons'
 import { getSkill } from '@/domain/skills/catalog'
 import { SKILL_IDS, type SkillId } from '@/domain/types'
+import { PageHeader } from '@/components/ui/primitives'
 
 /**
  * A lição de UMA habilidade, com endereço próprio.
@@ -49,11 +50,10 @@ export default async function LicaoPage({ params }: { params: Promise<{ skillId:
 
   return (
     <>
-      <h1>{getSkill(licao.habilidade).label}</h1>
-      <p>
-        Conceito, exemplo resolvido e exercícios — nesta ordem, com a ajuda diminuindo a cada etapa.
-        A última etapa é sem dica nenhuma.
-      </p>
+      <PageHeader
+        title={getSkill(licao.habilidade).label}
+        description="Conceito, exemplo resolvido e exercícios, com a ajuda diminuindo a cada etapa."
+      />
       <BibliotecaDeLicoes licaoInicialId={licao.id} />
     </>
   )

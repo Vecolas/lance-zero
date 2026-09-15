@@ -14,6 +14,7 @@ const ROTAS = [
 const VIEWPORTS = [
   { nome: 'mobile', width: 360, height: 800 },
   { nome: 'tablet', width: 768, height: 1024 },
+  { nome: 'desktop-curto', width: 1280, height: 800 },
   { nome: 'desktop', width: 1440, height: 900 },
 ] as const
 
@@ -33,8 +34,11 @@ test.describe('QA visual do frontend', () => {
         expect(layout.overflow, `${rota} em ${viewport.nome} ultrapassa a viewport`).toBe(false)
         await expect(page.locator('main')).toBeVisible()
         const arquivo = rota.slice(1).replace(/[/?&=]/g, '-') || 'home'
+        const destino = process.env.SAVE_FRONTEND_BASELINES
+          ? `docs/frontend-baselines/${viewport.nome}-${arquivo}.png`
+          : testInfo.outputPath(`frontend-${viewport.nome}-${arquivo}.png`)
         await page.screenshot({
-          path: testInfo.outputPath(`frontend-${viewport.nome}-${arquivo}.png`),
+          path: destino,
           fullPage: true,
         })
       }

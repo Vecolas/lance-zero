@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { runtimeDependencies, plannedDependencies } from '@/lib/legal/licenses'
 import styles from './page.module.css'
+import { PageHeader } from '@/components/ui/primitives'
 
 export const metadata: Metadata = { title: 'Licenças e fontes de dados' }
 
@@ -49,12 +50,10 @@ function Table({ rows, vazio }: { rows: typeof runtimeDependencies; vazio: strin
 export default function LicensesPage() {
   return (
     <>
-      <h1>Licenças e fontes de dados</h1>
-      <p>
-        O LanceZero é construído sobre software e dados abertos. Esta página existe desde a primeira
-        linha de código porque as obrigações de licença — em especial a GPL do Stockfish — moldam a
-        arquitetura, e não o contrário.
-      </p>
+      <PageHeader
+        title="Licenças e fontes de dados"
+        description="Software e dados abertos fazem parte da arquitetura do LanceZero. Aqui estão as obrigações e fontes usadas."
+      />
 
       <h2>Em uso hoje</h2>
       <Table

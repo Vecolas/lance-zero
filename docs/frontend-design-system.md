@@ -22,11 +22,14 @@ temas. Não adicionar hex avulso em componentes.
 ## Estados e pedagogia
 
 `StatusBadge` sempre combina símbolo e texto. `ModeLabel` diferencia Aprender,
-Praticar, Revisar e Diagnóstico sem depender de cor. `StatePanel` reserva espaço
-para loading, empty, error e completed; erro de um bloco não substitui a página.
+Praticar, Revisar e Diagnóstico sem depender de cor. `LoadingState`, `EmptyState`,
+`ErrorState` e `CompletedState` são fachadas nomeadas do `StatePanel`; todos
+reservam o mesmo espaço e contrato ARIA. Erro de um bloco não substitui a página.
 
 ## Xadrez
 
 O board é dominante em tarefas centradas em xadrez. Comentário, feedback,
 movelist e ações ficam em regiões próprias. Mini-boards são previews estáticos:
-não carregam engine, tablebase ou explorer.
+não carregam engine, tablebase ou explorer. O shell aplica `PageContainer` e as
+rotas de produto usam `PageHeader` para manter H1, descrição e ação na mesma
+composição.
