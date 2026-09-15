@@ -1,4 +1,5 @@
 import type { EndgameDefinition, EndgameLesson, EndgamePosition, EndgamePositionSet, TechniqueDefinition } from '@/domain/endgames'
+import { validarPosicaoDeFinal } from '@/domain/endgames'
 
 const OPOSICAO_A: EndgamePosition = {
   id: 'oposicao-biblioteca-a', fen: '4k3/8/8/4K3/4P3/8/8/8 b - - 0 1', sideToTrain: 'black',
@@ -58,3 +59,20 @@ export const ENDGAME_LESSONS: readonly EndgameLesson[] = ENDGAME_DEFINITIONS.map
 
 export const ENDGAME_BY_SLUG = new Map(ENDGAME_DEFINITIONS.map((definition) => [definition.slug, definition]))
 export const ENDGAME_LESSON_BY_ID = new Map(ENDGAME_LESSONS.map((lesson) => [lesson.id, lesson]))
+
+/** Portão executável para conteúdo novo: IDs, dependências e posições não podem
+ * falhar silenciosamente na biblioteca. */
+export function validarBibliotecaDeFinais(): string[] {
+  const erros: string[] = []
+  const ids = new Set<string>()
+  for (const definition of ENDGAME_DEFINITIONS) {
+    if (ids.has(definition.id)) erros.push(`id duplicado: ${definition.id}`)
+    ids.add(definition.id)
+    for (const prerequisite of definition.prerequisiteIds) if (!ENDGAME_DEFINITIONS.some((item) => item.id === prerequisite)) erros.push(`${definition.id}: pré-requisito inexistente ${prerequisite}`)
+    if (definition.lessonIds.some((id) => !ENDGAME_LESSON_BY_ID.has(id))) erros.push(`${definition.id}: lição inexistente`)
+    const set = ENDGAME_POSITION_SETS.find((item) => item.id === definition.drillIds[0])
+    if (!set || set.positions.length === 0) erros.push(`${definition.id}: conjunto de posições vazio`)
+  }
+  for (const set of ENDGAME_POSITION_SETS) for (const position of set.positions) { const result = validarPosicaoDeFinal(position); if (!result.ok) erros.push(`${set.id}/${position.id}: ${result.reason}`) }
+  return erros
+}
