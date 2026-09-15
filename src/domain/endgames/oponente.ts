@@ -4,6 +4,7 @@ import { applyMove, legalMoves, parseUci } from '@/lib/chess'
 export interface TrainingContext { moves: readonly string[]; targetResult?: 'win' | 'draw' | 'loss' }
 export interface EndgameTrainingMove { uci: string; source: 'tablebase' | 'stockfish' | 'scripted' | 'legal'; explanation?: string }
 export interface EndgameTrainingOpponent { getMove(position: string, context: TrainingContext): Promise<EndgameTrainingMove | null> }
+export type StockfishMovePicker = (fen: string, context: TrainingContext) => Promise<string | null>
 export type TablebaseProbe = (fen: string) => Promise<TablebaseResult | null>
 
 /** Oponente objetivo: usa o primeiro lance legal recomendado pela tablebase. */
@@ -24,6 +25,17 @@ export class ScriptedTechniqueOpponent implements EndgameTrainingOpponent {
     if (candidate && legalMoves(position).some((move) => move.uci === candidate)) return { uci: candidate, source: 'scripted' }
     const fallback = legalMoves(position).map((move) => move.uci).sort()[0]
     return fallback ? { uci: fallback, source: 'legal' } : null
+  }
+}
+
+/** Adapter agnóstico ao worker: a UI injeta o provider Stockfish já existente,
+ * evitando bloquear o componente e mantendo o domínio testável sem WASM. */
+export class StockfishOpponent implements EndgameTrainingOpponent {
+  constructor(private readonly pickMove: StockfishMovePicker) {}
+  async getMove(position: string, context: TrainingContext): Promise<EndgameTrainingMove | null> {
+    const uci = await this.pickMove(position, context)
+    if (!uci || !legalMoves(position).some((move) => move.uci === uci)) return null
+    return { uci, source: 'stockfish', explanation: 'Resposta escolhida pelo Stockfish em worker.' }
   }
 }
 
