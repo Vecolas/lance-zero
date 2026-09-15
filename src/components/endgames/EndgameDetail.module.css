@@ -1,0 +1,157 @@
+.page,
+.trainerPage {
+  min-width: 0;
+}
+.back {
+  display: inline-block;
+  margin-bottom: var(--space-4);
+  color: var(--link);
+  text-decoration: none;
+}
+.backButton {
+  margin-bottom: var(--space-4);
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  cursor: pointer;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+.header h1 {
+  margin: 0;
+}
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--accent-readable);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.lead {
+  max-width: 52rem;
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+}
+.primary,
+.secondary {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.secondary {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+.overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: var(--space-5);
+  padding-top: var(--space-5);
+}
+.overview h2,
+.section h2 {
+  margin-top: 0;
+}
+.overview p,
+.section p {
+  color: var(--text-muted);
+}
+.infoCard,
+.progressCard {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+.infoCard li {
+  margin: var(--space-2) 0;
+}
+.section {
+  padding-top: var(--space-5);
+}
+.positions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-4);
+}
+.position {
+  display: grid;
+  grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.position:hover {
+  border-color: var(--accent);
+}
+.miniBoard {
+  min-width: 0;
+}
+.positionBody {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.positionBody span {
+  color: var(--text-muted);
+}
+.linkText {
+  color: var(--link) !important;
+  font-weight: 700;
+}
+.list {
+  padding-left: 1.2rem;
+  color: var(--text-muted);
+}
+.list li {
+  margin: var(--space-3) 0;
+}
+.note {
+  padding: var(--space-4);
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+}
+.progressCard {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 32rem;
+}
+.progressCard span {
+  color: var(--text-muted);
+}
+@media (max-width: 48rem) {
+  .header,
+  .overview {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+  .header .primary {
+    width: 100%;
+  }
+  .position {
+    grid-template-columns: 8rem minmax(0, 1fr);
+  }
+}
