@@ -21,7 +21,7 @@ import {
   type OpeningMoveLesson,
   type OpeningProgress,
 } from '@/domain/openings'
-import { openingReviewCards } from '@/domain/openings/review'
+import { seedOpeningReviewCards } from '@/lib/training/opening-reviews'
 import styles from './OpeningCourse.module.css'
 
 type Tab = 'overview' | 'learn' | 'train' | 'variations' | 'plans' | 'mistakes' | 'progress'
@@ -61,7 +61,7 @@ export function OpeningCourse({ opening }: { opening: OpeningDefinition }) {
   useEffect(() => {
     if (!repo || !progressLoaded) return
     void repo.saveOpeningProgress(progress)
-    for (const card of openingReviewCards(opening, progress, new Date())) void repo.saveReviewCard(card)
+    void seedOpeningReviewCards(repo, opening, progress, new Date())
   }, [opening, progress, progressLoaded, repo])
   return (
     <div className={styles.page}>

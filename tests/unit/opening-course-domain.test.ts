@@ -16,6 +16,9 @@ import {
 import { openingReviewCards } from '@/domain/openings/review'
 import { registerOpeningGameEvidence, reviewOpeningGame } from '@/domain/openings/game-review'
 import { parsePgn } from '@/lib/chess'
+import { seedOpeningReviewCards } from '@/lib/training/opening-reviews'
+import { applyReview } from '@/lib/fsrs/cards'
+import { MemoryTrainingRepository } from '@/lib/storage/memory-repository'
 
 function positionAt(opening: OpeningDefinition, ply: number): string {
   let fen = opening.rootFen
@@ -129,5 +132,19 @@ describe('curso de aberturas como grafo pedagógico', () => {
     const merged = mergeOpeningProgressList([local], [remote])
     expect(merged[0]?.learnedNodeIds).toContain(opening.rootNodeId)
     expect(merged[0]?.completedActivities).toContain('opening:italiana:learn')
+  })
+
+  it('semeia card de abertura sem reiniciar o FSRS existente', async () => {
+    const opening = OPENING_COURSES.find((item) => item.id === 'italiana') as OpeningDefinition
+    const progress = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, '2026-01-01T00:00:00.000Z')
+    const repo = new MemoryTrainingRepository()
+    const now = new Date('2026-01-01T00:00:00.000Z')
+    expect(await seedOpeningReviewCards(repo, opening, progress, now)).toBe(1)
+    const first = (await repo.listReviewCards())[0]
+    if (!first) throw new Error('card não criado')
+    const scheduled = applyReview(first, 'good', new Date('2026-01-02T00:00:00.000Z'))
+    await repo.saveReviewCard(scheduled)
+    expect(await seedOpeningReviewCards(repo, opening, progress, new Date('2026-01-03T00:00:00.000Z'))).toBe(0)
+    expect((await repo.listReviewCards())[0]?.dueAt).toBe(scheduled.dueAt)
   })
 })
