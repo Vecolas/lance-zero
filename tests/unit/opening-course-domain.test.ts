@@ -53,6 +53,9 @@ describe('curso de aberturas como grafo pedagógico', () => {
     for (const opening of OPENING_COURSES) {
       for (const move of opening.mainline) {
         expect(move.comment.trim(), `${opening.id}:${move.san}`).not.toBe('')
+        expect(move.uci, `${opening.id}:${move.san} sem UCI normalizado`).toMatch(
+          /^[a-h][1-8][a-h][1-8][qrbn]?$/,
+        )
       }
       let fen = opening.rootFen
       for (const move of opening.mainline) {

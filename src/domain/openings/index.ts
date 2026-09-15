@@ -199,6 +199,33 @@ function mergeUnique(values: string[], additions: readonly string[]): void {
   for (const value of additions) if (!values.includes(value)) values.push(value)
 }
 
+function normalizeAuthoredLine(moves: readonly OpeningMoveLesson[]): OpeningMoveLesson[] {
+  let fen = START_FEN
+  return moves.map((lesson) => {
+    const before = fen
+    const applied = applyMove(before, lesson.san)
+    if (!applied) throw new Error(`Lance ilegal na abertura: ${lesson.san} em ${before}`)
+    const alternatives = lesson.alternatives?.map((alternative) => {
+      const alternativeApplied = applyMove(before, alternative.san)
+      if (!alternativeApplied) {
+        throw new Error(`Alternativa ilegal na abertura: ${alternative.san} em ${before}`)
+      }
+      return {
+        ...alternative,
+        san: alternativeApplied.move.san,
+        uci: alternativeApplied.move.uci,
+      }
+    })
+    fen = applied.fenAfter
+    return {
+      ...lesson,
+      san: applied.move.san,
+      uci: applied.move.uci,
+      alternatives,
+    }
+  })
+}
+
 /** Monta o grafo e recusa conteúdo ilegal em vez de publicar um falso verde. */
 export function buildOpeningGraph(
   lines: readonly { moves: readonly OpeningMoveLesson[]; role: OpeningMoveRole }[],
@@ -269,18 +296,21 @@ export function buildOpeningDefinition(
     )
   }
   const source = parsed.data
+  const mainline = normalizeAuthoredLine(source.mainline)
+  const variationLines = source.variations.map((variation) => normalizeAuthoredLine(variation.line))
   const lines = [
-    { moves: source.mainline, role: 'main' as const },
-    ...source.variations.map((variation) => ({
-      moves: variation.line,
+    { moves: mainline, role: 'main' as const },
+    ...variationLines.map((moves) => ({
+      moves,
       role: 'variation' as const,
     })),
   ]
   const { graph, rootNodeId } = buildOpeningGraph(lines)
   const mainLineId = `${source.id}:main`
-  const variations = source.variations.map((variation) => ({
+  const variations = source.variations.map((variation, index) => ({
     ...variation,
     rootNodeId,
+    line: variationLines[index] ?? [],
   }))
   const plans = source.plans.map((plan) => {
     const node = graph.get(plan.positionNodeId) ?? graph.get(rootNodeId)
@@ -288,7 +318,7 @@ export function buildOpeningDefinition(
   })
   let previewFen = graph.get(rootNodeId)?.fen ?? START_FEN
   let previewCursor = START_FEN
-  for (const lesson of source.mainline.slice(0, 4)) {
+  for (const lesson of mainline.slice(0, 4)) {
     const applied = applyMove(previewCursor, lesson.san)
     if (!applied) break
     previewCursor = applied.fenAfter
@@ -296,6 +326,7 @@ export function buildOpeningDefinition(
   }
   const opening: OpeningDefinition = {
     ...source,
+    mainline,
     rootNodeId,
     rootFen: graph.get(rootNodeId)?.fen ?? START_FEN,
     previewFen,
