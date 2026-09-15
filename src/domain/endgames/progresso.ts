@@ -1,4 +1,5 @@
 import type { EndgameStatus } from './catalogo'
+import type { EndgamePosition, EndgamePositionSet } from './catalogo'
 
 export interface EndgameSkillState {
   endgameId: string
@@ -40,6 +41,14 @@ export function registrarResultadoDeFinais(state: EndgameSkillState, resultado: 
     defense: sample(state.defense, resultado.defended),
     hintDependence: sample(state.hintDependence, resultado.maxHints > 0 && resultado.hints === 0),
   })
+}
+
+/** Seleção adaptativa determinística: primeiro a menor competência, depois a
+ * dificuldade mais adequada e, por fim, o ID para não depender da ordem. */
+export function selecionarPosicaoAdaptativa(set: EndgamePositionSet, state: EndgameSkillState): EndgamePosition | null {
+  if (set.positions.length === 0) return null
+  const weakest = Math.min(state.recognition, state.principleSelection, state.calculation, state.conversion, state.defense)
+  return [...set.positions].sort((a, b) => Math.abs(a.difficulty - (weakest < 0.35 ? 1 : weakest < 0.7 ? 2 : 3)) - Math.abs(b.difficulty - (weakest < 0.35 ? 1 : weakest < 0.7 ? 2 : 3)) || a.id.localeCompare(b.id))[0] ?? null
 }
 
 export function estadoInicialDeFinal(endgameId: string): EndgameSkillState {
