@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { EngineReview } from '@/components/games/EngineReview'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import { OPENING_COURSES } from '@/content/openings/course'
+import { registerOpeningGameEvidence, reviewOpeningGame, type OpeningGameReview } from '@/domain/openings/game-review'
 import type { Game } from '@/domain/types'
 import {
   fenAtPly,
@@ -30,6 +32,7 @@ export function HumanReview({ gameId }: Props) {
   const [notas, setNotas] = useState('')
   const [salvo, setSalvo] = useState(false)
   const [falha, setFalha] = useState<string | null>(null)
+  const [aberturas, setAberturas] = useState<OpeningGameReview[]>([])
 
   useEffect(() => {
     if (!repo) return
@@ -49,6 +52,7 @@ export function HumanReview({ gameId }: Props) {
         setLinha(parsePgn(alvo.pgn))
         setMarcados(alvo.humanReview?.markedPlies ?? [])
         setNotas(alvo.humanReview?.notes ?? '')
+        setAberturas(OPENING_COURSES.map((opening) => reviewOpeningGame(opening, parsePgn(alvo.pgn), alvo.userColor)))
       } catch (e) {
         if (!cancelado) {
           setFalha(e instanceof Error ? e.message : 'Não consegui abrir esta partida.')
@@ -83,12 +87,26 @@ export function HumanReview({ gameId }: Props) {
         },
       }
       await repo.saveGame(atualizado)
+      const linhaDaPartida = linha
+      const reviews = linhaDaPartida
+        ? OPENING_COURSES.map((opening) => reviewOpeningGame(opening, linhaDaPartida, game.userColor))
+        : []
+      for (const review of reviews) {
+        if (review.classification !== 'repertoire_mistake') continue
+        const progress = await repo.getOpeningProgress(review.openingId)
+        if (progress) {
+          await repo.saveOpeningProgress(
+            registerOpeningGameEvidence(progress, review, new Date().toISOString()),
+          )
+        }
+      }
+      setAberturas(reviews)
       setGame(atualizado)
       setSalvo(true)
     } catch (e) {
       setFalha(e instanceof Error ? e.message : 'Não consegui salvar sua revisão.')
     }
-  }, [game, marcados, notas, repo])
+  }, [game, linha, marcados, notas, repo])
 
   const pares = useMemo(() => (linha ? toMovePairs(linha) : []), [linha])
 
@@ -245,6 +263,15 @@ export function HumanReview({ gameId }: Props) {
           </div>
         </div>
       </div>
+
+      {aberturas.some((item) => item.classification !== 'normal_transition') ? (
+        <div className={styles.card} role="status">
+          <h2 className={styles.question}>Leitura da abertura</h2>
+          {aberturas
+            .filter((item) => item.classification !== 'normal_transition')
+            .map((item) => <p key={item.openingId}>{item.message}</p>)}
+        </div>
+      ) : null}
 
       {game.humanReview ? (
         <EngineReview
