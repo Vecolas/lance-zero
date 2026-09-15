@@ -10,7 +10,9 @@ export async function seedOpeningReviewCards(
   now: Date,
 ): Promise<number> {
   const existing = new Set((await repo.listReviewCards()).map((card) => card.id))
-  const candidates = openingReviewCards(opening, progress, now).filter((card) => !existing.has(card.id))
+  const candidates = openingReviewCards(opening, progress, now).filter(
+    (card) => !existing.has(card.id),
+  )
   for (const card of candidates) await repo.saveReviewCard(card)
   return candidates.length
 }

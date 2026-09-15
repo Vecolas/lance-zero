@@ -6,7 +6,11 @@ import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { EngineReview } from '@/components/games/EngineReview'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { OPENING_COURSES } from '@/content/openings/course'
-import { registerOpeningGameEvidence, reviewOpeningGame, type OpeningGameReview } from '@/domain/openings/game-review'
+import {
+  registerOpeningGameEvidence,
+  reviewOpeningGame,
+  type OpeningGameReview,
+} from '@/domain/openings/game-review'
 import type { Game } from '@/domain/types'
 import {
   fenAtPly,
@@ -55,7 +59,12 @@ export function HumanReview({ gameId }: Props) {
         const partida = parsePgn(alvo.pgn)
         const reviews = await Promise.all(
           OPENING_COURSES.map(async (opening) =>
-            reviewOpeningGame(opening, partida, alvo.userColor, (await repo.getOpeningProgress(opening.id)) ?? undefined),
+            reviewOpeningGame(
+              opening,
+              partida,
+              alvo.userColor,
+              (await repo.getOpeningProgress(opening.id)) ?? undefined,
+            ),
           ),
         )
         setAberturas(reviews)
@@ -284,7 +293,9 @@ export function HumanReview({ gameId }: Props) {
           <h2 className={styles.question}>Leitura da abertura</h2>
           {aberturas
             .filter((item) => item.classification !== 'normal_transition')
-            .map((item) => <p key={item.openingId}>{item.message}</p>)}
+            .map((item) => (
+              <p key={item.openingId}>{item.message}</p>
+            ))}
         </div>
       ) : null}
 

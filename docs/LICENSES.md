@@ -124,8 +124,8 @@ compatibilidade entre licenças.
 
 ## Previstos (entram junto com a fase que os exige)
 
-| ID                             | Pacote / dado                | Licença               | Motivo                                                                                                                                                                         | Fase | Fonte                   |
-| ------------------------------ | ---------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- | ----------------------- |
+| ID                             | Pacote / dado                | Licença               | Motivo                                                                                                                                  | Fase | Fonte                   |
+| ------------------------------ | ---------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---- | ----------------------- |
 | `lichess-api-opening-explorer` | Lichess Opening Explorer API | Termos da API Lichess | Estatísticas opcionais no `ExplorerPanel` da rota `/aberturas/[slug]`; o curso continua funcionando com fallback quando o serviço falha | 9    | https://lichess.org/api |
 
 ## Stockfish e GPL-3.0 — a restrição que molda a arquitetura

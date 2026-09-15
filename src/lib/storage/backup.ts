@@ -467,7 +467,11 @@ export function validateBackupFile(file: unknown): BackupFile {
     readString(item, 'openingId', where)
     readString(item, 'status', where)
     readString(item, 'lastPracticedAt', where)
-    if (!Array.isArray(item['learnedNodeIds']) || !Array.isArray(item['trainedNodeIds']) || !Array.isArray(item['weakNodeIds'])) {
+    if (
+      !Array.isArray(item['learnedNodeIds']) ||
+      !Array.isArray(item['trainedNodeIds']) ||
+      !Array.isArray(item['weakNodeIds'])
+    ) {
       throw invalid(`${where} deveria conter listas de nodes.`)
     }
     return item as unknown as OpeningProgress

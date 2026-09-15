@@ -291,13 +291,19 @@ describe('R2 — nenhuma atividade depende de outra do mesmo plano', () => {
 describe('aberturas — aprender e treinar são cards independentes', () => {
   it('aluno novo recebe Aprender, mas nunca Treinar a mesma abertura', () => {
     const plano = buildDailyPlanV2(contexto({ openingCourses: [OPENING_COURSES[0]] }), 'aberturas')
-    const cards = plano.activities.filter((item) => item.definition.openingId === OPENING_COURSES[0].id)
+    const cards = plano.activities.filter(
+      (item) => item.definition.openingId === OPENING_COURSES[0].id,
+    )
     expect(cards.map((item) => item.definition.openingMode)).toEqual(['learn'])
   })
 
   it('depois de ensinar, recebe Treinar sem duplicar Aprender no mesmo dia', () => {
     const opening = OPENING_COURSES[0]
-    const progress = markOpeningLearned(emptyOpeningProgress(opening.id), opening.rootNodeId, AGORA.toISOString())
+    const progress = markOpeningLearned(
+      emptyOpeningProgress(opening.id),
+      opening.rootNodeId,
+      AGORA.toISOString(),
+    )
     const plano = buildDailyPlanV2(
       contexto({ openingCourses: [opening], openingProgress: [progress] }),
       'aberturas',

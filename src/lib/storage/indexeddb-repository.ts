@@ -459,7 +459,9 @@ export class IndexedDbTrainingRepository implements BackupRepository {
   async getOpeningProgress(openingId: string): Promise<OpeningProgress | null> {
     const progress = await this.run([STORES.openingProgress], 'readonly', (tx) =>
       requestToPromise<OpeningProgress | undefined>(
-        tx.objectStore(STORES.openingProgress).get(openingId) as IDBRequest<OpeningProgress | undefined>,
+        tx.objectStore(STORES.openingProgress).get(openingId) as IDBRequest<
+          OpeningProgress | undefined
+        >,
       ),
     )
     return progress ?? null

@@ -7,7 +7,12 @@ import { useEffect, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { OPENING_COURSES } from '@/content/openings/course'
-import type { OpeningDefinition, OpeningProgress, OpeningSide, OpeningStatus } from '@/domain/openings'
+import type {
+  OpeningDefinition,
+  OpeningProgress,
+  OpeningSide,
+  OpeningStatus,
+} from '@/domain/openings'
 import styles from './OpeningCatalog.module.css'
 
 type Filter = 'all' | OpeningSide
@@ -24,19 +29,25 @@ export function OpeningCatalog() {
   const [progress, setProgress] = useState<Record<string, OpeningProgress>>({})
   useEffect(() => {
     let cancelled = false
-    if (!repo) return () => { cancelled = true }
+    if (!repo)
+      return () => {
+        cancelled = true
+      }
     void repo.listOpeningProgress().then((items) => {
       window.setTimeout(() => {
         if (cancelled) return
         setProgress(Object.fromEntries(items.map((item) => [item.openingId, item])))
       }, 0)
     })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [repo])
   const courses = OPENING_COURSES.filter((opening) => {
     const current = progress[opening.id]
     const status = current?.status ?? 'not_started'
-    const difficulty = opening.difficulty <= 1 ? 'beginner' : opening.difficulty === 2 ? 'intermediate' : 'advanced'
+    const difficulty =
+      opening.difficulty <= 1 ? 'beginner' : opening.difficulty === 2 ? 'intermediate' : 'advanced'
     const firstMove = opening.mainline[0]?.san
     return (
       (filter === 'all' || opening.side === filter) &&
@@ -69,7 +80,10 @@ export function OpeningCatalog() {
       <div className={styles.selectFilters} aria-label="Filtros detalhados">
         <label>
           Primeiro lance
-          <select value={firstMoveFilter} onChange={(event) => setFirstMoveFilter(event.target.value as FirstMoveFilter)}>
+          <select
+            value={firstMoveFilter}
+            onChange={(event) => setFirstMoveFilter(event.target.value as FirstMoveFilter)}
+          >
             <option value="all">Todos</option>
             <option value="e4">1.e4</option>
             <option value="d4">1.d4</option>
@@ -79,7 +93,10 @@ export function OpeningCatalog() {
         </label>
         <label>
           Nível
-          <select value={difficultyFilter} onChange={(event) => setDifficultyFilter(event.target.value as DifficultyFilter)}>
+          <select
+            value={difficultyFilter}
+            onChange={(event) => setDifficultyFilter(event.target.value as DifficultyFilter)}
+          >
             <option value="all">Todos</option>
             <option value="beginner">Iniciante</option>
             <option value="intermediate">Intermediária</option>
@@ -88,7 +105,10 @@ export function OpeningCatalog() {
         </label>
         <label>
           Status
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+          >
             <option value="all">Todos</option>
             <option value="not_started">Não iniciadas</option>
             <option value="learning">Aprendendo</option>
@@ -111,7 +131,13 @@ export function OpeningCatalog() {
   )
 }
 
-function OpeningCard({ opening, progress }: { opening: OpeningDefinition; progress?: OpeningProgress }) {
+function OpeningCard({
+  opening,
+  progress,
+}: {
+  opening: OpeningDefinition
+  progress?: OpeningProgress
+}) {
   const learned = progress?.learnedNodeIds.length ?? 0
   const total = opening.mainline.length
   const status = progress?.status ?? 'not_started'

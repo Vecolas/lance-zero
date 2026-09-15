@@ -2,10 +2,7 @@ import { identidadeDePosicao, START_FEN, type ChessGame } from '@/lib/chess'
 import type { OpeningDefinition, OpeningProgress } from './index'
 
 export type OpeningGameClassification =
-  | 'opponent_deviation'
-  | 'repertoire_mistake'
-  | 'normal_transition'
-  | 'opening_blunder'
+  'opponent_deviation' | 'repertoire_mistake' | 'normal_transition' | 'opening_blunder'
 
 export interface OpeningGameReview {
   openingId: string
@@ -51,17 +48,20 @@ export function reviewOpeningGame(
             classification: 'normal_transition',
             ply: ply.index,
             nodeId: node.id,
-            message: 'Essa resposta ainda não faz parte do seu repertório; não é tratada como esquecimento.',
+            message:
+              'Essa resposta ainda não faz parte do seu repertório; não é tratada como esquecimento.',
           }
         }
         return {
           openingId: opening.id,
-          classification: known && node.outgoingMoves.length > 0 ? 'repertoire_mistake' : 'opening_blunder',
+          classification:
+            known && node.outgoingMoves.length > 0 ? 'repertoire_mistake' : 'opening_blunder',
           ply: ply.index,
           nodeId: node.id,
-          message: known && node.outgoingMoves.length > 0
-            ? 'Você saiu do repertório numa posição já ensinada; essa posição entrou em reforço.'
-            : 'O lance encerrou a abertura antes de uma transição saudável para o meio-jogo.',
+          message:
+            known && node.outgoingMoves.length > 0
+              ? 'Você saiu do repertório numa posição já ensinada; essa posição entrou em reforço.'
+              : 'O lance encerrou a abertura antes de uma transição saudável para o meio-jogo.',
         }
       }
       return {
@@ -69,7 +69,8 @@ export function reviewOpeningGame(
         classification: 'opponent_deviation',
         ply: ply.index,
         nodeId: node?.id ?? null,
-        message: 'O adversário saiu da linha ensinada; agora os princípios importam mais que a memorização.',
+        message:
+          'O adversário saiu da linha ensinada; agora os princípios importam mais que a memorização.',
       }
     }
     nodeId = edge.nextNodeId
