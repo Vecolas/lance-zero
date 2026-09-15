@@ -68,8 +68,9 @@ export interface EndgameDefinition {
   prerequisiteIds: string[]
   lessonIds: string[]
   drillIds: string[]
+  /** Posição curada do treinador legado, quando o tema já possui play-out. */
+  trainingPositionId?: string
   tags: string[]
   level: 'essential' | 'fundamental' | 'intermediate' | 'advanced'
   version: number
 }
-
