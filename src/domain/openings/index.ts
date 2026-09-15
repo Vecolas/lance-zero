@@ -7,9 +7,6 @@
  * externos ficam fora desta fronteira.
  */
 import { applyMove, identidadeDePosicao, START_FEN, type SquareName } from '@/lib/chess'
-import { openingAuthoringSchema } from './schema'
-
-export * from './schema'
 
 export type OpeningSide = 'white' | 'black'
 export type OpeningStatus =
@@ -311,13 +308,12 @@ export function buildOpeningDefinition(
     'graph' | 'rootNodeId' | 'previewFen' | 'rootFen' | 'mainLineId' | 'variationIds' | 'planIds'
   >,
 ): OpeningDefinition {
-  const parsed = openingAuthoringSchema.safeParse(definition)
-  if (!parsed.success) {
-    throw new Error(
-      `Conteúdo de abertura inválido: ${parsed.error.issues.map((issue) => issue.message).join('; ')}`,
-    )
-  }
-  const source = parsed.data
+  // O schema Zod é um portão de autoria/testes e não entra no bundle do aluno:
+  // Zod compila algumas regras com Function(), o que gera uma violação CSP
+  // report-only em toda página que importa o catálogo. A validação completa
+  // acontece em `schema.ts` nos testes/pipeline; aqui validamos o grafo derivado
+  // sem carregar esse runtime pesado no navegador.
+  const source = definition
   const mainline = normalizeAuthoredLine(source.mainline)
   const variationLines = source.variations.map((variation) => normalizeAuthoredLine(variation.line))
   const lines = [
