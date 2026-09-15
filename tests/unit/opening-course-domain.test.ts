@@ -152,6 +152,9 @@ describe('curso de aberturas como grafo pedagógico', () => {
     expect(openingReviewCards(opening, learned, new Date('2026-01-01T00:00:00.000Z'))[0]?.id).toBe(
       `opening:${opening.id}:${opening.rootNodeId}`,
     )
+    expect(
+      new Set(openingReviewCards(opening, learned, new Date()).map((card) => card.kind)),
+    ).toContain('conceito')
   })
 
   it('funde progresso de dispositivos sem perder conclusões', () => {
@@ -259,14 +262,18 @@ describe('curso de aberturas como grafo pedagógico', () => {
     )
     const repo = new MemoryTrainingRepository()
     const now = new Date('2026-01-01T00:00:00.000Z')
-    expect(await seedOpeningReviewCards(repo, opening, progress, now)).toBe(1)
-    const first = (await repo.listReviewCards())[0]
+    expect(await seedOpeningReviewCards(repo, opening, progress, now)).toBeGreaterThan(1)
+    const first = (await repo.listReviewCards()).find(
+      (card) => card.id === `opening:${opening.id}:${opening.rootNodeId}`,
+    )
     if (!first) throw new Error('card não criado')
     const scheduled = applyReview(first, 'good', new Date('2026-01-02T00:00:00.000Z'))
     await repo.saveReviewCard(scheduled)
     expect(
       await seedOpeningReviewCards(repo, opening, progress, new Date('2026-01-03T00:00:00.000Z')),
     ).toBe(0)
-    expect((await repo.listReviewCards())[0]?.dueAt).toBe(scheduled.dueAt)
+    expect((await repo.listReviewCards()).find((card) => card.id === first.id)?.dueAt).toBe(
+      scheduled.dueAt,
+    )
   })
 })
