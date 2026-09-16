@@ -66,17 +66,28 @@
   color: var(--link);
   background: var(--accent-soft);
 }
+/* O SELO É TEXTO SOBRE A TINTA DA PRÓPRIA COR, e por isso ele não usa
+   `--positive`/`--warning`/`--danger` como cor de texto.
+
+   Aquelas são calibradas contra a página (#f7f9fb) e a margem é curta:
+   `--warning` dá 4.64:1 lá e 3.94:1 aqui, sobre a tinta. O selo "Revisar" do
+   Treinar REPROVAVA em AA por causa disso, e o de "Aprender" junto.
+
+   A tinta permanece — é ela que dá a linguagem visual do selo. Quem muda é o
+   texto, para a variante medida contra o pior fundo plausível. No escuro os
+   dois papéis apontam para a mesma cor, porque lá a tinta é escura e a cor
+   original já passa. */
 .status-completed,
 .mode-learn {
-  color: var(--positive);
+  color: var(--positive-on-tint);
   background: color-mix(in srgb, var(--positive) 12%, transparent);
 }
 .status-error {
-  color: var(--danger);
+  color: var(--danger-on-tint);
   background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 .mode-review {
-  color: var(--warning);
+  color: var(--warning-on-tint);
   background: color-mix(in srgb, var(--warning) 13%, transparent);
 }
 .progress {
