@@ -1,7 +1,25 @@
 'use client'
 
+/**
+ * A tela de Conta.
+ *
+ * TODO O TEXTO VEM DO DICIONÁRIO, e este arquivo era a maior exceção do app: ele
+ * estava inteiro em português fixo, inclusive para quem tinha escolhido inglês.
+ * Um aluno em inglês chegava aqui e lia "Excluir definitivamente" ao lado de um
+ * campo pedindo "APAGAR CONTA" — na tela onde errar é irreversível.
+ *
+ * A FRASE DE CONFIRMAÇÃO É TRADUZIDA, e ela é a decisão delicada deste arquivo.
+ * Ela não é um token de protocolo: é o gesto deliberado de escrever, letra por
+ * letra, o que vai acontecer. Esse gesto só é deliberado se a pessoa entende a
+ * frase — então "DELETE ACCOUNT" em inglês e "APAGAR CONTA" em português, e o
+ * servidor aceita as duas (ver `@/server/account-deletion`). A alternativa, que
+ * era traduzir no cliente para um token único, faria o servidor validar algo que
+ * o cliente fabrica em vez do que a pessoa digitou.
+ */
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useIdioma } from '@/components/providers/LocaleProvider'
 import { getBrowserSupabase } from '@/lib/auth/supabase-browser'
 import { deleteDatabase } from '@/lib/storage/indexeddb-repository'
 import styles from './AccountPanel.module.css'
@@ -21,6 +39,7 @@ function downloadJson(data: unknown) {
 
 export function AccountPanel() {
   const router = useRouter()
+  const { t } = useIdioma()
   const configuredSupabase = getBrowserSupabase()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
@@ -29,6 +48,8 @@ export function AccountPanel() {
   const [confirmation, setConfirmation] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<Feedback>(null)
+
+  const frase = t('account.deletePhrase')
 
   useEffect(() => {
     if (!configuredSupabase) return
@@ -44,11 +65,8 @@ export function AccountPanel() {
   if (!configuredSupabase) {
     return (
       <section className={styles.section}>
-        <h2>Conta online indisponível</h2>
-        <p>
-          Configure o Supabase para ativar o acesso à conta. Seus dados locais continuam disponíveis
-          em Ajustes.
-        </p>
+        <h2>{t('account.unavailableTitle')}</h2>
+        <p>{t('account.unavailableBody')}</p>
       </section>
     )
   }
@@ -74,15 +92,22 @@ export function AccountPanel() {
     setBusy(false)
     setFeedback(
       result.error
-        ? { ok: false, text: result.error.message }
+        ? /*
+            O ERRO DO SUPABASE CHEGA EM INGLÊS, sempre, e é ele que aparece aqui.
+            Traduzi-lo por tabela exigiria manter uma lista de mensagens de um
+            serviço que muda sem avisar — e uma tradução errada de "invalid login
+            credentials" é pior que a frase original, porque manda a pessoa
+            investigar a coisa errada.
+          */
+          { ok: false, text: result.error.message }
         : {
             ok: true,
             text:
               mode === 'reset'
-                ? 'Confira seu e-mail.'
+                ? t('account.checkEmail')
                 : mode === 'signup'
-                  ? 'Cadastro criado. Confirme seu e-mail se necessário.'
-                  : 'Login realizado.',
+                  ? t('account.signedUp')
+                  : t('account.signedIn'),
           },
     )
   }
@@ -90,24 +115,24 @@ export function AccountPanel() {
   async function exportar() {
     const current = await supabase.auth.getSession()
     const token = current.data.session?.access_token
-    if (!token) return setFeedback({ ok: false, text: 'Sessão expirada.' })
+    if (!token) return setFeedback({ ok: false, text: t('account.sessionExpired') })
     setBusy(true)
     const response = await fetch('/api/account/export', {
       headers: { Authorization: 'Bearer ' + token },
       cache: 'no-store',
     })
     setBusy(false)
-    if (!response.ok) return setFeedback({ ok: false, text: 'Não foi possível exportar a conta.' })
+    if (!response.ok) return setFeedback({ ok: false, text: t('account.exportFailed') })
     downloadJson(await response.json())
-    setFeedback({ ok: true, text: 'Exportação baixada.' })
+    setFeedback({ ok: true, text: t('account.exportDone') })
   }
 
   async function excluir() {
-    if (confirmation !== 'APAGAR CONTA')
-      return setFeedback({ ok: false, text: 'Digite APAGAR CONTA para confirmar.' })
+    if (confirmation !== frase)
+      return setFeedback({ ok: false, text: t('account.deleteConfirmRequired', { frase }) })
     const current = await supabase.auth.getSession()
     const token = current.data.session?.access_token
-    if (!token) return setFeedback({ ok: false, text: 'Sessão expirada.' })
+    if (!token) return setFeedback({ ok: false, text: t('account.sessionExpired') })
     setBusy(true)
     const response = await fetch('/api/account/delete', {
       method: 'DELETE',
@@ -121,37 +146,37 @@ export function AccountPanel() {
       return
     }
     setBusy(false)
-    setFeedback({ ok: false, text: 'Não foi possível excluir a conta.' })
+    setFeedback({ ok: false, text: t('account.deleteFailed') })
   }
 
   if (session) {
     return (
       <div>
         <section className={styles.section}>
-          <h2>Perfil</h2>
-          <p>Você está conectado como:</p>
-          <p>{session.email ?? 'Conta autenticada'}</p>
+          <h2>{t('account.profile')}</h2>
+          <p>{t('account.signedInAs')}</p>
+          <p>{session.email ?? t('account.authenticated')}</p>
           <div className={styles.actions}>
             <button className={styles.primary} onClick={() => void exportar()} disabled={busy}>
-              Baixar meus dados
+              {t('account.downloadData')}
             </button>
             <button className={styles.ghost} onClick={() => void supabase.auth.signOut()}>
-              Sair
+              {t('account.signOut')}
             </button>
           </div>
         </section>
         <section className={styles.danger} aria-labelledby="seguranca-privacidade">
-          <h2 id="seguranca-privacidade">Segurança e privacidade</h2>
-          <h3>Excluir conta</h3>
-          <p>Esta ação remove a conta, os dados persistidos e o banco local deste aparelho.</p>
-          <label htmlFor="delete-confirmation">Digite APAGAR CONTA</label>
+          <h2 id="seguranca-privacidade">{t('account.securityTitle')}</h2>
+          <h3>{t('account.deleteTitle')}</h3>
+          <p>{t('account.deleteBody')}</p>
+          <label htmlFor="delete-confirmation">{t('account.deleteLabel', { frase })}</label>
           <input
             id="delete-confirmation"
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
           />
           <button className={styles.dangerButton} onClick={() => void excluir()} disabled={busy}>
-            Excluir definitivamente
+            {t('account.deleteButton')}
           </button>
         </section>
         {feedback && <p role={feedback.ok ? 'status' : 'alert'}>{feedback.text}</p>}
@@ -161,9 +186,15 @@ export function AccountPanel() {
 
   return (
     <section className={styles.section}>
-      <h2>{mode === 'reset' ? 'Recuperar acesso' : mode === 'login' ? 'Entrar' : 'Criar conta'}</h2>
+      <h2>
+        {mode === 'reset'
+          ? t('account.recover')
+          : mode === 'login'
+            ? t('account.signIn')
+            : t('account.signUp')}
+      </h2>
       <form onSubmit={submit} className={styles.form}>
-        <label htmlFor="account-email">E-mail</label>
+        <label htmlFor="account-email">{t('account.email')}</label>
         <input
           id="account-email"
           type="email"
@@ -174,7 +205,7 @@ export function AccountPanel() {
         />
         {mode !== 'reset' && (
           <>
-            <label htmlFor="account-password">Senha</label>
+            <label htmlFor="account-password">{t('account.password')}</label>
             <input
               id="account-password"
               type="password"
@@ -187,7 +218,11 @@ export function AccountPanel() {
           </>
         )}
         <button className={styles.primary} disabled={busy}>
-          {mode === 'reset' ? 'Enviar recuperação' : mode === 'login' ? 'Entrar' : 'Cadastrar'}
+          {mode === 'reset'
+            ? t('account.submitRecover')
+            : mode === 'login'
+              ? t('account.submitSignIn')
+              : t('account.submitSignUp')}
         </button>
       </form>
       <div className={styles.actions}>
@@ -195,13 +230,13 @@ export function AccountPanel() {
           className={styles.ghost}
           onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
         >
-          {mode === 'login' ? 'Criar conta' : 'Já tenho conta'}
+          {mode === 'login' ? t('account.signUp') : t('account.haveAccount')}
         </button>
         <button
           className={styles.ghost}
           onClick={() => setMode(mode === 'reset' ? 'login' : 'reset')}
         >
-          Esqueci a senha
+          {t('account.forgotPassword')}
         </button>
       </div>
       {feedback && <p role={feedback.ok ? 'status' : 'alert'}>{feedback.text}</p>}

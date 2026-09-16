@@ -1,0 +1,54 @@
+/*
+  O atalho da Conta: mesmo botão redondo do tema, e isso é intencional.
+
+  Conta, idioma e tema são os três controles de APRESENTAÇÃO E SESSÃO do app —
+  eles moram juntos no canto, e três desenhos diferentes fariam o aluno tratar
+  como três coisas sem relação. O alvo tem 2.75rem (44px) pela mesma razão que o
+  do tema: num botão redondo pequeno, a área que parece clicável é o desenho e
+  não a caixa.
+*/
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--surface-sunken);
+  color: var(--text);
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring) solid var(--accent);
+  outline-offset: 2px;
+}
+
+/*
+  ESTAR NA CONTA NÃO É SÓ UMA COR.
+
+  O ícone ganha o contorno de destaque E o preenchimento muda. Um atalho que
+  sinalizasse "você está aqui" só pelo azul da borda falharia para quem não
+  distingue as duas cores — e a regra do CLAUDE.md vale também para um ícone
+  sozinho, não só para etiqueta de status.
+*/
+.active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+}
