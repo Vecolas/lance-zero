@@ -14,8 +14,11 @@ import {
   type RoadmapNodeView,
 } from '@/domain/roadmap'
 import { resumoDaJornada, type StudyJourney } from '@/domain/jornada'
-import { conteudoDoNo } from '@/lib/training/jornadas-do-roadmap'
+import { conteudoDoTarget } from '@/lib/training/jornadas-do-roadmap'
 import { etapasDoConteudo } from '@/lib/training/etapas-do-conteudo'
+import { learningTargetOf } from '@/domain/roadmap/learning-objects'
+import type { ModoDeAprendizado } from '@/domain/roadmap/learning-target'
+import { rotaDeAprendizado } from '@/lib/training/rota-de-aprendizado'
 import styles from './RoadmapView.module.css'
 
 type Filter = 'todos' | 'em-andamento' | 'disponiveis' | 'revisar' | 'concluidos'
@@ -222,16 +225,37 @@ function RoadmapAreaSection({
 }
 
 /**
+ * O MODO em que o conteúdo abre, derivado da ação do nó.
+ *
+ * O destino é o mesmo nos quatro casos; o que muda é o que a tela diz ao chegar.
+ * "Reaprender" que abrisse igual a "Aprender" seria uma promessa quebrada em
+ * silêncio — o aluno pediu para rever o que esqueceu e recebeu a aula de
+ * estreia, sem nada indicando que o app entendeu o pedido.
+ */
+const MODO_DA_ACAO: Record<RoadmapNodeView['action'], ModoDeAprendizado> = {
+  aprender: 'aprender',
+  continuar: 'continuar',
+  revisar: 'revisar',
+  reaprender: 'reaprender',
+  bloqueado: 'aprender',
+}
+
+/**
  * Um nó do roadmap.
  *
- * ABERTURAS E FINAIS MOSTRAM O PROGRESSO DA JORNADA — "5 de 9 etapas" — e
- * levam à jornada, não à biblioteca de lições. Antes, um nó de abertura sem
- * `skillId` caía em `/lessons`, uma tela que não tem nada sobre a Italiana: o
- * card prometia um destino e entregava outro.
+ * O DEFEITO QUE ESTE CARD CARREGAVA, e que é a razão deste trabalho: o destino
+ * era decidido aqui, em uma linha, e a última alternativa dela era `'/lessons'`.
+ * Todo nó sem jornada e sem habilidade — vinte e nove deles — oferecia
+ * "Aprender" e despejava o aluno na biblioteca inteira. O Roadmap SABE o que o
+ * aluno quer aprender; responder com o catálogo é dizer "procure você mesmo", e
+ * é um caminho que parece funcionar, porque abre uma página de verdade.
  *
- * Os nós de HABILIDADE continuam como estavam. A ponte por nome devolve `null`
- * para eles, e `null` aqui significa "segue o caminho antigo" — o que mantém o
- * roadmap inteiro funcionando mesmo que a ponte não ache um par.
+ * Agora o destino vem de `rotaDeAprendizado`, e ele é EXPLÍCITO por nó. Quando
+ * não existe conteúdo, o botão não vira link genérico: ele some, e a tela diz a
+ * verdade. Ver `LEARNING_OBJECTS`.
+ *
+ * ABERTURAS E FINAIS continuam mostrando o progresso da jornada ("5 de 9
+ * etapas"), e é de lá que sai a etapa exata em que "Continuar" retoma.
  */
 function RoadmapNodeCard({
   node,
@@ -240,7 +264,8 @@ function RoadmapNodeCard({
   node: RoadmapNodeView
   jornadas: Record<string, StudyJourney>
 }) {
-  const conteudo = conteudoDoNo(node)
+  const target = learningTargetOf(node)
+  const conteudo = conteudoDoTarget(target)
   const jornada = conteudo ? (jornadas[conteudo.jornadaId] ?? null) : null
 
   // As etapas são derivadas do CONTEÚDO, e o resumo delas + da jornada. Uma
@@ -248,7 +273,18 @@ function RoadmapNodeCard({
   const stages = conteudo ? etapasDoConteudo(conteudo) : null
   const resumo = stages ? resumoDaJornada(jornada, stages) : null
 
-  const destino = conteudo?.rota ?? (node.skillId ? `/lessons/${node.skillId}` : '/lessons')
+  const modo = MODO_DA_ACAO[node.action]
+  /*
+    A ETAPA EXATA É O QUE FAZ "CONTINUAR" CONTINUAR.
+
+    Sem ela o deep link abriria a porta de entrada da jornada, e quem parou na
+    etapa 5 recomeçaria da 1 — perdendo exatamente o que já tinha feito. Ela só
+    entra quando há progresso: mandar `etapa` na primeira visita seria pedir à
+    jornada que pulasse para um lugar onde o aluno nunca esteve.
+  */
+  const etapa = modo === 'continuar' ? (resumo?.etapaAtual ?? undefined) : undefined
+  const destino = target ? rotaDeAprendizado(target, { modo, etapa }) : null
+
   const rotulo = resumo
     ? resumo.rotulo
     : node.action === 'reaprender'
@@ -276,10 +312,24 @@ function RoadmapNodeCard({
         <span className={styles.state}>
           {resumo
             ? `${resumo.concluida ? 'Concluído' : 'Em andamento'} · ${resumo.progresso}`
-            : stateLabel[node.state]}
+            : destino === null
+              ? 'Sem lição ainda'
+              : stateLabel[node.state]}
         </span>
       </div>
-      {node.action !== 'bloqueado' || resumo ? (
+      {destino === null ? (
+        /*
+          SEM CONTEÚDO, SEM BOTÃO — e com a frase inteira, não só a ausência.
+
+          O catálogo tem doze lições para um currículo de cinquenta e sete nós. A
+          alternativa de manter o botão apontando para a biblioteca é o que
+          existia antes, e ela transformava a falta de conteúdo numa caça ao
+          tesouro. Dizer "ainda não há" é pior de ler e melhor de usar.
+        */
+        <span className={styles.locked} data-testid="sem-conteudo">
+          Este conteúdo ainda não possui uma lição disponível.
+        </span>
+      ) : node.action !== 'bloqueado' || resumo ? (
         <Link className={styles.action} href={destino}>
           {rotulo}
         </Link>

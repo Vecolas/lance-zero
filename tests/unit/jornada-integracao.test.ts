@@ -26,8 +26,9 @@ import {
   voltarParaEtapa,
   type StudyStage,
 } from '@/domain/jornada'
-import { conteudoDoNo, nosSemJornada } from '@/lib/training/jornadas-do-roadmap'
+import { conteudoDoNo, jornadasComConteudoAusente } from '@/lib/training/jornadas-do-roadmap'
 import { etapasDoConteudo } from '@/lib/training/etapas-do-conteudo'
+import { ROADMAP_DEFINITION } from '@/domain/roadmap'
 
 const AGORA = new Date('2026-03-10T12:00:00.000Z')
 
@@ -153,61 +154,67 @@ describe('o verbo e o resumo são os MESMOS em toda tela', () => {
   })
 })
 
+/**
+ * A PONTE DEIXOU DE SER POR NOME, e esta seção mudou junto.
+ *
+ * Ela comparava títulos normalizados, e os testes daqui cobravam o comportamento
+ * dessa comparação — acento, caixa, recusa de nome parcial. Nada disso existe
+ * mais: a ligação vem de `LEARNING_OBJECTS`, declarada por id.
+ *
+ * O que os testes cobram agora é o que passou a valer: o id do nó leva ao
+ * conteúdo certo, e um alvo que aponte para conteúdo inexistente aparece como
+ * número em vez de degradar calado.
+ */
 describe('a ponte entre o Roadmap e os conteúdos', () => {
   it('liga o nó da Italiana à jornada da Italiana', () => {
-    const conteudo = conteudoDoNo({ title: 'Abertura Italiana', contentType: 'opening' })
+    const conteudo = conteudoDoNo({ id: 'opening.italian' })
     expect(conteudo).not.toBeNull()
     expect(conteudo?.dominio).toBe('abertura')
     expect(conteudo?.rota).toBe('/aberturas/italiana')
     expect(conteudo?.jornadaId).toBe('abertura:italiana')
   })
 
-  it('ignora acento e caixa, porque os dois catálogos escrevem diferente', () => {
-    // O Roadmap grafa "Jogo Escoces" sem acento; o catálogo, com.
-    expect(conteudoDoNo({ title: 'jogo escocês', contentType: 'opening' })?.dominio).toBe(
-      'abertura',
-    )
+  it('liga o nó da Oposição à jornada de final da Oposição', () => {
+    const conteudo = conteudoDoNo({ id: 'skill.endgame.king-pawn-opposition' })
+    expect(conteudo?.dominio).toBe('final')
+    expect(conteudo?.rota).toBe('/finais/oposicao')
+    expect(conteudo?.jornadaId).toBe('final:opposition')
   })
 
-  it('devolve null para nó de HABILIDADE, que não tem jornada', () => {
-    expect(conteudoDoNo({ title: 'Garfo', contentType: 'tactic' })).toBeNull()
-    expect(conteudoDoNo({ title: 'Abertura Italiana', contentType: 'concept' })).toBeNull()
+  it('devolve null para nó de LIÇÃO, que não tem jornada de etapas', () => {
+    expect(conteudoDoNo({ id: 'skill.tactics.fork' })).toBeNull()
+    expect(conteudoDoNo({ id: 'fundamentos.loose' })).toBeNull()
   })
 
-  it('devolve null para conteúdo que não existe, em vez de inventar rota', () => {
-    expect(conteudoDoNo({ title: 'Abertura Inexistente', contentType: 'opening' })).toBeNull()
-  })
-
-  /**
-   * A correspondência é EXATA, e isto é o portão dessa decisão.
-   *
-   * Existiu aqui uma busca aproximada (nome do catálogo terminando com o nome
-   * do nó) para acomodar "Caro-Kann" contra "Defesa Caro-Kann". Com os dois
-   * catálogos alinhados ela saiu — e este teste impede que volte. Busca
-   * aproximada resolveria a divergência de hoje e esconderia a de amanhã: uma
-   * abertura nova com grafia diferente casaria por acidente, e `nosSemJornada`
-   * deixaria de reprovar exatamente quando deveria.
-   */
-  it('NÃO casa por aproximação: nome parcial não acha a abertura', () => {
-    expect(conteudoDoNo({ title: 'Caro-Kann', contentType: 'opening' })).toBeNull()
-    expect(conteudoDoNo({ title: 'Italiana', contentType: 'opening' })).toBeNull()
+  it('devolve null para nó ainda sem conteúdo', () => {
+    expect(conteudoDoNo({ id: 'strategy.outpost' })).toBeNull()
   })
 
   /**
-   * O PORTÃO DA PONTE.
+   * NÓ FORA DO REGISTRO LANÇA, e é a diferença entre esquecer e decidir.
    *
-   * A ligação é por nome normalizado e degrada com segurança — mas "degrada em
-   * silêncio" é falso verde. Este teste transforma a divergência em número, e
-   * número reprova: um nó de abertura sem par no catálogo aparece aqui.
+   * Devolver `null` aqui apagaria essa diferença: um nó novo que ninguém mapeou
+   * ficaria indistinguível de um nó que alguém marcou como "ainda sem conteúdo".
    */
-  it('todo nó de abertura/final do Roadmap acha o seu conteúdo', () => {
-    expect(nosSemJornada()).toEqual([])
+  it('nó que ninguém declarou é ERRO, não silêncio', () => {
+    expect(() => conteudoDoNo({ id: 'nao.existe' })).toThrow(/não declara um LearningTarget/)
+  })
+
+  /**
+   * O PORTÃO DA PONTE, agora sobre IDs.
+   *
+   * Um id de abertura ou final escrito errado em `LEARNING_OBJECTS` não pode
+   * degradar em silêncio — o card mostraria "Aprender" e o link levaria a lugar
+   * nenhum. Aqui a divergência vira número, e número reprova.
+   */
+  it('todo alvo de jornada aponta para conteúdo que existe', () => {
+    expect(jornadasComConteudoAusente(ROADMAP_DEFINITION.nodes)).toEqual([])
   })
 })
 
 describe('as etapas de um conteúdo real', () => {
   it('a Italiana tem as nove etapas da jornada de abertura', () => {
-    const conteudo = conteudoDoNo({ title: 'Abertura Italiana', contentType: 'opening' })
+    const conteudo = conteudoDoNo({ id: 'opening.italian' })
     const stages = etapasDoConteudo(conteudo!)
     expect(stages).toHaveLength(9)
     expect(stages[stages.length - 1]?.ehTreinoFinal).toBe(true)

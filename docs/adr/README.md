@@ -21,3 +21,4 @@ Estados: `proposto`, `aceito`, `substituído por ADR-XXXX`, `descontinuado`.
 | [0009](./0009-supabase-auth-sem-clerk.md)                  | Supabase Auth no lugar do Clerk, e sincronização como documento único        | aceito                                                 |
 | [0010](./0010-tema-com-dois-estados.md)                    | Botão de tema com dois estados; "seguir o sistema" continua no armazenamento | aceito, altera o ADR-0007                              |
 | [0011](./0011-estagio-de-aprendizado-antes-da-cobranca.md) | Estágio de aprendizado por habilidade, antes de qualquer cobrança            | aceito, altera o planner                               |
+| [0012](./0012-roadmap-aponta-para-o-conteudo-exato.md)     | Roadmap aponta para o conteúdo exato; nunca para a biblioteca genérica       | aceito, substitui a ponte por nome                     |

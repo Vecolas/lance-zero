@@ -180,10 +180,27 @@
   font-size: 0.8rem;
   font-weight: 700;
   text-decoration: none;
+}
+/* O RÓTULO DE AÇÃO NÃO QUEBRA: "Aprender", "Continuar", "Reaprender" são curtos
+   e quebrá-los deixa o card com uma linha órfã. */
+.action {
   white-space: nowrap;
 }
+/*
+  A AUSÊNCIA DE CONTEÚDO É UMA FRASE, e frase quebra linha.
+
+  Ela herdava `white-space: nowrap` junto com a ação, e "Este conteúdo ainda não
+  possui uma lição disponível." numa linha só empurrava o card para além da tela:
+  a 360 px o Roadmap passou a rolar na horizontal, e os cliques no celular caíam
+  fora da área visível. Um texto explicativo não tem o mesmo comportamento de um
+  rótulo de botão, e tratar os dois igual foi o que quebrou.
+*/
 .locked {
+  max-width: 14rem;
   color: var(--text-muted);
+  font-weight: 400;
+  text-align: right;
+  text-wrap: pretty;
 }
 .choice {
   display: grid;

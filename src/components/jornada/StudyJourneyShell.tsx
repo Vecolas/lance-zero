@@ -18,13 +18,14 @@
  * sem cobrir nada e o app registraria uma jornada concluída que não aconteceu.
  */
 
-import type { ReactNode } from 'react'
+import { useSyncExternalStore, type ReactNode } from 'react'
 import {
   etapaCumprida,
   progressoDaJornada,
   type StudyJourney,
   type StudyStage,
 } from '@/domain/jornada'
+import { AVISO_DO_MODO, modoDaUrl } from '@/lib/training/modo-de-aprendizado'
 import { StudyProgressRail } from './StudyProgressRail'
 import styles from './StudyJourneyShell.module.css'
 
@@ -77,6 +78,25 @@ export function StudyJourneyShell({
   aoSair,
   aoRever,
 }: StudyJourneyShellProps) {
+  /*
+    O modo vem da URL, e é lido com `useSyncExternalStore`.
+
+    A tentação é `useState` + efeito, e ela está errada nos dois sentidos: no
+    servidor não existe `window.location.search`, então ler no render divergiria
+    da hidratação; e escrever estado dentro de um efeito provoca a renderização
+    extra que o lint do projeto proíbe, com razão.
+
+    `useSyncExternalStore` responde exatamente a essa pergunta — o React usa o
+    retorno do servidor para o HTML e o do cliente depois da hidratação, sem
+    divergência e sem efeito. A URL não muda sem navegação, então não há nada a
+    assinar: a inscrição devolve um cancelamento que não faz nada.
+  */
+  const modo = useSyncExternalStore(
+    () => () => {},
+    modoDaUrl,
+    () => null,
+  )
+
   const stage = stages.find((item) => item.id === jornada.currentStageId) ?? stages[0]
   if (!stage) return null
 
@@ -114,6 +134,20 @@ export function StudyJourneyShell({
         <p className={styles.passo} role="status">
           Etapa {progresso.atual} de {progresso.total} — {stage.objetivo}
         </p>
+        {/*
+          O MODO COM QUE O ALUNO CHEGOU, quando não é o padrão.
+
+          "Reaprender" e "Aprender" abrem o MESMO conteúdo — é isso que faz o
+          deep link ser um só. Sem esta linha, quem pediu para rever o que
+          esqueceu recebia a aula de estreia sem nenhum sinal de que o app tinha
+          entendido o pedido: nada errava, e mesmo assim a resposta não era a que
+          foi pedida.
+        */}
+        {modo && modo !== 'aprender' ? (
+          <p className={styles.modo} data-testid="modo-de-aprendizado">
+            {AVISO_DO_MODO[modo]}
+          </p>
+        ) : null}
         {aoRever ? (
           <button type="button" className={styles.rever} onClick={aoRever}>
             Rever conteúdo
