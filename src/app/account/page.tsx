@@ -9,7 +9,7 @@ export default function AccountPage() {
     <>
       <PageHeader
         title="Conta"
-        description="Entre para levar seu progresso entre aparelhos. Sem conta, o LanceZero continua funcionando localmente."
+        description="Acesse seus dados salvos com segurança. Sem conta, o LanceZero continua funcionando localmente."
       />
       <AccountPanel />
     </>

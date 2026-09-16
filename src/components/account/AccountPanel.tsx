@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getBrowserSupabase } from '@/lib/auth/supabase-browser'
 import { deleteDatabase } from '@/lib/storage/indexeddb-repository'
-import { useRepository } from '@/components/providers/RepositoryProvider'
-import { exportBackup, importBackup, parseBackup } from '@/lib/storage/backup'
-import { mergeOpeningProgressList } from '@/domain/openings'
 import styles from './AccountPanel.module.css'
 
 type Mode = 'login' | 'signup' | 'reset'
@@ -17,14 +14,13 @@ function downloadJson(data: unknown) {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `lancezero-account-${new Date().toISOString().slice(0, 10)}.json`
+  link.download = 'lancezero-account-' + new Date().toISOString().slice(0, 10) + '.json'
   link.click()
   URL.revokeObjectURL(url)
 }
 
 export function AccountPanel() {
   const router = useRouter()
-  const { repo, refresh } = useRepository()
   const configuredSupabase = getBrowserSupabase()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
@@ -33,7 +29,6 @@ export function AccountPanel() {
   const [confirmation, setConfirmation] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<Feedback>(null)
-  const [deviceLabel, setDeviceLabel] = useState('')
 
   useEffect(() => {
     if (!configuredSupabase) return
@@ -51,7 +46,7 @@ export function AccountPanel() {
       <section className={styles.section}>
         <h2>Conta online indisponível</h2>
         <p>
-          Configure o Supabase para ativar login e sincronização. Seus dados locais continuam
+          Configure o Supabase para ativar o acesso à conta. Seus dados locais continuam
           disponíveis em Ajustes.
         </p>
       </section>
@@ -67,14 +62,14 @@ export function AccountPanel() {
     const result =
       mode === 'reset'
         ? await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/account`,
+            redirectTo: window.location.origin + '/account',
           })
         : mode === 'login'
           ? await supabase.auth.signInWithPassword({ email, password })
           : await supabase.auth.signUp({
               email,
               password,
-              options: { emailRedirectTo: `${window.location.origin}/account` },
+              options: { emailRedirectTo: window.location.origin + '/account' },
             })
     setBusy(false)
     setFeedback(
@@ -98,102 +93,13 @@ export function AccountPanel() {
     if (!token) return setFeedback({ ok: false, text: 'Sessão expirada.' })
     setBusy(true)
     const response = await fetch('/api/account/export', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: 'Bearer ' + token },
       cache: 'no-store',
     })
     setBusy(false)
     if (!response.ok) return setFeedback({ ok: false, text: 'Não foi possível exportar a conta.' })
     downloadJson(await response.json())
     setFeedback({ ok: true, text: 'Exportação baixada.' })
-  }
-
-  async function tokenAtual() {
-    const current = await supabase.auth.getSession()
-    return current.data.session?.access_token ?? null
-  }
-
-  async function enviarSincronizacao() {
-    if (!repo) return setFeedback({ ok: false, text: 'Os dados locais ainda estão abrindo.' })
-    const token = await tokenAtual()
-    if (!token) return setFeedback({ ok: false, text: 'Sessão expirada.' })
-    setBusy(true)
-    try {
-      const local = await exportBackup(repo)
-      const remoteResponse = await fetch('/api/sync', {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      })
-      const remote = remoteResponse.ok ? await remoteResponse.json() : null
-      const remoteBackup = remote ? parseBackup(JSON.stringify(remote.payload)) : null
-      if (
-        remote &&
-        !window.confirm('Já existe uma cópia na nuvem. Enviar substituirá essa cópia. Continuar?')
-      )
-        return
-      const mergedPayload = remoteBackup
-        ? {
-            ...local,
-            openingProgress: mergeOpeningProgressList(
-              local.openingProgress ?? [],
-              remoteBackup.openingProgress ?? [],
-            ),
-          }
-        : local
-      const response = await fetch('/api/sync', {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          payload: mergedPayload,
-          schemaVersion: mergedPayload.version,
-          deviceLabel: deviceLabel.trim() || null,
-        }),
-      })
-      setFeedback(
-        response.ok
-          ? { ok: true, text: 'Progresso enviado para a nuvem.' }
-          : { ok: false, text: 'Não foi possível enviar o progresso.' },
-      )
-    } catch {
-      setFeedback({ ok: false, text: 'Não foi possível enviar o progresso.' })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function baixarSincronizacao() {
-    if (!repo) return setFeedback({ ok: false, text: 'Os dados locais ainda estão abrindo.' })
-    const token = await tokenAtual()
-    if (!token) return setFeedback({ ok: false, text: 'Sessão expirada.' })
-    setBusy(true)
-    try {
-      const response = await fetch('/api/sync', {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      })
-      const remote = response.ok ? await response.json() : null
-      if (!remote) return setFeedback({ ok: false, text: 'Ainda não há progresso na nuvem.' })
-      if (
-        !window.confirm(
-          'Baixar substituirá os dados locais deste aparelho. Exporte um backup antes. Continuar?',
-        )
-      )
-        return
-      const remoteBackup = parseBackup(JSON.stringify(remote.payload))
-      const localBackup = await exportBackup(repo)
-      await importBackup(repo, {
-        ...remoteBackup,
-        openingProgress: mergeOpeningProgressList(
-          localBackup.openingProgress ?? [],
-          remoteBackup.openingProgress ?? [],
-        ),
-      })
-      refresh()
-      setFeedback({ ok: true, text: 'Progresso baixado e aplicado localmente.' })
-    } catch {
-      setFeedback({ ok: false, text: 'A cópia da nuvem não pôde ser aplicada.' })
-    } finally {
-      setBusy(false)
-    }
   }
 
   async function excluir() {
@@ -205,7 +111,7 @@ export function AccountPanel() {
     setBusy(true)
     const response = await fetch('/api/account/delete', {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ confirmation }),
     })
     if (response.ok) {
@@ -234,40 +140,10 @@ export function AccountPanel() {
             </button>
           </div>
         </section>
-        <section className={styles.section}>
-          <h2>Sincronizar entre aparelhos</h2>
-          <p>
-            A nuvem é uma cópia do backup local. Antes de substituir qualquer lado, o LanceZero pede
-            confirmação.
-          </p>
-          <label htmlFor="device-label">Nome deste aparelho (opcional)</label>
-          <input
-            id="device-label"
-            value={deviceLabel}
-            maxLength={40}
-            onChange={(e) => setDeviceLabel(e.target.value)}
-          />
-          <div className={styles.actions}>
-            <button
-              className={styles.primary}
-              onClick={() => void enviarSincronizacao()}
-              disabled={busy}
-            >
-              Enviar progresso
-            </button>
-            <button
-              className={styles.ghost}
-              onClick={() => void baixarSincronizacao()}
-              disabled={busy}
-            >
-              Baixar progresso
-            </button>
-          </div>
-        </section>
         <section className={styles.danger} aria-labelledby="seguranca-privacidade">
           <h2 id="seguranca-privacidade">Segurança e privacidade</h2>
           <h3>Excluir conta</h3>
-          <p>Esta ação remove a conta, os dados sincronizados e o banco local deste aparelho.</p>
+          <p>Esta ação remove a conta, os dados persistidos e o banco local deste aparelho.</p>
           <label htmlFor="delete-confirmation">Digite APAGAR CONTA</label>
           <input
             id="delete-confirmation"
