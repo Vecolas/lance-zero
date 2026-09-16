@@ -32,12 +32,12 @@ export function AccountPanel() {
 
   useEffect(() => {
     if (!configuredSupabase) return
-    void configuredSupabase.auth
-      .getSession()
-      .then(({ data }) => setSession(data.session?.user ?? null))
-    const { data } = configuredSupabase.auth.onAuthStateChange((_event, next) =>
-      setSession(next?.user ?? null),
-    )
+    void configuredSupabase.auth.getSession().then(({ data }) => {
+      setSession(data.session?.user ?? null)
+    })
+    const { data } = configuredSupabase.auth.onAuthStateChange((_event, next) => {
+      setSession(next?.user ?? null)
+    })
     return () => data.subscription.unsubscribe()
   }, [configuredSupabase])
 
@@ -124,7 +124,7 @@ export function AccountPanel() {
     setFeedback({ ok: false, text: 'Não foi possível excluir a conta.' })
   }
 
-  if (session)
+  if (session) {
     return (
       <div>
         <section className={styles.section}>
@@ -148,7 +148,7 @@ export function AccountPanel() {
           <input
             id="delete-confirmation"
             value={confirmation}
-            onChange={(e) => setConfirmation(e.target.value)}
+            onChange={(event) => setConfirmation(event.target.value)}
           />
           <button className={styles.dangerButton} onClick={() => void excluir()} disabled={busy}>
             Excluir definitivamente
@@ -157,6 +157,7 @@ export function AccountPanel() {
         {feedback && <p role={feedback.ok ? 'status' : 'alert'}>{feedback.text}</p>}
       </div>
     )
+  }
 
   return (
     <section className={styles.section}>
@@ -169,7 +170,7 @@ export function AccountPanel() {
           autoComplete="email"
           required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(event) => setEmail(event.target.value)}
         />
         {mode !== 'reset' && (
           <>
@@ -181,7 +182,7 @@ export function AccountPanel() {
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
             />
           </>
         )}

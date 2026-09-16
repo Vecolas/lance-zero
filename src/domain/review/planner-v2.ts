@@ -1,4 +1,5 @@
-import type { ReviewCard, ReviewCardKind } from '@/domain/types'
+import type { ReviewCard, ReviewCardKind, ReviewRating } from '@/domain/types'
+import type { RecallOutcome } from '@/domain/roadmap'
 
 /**
  * Planeja unidades pedagógicas, não lances individuais.
@@ -30,6 +31,25 @@ export interface ReviewItem {
   priority: number
   steps: ReviewStep[]
   status: 'pending' | 'in_progress' | 'completed'
+  outcome?: RecallOutcome
+}
+
+export interface ReviewItemResult {
+  itemId: string
+  outcome: RecallOutcome
+  attempts: number
+  hintsUsed: number
+  completedAt: string
+}
+
+export interface RelearningSession {
+  id: string
+  sourceReviewItemId: string
+  learningObjectId: string
+  lessonId: string
+  startedAt: string
+  completedAt: string | null
+  returnToReviewSessionId: string
 }
 
 export interface ReviewSessionV2 {
@@ -48,6 +68,8 @@ export interface ReviewPlannerInput {
   now: Date
   targetItemCount?: number
   seed?: string
+  /** Gate V3: ausência de evidência não pode virar recuperação. */
+  reviewEligible?: (card: ReviewCard) => boolean
 }
 
 interface Group {
@@ -160,10 +182,11 @@ export function groupIntoPedagogicalReviewItems(cards: readonly ReviewCard[], no
 
 export function createReviewSessionV2(
   cards: readonly ReviewCard[],
-  { now, targetItemCount = 20, seed = now.toISOString() }: ReviewPlannerInput,
+  { now, targetItemCount = 20, seed = now.toISOString(), reviewEligible = () => true }: ReviewPlannerInput,
 ): ReviewSessionV2 {
+  const eligibleCards = cards.filter(reviewEligible)
   const groups = new Map<string, Group>()
-  for (const card of cards) {
+  for (const card of eligibleCards) {
     const kind = kindOf(card)
     const key = groupKey(card, kind)
     const current = groups.get(key) ?? { key, kind, learningObjectId: key, cards: [] }
@@ -214,6 +237,22 @@ export function completeReviewItem(session: ReviewSessionV2, itemId: string): Re
     items: session.items.map((item) =>
       item.id === itemId ? { ...item, status: 'completed' as const } : item,
     ),
+  }
+}
+
+/** Converte o resultado pedagógico em nota FSRS sem chamar reaprendizado de acerto. */
+export function ratingForRecallOutcome(outcome: RecallOutcome): ReviewRating {
+  if (outcome === 'recalled') return 'good'
+  if (outcome === 'recalled-with-hint') return 'hard'
+  if (outcome === 'failed' || outcome === 'declared-forgotten') return 'again'
+  // Reaprender é uma intervenção, não uma lembrança perfeita.
+  return outcome === 'relearned' ? 'hard' : 'again'
+}
+
+export function setReviewItemOutcome(session: ReviewSessionV2, itemId: string, outcome: RecallOutcome): ReviewSessionV2 {
+  return {
+    ...session,
+    items: session.items.map((item) => item.id === itemId ? { ...item, outcome } : item),
   }
 }
 

@@ -95,7 +95,21 @@ export async function carregarPlanoDeHoje({
   const dateKey = chaveDoDia(contexto.now)
 
   const gravado = await repo.getPlanoDoDia(dateKey)
-  if (gravado !== null) return gravado
+  if (gravado !== null) {
+    // Planos gravados antes do gate V3 podem conter revisão de conteúdo nunca
+    // ensinado. Regerar remove apenas atividades ainda não concluídas; ✓ já
+    // concluídos continuam sendo fundidos por `regerarPlanoDeHoje`.
+    const estados = await carregarSkillStates(repo, contexto.now)
+    const porId = new Map(estados.map((estado) => [estado.skillId, estado]))
+    const legadoIlegivel = gravado.activities.some((activity) =>
+      activity.definition.kind === 'revisao' && activity.definition.skillIds.some((skillId) => {
+        const state = porId.get(skillId)
+        return state === undefined || state.exposureCount === 0 || state.precisaDeReensino
+      }),
+    )
+    if (!legadoIlegivel) return gravado
+    return regerarPlanoDeHoje({ repo, contexto, config })
+  }
 
   const skillStates = await carregarSkillStates(repo, contexto.now)
   const plano = buildDailyPlanV2({ ...contexto, skillStates }, dateKey, config)

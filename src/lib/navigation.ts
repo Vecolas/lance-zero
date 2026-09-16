@@ -56,8 +56,8 @@ export const mainNav: NavItem[] = [
     phase: 8,
   },
   {
-    href: '/progress',
-    label: 'Progresso',
+    href: '/roadmap',
+    label: 'Roadmap',
     description: 'Forças, prioridades e retenção — sem métricas de vaidade.',
     phase: 5,
   },
