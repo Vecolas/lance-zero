@@ -1,27 +1,31 @@
 /**
  * A ponte entre os nós do Roadmap e as jornadas de Aberturas e Finais.
  *
- * O PROBLEMA QUE ELA RESOLVE: o Roadmap nomeia os conteúdos com ids próprios
- * (`opening.italian`), e o catálogo de conteúdo usa outros (`italiana`). Os dois
- * vocabulários nasceram separados e nenhum é errado — o Roadmap fala de
- * currículo, o catálogo fala de conteúdo.
+ * ELA ERA POR NOME, E DEIXOU DE SER. A versão anterior comparava TÍTULOS
+ * normalizados — "Abertura Italiana" no Roadmap contra "Abertura Italiana" no
+ * catálogo — porque os dois vocabulários nasceram separados e ninguém queria uma
+ * tabela escrita à mão.
  *
- * COMO A PONTE É FEITA, e por que assim: por NOME NORMALIZADO, derivado dos dois
- * catálogos na hora. A alternativa seria uma tabela `opening.italian → italiana`
- * escrita à mão, que é a segunda fonte da mesma verdade — e que ficaria
- * desatualizada em silêncio no dia em que uma abertura entrasse só num dos dois
- * lugares.
+ * O preço estava declarado no próprio arquivo e continuava sendo pago: renomear
+ * um dos lados quebrava o link em silêncio. E o risco pior nunca era a quebra, e
+ * sim o ACERTO ERRADO — busca por nome pode casar com o conteúdo vizinho, e um
+ * aluno que pede Caro-Kann e recebe outra abertura não tem como saber que foi o
+ * app que errou.
  *
- * O PONTO CEGO DESTA ESCOLHA, declarado: se alguém renomear "Abertura Italiana"
- * num dos catálogos e não no outro, o nó perde o link para a jornada. O
- * comportamento degrada com segurança — o card continua funcionando e leva ao
- * lugar antigo —, e `nosSemJornada` existe para um portão conseguir MEDIR
- * quantos ficaram sem par, em vez de a divergência passar despercebida.
+ * Agora a ligação vem de `LEARNING_OBJECTS`, declarada por ID, uma linha por nó.
+ * A tabela escrita à mão que evitávamos é exatamente o que torna a ligação
+ * auditável: um nó novo sem decisão reprova no portão, em vez de casar por
+ * acaso com o nome mais parecido.
+ *
+ * O QUE SOBROU AQUI é só a tradução de id de conteúdo para SLUG, que é
+ * informação do catálogo e não do currículo.
  */
 
 import { ENDGAME_DEFINITIONS } from '@/content/endgames/biblioteca'
 import { OPENING_COURSES } from '@/content/openings/course'
-import { ROADMAP_DEFINITION, type RoadmapNode } from '@/domain/roadmap'
+import type { RoadmapNode } from '@/domain/roadmap'
+import { learningTargetOf } from '@/domain/roadmap/learning-objects'
+import type { LearningTarget } from '@/domain/roadmap/learning-target'
 import { rotaDaJornada, type DominioDeJornada } from '@/domain/jornada'
 
 export interface ConteudoDoNo {
@@ -33,108 +37,61 @@ export interface ConteudoDoNo {
 }
 
 /**
- * Nome comparável: sem acento, sem caixa, sem pontuação.
+ * O conteúdo apontado por um alvo de jornada, ou `null` para os demais alvos.
  *
- * "Abertura Italiana" e "abertura italiana" são o mesmo conteúdo; "Jogo
- * Escoces" (sem acento, como está no Roadmap) e "Jogo Escocês" também.
+ * `null` aqui significa "este nó não é uma jornada de abertura ou final" — uma
+ * lição não tem etapas para contar, e forçar uma seria inventar progresso.
  */
-function normalizar(nome: string): string {
-  return nome
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-}
+export function conteudoDoTarget(target: LearningTarget | null): ConteudoDoNo | null {
+  if (target === null) return null
 
-/** O índice nome → conteúdo, montado uma vez a partir dos dois catálogos. */
-function indice(): Map<string, ConteudoDoNo> {
-  const mapa = new Map<string, ConteudoDoNo>()
-
-  for (const abertura of OPENING_COURSES) {
-    mapa.set(normalizar(abertura.name), {
+  if (target.type === 'opening-journey') {
+    const curso = OPENING_COURSES.find((item) => item.id === target.openingId)
+    if (!curso) return null
+    return {
       dominio: 'abertura',
-      slug: abertura.slug,
-      jornadaId: `abertura:${abertura.id}`,
-      rota: rotaDaJornada('abertura', abertura.slug),
-    })
+      slug: curso.slug,
+      jornadaId: `abertura:${curso.id}`,
+      rota: rotaDaJornada('abertura', curso.slug),
+    }
   }
 
-  for (const final of ENDGAME_DEFINITIONS) {
-    mapa.set(normalizar(final.name), {
+  if (target.type === 'endgame-journey') {
+    const final = ENDGAME_DEFINITIONS.find((item) => item.id === target.endgameId)
+    if (!final) return null
+    return {
       dominio: 'final',
       slug: final.slug,
       jornadaId: `final:${final.id}`,
       rota: rotaDaJornada('final', final.slug),
-    })
+    }
   }
 
-  return mapa
+  return null
 }
 
 /**
- * O nó é um CONTEÚDO (uma abertura, um final), e não uma habilidade?
+ * O conteúdo de um nó do Roadmap, quando ele abre uma jornada.
  *
- * `contentType` sozinho NÃO responde isso, e descobrir por quê custou um teste
- * vermelho: o Roadmap deriva `contentType` da ÁREA, então "Desenvolvimento" —
- * que é uma habilidade da área de aberturas — também chega aqui como
- * `'opening'`. Tratá-la como conteúdo faria o card procurar uma jornada da
- * "abertura Desenvolvimento", que não existe.
- *
- * O discriminador honesto é `skillId`: nós de habilidade têm um, nós de
- * conteúdo não. É uma propriedade da forma do dado, e não uma convenção de
- * nome — um id novo não a quebra.
+ * `null` para lição, jornada de lições e nó ainda sem conteúdo.
  */
-function ehNoDeConteudo(node: Pick<RoadmapNode, 'contentType' | 'skillId'>): boolean {
-  if (node.skillId !== undefined) return false
-  return node.contentType === 'opening' || node.contentType === 'endgame'
+export function conteudoDoNo(node: Pick<RoadmapNode, 'id'>): ConteudoDoNo | null {
+  return conteudoDoTarget(learningTargetOf(node))
 }
 
 /**
- * O conteúdo de um nó do Roadmap, quando ele tem jornada.
+ * Os nós de jornada cujo conteúdo NÃO existe no catálogo.
  *
- * `null` para os nós de habilidade (tática, cálculo, fundamentos, e também
- * "Desenvolvimento" ou "Finais de torre"), que continuam apontando para a
- * biblioteca de lições.
+ * O portão: um id de abertura ou final errado em `LEARNING_OBJECTS` não pode
+ * degradar em silêncio. Aqui ele vira número, e número reprova.
  */
-export function conteudoDoNo(
-  node: Pick<RoadmapNode, 'title' | 'contentType' | 'skillId'>,
-): ConteudoDoNo | null {
-  if (!ehNoDeConteudo(node)) return null
-
-  /*
-    CORRESPONDÊNCIA EXATA, e só ela.
-
-    Houve aqui uma segunda passada que aceitava o nome do catálogo TERMINANDO
-    com o nome do nó, para acomodar "Caro-Kann" (Roadmap) contra "Defesa
-    Caro-Kann" (conteúdo). Ela foi REMOVIDA quando os dois catálogos passaram a
-    escrever o mesmo nome.
-
-    A remoção é a parte que importa: busca aproximada resolve a divergência de
-    hoje e ESCONDE a de amanhã. Com ela no lugar, uma abertura nova grafada
-    diferente casaria por acidente e o portão `nosSemJornada` nunca reprovaria —
-    até o dia em que duas aberturas parecidas casassem com o mesmo nó e o card
-    levasse à errada. Exigir o nome exato faz a próxima divergência aparecer
-    como teste vermelho, que é onde ela deve aparecer.
-  */
-  return indice().get(normalizar(node.title)) ?? null
-}
-
-/**
- * Os nós de abertura/final que NÃO acharam conteúdo.
- *
- * Existe para o portão: a ponte por nome degrada com segurança, mas "degrada em
- * silêncio" é o que este projeto chama de falso verde. Medir quantos ficaram
- * sem par transforma a divergência em número, e número reprova.
- */
-export function nosSemJornada(): string[] {
-  return (
-    ROADMAP_DEFINITION.nodes
-      .filter(ehNoDeConteudo)
-      // Usa a MESMA função que a tela usa. Reimplementar a busca aqui faria o
-      // portão medir uma ligação diferente da que o aluno recebe — que é a forma
-      // mais elegante de um portão passar sem proteger nada.
-      .filter((node) => conteudoDoNo(node) === null)
-      .map((node) => node.id)
-  )
+export function jornadasComConteudoAusente(nodes: readonly RoadmapNode[]): string[] {
+  return nodes
+    .filter((node) => {
+      const target = learningTargetOf(node)
+      if (target === null) return false
+      if (target.type !== 'opening-journey' && target.type !== 'endgame-journey') return false
+      return conteudoDoTarget(target) === null
+    })
+    .map((node) => node.id)
 }

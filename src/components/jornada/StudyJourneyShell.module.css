@@ -37,6 +37,18 @@
   max-width: 62ch;
 }
 
+/* O aviso do modo: presente quando o aluno chegou por "Continuar", "Revisar" ou
+   "Reaprender". Discreto de propósito — é enquadramento, não instrução. */
+.modo {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  max-width: 62ch;
+}
+
 /*
   Discreto de propósito. Consultar é uma saída lateral, não o próximo passo —
   um botão com peso aqui competiria com o "Continuar" e sugeriria que reler é
