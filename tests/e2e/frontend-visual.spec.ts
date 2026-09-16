@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 const ROTAS = [
   '/dashboard',
-  '/train',
+  '/revisao',
   '/aberturas',
   '/aberturas/italiana?mode=learn',
   '/aberturas/italiana?mode=train',

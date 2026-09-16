@@ -14,16 +14,29 @@
   Ele é o nome do conteúdo ("Abertura Italiana") e passou a ser renderizado pela
   PÁGINA, no servidor — ver a nota no componente. Manter a regra órfã convidaria
   alguém a reintroduzir um `h1` que muda a cada Continuar.
-*/
-.etapa {
-  margin: 0;
-  font-size: 1.5rem;
-}
 
-.passo {
-  margin: 0;
-  color: var(--text-muted);
-  max-width: 62ch;
+  `.etapa` e `.passo` saíram junto com a faixa de etapas: o nome da etapa e o
+  contador vivem agora em `StudyStageHeader`, um por vez.
+*/
+
+/*
+  A CONTAGEM QUE SÓ O LEITOR DE TELA OUVE.
+
+  O cabeçalho mostra "Reconhecer — 2/10", que é compacto e visual. Esta linha é
+  a região viva que ANUNCIA a troca de etapa: sem ela, avançar seria silencioso
+  para quem não vê a tela. Repeti-la visivelmente seria a mesma informação duas
+  vezes na mesma dobra.
+*/
+.leitorDeTela {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* O aviso do modo: presente quando o aluno chegou por "Continuar", "Revisar" ou

@@ -41,7 +41,7 @@ import { caminhoInterno } from '@/lib/i18n/rotas'
  *
  * A LISTA É EXPLÍCITA, e a versão anterior era "qualquer coisa com ponto no
  * fim". O problema é que id de habilidade TEM PONTO — `tactics.fork`,
- * `endgame.opposition`. `/train/pratica/tactics.fork` era lido como pedido de
+ * `endgame.opposition`. `/pratica/tactics.fork` era lido como pedido de
  * arquivo, saía do caminho do proxy, chegava ao Next sem o segmento de idioma e
  * respondia 404. Vinte e duas rotas de prática de uma vez.
  *

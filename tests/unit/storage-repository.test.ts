@@ -331,6 +331,45 @@ describe.each(implementacoes)('contrato do repositorio ($nome)', (impl) => {
     expect(logs.map((log) => log.rating)).toContain('again')
   })
 
+  /*
+    O TETO DO HISTORICO.
+
+    `listReviewLogs` subiu de `BackupRepository` para o contrato do dia a dia
+    para a tela de Revisar poder mostrar as ultimas sessoes. A condicao da
+    subida foi o `limit`: o caminho do dia a dia pede um numero pequeno, e so o
+    backup varre a colecao inteira.
+
+    O recorte e dos MAIS RECENTES e a ordem continua crescente. Devolver os
+    primeiros mostraria as revisoes mais antigas como se fossem as ultimas —
+    falso verde perfeito, porque a tela renderiza igual nos dois casos.
+  */
+  it('o historico recortado devolve os mais RECENTES, em ordem crescente', async () => {
+    for (const dia of ['01', '02', '03']) {
+      await repo.saveReviewLog({
+        cardId: `card-${dia}`,
+        reviewedAt: `2026-04-${dia}T09:00:00.000Z`,
+        rating: 'good',
+        elapsedMs: 0,
+      })
+    }
+
+    const recorte = await repo.listReviewLogs(2)
+    expect(recorte.map((log) => log.cardId)).toEqual(['card-02', 'card-03'])
+  })
+
+  it('sem limite, o historico vem inteiro — e e o que o backup pede', async () => {
+    for (const dia of ['01', '02', '03']) {
+      await repo.saveReviewLog({
+        cardId: `card-${dia}`,
+        reviewedAt: `2026-04-${dia}T09:00:00.000Z`,
+        rating: 'good',
+        elapsedMs: 0,
+      })
+    }
+
+    expect(await repo.listReviewLogs()).toHaveLength(3)
+  })
+
   it('salva o mastery em lote e atualiza pela habilidade', async () => {
     await repo.saveSkillMastery([mastery(), mastery({ skillId: 'tactics.pin', mastery: 0.2 })])
     expect(await repo.getSkillMastery()).toHaveLength(2)

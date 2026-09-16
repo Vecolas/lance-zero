@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 const FIXTURES = [
   { rota: '/dashboard', heading: 'Treino de hoje' },
-  { rota: '/train', heading: 'Treinar' },
+  { rota: '/revisao', heading: 'Revisar' },
   { rota: '/aberturas/italiana', heading: 'Abertura Italiana' },
   { rota: '/endgames/mate-de-dama', heading: 'Mate de rei e dama' },
   { rota: '/settings', heading: 'Ajustes' },

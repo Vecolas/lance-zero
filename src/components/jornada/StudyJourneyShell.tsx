@@ -18,7 +18,7 @@
  * sem cobrir nada e o app registraria uma jornada concluída que não aconteceu.
  */
 
-import { useSyncExternalStore, type ReactNode } from 'react'
+import { useState, useSyncExternalStore, type ReactNode } from 'react'
 import {
   etapaCumprida,
   progressoDaJornada,
@@ -29,7 +29,8 @@ import type { ModoDeAprendizado } from '@/domain/roadmap/learning-target'
 import { modoDaUrl } from '@/lib/training/modo-de-aprendizado'
 import { useTraduzir } from '@/components/providers/LocaleProvider'
 import type { ChaveDeMensagem } from '@/lib/i18n/mensagens'
-import { StudyProgressRail } from './StudyProgressRail'
+import { StudyContentIndex } from './StudyContentIndex'
+import { StudyStageHeader } from './StudyStageHeader'
 import styles from './StudyJourneyShell.module.css'
 
 /**
@@ -106,6 +107,9 @@ export function StudyJourneyShell({
     divergência e sem efeito. A URL não muda sem navegação, então não há nada a
     assinar: a inscrição devolve um cancelamento que não faz nada.
   */
+  /** O Mapa do estudo está aberto? Estado de tela, nada de domínio. */
+  const [mapaAberto, setMapaAberto] = useState(false)
+
   const modo = useSyncExternalStore(
     () => () => {},
     modoDaUrl,
@@ -140,15 +144,25 @@ export function StudyJourneyShell({
 
           A etapa é uma seção DENTRO do estudo, e por isso é `h2`.
         */}
-        <h2 className={styles.etapa}>{stage.titulo}</h2>
         {/*
-          A contagem por extenso é a fonte acessível do progresso. O trilho é o
-          reforço visual; se ele sumir no celular, esta linha continua dizendo
-          onde o aluno está.
+          UMA ETAPA POR VEZ. O nome, a posição e o Mapa vivem no cabeçalho de
+          etapa; a faixa com os dez rótulos saiu. Ver `StudyStageHeader`.
         */}
-        <p className={styles.passo} role="status">
-          {t('journey.stageOf', { current: progresso.atual, total: progresso.total })} —{' '}
-          {stage.objetivo}
+        <StudyStageHeader
+          jornada={jornada}
+          stages={stages}
+          stage={stage}
+          aoAbrirMapa={aoVoltarEtapa ? () => setMapaAberto(true) : undefined}
+        />
+        {/*
+          A CONTAGEM POR EXTENSO CONTINUA, e continua sendo `role="status"`.
+
+          O cabeçalho escreve "Reconhecer — 2/10", que é compacto e visual. Esta
+          linha é o que um leitor de tela ANUNCIA quando a etapa troca: sem ela,
+          avançar seria silencioso para quem não vê a tela.
+        */}
+        <p className={styles.leitorDeTela} role="status">
+          {t('journey.stageOf', { current: progresso.atual, total: progresso.total })}
         </p>
         {/*
           O MODO COM QUE O ALUNO CHEGOU, quando não é o padrão.
@@ -171,7 +185,24 @@ export function StudyJourneyShell({
         ) : null}
       </header>
 
-      <StudyProgressRail jornada={jornada} stages={stages} aoEscolher={aoVoltarEtapa} />
+      {/*
+        O MAPA É O ÚNICO LUGAR QUE MOSTRA TUDO AO MESMO TEMPO, e é pedido.
+
+        `aoVoltarEtapa` ausente significa que a tela não deixa navegar entre
+        etapas — aí não há mapa para abrir, em vez de um mapa que não leva a
+        lugar nenhum.
+      */}
+      {mapaAberto && aoVoltarEtapa ? (
+        <StudyContentIndex
+          jornada={jornada}
+          stages={stages}
+          aoEscolher={(stageId) => {
+            setMapaAberto(false)
+            aoVoltarEtapa(stageId)
+          }}
+          aoFechar={() => setMapaAberto(false)}
+        />
+      ) : null}
 
       {/*
         DUAS COLUNAS SÓ QUANDO HÁ TABULEIRO NO SLOT.
@@ -185,7 +216,19 @@ export function StudyJourneyShell({
       */}
       <div className={tabuleiro ? `${styles.area} ${styles.areaComTabuleiro}` : styles.area}>
         {tabuleiro ? <div className={styles.tabuleiro}>{tabuleiro}</div> : null}
-        <div className={styles.painel}>{children}</div>
+        {/*
+          O ALVO MENSURÁVEL SÓ EXISTE QUANDO ESTE PAINEL É, DE FATO, A COLUNA DE
+          INSTRUÇÃO — ou seja, quando o tabuleiro veio pelo slot.
+
+          Sem a condição, este `div` carregaria o mesmo id da coluna interna da
+          `MesaDeEstudo` e a envolveria: o portão visual mediria o contêiner (que
+          começa na borda esquerda e contém o próprio tabuleiro) e concluiria que
+          a instrução está embaixo. Foi o que aconteceu na primeira versão do
+          teste, e o falso positivo era indistinguível do defeito real.
+        */}
+        <div className={styles.painel} data-testid={tabuleiro ? 'instrucao-do-estudo' : undefined}>
+          {children}
+        </div>
       </div>
 
       {rodapeOculto ? null : (

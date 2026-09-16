@@ -38,7 +38,7 @@ import { expect, test, type Page } from '@playwright/test'
 const ROTAS = [
   '/dashboard',
   '/en/today',
-  '/train',
+  '/revisao',
   '/roadmap',
   '/en/roadmap',
   '/lessons',

@@ -114,36 +114,54 @@ test('o plano de hoje é o MESMO depois de recarregar — não é resorteado', a
   expect(depois).toEqual(antes)
 })
 
-test('abrir Treinar NÃO dispara um exercício: é um hub', async ({ page }) => {
-  await page.goto('/train')
+/*
+  A ABA "TREINAR" VIROU "REVISAR".
 
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Treinar')
+  O caso abaixo era `abrir Treinar NÃO dispara um exercício: é um hub` e afirmava
+  os quatro títulos do hub. O hub deixou de existir — ele era um roteador: cinco
+  dos seis blocos só apontavam para lugares que já existiam.
 
-  // A §49, linha 1. Nenhum tabuleiro, nenhuma pergunta sobre um lance.
+  A AFIRMAÇÃO QUE SOBREVIVEU É A DE AUSÊNCIA, e é a que importa: abrir a aba não
+  monta tabuleiro nenhum. Ela vem da §49 do plano de aprendizado e é a razão de o
+  hub ter existido em primeiro lugar — `/train` abria uma posição direto, sem o
+  aluno ter escolhido nada. A tela nova herda a propriedade.
+*/
+test('abrir Revisar NÃO dispara um exercício', async ({ page }) => {
+  await page.goto('/revisao')
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Revisar')
+
+  // Nenhum tabuleiro, nenhuma pergunta sobre um lance.
   await expect(page.locator('[data-testid="chessboard"]')).toHaveCount(0)
 
-  // As quatro seções pedagógicas, com os nomes que o plano pede. Nada chamado
-  // genericamente de "puzzle".
-  await expect(page.getByRole('heading', { name: 'Praticar' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Revisar' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Currículo' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Minhas partidas' })).toBeVisible()
+  // Nada chamado genericamente de "puzzle": o vocabulário é pedagógico.
   await expect(page.getByText(/puzzle/i)).toHaveCount(0)
 })
 
-test('o hub admite quando ainda não há nada para praticar, sem oferecer exercício', async ({
-  page,
-}) => {
+test('o endereço antigo de Treinar leva à casa da revisão', async ({ page }) => {
+  // `/train` esteve na navegação desde a fase 5 e está no SHELL do service
+  // worker. Um 404 aqui transformaria renomear uma aba em perder acesso.
   await page.goto('/train')
+  await expect(page).toHaveURL(/\/revisao$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Revisar')
+})
 
-  // Estado vazio HONESTO: diz que o app só cobra o que já ensinou, e aponta
-  // para o currículo — em vez de inventar um exercício para preencher a tela.
-  await expect(page.getByText(/só cobra sem apoio o que já te ensinou/i)).toBeVisible()
-  await expect(page.getByText(/Nenhuma revisão vencida/)).toBeVisible()
+test('Revisar admite quando não há nada vencido, sem esconder o caminho', async ({ page }) => {
+  await page.goto('/revisao')
+
+  /*
+    Estado vazio HONESTO, e o botão CONTINUA VISÍVEL.
+
+    Escondê-lo faria a tela parecer quebrada — o aluno chega na aba de revisar e
+    não encontra como revisar. Inerte com o motivo ao lado, ele ensina a regra.
+  */
+  await expect(page.getByText('Nada vencido agora')).toBeVisible()
+  await expect(page.getByText(/Antecipar revisão não ajuda a fixar/)).toBeVisible()
+  await expect(page.getByText('Revisar agora')).toBeVisible()
 })
 
 test('a prática de uma habilidade nunca vista manda aprender antes', async ({ page }) => {
-  await page.goto('/train/pratica/tactics.fork')
+  await page.goto('/pratica/tactics.fork')
 
   // A porta que fecha a dívida: sem estágio, não há exercício.
   await expect(page.getByText(/ainda não te mostrou|adivinhar/i)).toBeVisible()
@@ -183,8 +201,15 @@ test('a evolução admite que ainda não há o que medir', async ({ page }) => {
   await expect(page.getByText(/Ainda não há o que medir/)).toBeVisible()
 })
 
-test('a revisão tem rota própria e admite quando não há nada vencido', async ({ page }) => {
-  await page.goto('/train/revisao')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Revisar')
+test('a fila tem rota própria e admite quando não há nada vencido', async ({ page }) => {
+  await page.goto('/revisao/sessao')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sessão de revisão')
   await expect(page.getByText(/Nada vencido agora/)).toBeVisible()
+})
+
+test('o endereço antigo da fila continua abrindo', async ({ page }) => {
+  // É o href que os PLANOS JÁ GRAVADOS guardam. Sem o desvio, o card
+  // "Revisões vencidas" de ontem abriria um 404 hoje.
+  await page.goto('/train/revisao')
+  await expect(page).toHaveURL(/\/revisao\/sessao$/)
 })

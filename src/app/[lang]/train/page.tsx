@@ -1,25 +1,23 @@
 import type { Metadata } from 'next'
-import { TreinoHub } from '@/components/training/TreinoHub'
-import { PageHeader } from '@/components/ui/primitives'
+import { redirect } from 'next/navigation'
 
-export const metadata: Metadata = { title: 'Treinar' }
+export const metadata: Metadata = { title: 'Revisar' }
 
 /**
- * ABRIR ESTA PÁGINA NÃO ABRE UM EXERCÍCIO.
+ * `/train` VIROU REDIRECIONAMENTO.
  *
- * Era o que acontecia antes: a rota montava a sessão de revisão direto, e o
- * aluno caía numa posição sem ter escolhido nada. A sessão continua existindo,
- * agora em `/train/revisao`, alcançável pelo hub — quem quer revisar continua a
- * um clique, e quem abriu a aba para ver o que existe passa a poder ver.
+ * A aba "Treinar" era um roteador: seis blocos, cinco só apontando para lugares
+ * que já existiam. No lugar dela entrou `/revisao`, que é a casa da revisão
+ * espaçada — ver `src/components/review/PainelDeRevisao.tsx`.
+ *
+ * O ENDEREÇO NÃO SOME, e isso não é zelo excessivo: `/train` esteve na barra de
+ * navegação desde a fase 5, está no `SHELL` pré-cacheado pelo service worker, e
+ * é o link que a documentação e qualquer marcador de quem usa o app apontam.
+ * Um 404 aqui transformaria a renomeação de uma aba em perda de acesso.
+ *
+ * Mesmo padrão de `src/app/[lang]/progress/page.tsx`, que desviou para o Roadmap
+ * quando o progresso mudou de casa.
  */
 export default function TrainPage() {
-  return (
-    <>
-      <PageHeader
-        title="Treinar"
-        description="Aprender, praticar, revisar e analisar são atividades diferentes. O LanceZero só cobra sem apoio aquilo que já te ensinou."
-      />
-      <TreinoHub />
-    </>
-  )
+  redirect('/revisao')
 }

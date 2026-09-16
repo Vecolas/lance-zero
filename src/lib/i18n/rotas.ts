@@ -37,6 +37,7 @@ export const SEGMENTOS_DE_ROTA = {
   today: { 'pt-BR': 'dashboard', en: 'today' },
   training: { 'pt-BR': 'train', en: 'training' },
   review: { 'pt-BR': 'revisao', en: 'review' },
+  session: { 'pt-BR': 'sessao', en: 'session' },
   practice: { 'pt-BR': 'pratica', en: 'practice' },
   journey: { 'pt-BR': 'jornada', en: 'journey' },
 

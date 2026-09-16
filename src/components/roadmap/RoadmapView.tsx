@@ -14,6 +14,9 @@ import {
   type RoadmapNodeView,
 } from '@/domain/roadmap'
 import { resumoDaJornada, type StudyJourney } from '@/domain/jornada'
+import { visaoDaHabilidade } from '@/domain/aprendizado/skill-state'
+import type { SkillId } from '@/domain/types'
+import { traduzirRota } from '@/lib/i18n/rotas'
 import { conteudoDoTarget } from '@/lib/training/jornadas-do-roadmap'
 import { etapasDoConteudo } from '@/lib/training/etapas-do-conteudo'
 import { learningTargetOf } from '@/domain/roadmap/learning-objects'
@@ -67,6 +70,8 @@ export function RoadmapView() {
   const [nodes, setNodes] = useState<RoadmapNodeView[]>([])
   const [jornadas, setJornadas] = useState<Record<string, StudyJourney>>({})
   const [failed, setFailed] = useState<string | null>(null)
+  /** As habilidades que já podem ser cobradas sem apoio. Ver a leitura abaixo. */
+  const [praticaveis, setPraticaveis] = useState<ReadonlySet<SkillId>>(new Set())
   useEffect(() => {
     if (!repo) return
     const repository = repo
@@ -85,6 +90,27 @@ export function RoadmapView() {
           setJornadas(Object.fromEntries(todasAsJornadas.map((jornada) => [jornada.id, jornada])))
         const bySkill = new Map(skillStates.map((state) => [state.skillId, state]))
         const dueSkills = new Set(dueCards.flatMap((card) => card.skillIds))
+        /*
+          QUEM JÁ PODE SER COBRADO SEM APOIO.
+
+          Esta porta veio do hub "Treinar", que deixou de existir: era o único
+          lugar navegável que oferecia prática independente por habilidade. Ela
+          foi para cá e não para outra aba porque o Roadmap é onde o aluno vê o
+          currículo — mas a REGRA veio junto, intacta.
+
+          `podeCobrarSemApoio` já atravessa a marca de reensino: uma habilidade
+          em `review` com reaprendizado pendente não aparece, por mais alto que
+          esteja o degrau. É a regra acima de todas as outras do PEDAGOGY.md, e
+          é o motivo de este conjunto ser derivado de `visaoDaHabilidade` em vez
+          de um `stage !== 'unseen'` escrito aqui.
+        */
+        const praticaveis = new Set(
+          skillStates
+            .map((state) => visaoDaHabilidade(state, undefined))
+            .filter((visao) => visao.podeCobrarSemApoio)
+            .map((visao) => visao.skillId),
+        )
+        if (!cancelled) setPraticaveis(praticaveis)
         const completedLearningObjects = new Set(
           skillStates
             .filter((state) => state.exposureCount > 0)
@@ -177,6 +203,7 @@ export function RoadmapView() {
               area={area.id}
               nodes={areaNodes}
               jornadas={jornadas}
+              praticaveis={praticaveis}
             />
           ) : null
         })}
@@ -189,10 +216,12 @@ function RoadmapAreaSection({
   area,
   nodes,
   jornadas,
+  praticaveis,
 }: {
   area: RoadmapArea
   nodes: RoadmapNodeView[]
   jornadas: Record<string, StudyJourney>
+  praticaveis: ReadonlySet<SkillId>
 }) {
   const t = useTraduzir()
   return (
@@ -210,7 +239,12 @@ function RoadmapAreaSection({
           `order` aqui desfaria a conclusão que manda o card para o fim. */}
       <div className={styles.nodes}>
         {nodes.map((node) => (
-          <RoadmapNodeCard key={node.id} node={node} jornadas={jornadas} />
+          <RoadmapNodeCard
+            key={node.id}
+            node={node}
+            jornadas={jornadas}
+            praticaveis={praticaveis}
+          />
         ))}
       </div>
     </section>
@@ -253,9 +287,12 @@ const MODO_DA_ACAO: Record<RoadmapNodeView['action'], ModoDeAprendizado> = {
 function RoadmapNodeCard({
   node,
   jornadas,
+  praticaveis,
 }: {
   node: RoadmapNodeView
   jornadas: Record<string, StudyJourney>
+  /** Habilidades que já podem ser cobradas sem apoio. Ver a leitura no pai. */
+  praticaveis: ReadonlySet<SkillId>
 }) {
   const { locale, t } = useIdioma()
   const texto = textoDoNo(node, locale)
@@ -325,13 +362,35 @@ function RoadmapNodeCard({
               : t(CHAVE_DO_ESTADO[node.state])}
         </span>
       </div>
-      {destino !== null && (node.action !== 'bloqueado' || resumo) ? (
-        <Link className={styles.action} href={destino}>
-          {rotulo}
-        </Link>
-      ) : destino !== null ? (
-        <span className={styles.locked}>{t('common.states.locked')}</span>
-      ) : null}
+      <div className={styles.actions}>
+        {destino !== null && (node.action !== 'bloqueado' || resumo) ? (
+          <Link className={styles.action} href={destino}>
+            {rotulo}
+          </Link>
+        ) : destino !== null ? (
+          <span className={styles.locked}>{t('common.states.locked')}</span>
+        ) : null}
+
+        {/*
+          PRATICAR: a porta que veio do hub "Treinar" quando ele deixou de
+          existir. Ele era o único lugar navegável que oferecia prática
+          independente por habilidade — sem isto ela passaria a existir só
+          dentro do plano do dia.
+
+          ELA SÓ APARECE PARA QUEM JÁ PODE SER COBRADO SEM APOIO, e a condição é
+          a mesma que o hub usava. Oferecer prática independente de um conceito
+          que o app nunca ensinou é exatamente o que a regra acima de todas as
+          outras do PEDAGOGY.md proíbe — e é o defeito que o ADR-0011 corrigiu.
+        */}
+        {node.skillId && praticaveis.has(node.skillId) ? (
+          <Link
+            className={styles.actionSecondary}
+            href={traduzirRota(`/pratica/${node.skillId}`, locale)}
+          >
+            {t('common.actions.practice')}
+          </Link>
+        ) : null}
+      </div>
     </article>
   )
 }

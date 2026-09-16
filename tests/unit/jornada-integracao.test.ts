@@ -93,11 +93,21 @@ describe('as rotas de jornada', () => {
 })
 
 describe('O DEEP LINK NÃO É ATALHO', () => {
-  it('pedir o treino sem ter estudado NÃO abre o treino', () => {
-    const jornada = nova()
-    // É o que a URL faria: `voltarParaEtapa` é a porta única, e ela recusa
-    // etapa futura. Sem isso, colar o link puloria o aprendizado inteiro.
-    expect(voltarParaEtapa(jornada, 'treino-final').currentStageId).toBe('visao')
+  /*
+    O DEEP LINK ABRE, E NÃO CONCLUI.
+
+    Este caso afirmava que a URL era RECUSADA. O V5.1 mudou a regra: todo
+    conteúdo principal é alcançável desde o primeiro acesso, e o que a
+    progressão governa é recomendação e conclusão.
+
+    O que continua valendo, e é o que `podeIrDiretoAoTreino` responde logo
+    abaixo: abrir cedo não marca a jornada como concluída.
+  */
+  it('pedir o treino sem ter estudado ABRE o treino, sem concluir nada', () => {
+    const jornada = voltarParaEtapa(nova(), 'treino-final')
+
+    expect(jornada.currentStageId).toBe('treino-final')
+    expect(podeIrDiretoAoTreino(jornada, ETAPAS)).toBe(false)
   })
 
   it('pedir o treino DEPOIS de estudar abre o treino', () => {

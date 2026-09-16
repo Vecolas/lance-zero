@@ -557,6 +557,24 @@ export interface TrainingRepository {
   listReviewCards(): Promise<ReviewCard[]>
   saveReviewCard(card: ReviewCard): Promise<void>
   saveReviewLog(log: ReviewLog): Promise<void>
+  /**
+   * O histórico de revisões, do mais antigo para o mais recente.
+   *
+   * ELE SUBIU DE `BackupRepository` PARA CÁ, e a mudança tem uma condição. O
+   * comentário de lá — que continua valendo — diz que o contrato do dia a dia
+   * não precisa varrer coleções inteiras. Por isso `limit`: a tela de Revisar
+   * pede um número pequeno e fixo, e o backup continua chamando sem argumento
+   * para levar tudo.
+   *
+   * Até aqui estes logs eram ESCRITOS E NUNCA LIDOS por nenhuma tela — o único
+   * leitor em produção era o backup. Todo desfecho de revisão que o aluno
+   * produziu está gravado desde sempre; o app é que não perguntava.
+   *
+   * A ORDEM É CRONOLÓGICA nos dois casos. Com `limit`, o recorte são os N MAIS
+   * RECENTES, ainda em ordem crescente — inverter aqui mudaria a ordem que o
+   * backup grava na restauração.
+   */
+  listReviewLogs(limit?: number): Promise<ReviewLog[]>
   getSkillMastery(): Promise<SkillMastery[]>
   saveSkillMastery(mastery: SkillMastery[]): Promise<void>
   /**

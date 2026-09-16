@@ -130,8 +130,10 @@ export class MemoryTrainingRepository implements BackupRepository {
     this.reviewLogs.push(cloneJson(log))
   }
 
-  async listReviewLogs(): Promise<ReviewLog[]> {
-    return this.reviewLogs.map((log) => cloneJson(log))
+  /** Mesma semântica do IndexedDB: cronológica, e o recorte é dos N últimos. */
+  async listReviewLogs(limit?: number): Promise<ReviewLog[]> {
+    const logs = limit === undefined ? this.reviewLogs : this.reviewLogs.slice(-limit)
+    return logs.map((log) => cloneJson(log))
   }
 
   async getSkillMastery(): Promise<SkillMastery[]> {

@@ -112,12 +112,12 @@ test('desistir revela a solução e oferece o próximo', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Próximo puzzle|Encerrar sessão/ })).toBeVisible()
 })
 
-test('o erro vira card de revisão em /train/revisao', async ({ page }) => {
+test('o erro vira card de revisão em /revisao/sessao', async ({ page }) => {
   await page.goto('/puzzles')
   await page.getByRole('button', { name: 'Desistir' }).click()
   await expect(page.getByText('O que era')).toBeVisible()
 
-  await page.goto('/train/revisao')
+  await page.goto('/revisao/sessao')
   // O card criado pelo puzzle está vencido agora, então a fila não está vazia.
   await expect(page.getByText(/Revisão 1 de/)).toBeVisible()
   await expect(page.getByText(/errou este padrão antes/)).toBeVisible()

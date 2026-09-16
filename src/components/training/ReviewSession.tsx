@@ -66,6 +66,8 @@
  */
 
 import Link from 'next/link'
+import { useIdioma } from '@/components/providers/LocaleProvider'
+import { traduzirRota } from '@/lib/i18n/rotas'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import type { Sonda } from '@/components/endgames/resposta-do-adversario'
@@ -315,6 +317,7 @@ export interface ReviewSessionProps {
 
 export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const { status, repo, profile, erro, refresh } = useRepository()
+  const { locale, t } = useIdioma()
   const reviewStorageKey = profile?.id
     ? `lancezero-review-v2:${profile.id}`
     : 'lancezero-review-v2:local'
@@ -745,7 +748,15 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
           As revisões nascem dos seus erros. Enquanto não houver puzzles resolvidos nem partidas
           importadas, esta fila fica vazia — e isso é o comportamento certo, não uma tela quebrada.
         </p>
-        <Link href="/dashboard">Voltar ao treino de hoje</Link>
+        {/*
+          VOLTA PARA A CASA DA REVISÃO, e não para o Hoje.
+
+          A fila agora mora dentro de uma aba que responde o resto: o que vem, de
+          onde veio, o que continua caindo, e esta sessão que acabou de terminar.
+          Mandar o aluno para o plano do dia o tirava justamente da tela que dá
+          sentido ao que ele acabou de fazer.
+        */}
+        <Link href={traduzirRota('/revisao', locale)}>{t('review.backToReview')}</Link>
       </div>
     )
   }

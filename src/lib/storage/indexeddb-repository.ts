@@ -430,8 +430,17 @@ export class IndexedDbTrainingRepository implements BackupRepository {
     })
   }
 
-  async listReviewLogs(): Promise<ReviewLog[]> {
-    return this.readAll<ReviewLog>(STORES.reviewLogs)
+  /**
+   * O histórico, em ordem cronológica.
+   *
+   * A store é `autoIncrement` e só recebe `add`, nunca `put`: a ordem de leitura
+   * JÁ É a ordem de gravação. O recorte é dos N mais recentes — `slice(-limit)`
+   * e não `slice(0, limit)` — e o resultado continua crescente, que é o que o
+   * backup espera na restauração.
+   */
+  async listReviewLogs(limit?: number): Promise<ReviewLog[]> {
+    const logs = await this.readAll<ReviewLog>(STORES.reviewLogs)
+    return limit === undefined ? logs : logs.slice(-limit)
   }
 
   async getSkillMastery(): Promise<SkillMastery[]> {

@@ -55,8 +55,15 @@ test('abrir uma abertura abre a JORNADA, não um menu de abas pedagógicas', asy
     await expect(page.getByRole('button', { name: aba, exact: true })).toHaveCount(0)
   }
 
-  // O trilho de progresso informa onde o aluno está — e não é uma tab bar.
-  await expect(page.getByRole('navigation', { name: 'Progresso da jornada' })).toBeVisible()
+  /*
+    O CABEÇALHO INFORMA ONDE O ALUNO ESTÁ — e mostra UMA etapa, não dez.
+
+    Antes esta asserção procurava o trilho com todos os rótulos. Ele saiu: a
+    faixa comia a largura do tabuleiro e transformava o curso numa coleção de
+    abas. O que ficou é nome + posição, e o Mapa do estudo ao lado.
+  */
+  await expect(page.getByRole('heading', { level: 2 }).first()).toContainText(/—\s*\d+\/\d+/)
+  await expect(page.getByRole('button', { name: /Mapa do estudo/ })).toBeVisible()
 })
 
 test('o treino NÃO é a primeira etapa de uma jornada nova', async ({ page }) => {
@@ -96,9 +103,14 @@ test('voltar para uma etapa concluída NÃO perde progresso', async ({ page }) =
   await page.getByRole('button', { name: /Continuar/ }).click()
   await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
 
-  // O trilho deixa voltar ao que já foi visto.
-  const trilho = page.getByRole('navigation', { name: 'Progresso da jornada' })
-  await trilho.getByRole('button').first().click()
+  // O MAPA deixa voltar ao que já foi visto — e agora também ir adiante.
+  await page.getByRole('button', { name: /Mapa do estudo/ }).click()
+  const mapa = page.getByRole('dialog', { name: 'Mapa do estudo' })
+  await mapa
+    .getByRole('button')
+    .filter({ hasNotText: /Fechar/ })
+    .first()
+    .click()
   await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
 
   // E o avanço não foi desfeito: continuar leva de volta à etapa 2.
@@ -213,10 +225,25 @@ test('o roadmap mostra o progresso da jornada e leva para ela', async ({ page })
   await expect(card.getByRole('link')).toHaveAttribute('href', '/aberturas/italiana')
 })
 
-test('o deep link do treino NÃO pula o aprendizado', async ({ page }) => {
-  // Jornada nova: pedir o treino pela URL tem de cair onde o aluno realmente
-  // está. Sem isso, bastaria colar o link para cobrar sem ter ensinado.
+test('o deep link do treino ABRE o treino, e não conclui nada', async ({ page }) => {
+  /*
+    A REGRA MUDOU COM O V5.1, e a mudança é deliberada.
+
+    Antes este caso afirmava que a URL era RECUSADA: pedir o treino numa jornada
+    nova devolvia a etapa 1. O contrato novo separa as duas coisas — progressão
+    define RECOMENDAÇÃO e CONCLUSÃO, nunca visibilidade. O aluno pode espiar o
+    treino, e espiar não ensina nem conclui.
+
+    O QUE PRECISA CONTINUAR VERDADEIRO é a segunda metade: a jornada segue sem
+    nenhuma etapa concluída depois do salto. Sem essa asserção, "abrir é livre"
+    viraria "abrir é concluir" — que é exatamente o defeito que o ADR-0011
+    corrigiu, de volta por outra porta.
+  */
   await page.goto('/aberturas/italiana?etapa=treino-final')
-  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
-  await expect(page.getByText('TREINO · sem dicas')).toHaveCount(0)
+
+  const cabecalho = page.getByRole('heading', { level: 2 }).first()
+  await expect(cabecalho).toContainText(/—\s*\d+\/\d+/)
+
+  // Zero concluídas: o contador de progresso do cabeçalho não se moveu.
+  await expect(page.getByText(/0 de \d+ etapas/)).toBeVisible()
 })

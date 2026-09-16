@@ -35,9 +35,14 @@ export type {
  * `TrainingRepository` é o que a aplicação usa no dia a dia e não precisa
  * varrer coleções inteiras. Exportar e importar precisa, então o backup pede
  * este contrato mais largo em vez de alargar o contrato do domínio.
+ *
+ * `listReviewLogs` SAIU DAQUI e subiu para o contrato do dia a dia, com um
+ * `limit` opcional — a tela de Revisar precisa do histórico e pede um número
+ * pequeno. A regra acima não foi quebrada: continua não havendo varredura de
+ * coleção inteira no caminho do dia a dia; ela só é possível, e é o backup que
+ * a pede, omitindo o limite.
  */
 export interface BackupRepository extends TrainingRepository {
-  listReviewLogs(): Promise<ReviewLog[]>
   listAllPositionAnalyses(): Promise<PositionAnalysis[]>
 }
 

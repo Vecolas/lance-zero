@@ -162,7 +162,7 @@ export function LicaoAberta({ licao }: { licao: Licao }) {
           try {
             const bruto = window.localStorage.getItem(chave)
             if (bruto && JSON.parse(bruto).completed === true) {
-              router.push(traduzirRota('/train/revisao', locale))
+              router.push(traduzirRota('/revisao/sessao', locale))
               return
             }
           } catch {

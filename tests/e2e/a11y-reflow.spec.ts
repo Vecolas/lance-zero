@@ -54,7 +54,7 @@ const ZOOM_200 = { width: 640, height: 360 } as const
 const ROTAS_360 = [
   '/',
   '/dashboard',
-  '/train',
+  '/revisao',
   '/puzzles',
   '/calculate',
   '/endgames',
@@ -248,7 +248,7 @@ test.describe('zoom de 200% — onde o aluno passa o tempo', () => {
   })
 
   test('o treino do dia continua utilizável com 200% de zoom', async ({ page }) => {
-    await page.goto('/train')
+    await page.goto('/revisao')
     await esperaConteudo(page)
     await semRolagemHorizontal(page, '/train @200%')
   })

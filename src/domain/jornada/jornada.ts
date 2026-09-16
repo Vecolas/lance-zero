@@ -225,21 +225,32 @@ function proximoStatus(stages: readonly StudyStage[], stageId: string): StatusDa
 }
 
 /**
- * Volta para uma etapa já concluída.
+ * Abre uma etapa qualquer da jornada.
  *
- * NÃO APAGA NADA (plano §138). Voltar é consulta, não regressão: o aluno revê o
- * que quiser e o progresso continua onde estava. Uma volta que resetasse a
+ * NÃO APAGA NADA. Ir e voltar é consulta, não regressão: o aluno vê o que
+ * quiser e o progresso continua onde estava. Uma navegação que resetasse a
  * etapa transformaria "reler" em "refazer", e o aluno aprenderia a não voltar.
  *
- * Só permite ir para etapa CONCLUÍDA ou para a atual — pular adiante pela
- * navegação seria o mesmo que não ter sequência.
+ * O BLOQUEIO DE AVANÇO SAIU, e é a mudança do V5.1. Antes só a etapa concluída
+ * ou a atual eram alcançáveis, e o trilho anunciava as demais como "ainda não
+ * aberta". Progressão passa a definir RECOMENDAÇÃO e CONCLUSÃO — não
+ * visibilidade.
+ *
+ * Isso não afrouxa nada do que importa: quem decide se a jornada está concluída
+ * continua sendo `jornadaConcluida`, que exige a regra de CADA etapa cumprida,
+ * inclusive a cobertura do treino. Espiar o treino cedo não marca nada; a única
+ * coisa que o aluno ganha ao abrir uma etapa adiantada é ver o conteúdo.
  */
-export function voltarParaEtapa(jornada: StudyJourney, stageId: string): StudyJourney {
-  const permitido =
-    jornada.completedStageIds.includes(stageId) || stageId === jornada.currentStageId
-  if (!permitido || !jornada.stageIds.includes(stageId)) return jornada
+export function abrirEtapa(jornada: StudyJourney, stageId: string): StudyJourney {
+  if (!jornada.stageIds.includes(stageId)) return jornada
   return { ...jornada, currentStageId: stageId }
 }
+
+/**
+ * @deprecated Use `abrirEtapa`. Mantido enquanto os chamadores migram — o nome
+ * antigo prometia "só volta", e a regra deixou de ser essa.
+ */
+export const voltarParaEtapa = abrirEtapa
 
 /**
  * A jornada está concluída DE VERDADE?
@@ -272,12 +283,20 @@ export function progressoDaJornada(
   }
 }
 
-/** Estado de cada etapa no trilho de progresso. */
-export type EstadoNoTrilho = 'concluida' | 'atual' | 'futura'
+/**
+ * Estado de cada etapa no índice do estudo.
+ *
+ * `disponivel` E NÃO `futura`, e a troca de palavra é a decisão. "Futura"
+ * descrevia um conteúdo que o aluno não podia abrir, e o trilho o anunciava como
+ * "ainda não aberta". Toda etapa principal passou a ser alcançável desde o
+ * primeiro acesso: o que o estado diz agora é onde o aluno ESTÁ no caminho
+ * recomendado, não o que ele tem permissão de ver.
+ */
+export type EstadoNoTrilho = 'concluida' | 'atual' | 'disponivel'
 
 export function estadoNoTrilho(jornada: StudyJourney, stage: StudyStage): EstadoNoTrilho {
   if (stage.id === jornada.currentStageId) return 'atual'
-  return jornada.completedStageIds.includes(stage.id) ? 'concluida' : 'futura'
+  return jornada.completedStageIds.includes(stage.id) ? 'concluida' : 'disponivel'
 }
 
 /**

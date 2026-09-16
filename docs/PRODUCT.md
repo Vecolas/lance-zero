@@ -46,26 +46,26 @@ tem três estados — sistema (padrão), claro e escuro.
 
 ## Superfícies
 
-| Rota                     | Nome PT-BR     | Fase | Papel                                                   |
-| ------------------------ | -------------- | ---- | ------------------------------------------------------- |
-| `/`                      | Landing        | 0    | Explica o ciclo e leva ao primeiro treino               |
-| `/onboarding`            | Diagnóstico    | 10   | 12–20 posições, estimativa inicial, primeira semana     |
-| `/dashboard`             | Treino de hoje | 5    | Home local; atividades independentes, qualquer ordem, ✓ |
-| `/train`                 | Treinar        | 5    | Hub: Aprender, Praticar, Revisar, Currículo, Partidas   |
-| `/train/revisao`         | Revisar        | 5    | A fila de revisão espaçada, com endereço próprio        |
-| `/train/pratica/[skill]` | Praticar       | 5    | Prática da habilidade, no degrau em que ela está        |
-| `/lessons/[skill]`       | Lição          | 10   | As nove etapas, com a ajuda desvanecendo                |
-| `/puzzles`               | Puzzles        | 3    | Táticas com dicas graduais                              |
-| `/calculate`             | Cálculo        | 4    | Xeques, capturas, ameaças; candidatos; visualização     |
-| `/games`                 | Partidas       | 6    | Importação, revisão humana, depois engine               |
-| `/openings`              | Aberturas      | 9    | Princípios + repertório enxuto + explorer               |
-| `/endgames`              | Finais         | 8    | Currículo básico + tablebase                            |
-| `/lessons`               | Biblioteca     | 10   | 30–40 microlições                                       |
-| `/progress`              | Progresso      | 5    | Forças, prioridades, retenção                           |
-| `/settings`              | Ajustes        | 4    | Backup, orçamento de engine, preferências               |
-| `/licenses`              | Licenças       | 0    | Obrigações de licença e fontes de dados                 |
+| Rota               | Nome PT-BR     | Fase | Papel                                                    |
+| ------------------ | -------------- | ---- | -------------------------------------------------------- |
+| `/`                | Landing        | 0    | Explica o ciclo e leva ao primeiro treino                |
+| `/onboarding`      | Diagnóstico    | 10   | 12–20 posições, estimativa inicial, primeira semana      |
+| `/dashboard`       | Treino de hoje | 5    | Home local; atividades independentes, qualquer ordem, ✓  |
+| `/revisao`         | Revisar        | 5    | A casa da revisão: vencidas, previsão, origem, histórico |
+| `/revisao/sessao`  | Sessão         | 5    | A fila de revisão espaçada, com endereço próprio         |
+| `/pratica/[skill]` | Praticar       | 5    | Prática da habilidade, no degrau em que ela está         |
+| `/lessons/[skill]` | Lição          | 10   | As nove etapas, com a ajuda desvanecendo                 |
+| `/puzzles`         | Puzzles        | 3    | Táticas com dicas graduais                               |
+| `/calculate`       | Cálculo        | 4    | Xeques, capturas, ameaças; candidatos; visualização      |
+| `/games`           | Partidas       | 6    | Importação, revisão humana, depois engine                |
+| `/openings`        | Aberturas      | 9    | Princípios + repertório enxuto + explorer                |
+| `/endgames`        | Finais         | 8    | Currículo básico + tablebase                             |
+| `/lessons`         | Biblioteca     | 10   | 30–40 microlições                                        |
+| `/progress`        | Progresso      | 5    | Forças, prioridades, retenção                            |
+| `/settings`        | Ajustes        | 4    | Backup, orçamento de engine, preferências                |
+| `/licenses`        | Licenças       | 0    | Obrigações de licença e fontes de dados                  |
 
-Mobile: bottom navigation com Hoje, Treinar, Partidas e "Mais".
+Mobile: bottom navigation com Hoje, Revisar, Partidas e Biblioteca.
 
 ## Alocação inicial do plano diário (~1100)
 
@@ -94,7 +94,7 @@ funcionam offline, mas o beta ainda é pendente.**
 
 O ciclo central já fecha de ponta a ponta e tem teste e2e provando:
 
-> errar um puzzle → virar card de revisão → reaparecer em `/train` na hora certa
+> errar um puzzle → virar card de revisão → reaparecer em `/revisao` na hora certa
 
 O que funciona hoje:
 
@@ -105,11 +105,13 @@ O que funciona hoje:
   o plano oferece a quem nunca viu o conceito — em vez de perguntar o melhor lance;
 - `/puzzles` treina táticas sem revelar o tema antes da resposta, com dicas
   graduais e a explicação só depois;
-- `/train` é um hub (Aprender, Praticar, Revisar, Currículo, Partidas): abrir a
-  aba não dispara mais um exercício;
-- `/train/revisao` roda as revisões espaçadas com FSRS e move o modelo de habilidades;
-- `/train/pratica/[skill]` só cobra sem apoio o que já foi ensinado; quando não
-  foi, manda aprender e diz por quê;
+- `/revisao` é a casa da revisão espaçada: o que venceu, o que vem, de onde cada
+  card nasceu, o que o aluno vem esquecendo e as últimas sessões. Abrir a aba não
+  dispara exercício — a fila tem endereço próprio;
+- `/revisao/sessao` roda as revisões com FSRS e move o modelo de habilidades;
+- `/pratica/[skill]` só cobra sem apoio o que já foi ensinado; quando não foi,
+  manda aprender e diz por quê. Ela é alcançável pelo card do Roadmap e pelo
+  plano do dia;
 - `/games` importa partidas por PGN, Lichess ou Chess.com, sem duplicar, e
   `/games/[id]` executa os dois passes da revisão: primeiro o usuário marca onde
   acha que a partida mudou e escreve o porquê; depois a engine confirma ou corrige

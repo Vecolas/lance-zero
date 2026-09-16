@@ -22,7 +22,7 @@ async function jogar(page: Page, uci: string): Promise<void> {
 
 test('revisão não expõe o input UCI ao aluno', async ({ page }) => {
   await semTablebase(page)
-  await page.goto('/train/revisao')
+  await page.goto('/revisao/sessao')
 
   await expect(page.getByText(/Lance em UCI/i)).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Jogar lance/i })).toHaveCount(0)
