@@ -31,9 +31,9 @@ import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { StudyJourneyShell } from '@/components/jornada/StudyJourneyShell'
 import { MesaDeEstudo } from '@/components/jornada/MesaDeEstudo'
 import { RoundResultPanel } from '@/components/jornada/RoundResultPanel'
-import { ModoReferencia } from '@/components/jornada/ModoReferencia'
 import {
   concluirEtapa,
+  jornadaConcluida,
   criarJornada,
   registrarItem,
   voltarParaEtapa,
@@ -82,7 +82,6 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
   const { repo } = useRepository()
   const stages = useMemo(() => construirJornadaDeFinal(endgame, conteudo), [endgame, conteudo])
   const [jornada, setJornada] = useState<StudyJourney | null>(null)
-  const [referencia, setReferencia] = useState(false)
 
   useEffect(() => {
     if (!repo) return
@@ -112,29 +111,27 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
 
   if (!jornada) return <p className={styles.estado}>Abrindo o seu estudo deste final…</p>
 
-  if (referencia) {
-    return (
-      <ModoReferencia
-        titulo={endgame.name}
-        stages={stages}
-        aoSair={() => setReferencia(false)}
-        conteudoDaEtapa={(stage) => (
-          // A MESMA função de conteúdo da jornada — ver a razão no componente
-          // equivalente da abertura.
-          <ConteudoDeEtapa
-            endgame={endgame}
-            conteudo={conteudo}
-            stage={stage}
-            jornada={jornada}
-            aoResponder={() => undefined}
-          />
-        )}
-      />
-    )
-  }
+  /*
+    O MODO REFERÊNCIA SAIU. Ver a nota equivalente em `OpeningStudyJourney`: ele
+    era redundante com o Mapa do estudo e renderizava tabuleiros interativos que
+    não respondiam a nada.
+  */
 
   const stage = stages.find((item) => item.id === jornada.currentStageId) ?? stages[0]
   const ehTreino = stage?.ehTreinoFinal === true
+
+  /*
+    PRATICAR DE NOVO, oferecido a quem já concluiu.
+
+    O equivalente do sparring das Aberturas. A jornada ensina uma vez e termina;
+    quem quer repetir o final — que é como técnica de final entra na mão — não
+    tinha onde, e reabrir o treino pelo Mapa exige saber que o Mapa faz isso.
+
+    NÃO APAGA NADA. Ele só reabre a etapa de treino: a cobertura já conquistada
+    continua conquistada, e jogar mais rodadas não pode desfazer conclusão.
+  */
+  const concluiu = jornadaConcluida(jornada, stages)
+  const treino = stages.find((item) => item.ehTreinoFinal === true)
 
   return (
     <StudyJourneyShell
@@ -144,7 +141,6 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
       aoVoltarEtapa={(stageId) => gravar(voltarParaEtapa(jornada, stageId))}
       aoContinuar={ehTreino ? undefined : () => gravar(concluirEtapa(jornada, stages, new Date()))}
       rodapeOculto={ehTreino}
-      aoRever={() => setReferencia(true)}
     >
       {ehTreino ? (
         <TreinoDoFinal
@@ -164,6 +160,15 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
           aoResponder={gravar}
         />
       )}
+      {concluiu && !ehTreino && treino ? (
+        <button
+          type="button"
+          className={styles.praticarDeNovo}
+          onClick={() => gravar(voltarParaEtapa(jornada, treino.id))}
+        >
+          Praticar este final de novo
+        </button>
+      ) : null}
     </StudyJourneyShell>
   )
 }

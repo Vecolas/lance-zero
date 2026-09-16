@@ -27,11 +27,19 @@
   }
 }
 
-/* O tabuleiro cresce com a coluna. O teto evita que ele vire pôster na tela
-   larga, onde o olho passaria a varrer demais entre um canto e outro. */
+/*
+  O tabuleiro cresce com a coluna. O teto evita que ele vire pôster na tela
+  larga, onde o olho passaria a varrer demais entre um canto e outro.
+
+  `min(40rem, 100%)` E NÃO `40rem`: o teto sozinho é maior que a tela de 360 px,
+  e a biblioteca de tabuleiro desenha no tamanho que recebe. A página inteira
+  passava a rolar na horizontal — o portão visual pegou quando a mesa entrou nas
+  etapas de leitura da abertura. É a mesma forma que `.tabuleiroEmbutido` já
+  usava, e agora está num lugar só.
+*/
 .tabuleiro {
   min-width: 0;
-  max-width: 40rem;
+  max-width: min(40rem, 100%);
 }
 
 /* A coluna de texto: conteúdo empilhado, colado no topo. */

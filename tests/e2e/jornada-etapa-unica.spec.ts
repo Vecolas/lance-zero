@@ -166,6 +166,32 @@ test('TESTE LAYOUT — em desktop a instrução fica AO LADO do tabuleiro', asyn
   expect(caixaDoTabuleiro.width).toBeGreaterThan(360)
 })
 
+test('TESTE TABULEIRO SEMPRE — toda etapa de abertura mostra a posição', async ({ page }) => {
+  /*
+    A REGRA DO PLANO: toda etapa de estudo tem tabuleiro visível, e a posição
+    existe por razão pedagógica — nunca decorativa, nunca a inicial genérica.
+
+    As etapas de leitura da abertura (visão, ideias, respostas, variações,
+    planos, dois lados) eram texto puro: o aluno lia sobre estruturas e rupturas
+    sem a posição na tela. A posição mostrada é a que a linha principal ALCANÇA —
+    é dela que esses textos falam.
+  */
+  await page.goto('/aberturas/italiana')
+
+  for (let etapa = 0; etapa < 9; etapa += 1) {
+    await expect(
+      page.locator('[data-testid="chessboard"]').first(),
+      `etapa ${etapa + 1} sem tabuleiro`,
+    ).toBeVisible()
+
+    const continuar = page.getByRole('button', { name: /Continuar →/ }).first()
+    if (!(await continuar.isVisible().catch(() => false))) break
+    if (await continuar.isDisabled()) break
+    await continuar.click()
+    await page.waitForTimeout(150)
+  }
+})
+
 test('TESTE LAYOUT — no celular o tabuleiro vem antes do texto', async ({ page }) => {
   test.skip(test.info().project.name !== 'mobile', 'a regra é do celular')
 

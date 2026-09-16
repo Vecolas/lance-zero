@@ -33,6 +33,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { useLanceNoTabuleiro } from '@/components/chess/useLanceNoTabuleiro'
 import {
   ETAPAS_DA_LICAO,
   TITULO_DA_ETAPA,
@@ -50,10 +51,10 @@ import {
   responderAoErro,
   type NivelDeApoio,
 } from '@/domain/aprendizado'
-import { acertou, opcoesDe } from '@/domain/diagnostic'
+import { acertou } from '@/domain/diagnostic'
 import { julgarLanceDaLicao, type ExercicioPosicional } from '@/domain/exercicios'
 import { getSkill } from '@/domain/skills/catalog'
-import { applyMove, legalMoves, normalizeUci, parseUci } from '@/lib/chess'
+import { applyMove, normalizeUci, parseUci } from '@/lib/chess'
 import type { PromotionPiece, SquareName } from '@/lib/chess'
 import styles from './LicaoPlayer.module.css'
 
@@ -453,12 +454,6 @@ function Tabuleiro({
   /** O último arraste que não era lance. Discreto, e some no lance seguinte. */
   const [recusa, setRecusa] = useState<string | null>(null)
 
-  const notacoes = useMemo(() => {
-    const mapa = new Map<string, string>()
-    for (const lance of legalMoves(exercicio.fen)) mapa.set(lance.uci, lance.san)
-    return mapa
-  }, [exercicio.fen])
-
   const certo = escolhido !== null && acertou(exercicio, escolhido)
   const apoio = nivelDeApoio(dicasAbertas, revelou)
 
@@ -520,6 +515,18 @@ function Tabuleiro({
 
   const feedback = feedbackGenerico()
 
+  /*
+    O CLIQUE EM DUAS CASAS é a outra porta da mesma resposta — ver
+    `useLanceNoTabuleiro`. Arrastar exige apontador e coordenação fina; sem o
+    clique, "a resposta acontece no tabuleiro" viraria "quem não arrasta não
+    responde".
+  */
+  const lance = useLanceNoTabuleiro({
+    fen: exercicio.fen,
+    ativo: !certo && !mostrarSolucao,
+    aoTentar: (origem, destino) => soltar(origem, destino),
+  })
+
   return (
     <div className={styles.comTabuleiro}>
       <div className={styles.tabuleiro}>
@@ -538,7 +545,10 @@ function Tabuleiro({
           fen={exercicio.fen}
           orientation={exercicio.ladoDoAluno}
           interactive={!certo && !mostrarSolucao}
+          selected={lance.selecionada}
+          targets={lance.destinos}
           onMove={soltar}
+          onSquareClick={lance.aoClicarNaCasa}
           onIllegalMove={(origem, destino) => setRecusa(`${origem}${destino}`)}
           lastMove={mostrarSolucao ? casasDaSolucao : undefined}
         />

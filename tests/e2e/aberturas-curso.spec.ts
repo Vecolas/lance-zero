@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { legalMoves } from '@/lib/chess'
 
 /**
  * A jornada da abertura, medida no navegador.
@@ -46,19 +47,26 @@ async function irAteEtapa(page: import('@playwright/test').Page, titulo: RegExp)
       .catch(() => '')
     if (titulo.test(atual)) return
 
-    // Etapa que cobra resposta: escolhe uma opção e confirma.
-    const opcoes = page.getByRole('list', { name: 'Lances possíveis' }).getByRole('button')
-    if (
-      (await opcoes.count()) > 0 &&
-      (await opcoes
-        .first()
-        .isEnabled()
-        .catch(() => false))
-    ) {
-      await opcoes.first().click()
-      const confirmar = page.getByRole('button', { name: 'Continuar', exact: true })
-      if ((await confirmar.count()) > 0) await confirmar.first().click()
-      continue
+    /*
+      ETAPA QUE COBRA RESPOSTA: joga no tabuleiro.
+
+      Antes o ajudante clicava na primeira opção de uma lista de notação. A
+      lista saiu — a resposta é um lance —, e o que ele faz agora é jogar o
+      primeiro lance legal da posição. Ele não tenta acertar: a travessia existe
+      para CHEGAR a uma etapa, e os testes que medem acerto o fazem por conta
+      própria.
+    */
+    const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
+    if (await tabuleiro.isVisible().catch(() => false)) {
+      const fen = await tabuleiro.getAttribute('data-fen')
+      const lance = fen ? legalMoves(fen)[0] : undefined
+      if (lance) {
+        await page.locator('#lancezero-board-square-' + lance.from).click()
+        await page.locator('#lancezero-board-square-' + lance.to).click()
+        const confirmar = page.getByRole('button', { name: 'Continuar', exact: true })
+        if ((await confirmar.count()) > 0) await confirmar.first().click()
+        continue
+      }
     }
 
     const continuar = page.getByRole('button', { name: /Continuar →/ })
@@ -220,7 +228,24 @@ test('quem já conhece a abertura recebe uma verificação curta, e não um atal
   await expect(page.getByText('DIAGNÓSTICO')).toBeVisible()
   await expect(page.getByText(/Qual decisão você tomaria/)).toBeVisible()
 
-  await page.getByRole('button', { name: 'e4', exact: true }).click()
+  /*
+    A DECISÃO É TOMADA NO TABULEIRO, e não escolhida numa lista.
+
+    Aqui se clicava no botão `e4`. Ler três lances e apontar um é reconhecimento
+    de string: o aluno confirma que já viu aquela notação, não que reconhece a
+    posição. A pergunta é "qual decisão VOCÊ tomaria" — e tomar uma decisão de
+    abertura é jogar o lance.
+  */
+  /*
+    O TABULEIRO DA VERIFICAÇÃO, e não o da etapa.
+
+    A etapa de visão agora tem tabuleiro próprio — toda etapa tem, e é a regra
+    do contrato. Mirar `#lancezero-board-square-e2` solto encontra os dois e o
+    Playwright recusa por ambiguidade, com razão: são posições diferentes.
+  */
+  const verificacao = page.locator('[class*="bloco"]', { hasText: 'DIAGNÓSTICO' }).first()
+  await verificacao.locator('#lancezero-board-square-e2').click()
+  await verificacao.locator('#lancezero-board-square-e4').click()
   await expect(page.getByText(/Você reconheceu a decisão do repertório/)).toBeVisible()
 
   // E MESMO ASSIM o treino continua exigindo a demonstração: "já conheço" não

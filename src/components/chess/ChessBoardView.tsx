@@ -108,7 +108,22 @@ export function ChessBoardView({
         e é o que permite MEDIR o tabuleiro, que é como a regra "tabuleiro grande"
         deixa de ser uma frase que ninguém confere.
       */}
-      <div className={styles.board} data-testid="chessboard">
+      {/*
+        `data-interactive` É CONTRATO, como o `data-testid` ao lado.
+
+        "Este tabuleiro aceita lance?" é a diferença entre a resposta e a
+        ilustração, e não havia como perguntar isso de fora: a biblioteca de
+        tabuleiro implementa o arraste por conta própria e não marca as peças com
+        o `draggable` do HTML. Sem este atributo, um portão que quisesse provar
+        "a etapa que cobra lance é jogável" teria de adivinhar pela estrutura
+        interna de uma dependência.
+      */}
+      <div
+        className={styles.board}
+        data-testid="chessboard"
+        data-interactive={interactive ? 'true' : 'false'}
+        data-fen={fen}
+      >
         <Chessboard
           options={{
             id: 'lancezero-board',

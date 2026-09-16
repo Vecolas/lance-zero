@@ -10,7 +10,7 @@
  * que sobra no repositório — e não sobre qual função foi chamada.
  */
 
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { BANCO_DE_DIAGNOSTICO } from '@/content/diagnostic'
@@ -18,7 +18,6 @@ import { acertou } from '@/domain/diagnostic'
 import { createDefaultProfile } from '@/domain/profile'
 import type { UserProfile } from '@/domain/types'
 import { MemoryTrainingRepository } from '@/lib/storage/memory-repository'
-import { legalMoves } from '@/lib/chess'
 
 const contexto = vi.hoisted(() => ({ valor: null as unknown }))
 
@@ -26,11 +25,28 @@ vi.mock('@/components/providers/RepositoryProvider', () => ({
   useRepository: () => contexto.valor,
 }))
 
-// O tabuleiro real depende de medida de layout, que o jsdom não tem. O que este
-// arquivo mede é a costura do diagnóstico, não o desenho das casas — o `data-fen`
-// basta para provar que a posição certa chegou à tela.
+/*
+  O tabuleiro real depende de medida de layout, que o jsdom não tem. O que este
+  arquivo mede é a costura do diagnóstico, não o desenho das casas — o `data-fen`
+  basta para provar que a posição certa chegou à tela.
+
+  O MOCK GUARDA O `onMove`, e é por aí que o teste responde. A resposta do
+  diagnóstico deixou de ser um botão com notação e passou a ser um lance no
+  tabuleiro; chamar o handler é o equivalente de jsdom a arrastar a peça, e é o
+  mesmo padrão que `review-entrada-por-teclado` já usa.
+*/
+const tabuleiro = vi.hoisted(() => ({
+  onMove: null as null | ((from: string, to: string, promotion?: string) => boolean),
+}))
+
 vi.mock('@/components/chess/ChessBoardView', () => ({
-  ChessBoardView: ({ fen }: { fen: string }) => <div data-testid="tabuleiro" data-fen={fen} />,
+  ChessBoardView: (props: {
+    fen: string
+    onMove?: (from: string, to: string, promotion?: string) => boolean
+  }) => {
+    tabuleiro.onMove = props.onMove ?? null
+    return <div data-testid="tabuleiro" data-fen={props.fen} />
+  },
 }))
 
 const { DiagnosticoWizard } = await import('@/components/onboarding/DiagnosticoWizard')
@@ -55,9 +71,24 @@ function montar() {
   return { repo, perfilAtual: () => perfil }
 }
 
-/** Notação curta do lance, que é o rótulo do botão na tela. */
-function rotuloDe(fen: string, uci: string): string {
-  return legalMoves(fen).find((lance) => lance.uci === uci)?.san ?? uci
+/**
+ * Joga um lance CLICANDO em duas casas do tabuleiro.
+ *
+ * A RESPOSTA DEIXOU DE SER BOTÃO COM NOTAÇÃO. O diagnóstico media o que o aluno
+ * reconhece entre três strings — e dá para acertar um garfo lendo `Nxe5` sem
+ * localizar o cavalo. Como o resultado calibra a primeira semana inteira, medir
+ * a coisa errada aqui contamina tudo que vem depois.
+ *
+ * O teste usa o CLIQUE e não o arraste porque o arraste é implementado pela
+ * biblioteca de tabuleiro e não existe em jsdom. As duas portas levam à mesma
+ * validação — ver `useLanceNoTabuleiro`.
+ */
+async function jogar(uci: string) {
+  const jogada = tabuleiro.onMove
+  if (!jogada) throw new Error('o tabuleiro não expôs onMove: a tela não aceita lance')
+  await act(async () => {
+    jogada(uci.slice(0, 2), uci.slice(2, 4), uci.slice(4) || undefined)
+  })
 }
 
 /** Responde o diagnóstico inteiro escolhendo certo ou errado por item. */
@@ -67,8 +98,8 @@ async function responderTudo(
 ) {
   for (const item of BANCO_DE_DIAGNOSTICO) {
     const uci = certo(item.dificuldade) ? item.lancesAceitos[0] : item.alternativas[0]
-    const botao = await screen.findByRole('button', { name: rotuloDe(item.fen, uci) })
-    await usuario.click(botao)
+    await screen.findByText(item.enunciado)
+    await jogar(uci)
   }
 }
 
@@ -136,7 +167,7 @@ describe('diagnóstico na tela', () => {
     const primeiro = BANCO_DE_DIAGNOSTICO[0]
     const errado = primeiro.alternativas[0]
     expect(acertou(primeiro, errado)).toBe(false)
-    await usuario.click(screen.getByRole('button', { name: rotuloDe(primeiro.fen, errado) }))
+    await jogar(errado)
 
     expect(screen.queryByText(primeiro.explicacao)).not.toBeInTheDocument()
     expect(screen.getByText(/posição 2 de/i)).toBeInTheDocument()

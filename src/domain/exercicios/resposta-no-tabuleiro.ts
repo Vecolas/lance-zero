@@ -41,9 +41,7 @@ import type { ExercicioPosicional } from './exercicio'
  * pedagógica. Ele não carrega o lance porque não houve lance: nada foi jogado.
  */
 export type RespostaNoTabuleiro =
-  | { tipo: 'ilegal' }
-  | { tipo: 'correto'; uci: string }
-  | { tipo: 'incorreto'; uci: string }
+  { tipo: 'ilegal' } | { tipo: 'correto'; uci: string } | { tipo: 'incorreto'; uci: string }
 
 /**
  * O sufixo de promoção implícito.

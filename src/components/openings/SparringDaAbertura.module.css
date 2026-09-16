@@ -1,0 +1,104 @@
+/*
+  PRATICAR A ABERTURA CONTRA O BOT.
+
+  Ela aparece ao FIM da jornada e ao reabrir uma abertura já concluída — é a
+  repetição livre que a sequência não oferece. Visualmente é uma seção do
+  estudo, não uma tela à parte: o aluno não sai do lugar para praticar.
+*/
+.sparring {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.0625rem;
+  color: var(--text-strong);
+}
+
+/*
+  A ESCOLHA DO LADO, em chips.
+
+  `flex-wrap` porque os dois rótulos carregam o sufixo "· seu repertório", e em
+  360 px eles não cabem lado a lado. Empilhar é melhor que espremer.
+*/
+.lados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.lado,
+.ladoAtivo {
+  min-height: 2.75rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+/* O lado escolhido é marcado por fundo E peso, nunca só por cor. */
+.ladoAtivo {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--on-accent);
+  font-weight: 650;
+}
+
+.lado:focus-visible,
+.ladoAtivo:focus-visible,
+.recomecar:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+.vez {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.comentario {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/*
+  FORA DO REPERTÓRIO usa a cor de ATENÇÃO, não a de erro.
+
+  A distinção é a mesma da frase: o app não conferiu se o lance é bom. Pintar de
+  vermelho diria "você errou" sem que ninguém tenha verificado isso.
+*/
+.fora {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--attention-on-tint);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.recomecar {
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.recomecar:hover {
+  background: var(--surface-sunken);
+}

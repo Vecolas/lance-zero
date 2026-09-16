@@ -185,7 +185,8 @@
       "learning": "Aprendendo",
       "training": "Treinando",
       "consolidating": "Consolidando",
-      "activeRepertoire": "Repertório ativo"
+      "activeRepertoire": "Repertório ativo",
+      "completed": "Estudo concluído"
     },
     "filterByLevel": "Filtrar por nível"
   },
@@ -205,7 +206,8 @@
       "learning": "Aprendendo",
       "practicing": "Praticando",
       "review": "Revisar",
-      "consolidated": "Consolidado"
+      "consolidated": "Consolidado",
+      "completed": "Estudo concluído"
     },
     "filterByStatus": "Filtrar por status"
   },
