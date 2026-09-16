@@ -17,7 +17,7 @@
  * degrau determinístico. Assim o vai-e-volta acontece sem rede e sem sorteio.
  */
 
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LicaoDeFinal, PosicaoDeFinal } from '@/domain/endgames'
 import {
@@ -105,8 +105,37 @@ function chipComRotulo(rotulo: string): HTMLElement | undefined {
   return screen.queryAllByRole('status').find((elemento) => elemento.textContent?.includes(rotulo))
 }
 
+/**
+ * Joga um lance do aluno e ESPERA A VEZ VOLTAR.
+ *
+ * O TESTE CORRIA COM O ADVERSÁRIO, e perdia sob carga. Ele esperava por
+ * `/O adversário está escolhendo|É a sua vez/` — e a primeira metade dessa
+ * alternativa é o estado INTERMEDIÁRIO. Bastava a espera ser satisfeita por ela
+ * para o laço disparar o lance seguinte enquanto ainda era a vez das brancas: o
+ * rei preto continuava em a8, `b8a8` chegava à tela e voltava como "não é um
+ * lance legal nesta posição". A repetição nunca acontecia e o teste reprovava
+ * dizendo que faltava o bloco do empate — a duas camadas de distância da causa.
+ *
+ * Na minha máquina isso só aparecia com duas suítes rodando ao mesmo tempo, o
+ * que é a pior forma de um teste falhar: parece ruído da máquina, e some quando
+ * alguém vai olhar.
+ *
+ * A condição para jogar o próximo lance é UMA: ser a vez do aluno. É essa que a
+ * espera passa a cobrar.
+ *
+ * O `act` existe pelo mesmo motivo — sem ele o React avisava, a cada lance, que
+ * havia atualização de estado fora dele, e era esse estado solto que chegava
+ * atrasado.
+ */
 async function jogar(uci: string) {
-  tabuleiro.onMove?.(uci.slice(0, 2), uci.slice(2, 4))
+  await act(async () => {
+    tabuleiro.onMove?.(uci.slice(0, 2), uci.slice(2, 4))
+  })
+}
+
+/** Espera o adversário responder e a vez voltar para o aluno. */
+async function esperarAVez() {
+  await waitFor(() => expect(screen.getByText(/É a sua vez/)).toBeInTheDocument())
 }
 
 beforeEach(() => {
@@ -127,9 +156,7 @@ describe('a tela diz por que o empate valeu', () => {
     // Uma volta só: a posição apareceu duas vezes, e duas não é repetição.
     for (const uci of LANCES_DO_ALUNO.slice(0, 1)) {
       await jogar(uci)
-      await waitFor(() =>
-        expect(screen.getByText(/O adversário está escolhendo|É a sua vez/)).toBeInTheDocument(),
-      )
+      await esperarAVez()
     }
     expect(screen.queryByTestId('regra-do-empate')).toBeNull()
     expect(chipComRotulo(APRESENTACAO_POR_ESTADO['em-andamento'].rotulo)).toBeTruthy()
@@ -141,11 +168,8 @@ describe('a tela diz por que o empate valeu', () => {
   it('na terceira ocorrência diz "cumprido" E diz que foi por repetição', async () => {
     for (const [indice, uci] of LANCES_DO_ALUNO.entries()) {
       await jogar(uci)
-      if (indice < LANCES_DO_ALUNO.length - 1) {
-        await waitFor(() =>
-          expect(screen.getByText(/O adversário está escolhendo|É a sua vez/)).toBeInTheDocument(),
-        )
-      }
+      // No último lance a posição se encerra: não há vez para voltar.
+      if (indice < LANCES_DO_ALUNO.length - 1) await esperarAVez()
     }
 
     const bloco = await screen.findByTestId('regra-do-empate')
