@@ -1,10 +1,9 @@
 # ADR-0014 — A biblioteca mostra a posição, e a lição guarda onde o aluno parou
 
-- Status: aceito
-- Data: 2026-09-16
-- Substitui: nada
-- Relacionado: ADR-0011 (estágio antes da cobrança), ADR-0012 (Roadmap aponta para
-  o conteúdo exato)
+- **Estado:** aceito
+- **Data:** 2026-09-16
+- **Relacionado:** ADR-0011 (estágio antes da cobrança), ADR-0012 (Roadmap aponta
+  para o conteúdo exato)
 
 ## Contexto
 
