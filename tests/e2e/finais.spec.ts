@@ -55,13 +55,30 @@ async function abrirPosicao(page: Page, enunciado: RegExp): Promise<void> {
   await page.getByRole('button', { name: enunciado }).click()
 }
 
+/**
+ * O lance entra por DOIS CLIQUES: casa de origem, casa de destino.
+ *
+ * ERA ARRASTE, e o arraste é o motivo de este arquivo ter ficado vermelho. O
+ * tabuleiro usa dnd-kit, que decide o alvo do drop pela posição do ponteiro
+ * durante o movimento; `dragTo` acertava em algumas casas e, em outras, soltava
+ * a peça na própria origem ("dropped over droppable area b1"). Em viewport de
+ * celular não acertava quase nenhuma. Teste que passa em quatro execuções de
+ * cinco não é portão, é sorteio — e o próprio cabeçalho deste arquivo já dizia
+ * isso quando os lances entravam por texto.
+ *
+ * O clique não é um contorno: é o caminho que quem usa teclado, leitor de tela
+ * ou toque tem para jogar. Ele existe nesta tela desde que `EndgameTrainer`
+ * passou a ligar `onSquareClick` — antes disso, arrastar era a ÚNICA forma de
+ * mover uma peça num final, o que contraria a régua de acessibilidade do
+ * CLAUDE.md. Cobrir o caminho acessível no e2e é cobrir acessibilidade.
+ */
 async function jogar(page: Page, uci: string): Promise<void> {
   const origem = page.locator('#lancezero-board-square-' + uci.slice(0, 2))
   const destino = page.locator('#lancezero-board-square-' + uci.slice(2, 4))
   await expect(origem).toBeVisible()
   await expect(destino).toBeVisible()
-  await expect(origem.locator('[role="button"]').first()).toBeVisible()
-  await origem.locator('[role="button"]').first().dragTo(destino)
+  await origem.click()
+  await destino.click()
 }
 
 const MATE_EM_1 = /O rei preto já está no canto/

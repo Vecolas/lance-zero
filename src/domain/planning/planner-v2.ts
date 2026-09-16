@@ -554,9 +554,31 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
   }
   for (const progresso of contexto.endgameProgress ?? []) {
     const skillId = skillDoFinal[progresso.endgameId]
-    const weak = [progresso.recognition, progresso.principleSelection, progresso.calculation, progresso.conversion, progresso.defense].some((value) => value < 0.5)
+    const weak = [
+      progresso.recognition,
+      progresso.principleSelection,
+      progresso.calculation,
+      progresso.conversion,
+      progresso.defense,
+    ].some((value) => value < 0.5)
     if (!skillId || !weak || estadoDe(contexto, skillId)?.stage === 'unseen') continue
-    lista.push({ definicao: { id: `final-${progresso.endgameId}`, kind: 'pratica-guiada', title: `Praticar final: ${progresso.endgameId}`, description: 'Reforce a competência mais fraca em uma posição equivalente.', skillIds: [skillId], pedagogicalStage: 'guided', contentVersion: 1, completionRule: { tipo: 'itens', total: 1 }, href: `/finais/${progresso.endgameId}` }, motivo: 'Seu progresso mostra uma competência de final que precisa de reforço.', prioridade: PRIORIDADE.habilidadeFracaConhecida + 5, itens: 1, conceitoNovo: false })
+    lista.push({
+      definicao: {
+        id: `final-${progresso.endgameId}`,
+        kind: 'pratica-guiada',
+        title: `Praticar final: ${progresso.endgameId}`,
+        description: 'Reforce a competência mais fraca em uma posição equivalente.',
+        skillIds: [skillId],
+        pedagogicalStage: 'guided',
+        contentVersion: 1,
+        completionRule: { tipo: 'itens', total: 1 },
+        href: `/finais/${progresso.endgameId}`,
+      },
+      motivo: 'Seu progresso mostra uma competência de final que precisa de reforço.',
+      prioridade: PRIORIDADE.habilidadeFracaConhecida + 5,
+      itens: 1,
+      conceitoNovo: false,
+    })
   }
 
   for (const skillId of ordemDoCurriculo()) {

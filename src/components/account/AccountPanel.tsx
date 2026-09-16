@@ -46,8 +46,8 @@ export function AccountPanel() {
       <section className={styles.section}>
         <h2>Conta online indisponível</h2>
         <p>
-          Configure o Supabase para ativar o acesso à conta. Seus dados locais continuam
-          disponíveis em Ajustes.
+          Configure o Supabase para ativar o acesso à conta. Seus dados locais continuam disponíveis
+          em Ajustes.
         </p>
       </section>
     )

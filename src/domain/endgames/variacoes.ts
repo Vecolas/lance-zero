@@ -8,9 +8,13 @@ export function espelharHorizontalmenteFen(fen: string): string {
   return [ranks.join('/'), ...fields.slice(1)].join(' ')
 }
 
-export function validarPosicaoDeFinal(position: EndgamePosition): { ok: true } | { ok: false; reason: string } {
+export function validarPosicaoDeFinal(
+  position: EndgamePosition,
+): { ok: true } | { ok: false; reason: string } {
   if (!isValidFen(position.fen)) return { ok: false, reason: 'FEN inválida.' }
-  if (position.difficulty < 1 || position.difficulty > 5) return { ok: false, reason: 'Dificuldade fora de 1–5.' }
-  if (position.conceptIds.length === 0) return { ok: false, reason: 'A posição precisa declarar um conceito.' }
+  if (position.difficulty < 1 || position.difficulty > 5)
+    return { ok: false, reason: 'Dificuldade fora de 1–5.' }
+  if (position.conceptIds.length === 0)
+    return { ok: false, reason: 'A posição precisa declarar um conceito.' }
   return { ok: true }
 }

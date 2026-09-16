@@ -529,9 +529,24 @@ function TreinoDoFinal({
             void tentar(from, to)
             return true
           }}
-          onSquareClick={(casa) =>
+          /* SEGUNDO CLIQUE JOGA — mesma correção de `OpeningStudyJourney`.
+             Selecionar sem nunca concluir deixava quem não arrasta sem caminho
+             nenhum até o lance. */
+          onSquareClick={(casa) => {
+            /* `tentar` é assíncrono aqui, então a decisão não pode esperar a
+               resposta dele: a legalidade é conferida ANTES, contra a mesma
+               posição. Sem isso, um segundo clique numa casa inalcançável
+               engoliria a seleção em vez de virar a nova origem. */
+            const alcancavel =
+              selecionada !== null &&
+              legalMoves(round.currentFen, selecionada).some((lance) => lance.to === casa)
+            if (selecionada && alcancavel) {
+              void tentar(selecionada, casa)
+              setSelecionada(null)
+              return
+            }
             setSelecionada(legalMoves(round.currentFen, casa).length > 0 ? casa : null)
-          }
+          }}
           interactive={!terminou}
         />
       </div>

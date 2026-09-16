@@ -764,9 +764,18 @@ function TreinoDaAbertura({
           orientation={round.userSide === 'white' ? 'w' : 'b'}
           selected={selecionada}
           onMove={tentar}
-          onSquareClick={(casa) =>
+          /* SEGUNDO CLIQUE JOGA. Sem a primeira linha o clique só selecionava:
+             clicar na casa de destino — vazia, logo sem lance legal saindo dela
+             — apenas apagava a seleção, e quem não arrasta não conseguia jogar.
+             A ordem é a de `OpeningCourse`: tenta o lance, e só se ele não sair
+             é que a casa vira a nova origem. */
+          onSquareClick={(casa) => {
+            if (selecionada && selecionada !== casa && tentar(selecionada, casa)) {
+              setSelecionada(null)
+              return
+            }
             setSelecionada(legalMoves(round.currentFen, casa).length > 0 ? casa : null)
-          }
+          }}
           interactive={!terminou && vezDoAluno(round)}
         />
       </div>

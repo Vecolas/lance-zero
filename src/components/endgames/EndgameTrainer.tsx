@@ -18,10 +18,15 @@
  * 3. O ADVERSÁRIO TEM PROCEDÊNCIA VISÍVEL. Ver `resposta-do-adversario.ts`. A
  *    tela nunca chama de defesa perfeita o que não veio da tablebase.
  *
- * 4. ENTRADA POR TEXTO ALÉM DO ARRASTO. O campo de lance em UCI não é atalho de
- *    teste: é a alternativa acessível ao tabuleiro (teclado, leitor de tela),
- *    exigida pelo CLAUDE.md. Os dois caminhos entram pela MESMA função, para
- *    não existir um lance que só um deles aceita.
+ * 4. CLIQUE ALÉM DO ARRASTE. Existiu aqui um campo de lance em UCI; a migração
+ *    para tabuleiro-só o removeu e, por um tempo, ARRASTAR foi a única forma de
+ *    mover uma peça num final — quem usa teclado, leitor de tela ou um toque
+ *    impreciso ficava sem caminho nenhum, contra a régua de acessibilidade do
+ *    CLAUDE.md. O lugar dele é `clicarNaCasa`: origem, destino.
+ *
+ *    Arraste e clique entram pela MESMA função (`jogarDoTabuleiro`), para não
+ *    existir um lance que só um dos dois aceita — a divergência apareceria
+ *    justamente para quem usa o caminho menos testado.
  *
  * 5. GRAVA UMA VEZ POR TENTATIVA, e o guarda disso é `gravada`, não o fluxo.
  *    A tentativa termina por três caminhos (lance do aluno, resposta do
@@ -79,7 +84,7 @@ import {
   type ResultadoObjetivo,
 } from '@/domain/endgames'
 import { gravarTentativaDeFinal } from '@/domain/endgames/persistencia'
-import { normalizeUci, parseUci } from '@/lib/chess'
+import { legalMoves, normalizeUci, parseUci } from '@/lib/chess'
 import { applyMove, positionStatus, type PromotionPiece, type SquareName } from '@/lib/chess'
 import { LichessTablebaseProvider } from '@/lib/tablebase'
 import { descreverLinhaModelo } from './linha-modelo-legivel'
@@ -165,6 +170,8 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe, opponent }: En
   const [fase, setFase] = useState<Fase>('jogando')
   const [dicasReveladas, setDicasReveladas] = useState(0)
   const [erroDeLance, setErroDeLance] = useState<string | null>(null)
+  /** Casa de origem já escolhida no clique. Ver `clicarNaCasa`. */
+  const [selecionada, setSelecionada] = useState<SquareName | null>(null)
   const [falhaDoSistema, setFalhaDoSistema] = useState<string | null>(null)
   const [recomecos, setRecomecos] = useState(0)
   const [inicio, setInicio] = useState(() => Date.now())
@@ -377,6 +384,31 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe, opponent }: En
     [jogar, tentativa.fen],
   )
 
+  /**
+   * O LANCE POR CLIQUE: casa de origem, casa de destino.
+   *
+   * Até aqui o tabuleiro desta tela só aceitava ARRASTE. Quem usa teclado,
+   * leitor de tela ou um toque impreciso no celular não tinha como jogar um
+   * final — e o CLAUDE.md cobra alternativa ao tabuleiro em toda tela, não só
+   * nas que algum teste alcança.
+   *
+   * É a MESMA sequência de `OpeningCourse`: segundo clique tenta o lance, e só
+   * quando ele não sai é que a casa vira a nova seleção. Sem essa ordem, clicar
+   * no destino apenas apagaria a seleção — que era o defeito de
+   * `EndgameStudyJourney` e `OpeningStudyJourney`, corrigido junto.
+   */
+  const clicarNaCasa = useCallback(
+    (casa: SquareName) => {
+      if (fase !== 'jogando') return
+      if (selecionada && selecionada !== casa && jogarDoTabuleiro(selecionada, casa)) {
+        setSelecionada(null)
+        return
+      }
+      setSelecionada(legalMoves(tentativa.fen, casa).length > 0 ? casa : null)
+    },
+    [fase, jogarDoTabuleiro, selecionada, tentativa.fen],
+  )
+
   const desistir = useCallback(() => {
     setTentativa((atual) => ({ ...atual, desistiu: true }))
     setFase('encerrada')
@@ -523,12 +555,19 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe, opponent }: En
           theme={profile?.preferences.boardTheme ?? 'claro'}
           lastMove={tentativa.ultimoLance}
           interactive={fase === 'jogando'}
+          selected={selecionada}
           onMove={jogarDoTabuleiro}
-          onIllegalMove={(from, to) => setErroDeLance(`${from}${to} não é um lance legal nesta posição.`)}
+          onSquareClick={clicarNaCasa}
+          onIllegalMove={(from, to) =>
+            setErroDeLance(`${from}${to} não é um lance legal nesta posição.`)
+          }
         />
 
         <div className={styles.entrada}>
-          <p className={styles.meta}>Jogue diretamente no tabuleiro arrastando a peça.</p>
+          <p className={styles.meta}>
+            Jogue diretamente no tabuleiro: arraste a peça, ou clique na casa de origem e depois na
+            de destino.
+          </p>
           {erroDeLance ? (
             <p className={`${styles.aviso} ${styles.ruim}`} role="status">
               <span aria-hidden="true">✕</span> {erroDeLance}

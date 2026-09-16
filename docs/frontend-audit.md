@@ -4,17 +4,17 @@ Data da auditoria: 2026-09-15. As imagens geradas pelo teste visual são referê
 
 ## Rotas e composição
 
-| Área | Rotas | Composição entregue |
-| --- | --- | --- |
-| Hoje | `/dashboard` | lista local-first, conclusão persistente e estados visuais |
-| Treino | `/train` | hub com continuar, praticar, revisar e cálculo |
+| Área      | Rotas                             | Composição entregue                                                     |
+| --------- | --------------------------------- | ----------------------------------------------------------------------- |
+| Hoje      | `/dashboard`                      | lista local-first, conclusão persistente e estados visuais              |
+| Treino    | `/train`                          | hub com continuar, praticar, revisar e cálculo                          |
 | Aberturas | `/aberturas`, `/aberturas/[slug]` | catálogo, mini-tabuleiros, curso, aprender, treinar, planos e variações |
-| Finais | `/endgames`, `/endgames/[slug]` | biblioteca, detalhe, posições treináveis e progresso |
-| Cálculo | `/calculate` | exercício guiado com board + painel e etapas explícitas |
-| Partidas | `/games`, `/games/[gameId]` | revisão humana, timeline de lances e análise secundária |
-| Progresso | `/progress` | atividade, prioridades, retenção e tabela por habilidade |
-| Conta | `/account` | autenticação, exportação, sincronização e exclusão |
-| Ajustes | `/settings` | backup, orçamento e preferências de tabuleiro |
+| Finais    | `/endgames`, `/endgames/[slug]`   | biblioteca, detalhe, posições treináveis e progresso                    |
+| Cálculo   | `/calculate`                      | exercício guiado com board + painel e etapas explícitas                 |
+| Partidas  | `/games`, `/games/[gameId]`       | revisão humana, timeline de lances e análise secundária                 |
+| Progresso | `/progress`                       | atividade, prioridades, retenção e tabela por habilidade                |
+| Conta     | `/account`                        | autenticação, exportação, sincronização e exclusão                      |
+| Ajustes   | `/settings`                       | backup, orçamento e preferências de tabuleiro                           |
 
 ## Inventário reutilizável
 

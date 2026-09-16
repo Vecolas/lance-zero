@@ -64,7 +64,9 @@ function acharPosicao(id: string | null): Escolha | null {
   return null
 }
 
-export function EndgamesWorkbench({ initialPositionId = null }: { initialPositionId?: string | null } = {}) {
+export function EndgamesWorkbench({
+  initialPositionId = null,
+}: { initialPositionId?: string | null } = {}) {
   const { repo, revision, status } = useRepository()
   const [escolhidaId, setEscolhidaId] = useState<string | null>(initialPositionId)
   const [historico, setHistorico] = useState<Map<string, HistoricoDaPosicao>>(new Map())

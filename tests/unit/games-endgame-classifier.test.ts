@@ -12,6 +12,8 @@ describe('classificação de finais em partidas reais', () => {
   })
   it('valida a resposta do adapter Stockfish antes de entregá-la', async () => {
     const opponent = new StockfishOpponent(async () => 'e8e7')
-    await expect(opponent.getMove('4k3/8/8/8/8/8/4K3/8 b - - 0 1', { moves: [] })).resolves.toMatchObject({ uci: 'e8e7', source: 'stockfish' })
+    await expect(
+      opponent.getMove('4k3/8/8/8/8/8/4K3/8 b - - 0 1', { moves: [] }),
+    ).resolves.toMatchObject({ uci: 'e8e7', source: 'stockfish' })
   })
 })

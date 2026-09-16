@@ -10,7 +10,8 @@ export function skillDeFinal(fen: string): SkillId | null {
   const rooks = pieces.filter((piece) => 'Rr'.includes(piece)).length
   const queens = pieces.filter((piece) => 'Qq'.includes(piece)).length
   const pawns = pieces.filter((piece) => 'Pp'.includes(piece)).length
-  if (queens === 0 && rooks === 0 && minors === 0 && pawns > 0) return 'endgame.king-pawn-opposition'
+  if (queens === 0 && rooks === 0 && minors === 0 && pawns > 0)
+    return 'endgame.king-pawn-opposition'
   if (rooks > 0) return 'endgame.rook-endgames'
   if (queens > 0 || minors > 0) return 'endgame.basic-mates'
   return null

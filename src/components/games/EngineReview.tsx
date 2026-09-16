@@ -272,6 +272,11 @@ export function EngineReview({
           {momentosOrdenados.length === 0 ? (
             <StatePanel
               kind="completed"
+              /* O veredito logo acima já é `role="status"` e já anuncia o fim da
+                 análise. Com os dois vivos, o leitor de tela cortava um para
+                 começar o outro — e o modo estrito do Playwright via duas
+                 regiões onde o Passe 2 deveria ter uma. */
+              announce={false}
               title="Nenhum momento crítico encontrado"
               description="A análise não encontrou uma mudança que mereça virar exercício. Isso não é uma nota: é um convite para seguir jogando e revisar com suas próprias perguntas."
             />

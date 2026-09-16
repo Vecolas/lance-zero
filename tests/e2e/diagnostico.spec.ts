@@ -80,7 +80,20 @@ test('sem conta, o diagnóstico leva a um plano e a um perfil salvo', async ({ p
 test('o tom não é de cassino e nada é enviado para fora', async ({ page }) => {
   await page.goto('/onboarding')
   const corpo = page.locator('main')
-  await expect(corpo).toContainText('sem envio de dados')
+  /*
+    A PROMESSA, não a grafia.
+
+    Este trecho cobrava a string exata "sem envio de dados". A tela passou a
+    dizer "Sem conta ou envio de dados: o resultado fica neste navegador" — o
+    compromisso continua inteiro, e mesmo assim o teste reprovava. Teste preso à
+    redação transforma revisão de texto em falha, e o efeito prático é ensinar a
+    ignorar o vermelho.
+
+    O que importa cobrar é o COMPROMISSO: nenhum dado sai do navegador. As duas
+    metades da frase ficam.
+  */
+  await expect(corpo).toContainText(/envio de dados/)
+  await expect(corpo).toContainText(/fica neste navegador/)
   await expect(corpo).not.toContainText(/parab[ée]ns/i)
   await expect(corpo).not.toContainText(/sequência de dias/i)
 })

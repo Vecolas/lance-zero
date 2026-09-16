@@ -226,7 +226,6 @@ function cardQueNaoEDeFinal(nascidoEm = new Date('2026-01-01T00:00:00.000Z')): R
   )
 }
 
-
 async function montarFila(cards: readonly ReviewCard[], probe: Sonda) {
   const repo = new MemoryTrainingRepository()
   for (const card of cards) {
@@ -484,7 +483,11 @@ describe('card de final aceita alternativa na fila de revisão', () => {
     await montar(cardDoFinal(), sondaFalsa())
     await jogar(DO_CARD)
 
-    expect((await screen.findAllByRole('status')).some((element) => /Correto/.test(element.textContent ?? ''))).toBe(true)
+    expect(
+      (await screen.findAllByRole('status')).some((element) =>
+        /Correto/.test(element.textContent ?? ''),
+      ),
+    ).toBe(true)
     expect(screen.getByRole('button', { name: NOTA_DE_QUEM_ACERTOU })).toBeInTheDocument()
   })
 })
@@ -506,7 +509,11 @@ describe('sem tablebase a fila volta ao modo estrito, e DIZ isso', () => {
     await montar(cardDoFinal(), sondaMuda)
     await jogar(DO_CARD)
 
-    expect((await screen.findAllByRole('status')).some((element) => /Correto/.test(element.textContent ?? ''))).toBe(true)
+    expect(
+      (await screen.findAllByRole('status')).some((element) =>
+        /Correto/.test(element.textContent ?? ''),
+      ),
+    ).toBe(true)
     expect(screen.queryByTestId('modo-estrito')).not.toBeInTheDocument()
   })
 })
