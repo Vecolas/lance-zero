@@ -36,27 +36,33 @@
  * de `EndgameTrainer`: o teste roda sem rede nenhuma e a produção não precisa
  * escolher nada.
  *
- * ENTRADA POR TEXTO ALÉM DO ARRASTE (issue #67). Até aqui o lance só entrava
- * pelo tabuleiro, por arraste — quem usa teclado ou leitor de tela não
- * conseguia responder um card, e a revisão espaçada é o NÚCLEO do produto. O
- * campo de lance em UCI é a alternativa exigida pelo CLAUDE.md ("lista textual
- * de lances como alternativa ao tabuleiro"), e vale para TODOS os tipos de
- * card, não só para o de final: a razão dele é acessibilidade, e acessibilidade
- * não vale só para o tipo que algum teste alcança.
+ * CLIQUE ALÉM DO ARRASTE (issue #67, e o que sobrou dela). A exigência do
+ * CLAUDE.md é ter alternativa ao arraste, e a revisão espaçada é o NÚCLEO do
+ * produto: sem alternativa, quem usa teclado, leitor de tela ou um toque
+ * impreciso não responde card nenhum.
  *
- * PORTA ÚNICA. Arraste e texto entram os dois por `jogar(uci)`. Dois caminhos
- * separados criariam um lance que só um deles aceita, e a divergência
- * apareceria justamente para quem usa o caminho menos testado. `jogarDoTabuleiro`
- * é só a junção das casas em uma string: ele não decide nada.
+ * A alternativa foi um CAMPO DE LANCE EM UCI. A migração para tabuleiro-só o
+ * removeu e não pôs nada no lugar — por um tempo arrastar foi a única forma de
+ * responder. Hoje a alternativa é o clique em duas casas (`clicarNaCasa`), e ela
+ * vale para TODOS os tipos de card, não só para o de final: a razão dela é
+ * acessibilidade, e acessibilidade não vale só para o tipo que algum teste
+ * alcança.
  *
- * RECUSA COM FRASE. Lance mal escrito ou ilegal não some em silêncio — a tela
- * diz o que houve, numa região viva, e a tentativa CONTINUA. Recusar calado é o
- * pior desfecho para quem não vê o tabuleiro, e valia também para o arraste:
- * antes desta issue um arraste ilegal só revertia a peça, sem uma palavra.
+ * PORTA ÚNICA. Arraste e clique entram os dois por `jogarDoTabuleiro`, que chama
+ * `jogar(uci)`. Dois caminhos separados criariam um lance que só um deles
+ * aceita, e a divergência apareceria justamente para quem usa o caminho menos
+ * testado.
  *
- * O CAMPO É A ÚNICA FORMA DE PROMOÇÃO MENOR. `ChessBoardView` promove SEMPRE
- * para dama. Torre, bispo e cavalo só existem por aqui — por isso o sufixo é
- * aceito e a ajuda nomeia as quatro peças.
+ * RECUSA COM FRASE. Lance ilegal não some em silêncio — a tela diz o que houve,
+ * numa região viva, e a tentativa CONTINUA. Recusar calado é o pior desfecho
+ * para quem não vê o tabuleiro: antes da issue #67 um arraste ilegal só revertia
+ * a peça, sem uma palavra.
+ *
+ * DÍVIDA DECLARADA: A PROMOÇÃO MENOR FICOU INALCANÇÁVEL. `ChessBoardView`
+ * promove SEMPRE para dama, e o campo de texto era a única forma de pedir torre,
+ * bispo ou cavalo. Enquanto o tabuleiro não perguntar, subpromoção não tem
+ * caminho nesta tela — está escrito aqui para não voltar a ser descoberto por
+ * acaso.
  */
 
 import Link from 'next/link'
@@ -85,11 +91,7 @@ import {
   submitReviewMove,
   type ReviewSessionState,
 } from '@/domain/review/session'
-import {
-  createReviewSessionV2,
-  reviewItemLabel,
-  type ReviewItem,
-} from '@/domain/review/planner-v2'
+import { createReviewSessionV2, reviewItemLabel, type ReviewItem } from '@/domain/review/planner-v2'
 import { getSkill } from '@/domain/skills/catalog'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
 import { isSkillStateReviewEligible } from '@/domain/roadmap'
@@ -98,6 +100,7 @@ import type { RecallOutcome } from '@/domain/roadmap'
 import type { ReviewCard, ReviewRating, SkillMastery } from '@/domain/types'
 import {
   applyMove,
+  legalMoves,
   normalizeUci,
   parseUci,
   positionStatus,
@@ -312,7 +315,9 @@ export interface ReviewSessionProps {
 
 export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const { status, repo, profile, erro, refresh } = useRepository()
-  const reviewStorageKey = profile?.id ? `lancezero-review-v2:${profile.id}` : 'lancezero-review-v2:local'
+  const reviewStorageKey = profile?.id
+    ? `lancezero-review-v2:${profile.id}`
+    : 'lancezero-review-v2:local'
   const [fila, setFila] = useState<ReviewItem[]>([])
   const [indice, setIndice] = useState(0)
   const [passoInterno, setPassoInterno] = useState(0)
@@ -322,6 +327,8 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const [feitas, setFeitas] = useState(0)
   const [julgamento, setJulgamento] = useState<EstadoDoJulgamento>(SEM_JUIZ)
   const [erroDeLance, setErroDeLance] = useState<string | null>(null)
+  /** Casa de origem já escolhida no clique. Ver `clicarNaCasa`. */
+  const [selecionada, setSelecionada] = useState<SquareName | null>(null)
   const [declarouEsquecimento, setDeclarouEsquecimento] = useState(false)
   const [resultados, setResultados] = useState<Partial<Record<RecallOutcome, number>>>({})
 
@@ -361,7 +368,9 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         // V3: um card vencido sem evidência de ensino é legado, não revisão.
         // O filtro acontece antes de persistência, grouping e contador visual.
         const eligibleSkillIds = new Set(
-          skillStates.filter((state) => isSkillStateReviewEligible(state)).map((state) => state.skillId),
+          skillStates
+            .filter((state) => isSkillStateReviewEligible(state))
+            .map((state) => state.skillId),
         )
         // A regra mora em `@/domain/review/elegibilidade`, e mora num lugar só:
         // ela era escrita DUAS vezes aqui (este filtro e o `reviewEligible`
@@ -398,14 +407,15 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         const salvoCompatível = salvo?.items?.every((item) =>
           item.steps.every((step) => idsDisponiveis.has(step.card.id)),
         )
-        const plano = salvoCompatível && salvo?.items && salvo.items.length > 0
-          ? salvo.items
-          : createReviewSessionV2(eligibleCards, {
-              // A MESMA função do filtro acima. Repetir a expressão aqui foi o
-              // que fez a regra divergir de si mesma.
-              now: new Date(),
-              reviewEligible: cardEhElegivel,
-            }).items
+        const plano =
+          salvoCompatível && salvo?.items && salvo.items.length > 0
+            ? salvo.items
+            : createReviewSessionV2(eligibleCards, {
+                // A MESMA função do filtro acima. Repetir a expressão aqui foi o
+                // que fez a regra divergir de si mesma.
+                now: new Date(),
+                reviewEligible: cardEhElegivel,
+              }).items
         const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
         const relearning = (() => {
           try {
@@ -413,13 +423,22 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
             if (!raw) return null
             const parsed = JSON.parse(raw) as { itemId?: string; completed?: boolean }
             return parsed.completed === true && typeof parsed.itemId === 'string' ? parsed : null
-          } catch { return null }
+          } catch {
+            return null
+          }
         })()
-        const itemReaprendido = relearning ? plano.findIndex((item) => item.id === relearning.itemId) : -1
-        const planoAposReaprendizado = itemReaprendido >= 0
-          ? plano.map((item, itemIndex) => itemIndex === itemReaprendido ? { ...item, status: 'completed' as const, outcome: 'relearned' as const } : item)
-          : plano
-        const indiceSalvo = itemReaprendido >= 0 ? itemReaprendido + 1 : salvo?.indice ?? 0
+        const itemReaprendido = relearning
+          ? plano.findIndex((item) => item.id === relearning.itemId)
+          : -1
+        const planoAposReaprendizado =
+          itemReaprendido >= 0
+            ? plano.map((item, itemIndex) =>
+                itemIndex === itemReaprendido
+                  ? { ...item, status: 'completed' as const, outcome: 'relearned' as const }
+                  : item,
+              )
+            : plano
+        const indiceSalvo = itemReaprendido >= 0 ? itemReaprendido + 1 : (salvo?.indice ?? 0)
         const indiceInicial = Math.min(Math.max(0, indiceSalvo), Math.max(0, plano.length - 1))
         const passoInicial = Math.min(
           Math.max(0, salvo?.passoInterno ?? 0),
@@ -429,7 +448,10 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         setIndice(indiceInicial)
         setPassoInterno(passoInicial)
         setFeitas((salvo?.feitas ?? 0) + (itemReaprendido >= 0 ? 1 : 0))
-        setResultados({ ...(salvo?.resultados ?? {}), ...(itemReaprendido >= 0 ? { relearned: (salvo?.resultados?.relearned ?? 0) + 1 } : {}) })
+        setResultados({
+          ...(salvo?.resultados ?? {}),
+          ...(itemReaprendido >= 0 ? { relearned: (salvo?.resultados?.relearned ?? 0) + 1 } : {}),
+        })
         setJulgamento(SEM_JUIZ)
         setDeclarouEsquecimento(false)
         if (itemReaprendido >= 0) globalThis.localStorage.removeItem(markerKey)
@@ -438,11 +460,13 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         // jogou nesta posição.
         setErroDeLance(null)
         setSessao(
-          salvo?.sessao?.card && planoAposReaprendizado[indiceInicial]?.steps[passoInicial]?.card.id === salvo.sessao.card.id
+          salvo?.sessao?.card &&
+            planoAposReaprendizado[indiceInicial]?.steps[passoInicial]?.card.id ===
+              salvo.sessao.card.id
             ? salvo.sessao
             : planoAposReaprendizado[indiceInicial]?.steps[passoInicial]
               ? createReviewSession(planoAposReaprendizado[indiceInicial].steps[passoInicial].card)
-            : null,
+              : null,
         )
         setFase(indiceInicial < planoAposReaprendizado.length ? 'revisando' : 'concluida')
       } catch (e) {
@@ -466,7 +490,15 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
     try {
       globalThis.localStorage.setItem(
         reviewStorageKey,
-        JSON.stringify({ plannerVersion: 2, items: fila, indice, passoInterno, feitas, resultados, sessao }),
+        JSON.stringify({
+          plannerVersion: 2,
+          items: fila,
+          indice,
+          passoInterno,
+          feitas,
+          resultados,
+          sessao,
+        }),
       )
     } catch {
       // A revisão continua local-first mesmo quando o navegador bloqueia storage.
@@ -510,13 +542,15 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
       const agora = new Date()
       try {
         const atualizado = applyReview(sessao.card, rating, agora)
-        const outcome: RecallOutcome = outcomeOverride ?? (declarouEsquecimento
-          ? 'declared-forgotten'
-          : sessao.phase === 'errou'
-            ? 'failed'
-            : rating === 'again'
-              ? 'recalled-with-hint'
-              : 'recalled')
+        const outcome: RecallOutcome =
+          outcomeOverride ??
+          (declarouEsquecimento
+            ? 'declared-forgotten'
+            : sessao.phase === 'errou'
+              ? 'failed'
+              : rating === 'again'
+                ? 'recalled-with-hint'
+                : 'recalled')
         await repo.saveReviewCard(atualizado)
         await repo.saveReviewLog({
           cardId: sessao.card.id,
@@ -702,7 +736,9 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         </p>
         {feitas > 0 ? (
           <p className={styles.summary} data-testid="resumo-da-revisao">
-            {resultados.recalled ?? 0} lembrados · {resultados['recalled-with-hint'] ?? 0} com dica · {resultados.failed ?? 0} com dificuldade · {resultados['declared-forgotten'] ?? 0} esquecidos · {resultados.relearned ?? 0} reaprendidos
+            {resultados.recalled ?? 0} lembrados · {resultados['recalled-with-hint'] ?? 0} com dica
+            · {resultados.failed ?? 0} com dificuldade · {resultados['declared-forgotten'] ?? 0}{' '}
+            esquecidos · {resultados.relearned ?? 0} reaprendidos
           </p>
         ) : null}
         <p>
@@ -725,6 +761,35 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const uciJulgado = julgamento.situacao === 'julgado' ? julgamento.uci : null
   const consultando = julgamento.situacao === 'consultando'
   const emAndamento = sessao.phase === 'resolvendo' && veredito === null && !consultando
+
+  /**
+   * O LANCE POR CLIQUE: casa de origem, casa de destino.
+   *
+   * A revisão espaçada é o NÚCLEO do produto, e por um tempo a única forma de
+   * responder um card foi ARRASTAR uma peça. Quem usa teclado, leitor de tela ou
+   * um toque impreciso não tinha caminho nenhum até a resposta.
+   *
+   * Vale para TODO tipo de card, pelo mesmo motivo que o antigo campo de texto
+   * valia: a razão dele é acessibilidade, e acessibilidade não vale só para o
+   * tipo que algum teste alcança.
+   *
+   * PORTA ÚNICA, como o arraste: os dois chamam `jogarDoTabuleiro`, que chama
+   * `jogar`. Nenhum caminho aplica lance por fora da sessão.
+   *
+   * A PROMOÇÃO SAI DAMA, igual ao arraste — `ChessBoardView` não pergunta. É
+   * limitação do tabuleiro, não deste caminho.
+   *
+   * FUNÇÃO SIMPLES, e não `useCallback`: `emAndamento` só existe aqui embaixo,
+   * depois dos retornos antecipados, e um hook aqui quebraria a ordem dos hooks.
+   */
+  const clicarNaCasa = (casa: SquareName) => {
+    if (!emAndamento) return
+    if (selecionada && selecionada !== casa && jogarDoTabuleiro(selecionada, casa)) {
+      setSelecionada(null)
+      return
+    }
+    setSelecionada(legalMoves(sessao.fen, casa).length > 0 ? casa : null)
+  }
   // O lance alternativo não avança a sessão, então é o veredito que encerra a
   // revisão. `ehErro` já levou a sessão para `errou`, e ela responde por ele.
   const encerrada = sessao.phase !== 'resolvendo' || veredito !== null
@@ -753,8 +818,12 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
           orientation={posicao.turn}
           theme={profile?.preferences.boardTheme ?? 'claro'}
           interactive={emAndamento}
+          selected={selecionada}
           onMove={jogarDoTabuleiro}
-          onIllegalMove={(from, to) => setErroDeLance(`${from}${to} não é um lance legal nesta posição.`)}
+          onSquareClick={clicarNaCasa}
+          onIllegalMove={(from, to) =>
+            setErroDeLance(`${from}${to} não é um lance legal nesta posição.`)
+          }
         />
 
         {/* A alternativa ao arraste. Ela some junto com a interatividade do
@@ -763,7 +832,10 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         <div className={styles.entrada}>
           <p className={styles.hint}>Jogue o lance diretamente no tabuleiro.</p>
           <div className={styles.entradaLinha}>
-            <span className={styles.hint}>Arraste a peça e solte na casa de destino.</span>
+            <span className={styles.hint}>
+              Arraste a peça e solte na casa de destino, ou clique na casa de origem e depois na de
+              destino.
+            </span>
           </div>
           {/* `role="status"` e não `alert`: a recusa é informação, não
               interrupção — mesma decisão de tom da faixa de erro (#61). Sem
@@ -824,8 +896,13 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
                 onClick={() => {
                   const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
                   try {
-                    globalThis.localStorage.setItem(markerKey, JSON.stringify({ itemId: itemAtual?.id, completed: false }))
-                  } catch { /* a revisão continua disponível */ }
+                    globalThis.localStorage.setItem(
+                      markerKey,
+                      JSON.stringify({ itemId: itemAtual?.id, completed: false }),
+                    )
+                  } catch {
+                    /* a revisão continua disponível */
+                  }
                   void registrar('again', false, 'voluntary-relearn').then(() => {
                     window.location.assign(`/lessons/${sessao.card.skillIds[0]}?relearn=1`)
                   })
@@ -893,8 +970,13 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
                   onClick={() => {
                     const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
                     try {
-                      globalThis.localStorage.setItem(markerKey, JSON.stringify({ itemId: itemAtual?.id, completed: false }))
-                    } catch { /* a lição ainda pode ser aberta */ }
+                      globalThis.localStorage.setItem(
+                        markerKey,
+                        JSON.stringify({ itemId: itemAtual?.id, completed: false }),
+                      )
+                    } catch {
+                      /* a lição ainda pode ser aberta */
+                    }
                     void registrar('again', false).then(() => {
                       window.location.assign(`/lessons/${sessao.card.skillIds[0]}?relearn=1`)
                     })

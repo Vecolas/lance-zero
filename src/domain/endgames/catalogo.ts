@@ -5,14 +5,7 @@
  * e transferência para posições que não são a FEN de exemplo.
  */
 export type EndgameCategory =
-  | 'pawn'
-  | 'rook'
-  | 'queen'
-  | 'bishop'
-  | 'knight'
-  | 'conversion'
-  | 'defense'
-  | 'principle'
+  'pawn' | 'rook' | 'queen' | 'bishop' | 'knight' | 'conversion' | 'defense' | 'principle'
 
 export type EndgameStatus = 'not-started' | 'learning' | 'practicing' | 'review' | 'consolidated'
 
@@ -35,10 +28,23 @@ export interface EndgamePositionSet {
 
 export type EndgameLessonStep =
   | { type: 'principle'; title: string; text: string }
-  | { type: 'recognition'; question: string; options: string[]; answer: number; explanation: string }
+  | {
+      type: 'recognition'
+      question: string
+      options: string[]
+      answer: number
+      explanation: string
+    }
   | { type: 'demonstration'; title: string; fen: string; text: string }
   | { type: 'decision'; question: string; options: string[]; answer: number; explanation: string }
-  | { type: 'contrast'; title: string; left: EndgamePosition; right: EndgamePosition; prompt: string; explanation: string }
+  | {
+      type: 'contrast'
+      title: string
+      left: EndgamePosition
+      right: EndgamePosition
+      prompt: string
+      explanation: string
+    }
   | { type: 'play-out'; positionSetId: string; objective: string }
   | { type: 'summary'; title: string; rules: string[] }
 

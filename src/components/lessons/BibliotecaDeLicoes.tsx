@@ -64,10 +64,19 @@ export function BibliotecaDeLicoes({
             const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
             try {
               const raw = window.localStorage.getItem(markerKey)
-              if (raw) window.localStorage.setItem(markerKey, JSON.stringify({ ...JSON.parse(raw), completed: true }))
-            } catch { /* a lição continua concluída mesmo sem storage */ }
+              if (raw)
+                window.localStorage.setItem(
+                  markerKey,
+                  JSON.stringify({ ...JSON.parse(raw), completed: true }),
+                )
+            } catch {
+              /* a lição continua concluída mesmo sem storage */
+            }
           }
-          if (repo) void registrarEnsino(repo, aberta.habilidade as SkillId, new Date()).then(() => refresh())
+          if (repo)
+            void registrarEnsino(repo, aberta.habilidade as SkillId, new Date()).then(() =>
+              refresh(),
+            )
         }}
         aoFechar={() => {
           setAbertaId(null)
@@ -75,8 +84,11 @@ export function BibliotecaDeLicoes({
             const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
             try {
               const raw = window.localStorage.getItem(markerKey)
-              if (raw && JSON.parse(raw).completed === true) window.location.assign('/train/revisao')
-            } catch { /* navegação normal da biblioteca */ }
+              if (raw && JSON.parse(raw).completed === true)
+                window.location.assign('/train/revisao')
+            } catch {
+              /* navegação normal da biblioteca */
+            }
           }
         }}
       />

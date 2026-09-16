@@ -10,12 +10,7 @@ import type { RecallOutcome } from '@/domain/roadmap'
  */
 
 export type ReviewItemKind =
-  | 'opening'
-  | 'endgame'
-  | 'tactic'
-  | 'calculation'
-  | 'game-error'
-  | 'concept'
+  'opening' | 'endgame' | 'tactic' | 'calculation' | 'game-error' | 'concept'
 
 export interface ReviewStep {
   id: string
@@ -151,7 +146,10 @@ function chooseDiverse(groups: Group[], target: number, now: Date): Group[] {
   return selected
 }
 
-export function groupIntoPedagogicalReviewItems(cards: readonly ReviewCard[], now: Date): ReviewItem[] {
+export function groupIntoPedagogicalReviewItems(
+  cards: readonly ReviewCard[],
+  now: Date,
+): ReviewItem[] {
   const groups = new Map<string, Group>()
   for (const card of cards) {
     const kind = kindOf(card)
@@ -182,7 +180,12 @@ export function groupIntoPedagogicalReviewItems(cards: readonly ReviewCard[], no
 
 export function createReviewSessionV2(
   cards: readonly ReviewCard[],
-  { now, targetItemCount = 20, seed = now.toISOString(), reviewEligible = () => true }: ReviewPlannerInput,
+  {
+    now,
+    targetItemCount = 20,
+    seed = now.toISOString(),
+    reviewEligible = () => true,
+  }: ReviewPlannerInput,
 ): ReviewSessionV2 {
   const eligibleCards = cards.filter(reviewEligible)
   const groups = new Map<string, Group>()
@@ -249,10 +252,14 @@ export function ratingForRecallOutcome(outcome: RecallOutcome): ReviewRating {
   return outcome === 'relearned' ? 'hard' : 'again'
 }
 
-export function setReviewItemOutcome(session: ReviewSessionV2, itemId: string, outcome: RecallOutcome): ReviewSessionV2 {
+export function setReviewItemOutcome(
+  session: ReviewSessionV2,
+  itemId: string,
+  outcome: RecallOutcome,
+): ReviewSessionV2 {
   return {
     ...session,
-    items: session.items.map((item) => item.id === itemId ? { ...item, outcome } : item),
+    items: session.items.map((item) => (item.id === itemId ? { ...item, outcome } : item)),
   }
 }
 

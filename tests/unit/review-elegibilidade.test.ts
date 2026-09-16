@@ -109,10 +109,7 @@ describe('o portão de ensino vale SÓ para conceito', () => {
  * REESCRITA, não o resultado.
  */
 describe('a regra mora em um lugar só', () => {
-  const APLICAM = [
-    'src/domain/planning/planner-v2.ts',
-    'src/components/training/ReviewSession.tsx',
-  ]
+  const APLICAM = ['src/domain/planning/planner-v2.ts', 'src/components/training/ReviewSession.tsx']
 
   it('quem aplica a regra chama a função, e não a reescreve', () => {
     for (const caminho of APLICAM) {

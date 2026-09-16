@@ -101,11 +101,13 @@ export async function carregarPlanoDeHoje({
     // concluídos continuam sendo fundidos por `regerarPlanoDeHoje`.
     const estados = await carregarSkillStates(repo, contexto.now)
     const porId = new Map(estados.map((estado) => [estado.skillId, estado]))
-    const legadoIlegivel = gravado.activities.some((activity) =>
-      activity.definition.kind === 'revisao' && activity.definition.skillIds.some((skillId) => {
-        const state = porId.get(skillId)
-        return state === undefined || state.exposureCount === 0 || state.precisaDeReensino
-      }),
+    const legadoIlegivel = gravado.activities.some(
+      (activity) =>
+        activity.definition.kind === 'revisao' &&
+        activity.definition.skillIds.some((skillId) => {
+          const state = porId.get(skillId)
+          return state === undefined || state.exposureCount === 0 || state.precisaDeReensino
+        }),
     )
     if (!legadoIlegivel) return gravado
     return regerarPlanoDeHoje({ repo, contexto, config })

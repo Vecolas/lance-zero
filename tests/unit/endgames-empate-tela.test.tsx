@@ -127,7 +127,9 @@ describe('a tela diz por que o empate valeu', () => {
     // Uma volta só: a posição apareceu duas vezes, e duas não é repetição.
     for (const uci of LANCES_DO_ALUNO.slice(0, 1)) {
       await jogar(uci)
-      await waitFor(() => expect(screen.getByText(/O adversário está escolhendo|É a sua vez/)).toBeInTheDocument())
+      await waitFor(() =>
+        expect(screen.getByText(/O adversário está escolhendo|É a sua vez/)).toBeInTheDocument(),
+      )
     }
     expect(screen.queryByTestId('regra-do-empate')).toBeNull()
     expect(chipComRotulo(APRESENTACAO_POR_ESTADO['em-andamento'].rotulo)).toBeTruthy()
@@ -140,7 +142,9 @@ describe('a tela diz por que o empate valeu', () => {
     for (const [indice, uci] of LANCES_DO_ALUNO.entries()) {
       await jogar(uci)
       if (indice < LANCES_DO_ALUNO.length - 1) {
-        await waitFor(() => expect(screen.getByText(/O adversário está escolhendo|É a sua vez/)).toBeInTheDocument())
+        await waitFor(() =>
+          expect(screen.getByText(/O adversário está escolhendo|É a sua vez/)).toBeInTheDocument(),
+        )
       }
     }
 

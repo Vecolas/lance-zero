@@ -114,16 +114,31 @@ export function StatePanel({
   title,
   description,
   action,
+  announce = true,
 }: {
   kind: 'loading' | 'empty' | 'error' | 'completed'
   title: string
   description?: string
   action?: ReactNode
+  /**
+   * O painel é uma REGIÃO VIVA?
+   *
+   * Por padrão sim: quase sempre ele substitui o conteúdo quando o estado muda,
+   * e quem não vê a tela precisa ser avisado.
+   *
+   * `false` existe para o painel que aparece AO LADO de outra região viva, no
+   * mesmo instante. Duas regiões vivas anunciando juntas se atropelam — o leitor
+   * de tela corta uma no meio para começar a outra —, e o aluno ouve menos do
+   * que ouviria com uma só. É o caso do resumo da engine em `EngineReview`,
+   * onde o veredito já anuncia. Aqui o painel continua visível e continua sendo
+   * lido na navegação normal: ele só deixa de interromper.
+   */
+  announce?: boolean
 }) {
   return (
     <section
       className={`${styles.statePanel} ${styles[`state-${kind}`]}`}
-      role={kind === 'error' ? 'alert' : 'status'}
+      role={announce ? (kind === 'error' ? 'alert' : 'status') : undefined}
     >
       <h2>{title}</h2>
       {description ? <p>{description}</p> : null}

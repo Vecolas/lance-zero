@@ -12,15 +12,15 @@ promoção quando necessário. O fluxo recebe apenas `{ from, to, promotion }`.
 
 ## Auditoria
 
-| Fluxo | Antes | Depois | Estado |
-| --- | --- | --- | --- |
-| Revisar | campo UCI + botão | drag no tabuleiro + feedback | substituído |
-| Finais | campo UCI + botão | drag no tabuleiro + feedback | substituído |
-| Táticas | drag no tabuleiro | drag no tabuleiro | mantido |
-| Aberturas | drag no tabuleiro | drag no tabuleiro | mantido |
-| Cálculo | seleção visual de candidatos | seleção visual de candidatos | mantido |
-| Diagnóstico | seleção de lances gerados | seleção visual de lances | mantido |
-| Engine/debug/testes | UCI interno | UCI interno | interno |
+| Fluxo               | Antes                        | Depois                       | Estado      |
+| ------------------- | ---------------------------- | ---------------------------- | ----------- |
+| Revisar             | campo UCI + botão            | drag no tabuleiro + feedback | substituído |
+| Finais              | campo UCI + botão            | drag no tabuleiro + feedback | substituído |
+| Táticas             | drag no tabuleiro            | drag no tabuleiro            | mantido     |
+| Aberturas           | drag no tabuleiro            | drag no tabuleiro            | mantido     |
+| Cálculo             | seleção visual de candidatos | seleção visual de candidatos | mantido     |
+| Diagnóstico         | seleção de lances gerados    | seleção visual de lances     | mantido     |
+| Engine/debug/testes | UCI interno                  | UCI interno                  | interno     |
 
 ## Regra de busca
 

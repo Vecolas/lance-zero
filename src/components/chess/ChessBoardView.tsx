@@ -55,9 +55,11 @@ export function ChessBoardView({
   onSquareClick,
 }: ChessBoardViewProps) {
   const palette = boardThemes[theme]
-  const [promotion, setPromotion] = useState<
-    { from: SquareName; to: SquareName; fen: string } | null
-  >(null)
+  const [promotion, setPromotion] = useState<{
+    from: SquareName
+    to: SquareName
+    fen: string
+  } | null>(null)
 
   const squareStyles: Record<string, React.CSSProperties> = {}
   for (const square of lastMove) {
@@ -139,7 +141,11 @@ export function ChessBoardView({
               {option.label}
             </button>
           ))}
-          <button type="button" className={styles.promotionCancel} onClick={() => setPromotion(null)}>
+          <button
+            type="button"
+            className={styles.promotionCancel}
+            onClick={() => setPromotion(null)}
+          >
             Cancelar
           </button>
         </div>
