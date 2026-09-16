@@ -93,6 +93,7 @@ import {
 import { getSkill } from '@/domain/skills/catalog'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
 import { isSkillStateReviewEligible } from '@/domain/roadmap'
+import type { RecallOutcome } from '@/domain/roadmap'
 import type { ReviewRating, SkillMastery } from '@/domain/types'
 import {
   applyMove,
@@ -492,7 +493,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   }, [fila, indice, itemAtual, passoInterno, refresh, reviewStorageKey])
 
   const registrar = useCallback(
-    async (rating: ReviewRating) => {
+    async (rating: ReviewRating, advance = true, outcomeOverride?: RecallOutcome) => {
       if (!repo || !sessao) return
       const agora = new Date()
       try {
@@ -503,13 +504,13 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
           reviewedAt: agora.toISOString(),
           rating,
           elapsedMs: 0,
-          outcome: declarouEsquecimento
+          outcome: outcomeOverride ?? (declarouEsquecimento
             ? 'declared-forgotten'
             : sessao.phase === 'errou'
               ? 'failed'
               : rating === 'again'
                 ? 'recalled-with-hint'
-                : 'recalled',
+                : 'recalled'),
         })
 
         // O acerto com desconto (#62) usa o mecanismo que JÁ existe: o evento
@@ -538,7 +539,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
           )
         }
         await repo.saveSkillMastery([...porId.values()])
-        avancar()
+        if (advance) avancar()
       } catch (e) {
         setFalha(e instanceof Error ? e.message : 'Não consegui salvar esta revisão.')
         setFase('erro')
@@ -787,6 +788,23 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
             >
               Não lembro
             </button>
+            {sessao.card.skillIds[0] ? (
+              <button
+                type="button"
+                className={styles.ghost}
+                onClick={() => {
+                  const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
+                  try {
+                    globalThis.localStorage.setItem(markerKey, JSON.stringify({ itemId: itemAtual?.id, completed: false }))
+                  } catch { /* a revisão continua disponível */ }
+                  void registrar('again', false, 'voluntary-relearn').then(() => {
+                    window.location.assign(`/lessons/${sessao.card.skillIds[0]}?relearn=1`)
+                  })
+                }}
+              >
+                Rever lição antes de tentar
+              </button>
+            ) : null}
           </>
         ) : null}
 
@@ -845,8 +863,12 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
                   className={styles.relearnLink}
                   onClick={() => {
                     const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
-                    globalThis.localStorage.setItem(markerKey, JSON.stringify({ itemId: itemAtual?.id, completed: false }))
-                    window.location.assign(`/lessons/${sessao.card.skillIds[0]}?relearn=1`)
+                    try {
+                      globalThis.localStorage.setItem(markerKey, JSON.stringify({ itemId: itemAtual?.id, completed: false }))
+                    } catch { /* a lição ainda pode ser aberta */ }
+                    void registrar('again', false).then(() => {
+                      window.location.assign(`/lessons/${sessao.card.skillIds[0]}?relearn=1`)
+                    })
                   }}
                 >
                   Reaprender agora
