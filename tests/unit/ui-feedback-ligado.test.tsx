@@ -195,7 +195,7 @@ describe('ReviewSession usa a faixa do guia nos dois desfechos', () => {
     )
     contexto.valor = contextoCom(repo)
     render(<ReviewSession />)
-    await screen.findByText(/Revisão 0 de 1/)
+    await screen.findByText(/Revisão 1 de 1/)
   }
 
   it('lembrar o lance anuncia o estado correto do catálogo', async () => {

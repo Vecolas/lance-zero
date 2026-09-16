@@ -102,30 +102,22 @@ export function conteudoDoNo(
 ): ConteudoDoNo | null {
   if (!ehNoDeConteudo(node)) return null
 
-  const mapa = indice()
-  const nome = normalizar(node.title)
-
-  const exato = mapa.get(nome)
-  if (exato) return exato
-
   /*
-    SEGUNDA PASSADA: o prefixo de classificação.
+    CORRESPONDÊNCIA EXATA, e só ela.
 
-    Os dois catálogos nomeiam a mesma abertura com formalidade diferente — o
-    Roadmap diz "Caro-Kann", o conteúdo diz "Defesa Caro-Kann". Nenhum dos dois
-    está errado, e renomear um deles para agradar o outro seria escolher um
-    vencedor por conveniência de código.
+    Houve aqui uma segunda passada que aceitava o nome do catálogo TERMINANDO
+    com o nome do nó, para acomodar "Caro-Kann" (Roadmap) contra "Defesa
+    Caro-Kann" (conteúdo). Ela foi REMOVIDA quando os dois catálogos passaram a
+    escrever o mesmo nome.
 
-    A regra é ESTREITA de propósito: só casa quando o nome do catálogo TERMINA
-    com o nome do nó, em limite de palavra, E quando existe exatamente UM
-    candidato. Duas correspondências viram ambiguidade e devolvem `null` — um
-    palpite aqui mandaria o aluno para a abertura errada, que é pior que não
-    linkar.
+    A remoção é a parte que importa: busca aproximada resolve a divergência de
+    hoje e ESCONDE a de amanhã. Com ela no lugar, uma abertura nova grafada
+    diferente casaria por acidente e o portão `nosSemJornada` nunca reprovaria —
+    até o dia em que duas aberturas parecidas casassem com o mesmo nó e o card
+    levasse à errada. Exigir o nome exato faz a próxima divergência aparecer
+    como teste vermelho, que é onde ela deve aparecer.
   */
-  const candidatos = [...mapa.entries()].filter(
-    ([chave]) => chave === nome || chave.endsWith(` ${nome}`),
-  )
-  return candidatos.length === 1 ? candidatos[0][1] : null
+  return indice().get(normalizar(node.title)) ?? null
 }
 
 /**

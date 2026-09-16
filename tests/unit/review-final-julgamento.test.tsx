@@ -226,6 +226,7 @@ function cardQueNaoEDeFinal(nascidoEm = new Date('2026-01-01T00:00:00.000Z')): R
   )
 }
 
+
 async function montarFila(cards: readonly ReviewCard[], probe: Sonda) {
   const repo = new MemoryTrainingRepository()
   for (const card of cards) {
@@ -241,7 +242,7 @@ async function montarFila(cards: readonly ReviewCard[], probe: Sonda) {
     revision: 0,
   }
   const tela = render(<ReviewSession probe={probe} />)
-  await screen.findByText(new RegExp(`Revisão 0 de ${cards.length}`))
+  await screen.findByText(new RegExp(`Revisão 1 de ${cards.length}`))
   return { repo, tela }
 }
 
@@ -542,7 +543,7 @@ describe('a revisão seguinte começa limpa', () => {
     await screen.findByTestId('grau-do-lance')
     await userEvent.click(screen.getByRole('button', { name: NOTA_DE_QUEM_ACERTOU }))
 
-    await screen.findByText(/Revisão 1 de 2/)
+    await screen.findByText(/Revisão 2 de 2/)
     expect(screen.queryByTestId('grau-do-lance')).not.toBeInTheDocument()
     expect(screen.queryByTestId('modo-estrito')).not.toBeInTheDocument()
     // A revisão nova está em ANDAMENTO: nota nenhuma antes de jogar.
@@ -576,7 +577,7 @@ describe('resposta atrasada da tablebase não pousa na revisão errada', () => {
     await outroRepo.saveReviewCard(cardDoFinal())
     contexto.valor = { ...(contexto.valor as Record<string, unknown>), repo: outroRepo }
     tela.rerender(<ReviewSession probe={lenta} />)
-    await screen.findByText(/Revisão 0 de 1/)
+    await screen.findByText(/Revisão 1 de 1/)
 
     await act(async () => {
       liberar()

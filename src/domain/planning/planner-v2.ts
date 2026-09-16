@@ -47,6 +47,7 @@ import {
   type PlanoDoDia,
   type SkillState,
 } from '@/domain/aprendizado'
+import { cardPodeSerRevisado } from '@/domain/review/elegibilidade'
 import { getSkill } from '@/domain/skills/catalog'
 import type { ReviewCard, SkillId, SkillMastery, UserProfile } from '@/domain/types'
 import { createRng } from './rng'
@@ -320,16 +321,32 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
   // Só entram cards cuja habilidade PODE ser cobrada. Um card vencido de
   // habilidade em reensino não vira revisão: ele vira lição, logo abaixo. É o
   // teste 7 do plano, e é o ponto em que o FSRS deixa de mandar sozinho.
+  /*
+    QUEM JÁ RECEBEU ENSINO, em um conjunto só.
+
+    `estadoDe` é busca linear, e ela rodava por card e por habilidade dentro do
+    filtro. O conjunto é montado uma vez.
+
+    A REGRA EM SI NÃO MORA AQUI. Ela é `cardPodeSerRevisado`, a mesma que a fila
+    de revisão usa — e ela precisa ser a mesma: enquanto foram duas, o Hoje
+    prometia uma revisão que a fila descartava ao abrir, e vice-versa. O que
+    este arquivo decide é o que conta como ENSINADO; o que se faz com isso é
+    decisão do domínio de revisão.
+
+    Conteúdo presente no catálogo, ou um card legado, não prova ensino: sem
+    estado persistido a conta começa em zero exposições.
+  */
+  const habilidadesEnsinadas = new Set<SkillId>(
+    contexto.skillStates
+      .filter((estado) => estado.exposureCount > 0 && !estado.precisaDeReensino)
+      .map((estado) => estado.skillId),
+  )
+
   const vencidos = contexto.dueCards
     .filter((card) => {
       const quando = Date.parse(card.dueAt)
       if (Number.isNaN(quando) || quando > agora) return false
-      return card.skillIds.every((skillId) => {
-        const estado = estadoDe(contexto, skillId)
-        // Conteúdo presente no catálogo ou um card legado não prova ensino.
-        // Sem estado persistido, a conta começa com zero revisões.
-        return estado !== undefined && estado.exposureCount > 0 && !estado.precisaDeReensino
-      })
+      return cardPodeSerRevisado(card, habilidadesEnsinadas)
     })
     .sort((a, b) => a.dueAt.localeCompare(b.dueAt) || a.id.localeCompare(b.id))
     // O teto é o MENOR entre o limite absoluto e o que a fatia do dia comporta.

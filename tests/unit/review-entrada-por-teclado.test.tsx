@@ -39,7 +39,7 @@ async function montar() {
     erro: null, saveProfile: async () => {}, refresh: () => {}, revision: 0,
   }
   render(<ReviewSession />)
-  await screen.findByText(/Revisão 0 de 1/)
+  await screen.findByText(/Revisão 1 de 1/)
 }
 
 beforeEach(() => {
@@ -70,6 +70,6 @@ describe('entrada de lance learner-facing', () => {
     await montar()
     await act(async () => { expect(tabuleiro.onMove?.('b1', 'b2')).toBe(false) })
     expect(screen.getByText(/não é um lance legal/i)).toBeInTheDocument()
-    expect(screen.getByText(/Revisão 0 de 1/)).toBeInTheDocument()
+    expect(screen.getByText(/Revisão 1 de 1/)).toBeInTheDocument()
   })
 })

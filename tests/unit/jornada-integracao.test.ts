@@ -179,6 +179,21 @@ describe('a ponte entre o Roadmap e os conteúdos', () => {
   })
 
   /**
+   * A correspondência é EXATA, e isto é o portão dessa decisão.
+   *
+   * Existiu aqui uma busca aproximada (nome do catálogo terminando com o nome
+   * do nó) para acomodar "Caro-Kann" contra "Defesa Caro-Kann". Com os dois
+   * catálogos alinhados ela saiu — e este teste impede que volte. Busca
+   * aproximada resolveria a divergência de hoje e esconderia a de amanhã: uma
+   * abertura nova com grafia diferente casaria por acidente, e `nosSemJornada`
+   * deixaria de reprovar exatamente quando deveria.
+   */
+  it('NÃO casa por aproximação: nome parcial não acha a abertura', () => {
+    expect(conteudoDoNo({ title: 'Caro-Kann', contentType: 'opening' })).toBeNull()
+    expect(conteudoDoNo({ title: 'Italiana', contentType: 'opening' })).toBeNull()
+  })
+
+  /**
    * O PORTÃO DA PONTE.
    *
    * A ligação é por nome normalizado e degrada com segurança — mas "degrada em
