@@ -51,9 +51,10 @@ import {
   type NivelDeApoio,
 } from '@/domain/aprendizado'
 import { acertou, opcoesDe } from '@/domain/diagnostic'
-import type { ExercicioPosicional } from '@/domain/exercicios'
+import { julgarLanceDaLicao, type ExercicioPosicional } from '@/domain/exercicios'
 import { getSkill } from '@/domain/skills/catalog'
 import { applyMove, legalMoves, normalizeUci, parseUci } from '@/lib/chess'
+import type { PromotionPiece, SquareName } from '@/lib/chess'
 import styles from './LicaoPlayer.module.css'
 
 /** O que o leitor devolve a quem o hospeda, a cada etapa vencida. */
@@ -414,13 +415,23 @@ function Recuperacao({
 }
 
 /**
- * O tabuleiro com opções, a escada de dicas e o feedback.
+ * O tabuleiro onde o aluno RESPONDE, a escada de dicas e o feedback.
  *
- * AQUI NÃO EXISTE "TENTAR DE NOVO". Ao errar, `responderAoErro` decide o
- * próximo degrau de assistência; quando a escada acaba, a tela mostra a solução
- * e o botão passa a ser **Continuar**. A função é pura e mora no domínio, então
- * "nunca há tentativa cega infinita" é provado por teste unitário e não por
- * inspeção deste JSX.
+ * A REGRA CENTRAL: se a pergunta pode ser respondida com um lance, a resposta
+ * acontece no tabuleiro. Aqui havia `[Rxc6] [Rxd5] [Qxd4]` — e com três strings
+ * na tela o aluno não resolve a posição: ele lê e escolhe. Dava para acertar sem
+ * localizar a peça, sem ver de onde ela é atacada, e sem nunca executar o
+ * movimento. A evidência de aprendizado era "clicou no botão certo".
+ *
+ * AQUI NÃO EXISTE "TENTAR DE NOVO" COMO BOTÃO. Ao errar, `responderAoErro`
+ * decide o próximo degrau de assistência e o tabuleiro volta a aceitar lance
+ * sozinho — obrigar um clique em "Tentar novamente" é atrito sem função. A
+ * função é pura e mora no domínio, então "nunca há tentativa cega infinita" é
+ * provado por teste unitário e não por inspeção deste JSX.
+ *
+ * LANCE ILEGAL NÃO É ERRO. Ver `julgarLanceDaLicao`: o tabuleiro devolve a peça
+ * e a tela diz que aquele lance não existe nesta posição, sem mexer na contagem
+ * de erros nem na escada de dicas.
  */
 function Tabuleiro({
   exercicio,
@@ -439,6 +450,8 @@ function Tabuleiro({
   const [erros, setErros] = useState(0)
   const [dicasAbertas, setDicasAbertas] = useState(0)
   const [revelou, setRevelou] = useState(false)
+  /** O último arraste que não era lance. Discreto, e some no lance seguinte. */
+  const [recusa, setRecusa] = useState<string | null>(null)
 
   const notacoes = useMemo(() => {
     const mapa = new Map<string, string>()
@@ -448,9 +461,47 @@ function Tabuleiro({
 
   const certo = escolhido !== null && acertou(exercicio, escolhido)
   const apoio = nivelDeApoio(dicasAbertas, revelou)
+
+  /*
+    A SOLUÇÃO DESENHADA NO TABULEIRO, e não escrita como "Rxc6".
+
+    É a §26 do plano: quando a escada de assistência termina e a resposta
+    precisa aparecer, ela aparece ONDE acontece. Um aluno que lê a notação
+    aprende a notação; um que vê as duas casas acesas aprende o lance.
+  */
+  const casasDaSolucao = useMemo(() => {
+    const chave = exercicio.lancesAceitos[0]
+    const lance = chave ? parseUci(chave) : null
+    return lance ? [lance.from, lance.to] : []
+  }, [exercicio.lancesAceitos])
   const resposta = erros > 0 && !certo ? responderAoErro(erros, dicasAbertas) : null
   const mostrarSolucao =
     revelou || resposta?.acao === 'mostrar-solucao' || resposta?.acao === 'trocar-posicao'
+
+  /**
+   * O aluno soltou uma peça.
+   *
+   * Devolve `false` quando o lance não existe: é isso que faz o tabuleiro
+   * devolver a peça à casa de origem (snapback) em vez de aceitá-la.
+   */
+  function soltar(origem: SquareName, destino: SquareName, promocao?: PromotionPiece): boolean {
+    if (certo || mostrarSolucao) return false
+
+    const veredito = julgarLanceDaLicao(exercicio, origem, destino, promocao)
+    if (veredito.tipo === 'ilegal') {
+      /*
+        NÃO MEXE EM NADA PEDAGÓGICO. Sem contar erro, sem abrir dica, sem
+        registrar tentativa: o aluno não afirmou nada sobre a posição — ele
+        arrastou para um lugar onde a peça não vai.
+      */
+      setRecusa(`${origem}${destino}`)
+      return false
+    }
+
+    setRecusa(null)
+    escolher(veredito.uci)
+    return true
+  }
 
   function escolher(uci: string) {
     setEscolhido(uci)
@@ -472,32 +523,49 @@ function Tabuleiro({
   return (
     <div className={styles.comTabuleiro}>
       <div className={styles.tabuleiro}>
+        {/*
+          O TABULEIRO É A ÚNICA FORMA DE RESPONDER.
+
+          `interactive` cai quando já não há o que descobrir — acertou, ou a
+          solução foi revelada. Continuar aceitando lance ali recomeçaria o laço
+          que o degrau de assistência acabou de fechar.
+
+          `lastMove` mostra a solução NO TABULEIRO quando a escada chega ao fim:
+          o plano é explícito em não revelar a resposta como texto "Rxc6", e sim
+          desenhá-la onde ela acontece.
+        */}
         <ChessBoardView
           fen={exercicio.fen}
           orientation={exercicio.ladoDoAluno}
-          interactive={false}
+          interactive={!certo && !mostrarSolucao}
+          onMove={soltar}
+          onIllegalMove={(origem, destino) => setRecusa(`${origem}${destino}`)}
+          lastMove={mostrarSolucao ? casasDaSolucao : undefined}
         />
       </div>
       <div className={styles.aoLado}>
         <p className={styles.texto}>{enunciado}</p>
+        {/*
+          A INSTRUÇÃO DIZ COMO RESPONDER. Sem ela o aluno olha para uma posição
+          e um enunciado e não sabe que a resposta é um arraste — o tabuleiro
+          parecia ilustração na versão com botões, e o hábito fica.
+        */}
+        {escolhido === null && !mostrarSolucao ? (
+          <p className={styles.nota}>Jogue o lance no tabuleiro.</p>
+        ) : null}
 
-        <ul className={styles.opcoes} aria-label="Lances possíveis">
-          {opcoesDe(exercicio).map((uci) => (
-            <li key={uci}>
-              <button
-                type="button"
-                className={styles.opcao}
-                aria-pressed={escolhido === uci}
-                // Depois da solução as opções param de aceitar clique: não há
-                // mais o que descobrir, e clicar viraria o laço de novo.
-                disabled={certo || mostrarSolucao}
-                onClick={() => escolher(uci)}
-              >
-                {notacoes.get(uci) ?? uci}
-              </button>
-            </li>
-          ))}
-        </ul>
+        {/*
+          A RECUSA DE LANCE ILEGAL é discreta e não é erro.
+
+          `role="status"` e não `alert`: o aluno arrastou para um lugar onde a
+          peça não vai, e isso não é uma afirmação errada sobre a posição — é um
+          gesto que não virou lance.
+        */}
+        {recusa !== null && escolhido === null ? (
+          <p className={styles.nota} role="status" data-testid="recusa-do-lance">
+            Esse lance não é legal nesta posição.
+          </p>
+        ) : null}
 
         {dicasAbertas > 0 && dicas.length > 0 ? (
           <ol className={styles.dicas} aria-label="Dicas abertas">
