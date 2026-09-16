@@ -326,7 +326,9 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
       if (Number.isNaN(quando) || quando > agora) return false
       return card.skillIds.every((skillId) => {
         const estado = estadoDe(contexto, skillId)
-        return estado === undefined || !estado.precisaDeReensino
+        // Conteúdo presente no catálogo ou um card legado não prova ensino.
+        // Sem estado persistido, a conta começa com zero revisões.
+        return estado !== undefined && estado.exposureCount > 0 && !estado.precisaDeReensino
       })
     })
     .sort((a, b) => a.dueAt.localeCompare(b.dueAt) || a.id.localeCompare(b.id))

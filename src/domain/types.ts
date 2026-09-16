@@ -85,6 +85,8 @@ export type ReviewRating = 'again' | 'hard' | 'good' | 'easy'
 
 export interface ReviewCard {
   id: string
+  /** Objeto pedagógico estável; cards antigos podem não possuir o campo. */
+  learningObjectId?: string
   kind: ReviewCardKind
   skillIds: SkillId[]
   /** Posição a ser apresentada. */

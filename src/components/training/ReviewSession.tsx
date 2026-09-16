@@ -92,6 +92,7 @@ import {
 } from '@/domain/review/planner-v2'
 import { getSkill } from '@/domain/skills/catalog'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
+import { isSkillStateReviewEligible } from '@/domain/roadmap'
 import type { ReviewRating, SkillMastery } from '@/domain/types'
 import {
   applyMove,
@@ -349,7 +350,16 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
     async function carregar() {
       if (!repo) return
       try {
-        const cards = await repo.getDueCards(new Date())
+        const [cards, skillStates] = await Promise.all([
+          repo.getDueCards(new Date()),
+          repo.getSkillStates(),
+        ])
+        // V3: um card vencido sem evidência de ensino é legado, não revisão.
+        // O filtro acontece antes de persistência, grouping e contador visual.
+        const eligibleSkillIds = new Set(
+          skillStates.filter((state) => isSkillStateReviewEligible(state)).map((state) => state.skillId),
+        )
+        const eligibleCards = cards.filter((card) => card.skillIds.some((skillId) => eligibleSkillIds.has(skillId)))
         if (cancelado) return
         // A fila recarregada é uma revisão NOVA: uma consulta em voo pertence à
         // anterior, e deixá-la pousar aqui mostraria o veredito de um lance
@@ -373,13 +383,16 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
             return null
           }
         })()
-        const idsDisponiveis = new Set(cards.map((card) => card.id))
+        const idsDisponiveis = new Set(eligibleCards.map((card) => card.id))
         const salvoCompatível = salvo?.items?.every((item) =>
           item.steps.every((step) => idsDisponiveis.has(step.card.id)),
         )
         const plano = salvoCompatível && salvo?.items && salvo.items.length > 0
           ? salvo.items
-          : createReviewSessionV2(cards, { now: new Date() }).items
+          : createReviewSessionV2(eligibleCards, {
+              now: new Date(),
+              reviewEligible: (card) => card.skillIds.some((skillId) => eligibleSkillIds.has(skillId)),
+            }).items
         const indiceSalvo = salvo?.indice ?? 0
         const indiceInicial = Math.min(Math.max(0, indiceSalvo), Math.max(0, plano.length - 1))
         const passoInicial = Math.min(
@@ -798,6 +811,14 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
               O lance certo era <strong>{esperado}</strong>. Ele volta em breve.
             </p>
             {blocoDoGrau}
+            {sessao.card.skillIds[0] ? (
+              <p className={styles.relearnActions}>
+                <Link href={`/lessons/${sessao.card.skillIds[0]}`} className={styles.relearnLink}>
+                  Reaprender agora
+                </Link>
+                <span className={styles.hint}>ou escolha uma nota para continuar a revisão.</span>
+              </p>
+            ) : null}
           </FeedbackBanner>
         ) : null}
 

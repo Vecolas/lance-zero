@@ -127,6 +127,19 @@
   color: var(--text-muted);
 }
 
+.relearnActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+  margin: 0;
+}
+
+.relearnLink {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
 /* Julgamento do lance num card de final (#62). A COR do degrau não mora aqui:
    ela vem de `COR_DO_TOM`, no componente, porque esta folha não pode redeclarar
    as classes de estado que a issue #61 removeu. O que mora aqui é forma. */

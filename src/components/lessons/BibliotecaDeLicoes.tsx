@@ -22,11 +22,13 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { LicaoPlayer } from '@/components/lessons/LicaoPlayer'
+import { useRepository } from '@/components/providers/RepositoryProvider'
 import { CATALOGO_DE_LICOES } from '@/content/lessons'
 import { estimarMinutos } from '@/domain/lessons'
 import { ROTULO_DO_ESTAGIO, type LearningStage } from '@/domain/aprendizado'
 import { getSkill } from '@/domain/skills/catalog'
-import type { SkillArea } from '@/domain/types'
+import type { SkillArea, SkillId } from '@/domain/types'
+import { registrarEnsino } from '@/lib/training/registrar-tentativa'
 import styles from './BibliotecaDeLicoes.module.css'
 
 export interface BibliotecaDeLicoesProps {
@@ -43,6 +45,7 @@ export function BibliotecaDeLicoes({
   licaoInicialId,
   estagios,
 }: BibliotecaDeLicoesProps = {}) {
+  const { repo, refresh } = useRepository()
   const [abertaId, setAbertaId] = useState<string | null>(licaoInicialId ?? null)
 
   const visiveis = area
@@ -52,7 +55,16 @@ export function BibliotecaDeLicoes({
   const aberta = CATALOGO_DE_LICOES.find((licao) => licao.id === abertaId) ?? null
 
   if (aberta) {
-    return <LicaoPlayer licao={aberta} aoFechar={() => setAbertaId(null)} />
+    return (
+      <LicaoPlayer
+        licao={aberta}
+        aoAvancar={(evento) => {
+          if (evento.etapa !== 'resumo' || !repo) return
+          void registrarEnsino(repo, aberta.habilidade as SkillId, new Date()).then(() => refresh())
+        }}
+        aoFechar={() => setAbertaId(null)}
+      />
+    )
   }
 
   if (visiveis.length === 0) {
