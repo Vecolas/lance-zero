@@ -38,6 +38,29 @@
 }
 
 /*
+  Discreto de propósito. Consultar é uma saída lateral, não o próximo passo —
+  um botão com peso aqui competiria com o "Continuar" e sugeriria que reler é
+  o caminho.
+*/
+.rever {
+  justify-self: start;
+  min-height: 2.5rem;
+  padding: var(--space-1) 0;
+  border: none;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.rever:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+/*
   O TABULEIRO É DOMINANTE (plano §201). No desktop ele fica à esquerda com a
   maior fatia; no celular vai para cima, antes do texto, porque é o objeto do
   estudo — texto primeiro empurraria o tabuleiro para fora da dobra.

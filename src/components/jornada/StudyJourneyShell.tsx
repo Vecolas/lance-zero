@@ -55,6 +55,14 @@ export interface StudyJourneyShellProps {
    */
   rodapeOculto?: boolean
   aoSair?: () => void
+  /**
+   * Abre o modo referência.
+   *
+   * Fica no CABEÇALHO e não no rodapé de propósito: consultar não é avançar, e
+   * pô-lo ao lado de "Continuar" convidaria o aluno a usá-lo como se fosse o
+   * próximo passo. Ver `ModoReferencia`.
+   */
+  aoRever?: () => void
 }
 
 export function StudyJourneyShell({
@@ -67,6 +75,7 @@ export function StudyJourneyShell({
   aoContinuar,
   rodapeOculto,
   aoSair,
+  aoRever,
 }: StudyJourneyShellProps) {
   const stage = stages.find((item) => item.id === jornada.currentStageId) ?? stages[0]
   if (!stage) return null
@@ -105,6 +114,11 @@ export function StudyJourneyShell({
         <p className={styles.passo} role="status">
           Etapa {progresso.atual} de {progresso.total} — {stage.objetivo}
         </p>
+        {aoRever ? (
+          <button type="button" className={styles.rever} onClick={aoRever}>
+            Rever conteúdo
+          </button>
+        ) : null}
       </header>
 
       <StudyProgressRail jornada={jornada} stages={stages} aoEscolher={aoVoltarEtapa} />

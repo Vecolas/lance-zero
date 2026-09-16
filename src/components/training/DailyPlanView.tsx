@@ -39,6 +39,7 @@ import {
   type DailyActivity,
   type PlanoDoDia,
 } from '@/domain/aprendizado'
+import { verboDoHoje, type StudyJourney, type StudyStage } from '@/domain/jornada'
 import {
   carregarPlanoDeHoje,
   migrarHabilidadesSemEnsino,
@@ -69,6 +70,7 @@ const COR_DA_ATIVIDADE: Record<ActivityKind, string> = {
 export function DailyPlanView() {
   const { status, repo, profile, erro, saveProfile, revision } = useRepository()
   const [plano, setPlano] = useState<PlanoDoDia | null>(null)
+  const [jornadas, setJornadas] = useState<Record<string, StudyJourney>>({})
   const [falha, setFalha] = useState<string | null>(null)
 
   /**
@@ -139,8 +141,14 @@ export function DailyPlanView() {
         const agora = new Date()
         const contexto = await montarContexto(agora)
         if (contexto === null) return
-        const doDia = await carregarPlanoDeHoje({ repo, contexto })
-        if (!cancelado) setPlano(doDia)
+        const [doDia, todasAsJornadas] = await Promise.all([
+          carregarPlanoDeHoje({ repo, contexto }),
+          repo.listStudyJourneys(),
+        ])
+        if (!cancelado) {
+          setPlano(doDia)
+          setJornadas(Object.fromEntries(todasAsJornadas.map((j) => [j.id, j])))
+        }
       } catch (e) {
         if (!cancelado) {
           setFalha(e instanceof Error ? e.message : 'Não consegui ler seus dados locais.')
@@ -272,7 +280,7 @@ export function DailyPlanView() {
         */
         <ul className={styles.blocks}>
           {plano.activities.map((atividade) => (
-            <CardDeAtividade key={atividade.id} atividade={atividade} />
+            <CardDeAtividade key={atividade.id} atividade={atividade} jornadas={jornadas} />
           ))}
         </ul>
       )}
@@ -295,9 +303,86 @@ export function DailyPlanView() {
  * alvo de toque passa a ser menor que o card que o aluno vê. Aqui o alvo é o
  * card.
  */
-function CardDeAtividade({ atividade }: { atividade: DailyActivity }) {
+/**
+ * O título do card, corrigido pelo estado da jornada.
+ *
+ * Só toca em atividades de ABERTURA e FINAL, que são as que têm jornada. As
+ * demais passam intactas — uma função que reescrevesse todo título acabaria
+ * inventando verbos para revisão e análise de partida, que não têm etapas.
+ *
+ * Sem jornada gravada devolve o título original: "nunca começou" e "Aprender"
+ * já concordam, e não há o que corrigir.
+ */
+function tituloComJornada(
+  definicao: DailyActivity['definition'],
+  jornadas: Record<string, StudyJourney>,
+): string {
+  const separador = definicao.title.indexOf(':')
+  if (separador === -1) return definicao.title
+  const nome = definicao.title.slice(separador + 1).trim()
+
+  /*
+    A atividade de ABERTURA carrega `openingId`; a de FINAL não carrega um
+    campo equivalente — o id do final está no `href` (`/finais/<slug>`). Ler o
+    href é feio e é a leitura HONESTA: inventar um `endgameId` na definição
+    exigiria mexer no planner, que é território de outra frente agora, e um
+    campo opcional que ninguém preenche seria pior que a extração explícita.
+  */
+  const doFinal = /\/finais\/([^/?#]+)/.exec(definicao.href)?.[1]
+  const jornada =
+    (definicao.openingId ? jornadas[`abertura:${definicao.openingId}`] : undefined) ??
+    (doFinal ? jornadas[`final:${doFinal}`] : undefined) ??
+    null
+  if (!jornada) return definicao.title
+
+  const stages = etapasDaJornadaGravada(jornada)
+  if (stages.length === 0) return definicao.title
+
+  return `${verboDoHoje(jornada, stages)}: ${nome}`
+}
+
+/**
+ * As etapas de uma jornada JÁ GRAVADA.
+ *
+ * Derivadas de `stageIds`, que é o que ficou no disco. Remontar a jornada do
+ * catálogo aqui daria a lista ATUAL, e uma etapa acrescentada depois faria o
+ * card contar "5 de 10" sobre um estudo que o aluno começou com 9 — o número
+ * mudaria sem ele ter feito nada.
+ */
+function etapasDaJornadaGravada(jornada: StudyJourney): StudyStage[] {
+  return jornada.stageIds.map((id) => ({
+    id,
+    tipo: id,
+    titulo: id,
+    rotuloCurto: id,
+    objetivo: '',
+    regra: { tipo: 'leitura' as const },
+    ...(id.includes('treino') ? { ehTreinoFinal: true } : {}),
+  }))
+}
+
+function CardDeAtividade({
+  atividade,
+  jornadas,
+}: {
+  atividade: DailyActivity
+  jornadas: Record<string, StudyJourney>
+}) {
   const { definition: definicao, status } = atividade
   const concluida = status === 'concluida'
+
+  /*
+    O VERBO DO CARD DE ABERTURA/FINAL VEM DA JORNADA (plano §148–151).
+
+    O planner é puro e não lê o IndexedDB, então ele escreve "Aprender: Abertura
+    Italiana" sempre. Para quem já está na etapa 5, esse título mente — e mentir
+    sobre o ponto de partida é o que faz o aluno achar que vai perder o
+    progresso ao clicar.
+
+    A correção é de APRESENTAÇÃO e o verbo sai de `verboDoHoje`, no domínio: o
+    catálogo, o Roadmap e o Hoje precisam dizer a mesma palavra no mesmo estado.
+  */
+  const titulo = tituloComJornada(definicao, jornadas)
 
   return (
     <li className={styles.block} data-status={status}>
@@ -319,7 +404,7 @@ function CardDeAtividade({ atividade }: { atividade: DailyActivity }) {
             <span className={styles.kind} style={{ color: COR_DA_ATIVIDADE[definicao.kind] }}>
               {ROTULO_DA_ATIVIDADE[definicao.kind]}
             </span>
-            {definicao.title}
+            {titulo}
           </span>
           <span className={styles.rationale}>{atividade.generatedReason}</span>
         </span>

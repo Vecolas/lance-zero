@@ -31,6 +31,7 @@ import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { StudyJourneyShell } from '@/components/jornada/StudyJourneyShell'
 import { RoundResultPanel } from '@/components/jornada/RoundResultPanel'
 import { RepertoireDeviationFeedback } from '@/components/openings/RepertoireDeviationFeedback'
+import { ModoReferencia } from '@/components/jornada/ModoReferencia'
 import {
   concluirEtapa,
   criarJornada,
@@ -70,12 +71,41 @@ export function idDaJornadaDeAbertura(openingId: string): string {
   return `abertura:${openingId}`
 }
 
+/**
+ * Abre a jornada na etapa pedida pela URL (plano §151).
+ *
+ * `?etapa=treino-final` faz o card "Treinar Abertura Italiana" do Hoje levar ao
+ * treino em vez de recomeçar pela visão. `?mode=train` é o apelido antigo, que
+ * as atividades já gravadas no plano do dia ainda usam — honrá-lo evita que um
+ * card de ontem leve a lugar nenhum.
+ *
+ * NÃO É ATALHO. O salto passa por `voltarParaEtapa`, que só aceita etapa já
+ * CONCLUÍDA ou a atual. Colar a URL do treino sem ter estudado não abre o
+ * treino: abre onde o aluno de fato está. Sem essa passagem, o deep link seria
+ * a porta dos fundos que desfaz a sequência inteira.
+ */
+function aplicarEtapaDaUrl(jornada: StudyJourney, stages: readonly StudyStage[]): StudyJourney {
+  if (typeof window === 'undefined') return jornada
+  const params = new URLSearchParams(window.location.search)
+
+  const pedida = params.get('etapa')
+  if (pedida) return voltarParaEtapa(jornada, pedida)
+
+  const modo = params.get('mode')
+  if (modo === 'train') {
+    const treino = stages.find((stage) => stage.ehTreinoFinal === true)
+    if (treino) return voltarParaEtapa(jornada, treino.id)
+  }
+  return jornada
+}
+
 export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition }) {
   const { repo } = useRepository()
   const stages = useMemo(() => construirJornadaDeAbertura(opening), [opening])
 
   const [jornada, setJornada] = useState<StudyJourney | null>(null)
   const [progress, setProgress] = useState<OpeningProgress>(() => emptyOpeningProgress(opening.id))
+  const [referencia, setReferencia] = useState(false)
 
   // Carrega a jornada gravada, ou cria uma. `null` do repositório significa
   // "nunca começou", e é o único gatilho de criação.
@@ -91,7 +121,8 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
         repo.getOpeningProgress(opening.id),
       ])
       if (cancelado) return
-      setJornada(gravada ?? criarJornada(id, opening.id, 'abertura', stages))
+      const base = gravada ?? criarJornada(id, opening.id, 'abertura', stages)
+      setJornada(aplicarEtapaDaUrl(base, stages))
       if (prog) setProgress({ ...emptyOpeningProgress(opening.id), ...prog })
     }
 
@@ -113,6 +144,27 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
     return <p className={styles.estado}>Abrindo o seu estudo desta abertura…</p>
   }
 
+  if (referencia) {
+    return (
+      <ModoReferencia
+        titulo={opening.name}
+        stages={stages}
+        aoSair={() => setReferencia(false)}
+        conteudoDaEtapa={(stage) => (
+          // A MESMA função de conteúdo da jornada. Uma segunda renderização do
+          // material para a consulta seria a segunda fonte da mesma verdade, e
+          // divergiria na primeira correção de texto.
+          <ConteudoDeEtapa
+            opening={opening}
+            stage={stage}
+            jornada={jornada}
+            aoResponder={() => undefined}
+          />
+        )}
+      />
+    )
+  }
+
   const stage = stages.find((item) => item.id === jornada.currentStageId) ?? stages[0]
   const ehTreino = stage?.id === ETAPA_DE_TREINO_DE_ABERTURA
 
@@ -124,6 +176,7 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
       aoVoltarEtapa={(stageId) => gravar(voltarParaEtapa(jornada, stageId))}
       aoContinuar={ehTreino ? undefined : () => gravar(concluirEtapa(jornada, stages, new Date()))}
       rodapeOculto={ehTreino}
+      aoRever={() => setReferencia(true)}
     >
       {ehTreino ? (
         <TreinoDaAbertura

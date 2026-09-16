@@ -30,6 +30,7 @@ import { useRepository } from '@/components/providers/RepositoryProvider'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { StudyJourneyShell } from '@/components/jornada/StudyJourneyShell'
 import { RoundResultPanel } from '@/components/jornada/RoundResultPanel'
+import { ModoReferencia } from '@/components/jornada/ModoReferencia'
 import {
   concluirEtapa,
   criarJornada,
@@ -80,6 +81,7 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
   const { repo } = useRepository()
   const stages = useMemo(() => construirJornadaDeFinal(endgame, conteudo), [endgame, conteudo])
   const [jornada, setJornada] = useState<StudyJourney | null>(null)
+  const [referencia, setReferencia] = useState(false)
 
   useEffect(() => {
     if (!repo) return
@@ -109,6 +111,27 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
 
   if (!jornada) return <p className={styles.estado}>Abrindo o seu estudo deste final…</p>
 
+  if (referencia) {
+    return (
+      <ModoReferencia
+        titulo={endgame.name}
+        stages={stages}
+        aoSair={() => setReferencia(false)}
+        conteudoDaEtapa={(stage) => (
+          // A MESMA função de conteúdo da jornada — ver a razão no componente
+          // equivalente da abertura.
+          <ConteudoDeEtapa
+            endgame={endgame}
+            conteudo={conteudo}
+            stage={stage}
+            jornada={jornada}
+            aoResponder={() => undefined}
+          />
+        )}
+      />
+    )
+  }
+
   const stage = stages.find((item) => item.id === jornada.currentStageId) ?? stages[0]
   const ehTreino = stage?.ehTreinoFinal === true
 
@@ -120,6 +143,7 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
       aoVoltarEtapa={(stageId) => gravar(voltarParaEtapa(jornada, stageId))}
       aoContinuar={ehTreino ? undefined : () => gravar(concluirEtapa(jornada, stages, new Date()))}
       rodapeOculto={ehTreino}
+      aoRever={() => setReferencia(true)}
     >
       {ehTreino ? (
         <TreinoDoFinal

@@ -178,3 +178,45 @@ test('abrir um final abre a jornada do final, com reconhecimento antes do lance'
   // é conceito de abertura, e aplicá-lo a um final seria reprovar um lance bom.
   await expect(page.locator('main')).not.toContainText(/fora do repert[óo]rio/i)
 })
+
+test('modo referência deixa consultar sem alterar o progresso', async ({ page }) => {
+  await page.goto('/aberturas/italiana')
+  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
+
+  // Avança uma etapa para haver progresso que possa ser perdido.
+  await page.getByRole('button', { name: /Continuar →/ }).click()
+  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Rever conteúdo' }).click()
+  await expect(page.getByText('MODO REFERÊNCIA')).toBeVisible()
+  await expect(page.getByText(/não altera o seu progresso/)).toBeVisible()
+
+  // O TREINO FICA DE FORA da consulta: abrir rodada por aqui seria um segundo
+  // caminho para o treino, sem cobertura e sem desfecho registrado.
+  await expect(page.getByRole('heading', { name: 'Treino final' })).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Voltar ao estudo' }).click()
+  // O progresso continua exatamente onde estava.
+  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+})
+
+test('o roadmap mostra o progresso da jornada e leva para ela', async ({ page }) => {
+  await page.goto('/aberturas/italiana')
+  await page.getByRole('button', { name: /Continuar →/ }).click()
+  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+
+  await page.goto('/roadmap')
+  const card = page.locator('article').filter({ hasText: 'Abertura Italiana' }).first()
+  await expect(card).toContainText(/\d+ de 9 etapas/)
+  // O card leva à JORNADA, e não à biblioteca de lições — que não tem nada
+  // sobre a Italiana.
+  await expect(card.getByRole('link')).toHaveAttribute('href', '/aberturas/italiana')
+})
+
+test('o deep link do treino NÃO pula o aprendizado', async ({ page }) => {
+  // Jornada nova: pedir o treino pela URL tem de cair onde o aluno realmente
+  // está. Sem isso, bastaria colar o link para cobrar sem ter ensinado.
+  await page.goto('/aberturas/italiana?etapa=treino-final')
+  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
+  await expect(page.getByText('TREINO · sem dicas')).toHaveCount(0)
+})

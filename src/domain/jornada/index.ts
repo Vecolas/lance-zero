@@ -15,3 +15,4 @@
 
 export * from './niveis'
 export * from './jornada'
+export * from './integracao'
