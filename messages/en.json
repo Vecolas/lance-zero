@@ -26,7 +26,6 @@
     "skipToContent": "Skip to content",
     "mainNav": "Main navigation",
     "today": "Today",
-    "training": "Train",
     "games": "Games",
     "openings": "Openings",
     "endgames": "Endgames",
@@ -38,7 +37,8 @@
     "diagnostic": "Diagnostic",
     "settings": "Settings",
     "tagline": "Train what loses your games.",
-    "licenses": "Licences and data sources"
+    "licenses": "Licences and data sources",
+    "review": "Review"
   },
   "appearance": {
     "groupLabel": "Appearance and language",
@@ -143,6 +143,15 @@
         "relearn": "This came up wrong in a game again, so it is taught from scratch — starting at the stage that did not stick."
       },
       "missingLessonDescription": "The lesson \"{licao}\" is not in the catalogue. That is a curriculum configuration error, not a problem with your progress."
+    },
+    "stageCounter": "{indice}/{total}",
+    "studyMap": "Study map",
+    "studyMapHelp": "Everything in this journey, always open. The order below is the one we recommend — you can open any stage right now.",
+    "recommendedLater": "Recommended after the earlier stages.",
+    "stageStates": {
+      "completed": "Completed",
+      "current": "Current stage",
+      "available": "Available"
     }
   },
   "errors": {
@@ -229,5 +238,93 @@
       "reviewLesson": "Review lesson"
     },
     "resuming": "Picking up where you left off…"
+  },
+  "account": {
+    "title": "Account",
+    "description": "Reach your saved data securely. Without an account, LanceZero keeps working locally.",
+    "unavailableTitle": "Online account unavailable",
+    "unavailableBody": "Configure Supabase to enable account access. Your local data stays available under Settings.",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "recover": "Recover access",
+    "email": "Email",
+    "password": "Password",
+    "submitSignIn": "Sign in",
+    "submitSignUp": "Sign up",
+    "submitRecover": "Send recovery email",
+    "haveAccount": "I already have an account",
+    "forgotPassword": "I forgot my password",
+    "profile": "Profile",
+    "signedInAs": "You are signed in as:",
+    "authenticated": "Authenticated account",
+    "downloadData": "Download my data",
+    "signOut": "Sign out",
+    "securityTitle": "Security and privacy",
+    "deleteTitle": "Delete account",
+    "deleteBody": "This removes the account, the stored data and the local database on this device.",
+    "deletePhrase": "DELETE ACCOUNT",
+    "deleteLabel": "Type {frase}",
+    "deleteButton": "Delete permanently",
+    "checkEmail": "Check your email.",
+    "signedUp": "Account created. Confirm your email if prompted.",
+    "signedIn": "Signed in.",
+    "sessionExpired": "Session expired.",
+    "exportFailed": "The account could not be exported.",
+    "exportDone": "Export downloaded.",
+    "deleteConfirmRequired": "Type {frase} to confirm.",
+    "deleteFailed": "The account could not be deleted."
+  },
+  "review": {
+    "title": "Review",
+    "description": "Spaced review is what keeps what you learned yours. Here is what is due, what is coming, and what you keep forgetting.",
+    "dueNone": "Nothing due right now",
+    "dueCount": "{n, plural, one {# review due} other {# reviews due}}",
+    "start": "Review now",
+    "emptyWhy": "Come back when something falls due. Reviewing early does not help it stick.",
+    "overdueWarning": "{n, plural, one {# is overdue} other {# are overdue}} — past the day the interval was meant to end.",
+    "upcomingTitle": "What is coming",
+    "upcomingHelp": "Scheduled cards, not a prediction of how you will do.",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "sevenDays": "Next 7 days",
+    "later": "Later",
+    "upcomingEmpty": "Nothing scheduled yet. Cards come from what you miss and what you study.",
+    "originTitle": "Where your reviews come from",
+    "originHelp": "No card shows up here at random — each one has an origin.",
+    "kinds": {
+      "posicao-exata": "Tactic you missed",
+      "posicao-exataHelp": "A puzzle you did not solve, or solved with a hint.",
+      "erro-de-partida": "Game mistake",
+      "erro-de-partidaHelp": "A move you actually played that the engine flagged.",
+      "final": "Endgame",
+      "finalHelp": "A position from an endgame lesson you studied.",
+      "conceito": "Concept",
+      "conceitoHelp": "Curriculum: only what you have already been taught lands here.",
+      "repertorio": "Repertoire",
+      "repertorioHelp": "The move you yourself chose for your line."
+    },
+    "originCount": "{total} total · {vencidos} due",
+    "lapsingTitle": "Slipping again",
+    "lapsingHelp": "You have forgotten these more than once. That is not failure: it is the sign the idea deserves a lesson again, not another attempt.",
+    "lapsingEmpty": "Nothing slipping. What you reviewed has been holding.",
+    "relearning": "Relearning",
+    "lapses": "{n, plural, one {forgotten # time} other {forgotten # times}}",
+    "historyTitle": "Already reviewed",
+    "historyHelp": "Your latest sessions, and how each one ended.",
+    "historyEmpty": "No reviews yet. The first one shows up as soon as a card falls due.",
+    "historyItems": "{n, plural, one {# item} other {# items}}",
+    "outcomes": {
+      "recalled": "recalled",
+      "recalled-with-hint": "with a hint",
+      "failed": "missed",
+      "declared-forgotten": "forgotten",
+      "voluntary-relearn": "relearned by choice",
+      "relearned": "relearned"
+    },
+    "howTitle": "How review works here",
+    "howBody": "Trying before you see the answer is what makes it stick — that is why the solution comes last. Reviewing early does not help: the interval exists so you almost forget. And missing one never demotes what you already learned; what changes is when that card comes back.",
+    "sessionTitle": "Review session",
+    "sessionDescription": "Review starts with what is due. Try before you see the answer: recall is what fixes it.",
+    "backToReview": "Back to Review"
   }
 }

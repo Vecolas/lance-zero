@@ -120,13 +120,18 @@
   com pouco mais de 10 rem e títulos como "Valor e atividade das peças" quebravam
   em uma palavra por linha — o card virava uma coluna de palavras soltas.
 
-  22 rem dá ao corpo largura de frase. E `auto-fit` continua fazendo o resto: onde
+  22 rem dá ao corpo largura de frase. E a grade continua fazendo o resto: onde
   não couberem duas colunas, vira uma de largura inteira, que é melhor que duas
   espremidas.
+
+  `auto-fill` e não `auto-fit`: um grupo com um nó só — e há grupos assim —
+  teria o card esticado de ponta a ponta da tela, com o ícone de um lado e a ação
+  do outro. Com `auto-fill` ele fica do tamanho dos vizinhos das outras seções.
 */
 .nodes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  justify-content: start;
   gap: 0.75rem;
 }
 .node {
@@ -188,15 +193,41 @@
   uma linha órfã. `flex-shrink: 0` é o que impede o inverso — o rótulo ser
   espremido a ponto de virar uma coluna de letras.
 */
-.action,
-.locked {
+/*
+  AS AÇÕES DO CARD, agora até duas.
+
+  "Praticar" veio do hub "Treinar" quando ele deixou de existir. Elas empilham
+  em vez de ficarem lado a lado: numa coluna estreita duas ações na horizontal
+  espremeriam o corpo do card, e o título voltaria a quebrar em uma palavra por
+  linha — o defeito que já foi corrigido aqui uma vez.
+*/
+.actions {
   flex: 0 0 auto;
   align-self: end;
+  display: grid;
+  justify-items: end;
+  gap: var(--space-1);
+}
+.action,
+.actionSecondary,
+.locked {
   color: var(--link);
   font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
   text-decoration: none;
+}
+/*
+  A SEGUNDA AÇÃO É VISIVELMENTE SECUNDÁRIA.
+
+  Aprender vem antes de praticar — é a ordem do PEDAGOGY.md, e dois links com o
+  mesmo peso fariam o aluno escolher no par ou ímpar. O contraste continua sendo
+  de texto normal sobre a superfície do card, não uma cor mais fraca inventada
+  para a ocasião.
+*/
+.actionSecondary {
+  color: var(--text-muted);
+  font-weight: 600;
 }
 .locked {
   color: var(--text-muted);

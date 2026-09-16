@@ -128,7 +128,7 @@ export function PraticaDeHabilidade({ skillId }: { skillId: SkillId }) {
     return (
       <p className={styles.state}>
         Ainda não há lição escrita para {rotulo.toLocaleLowerCase('pt-BR')}, e o LanceZero não cobra
-        o que não ensinou. <Link href="/train">Voltar ao treino</Link>
+        o que não ensinou. <Link href="/roadmap">Voltar ao roadmap</Link>
       </p>
     )
   }

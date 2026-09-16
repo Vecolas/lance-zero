@@ -1,7 +1,7 @@
 /*
   A GRADE DA BIBLIOTECA.
 
-  `minmax(min(100%, 17rem), 1fr)` com `auto-fit` dá, na prática, o que o plano
+  `minmax(min(100%, 17rem), 1fr)` dá, na prática, o que o plano
   pede sem número mágico de colunas: quatro em telas largas, três em desktop
   comum, duas em tablet e uma no celular. O `min(100%, …)` é o que impede a
   coluna de ficar mais larga que a tela em 360 px — sem ele, `17rem` vira rolagem
@@ -12,11 +12,28 @@
   visual estável": os CTAs ficam alinhados mesmo quando um título ocupa duas
   linhas e o vizinho ocupa uma.
 */
+/*
+  `auto-fill` E NÃO `auto-fit`, e a diferença só aparece quando sobram poucos
+  cards.
+
+  As duas palavras montam a mesma grade quando ela está cheia. Com um card só,
+  `auto-fit` COLAPSA as colunas vazias e o card estica para a largura inteira da
+  tela — um cartão de 1150 px com um tabuleiro no meio e o título perdido num
+  canto. Era o que acontecia ao filtrar Aberturas por "Brancas" e sobrar uma.
+
+  `auto-fill` mantém as colunas vazias reservadas, então o card continua com a
+  largura que teria numa lista cheia. `justify-content: start` encosta o que
+  sobrou à esquerda, em vez de centralizar um item solto no meio do vazio.
+*/
 .grade {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  justify-content: start;
   gap: var(--space-4);
-  margin: var(--space-5) 0 0;
+  /* O espaço acima vem da `FilterBar`, que agora o carrega para todas as telas.
+     Repeti-lo aqui somaria duas margens e a Biblioteca ficaria mais folgada que
+     Aberturas e Finais — pelo mesmo controle. */
+  margin: 0;
   padding: 0;
   list-style: none;
 }

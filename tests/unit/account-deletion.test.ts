@@ -54,6 +54,40 @@ describe('exclusão de conta', () => {
     expect(chamadas).toEqual([])
   })
 
+  /*
+    A FRASE EXISTE NOS DOIS IDIOMAS DO PRODUTO.
+
+    O que esta checagem exige é o ATO DELIBERADO de escrever, letra por letra, o
+    que vai acontecer — e escrever só é deliberado se a pessoa entende a frase.
+    Um aluno lendo a tela em inglês recebia um campo pedindo "APAGAR CONTA", que
+    para ele é uma senha sem sentido a ser copiada, não uma confirmação.
+
+    A alternativa descartada era o cliente traduzir a frase digitada para um token
+    único antes de enviar. Aí o servidor validaria um token que o CLIENTE fabrica,
+    e não o gesto de quem digitou — que é a única coisa que esta porta guarda.
+  */
+  it('aceita a frase de confirmação em inglês', async () => {
+    const { admin } = adminFake()
+
+    await expect(deleteAccount(SESSION, 'DELETE ACCOUNT', admin)).resolves.toEqual({ ok: true })
+  })
+
+  it('continua aceitando a frase portuguesa, que é a já publicada', async () => {
+    const { admin } = adminFake()
+
+    await expect(deleteAccount(SESSION, 'APAGAR CONTA', admin)).resolves.toEqual({ ok: true })
+  })
+
+  it('não aceita a frase em inglês fora de caixa alta', async () => {
+    const { admin, chamadas } = adminFake()
+
+    await expect(deleteAccount(SESSION, 'delete account', admin)).resolves.toEqual({
+      ok: false,
+      code: 'confirmation-required',
+    })
+    expect(chamadas).toEqual([])
+  })
+
   it('remove avatars antes do usuário Auth, usando a identidade da sessão', async () => {
     const { admin, chamadas } = adminFake({
       async listAvatarObjects(userId, options) {

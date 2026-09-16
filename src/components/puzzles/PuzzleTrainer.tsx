@@ -448,7 +448,7 @@ export function PuzzleTrainer() {
           Sessão encerrada: {resolvidos} de {cards.length} resolvidos.
         </p>
         <p>
-          O que você errou virou card de revisão e volta em <strong>/train</strong> na hora certa.
+          O que você errou virou card de revisão e volta em <strong>Revisar</strong> na hora certa.
         </p>
       </div>
     )

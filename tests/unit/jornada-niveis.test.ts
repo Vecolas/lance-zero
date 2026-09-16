@@ -34,7 +34,7 @@ import {
   rodadaFoiSucesso,
   rodadaTerminou,
   retomadaDaJornada,
-  voltarParaEtapa,
+  abrirEtapa,
   type StudyStage,
 } from '@/domain/jornada'
 
@@ -192,18 +192,34 @@ describe('a sequência é do sistema; a navegação é do aluno', () => {
     let jornada = concluirEtapa(jornadaNova(), ETAPAS, AGORA)
     jornada = registrarItem(jornada, 'guiada', 'i1')
 
-    const voltou = voltarParaEtapa(jornada, 'visao')
+    const voltou = abrirEtapa(jornada, 'visao')
     expect(voltou.currentStageId).toBe('visao')
     // Reler não é refazer: o item respondido continua lá.
     expect(voltou.itensRespondidos.guiada).toEqual(['i1'])
     expect(voltou.completedStageIds).toEqual(['visao'])
   })
 
-  it('NÃO deixa pular para o treino sem cumprir o caminho', () => {
-    const jornada = jornadaNova()
-    // Etapa futura não é destino: sem isto, "sequência automática" seria
-    // decorativa e o aluno cairia no treino sem ter recebido nada.
-    expect(voltarParaEtapa(jornada, 'treino').currentStageId).toBe('visao')
+  /*
+    O BLOQUEIO SAIU, E A CONCLUSÃO FICOU.
+
+    Antes este caso afirmava que abrir o treino cedo era RECUSADO. O V5.1 separa
+    as duas coisas: progressão passa a definir recomendação e conclusão, nunca
+    visibilidade. O aluno pode espiar o treino — e espiar não conclui nada.
+
+    A afirmação que importa está na segunda metade: a jornada continua NÃO
+    concluída depois do salto. Sem ela, "abrir é livre" viraria "abrir é
+    concluir", que é o oposto do que o plano pede.
+  */
+  it('deixa abrir o treino cedo, e isso NÃO conclui a jornada', () => {
+    const jornada = abrirEtapa(jornadaNova(), 'treino')
+
+    expect(jornada.currentStageId).toBe('treino')
+    expect(jornadaConcluida(jornada, ETAPAS)).toBe(false)
+  })
+
+  it('etapa inexistente continua sendo recusada', () => {
+    // Acesso livre é às etapas DESTA jornada. Um id inventado não vira destino.
+    expect(abrirEtapa(jornadaNova(), 'nao-existe').currentStageId).toBe('visao')
   })
 
   it('entrar no treino final muda o status para em-treino', () => {
@@ -228,11 +244,16 @@ describe('o progresso e o trilho são derivados', () => {
     expect(progresso.atual).toBe(2)
   })
 
-  it('o trilho distingue concluída, atual e futura', () => {
+  it('o índice distingue concluída, atual e DISPONÍVEL', () => {
     const jornada = concluirEtapa(jornadaNova(), ETAPAS, AGORA)
     expect(estadoNoTrilho(jornada, ETAPAS[0])).toBe('concluida')
     expect(estadoNoTrilho(jornada, ETAPAS[1])).toBe('atual')
-    expect(estadoNoTrilho(jornada, ETAPAS[2])).toBe('futura')
+    /*
+      `disponivel` E NÃO `futura`. A palavra mudou junto com a regra: o estado
+      diz onde o aluno está no caminho recomendado, não o que ele tem permissão
+      de ver. "Ainda não aberta" saiu do produto.
+    */
+    expect(estadoNoTrilho(jornada, ETAPAS[2])).toBe('disponivel')
   })
 
   it('jornada vazia NÃO é jornada concluída', () => {

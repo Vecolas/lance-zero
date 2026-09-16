@@ -43,7 +43,7 @@ function definicao(id: string, total = 3): ActivityDefinition {
     estimatedMinutes: 6,
     contentVersion: 1,
     completionRule: { tipo: 'itens', total },
-    href: `/train/pratica/tactics.fork?a=${id}`,
+    href: `/pratica/tactics.fork?a=${id}`,
   }
 }
 

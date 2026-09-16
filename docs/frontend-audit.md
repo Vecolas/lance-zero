@@ -7,7 +7,7 @@ Data da auditoria: 2026-09-15. As imagens geradas pelo teste visual são referê
 | Área      | Rotas                             | Composição entregue                                                     |
 | --------- | --------------------------------- | ----------------------------------------------------------------------- |
 | Hoje      | `/dashboard`                      | lista local-first, conclusão persistente e estados visuais              |
-| Treino    | `/train`                          | hub com continuar, praticar, revisar e cálculo                          |
+| Revisar   | `/revisao`                        | casa da revisão: vencidas, previsão, origem, reincidentes e histórico   |
 | Aberturas | `/aberturas`, `/aberturas/[slug]` | catálogo, mini-tabuleiros, curso, aprender, treinar, planos e variações |
 | Finais    | `/endgames`, `/endgames/[slug]`   | biblioteca, detalhe, posições treináveis e progresso                    |
 | Cálculo   | `/calculate`                      | exercício guiado com board + painel e etapas explícitas                 |
@@ -20,7 +20,8 @@ Data da auditoria: 2026-09-15. As imagens geradas pelo teste visual são referê
 
 - Shell: `AppShell`, `SiteHeader`, `SiteBottomNav`, `ThemeToggle`.
 - Xadrez: `ChessBoardView`, `GameViewer`, `MoveList`, `ChessWorkspace`.
-- Treino: `DailyPlanView`, `TreinoHub`, `ReviewSession`, `FeedbackBanner`.
+- Revisão: `PainelDeRevisao`, `ReviewSession`, `FeedbackBanner`. O `TreinoHub` foi removido com a aba "Treinar".
+- Hoje: `DailyPlanView`.
 - Conteúdo: `OpeningCatalog`, `OpeningCourse`, `EndgamesWorkbench`, `EndgameDetail`, `EndgameTrainer`.
 - Primitives: `PageContainer`, `PageHeader`, `SectionHeader`, `Card`, `StatusBadge`, `ModeLabel`, `ProgressIndicator`, `StatePanel`, `Tabs` e `FilterBar` em `src/components/ui/primitives.tsx`.
 

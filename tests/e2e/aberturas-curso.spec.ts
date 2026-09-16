@@ -150,6 +150,41 @@ test('o catálogo filtra por lado e por nível, na mesma fileira', async ({ page
   await expect(page.getByText(/Nenhuma abertura corresponde aos filtros/)).toBeVisible()
 })
 
+test('TESTE GRADE RALA — um card sozinho não estica para a tela inteira', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'a regra só tem efeito onde cabem colunas')
+
+  /*
+    O DEFEITO, e ele só aparecia com o filtro ligado: a grade usava `auto-fit`,
+    que COLAPSA as colunas vazias. Com um card só, ele esticava de ponta a ponta —
+    um cartão de 1150 px com o tabuleiro no meio e o título perdido num canto.
+
+    `auto-fill` mantém as colunas reservadas, então um card sozinho fica com a
+    largura que teria numa lista cheia. O teste mede isso: a razão entre o card e
+    a grade, com a grade cheia e depois com ela rala.
+  */
+  await page.goto('/aberturas')
+  const grade = page.locator('[class*="grid"]').first()
+  const primeiro = () => grade.getByRole('link').first()
+  await expect(primeiro()).toBeVisible()
+
+  const larguraDaGrade = await grade.evaluate((el) => el.getBoundingClientRect().width)
+  const cheia = await primeiro().evaluate((el) => el.getBoundingClientRect().width)
+
+  // Filtra até sobrar UM. "Brancas" + o nível mais raro é o caminho do aluno.
+  await page.getByRole('button', { name: 'Brancas', exact: true }).click()
+  await expect(primeiro()).toBeVisible()
+  const cartoes = await grade.getByRole('link').count()
+
+  const rala = await primeiro().evaluate((el) => el.getBoundingClientRect().width)
+  expect(
+    Math.round(rala),
+    `com ${cartoes} card(s) o cartão ficou com ${Math.round(rala)}px numa grade de ${Math.round(larguraDaGrade)}px`,
+  ).toBe(Math.round(cheia))
+
+  // E a régua absoluta que o pedido traz: nunca mais que dois lado a lado.
+  expect(rala).toBeLessThanOrEqual(larguraDaGrade / 2 + 1)
+})
+
 test('o filtro de nível avisa que está ativo, e não só por cor', async ({ page }) => {
   await page.goto('/aberturas')
   const botao = page.getByRole('button', { name: /Filtrar por nível/ })

@@ -244,7 +244,7 @@ test('a posição que o aluno não cumpriu aparece no treino de hoje', async ({ 
   await jogar(page, 'b1e1')
   await expect(page.getByText(/já está vencida e aparece no treino de hoje/)).toBeVisible()
 
-  await page.goto('/train/revisao')
+  await page.goto('/revisao/sessao')
 
   // O card de final entrou na fila de revisão vencida, com o enunciado da
   // posição como pergunta.
@@ -281,6 +281,6 @@ test('cumprir sem dica não enche a fila de revisão', async ({ page }) => {
   await expect(page.getByText(/Tentativa gravada/)).toBeVisible()
   await expect(page.getByText(/aparece no treino de hoje/)).toBeHidden()
 
-  await page.goto('/train/revisao')
+  await page.goto('/revisao/sessao')
   await expect(page.getByText(/Nada vencido agora/)).toBeVisible()
 })

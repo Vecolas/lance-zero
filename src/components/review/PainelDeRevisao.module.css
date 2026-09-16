@@ -1,0 +1,264 @@
+/*
+  A ABA REVISAR.
+
+  UMA COLUNA, e não uma grade de cartões. A tela conta uma história em ordem: o
+  que venceu → o que vem → de onde veio → o que cai → o que já foi feito → a
+  regra. Espalhar isso em cartões lado a lado faria o aluno ler em ordem
+  aleatória seis respostas que só fazem sentido nessa sequência.
+
+  O bloco de AÇÃO é o único com peso visual. Os outros cinco são leitura.
+*/
+.painel {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 52rem;
+}
+
+/* ---------------------------------------------------- 1. o estado agora */
+
+.agora {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  padding: var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+
+.agoraTitulo {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-strong);
+}
+
+.botao {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.botao:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+/*
+  O BOTÃO INERTE, e por que ele não é um `<button disabled>`.
+
+  Não há ação nenhuma para desabilitar: não existe rota de sessão vazia para
+  onde ele levaria. Um `<button>` desabilitado prometeria um comando que o app
+  não tem, e alguns leitores de tela o omitem da navegação — o aluno perderia
+  junto a frase que explica POR QUE não há o que revisar.
+
+  Como `span` com `aria-disabled`, ele continua sendo lido, continua explicando,
+  e não finge ser clicável.
+*/
+.botaoInerte {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+.motivo {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+/* Atraso não é só cor: o símbolo vem no JSX e o texto diz o número. */
+.atraso {
+  margin: 0;
+  color: var(--attention-on-tint);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------- os cinco blocos */
+
+.bloco,
+.regra {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.blocoTitulo {
+  margin: 0;
+  font-size: 1.0625rem;
+  color: var(--text-strong);
+}
+
+.blocoAjuda {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Vazio é resposta, não falha: mesma cor do texto de apoio, nunca de erro. */
+.vazio {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+/* ------------------------------------------------------------ 2. o que vem */
+
+/*
+  `auto-fill` e não `auto-fit`, pelo mesmo motivo das grades de card: com uma
+  faixa só preenchida o número esticaria para a largura inteira do bloco.
+*/
+.faixas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+}
+
+.faixa {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.faixaRotulo {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.faixaValor {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+
+/* ---------------------------------------------------------- 3. de onde vem */
+
+.origens,
+.reincidentes,
+.historico {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.origem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-1) var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.origem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.origemNome {
+  font-weight: 650;
+  color: var(--text);
+}
+
+.origemNumero {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.origemAjuda {
+  grid-column: 1 / -1;
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* ------------------------------------------------------ 4. voltando a cair */
+
+.reincidente {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.reincidenteTexto {
+  min-width: 0;
+  color: var(--text);
+}
+
+.reincidenteMarca {
+  flex: none;
+  color: var(--attention-on-tint);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------- 5. já revisado */
+
+.sessao {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.sessaoDia {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.sessaoTotal {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.sessaoDesfechos {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------- 6. a regra */
+
+.regra {
+  background: var(--surface-sunken);
+}
+
+.regraTexto {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+  line-height: 1.6;
+}

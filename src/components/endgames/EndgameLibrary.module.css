@@ -26,9 +26,20 @@
   border-color: var(--accent-strong);
   color: var(--on-accent);
 }
+/*
+  `auto-fill` E NÃO `auto-fit`, e a diferença só aparece quando sobram poucos
+  cards.
+
+  As duas palavras montam a mesma grade quando ela está cheia. Com um card só,
+  `auto-fit` COLAPSA as colunas vazias e o card estica para a largura inteira da
+  tela — um cartão de 1150 px com um tabuleiro no meio e o título perdido num
+  canto. `auto-fill` mantém as colunas reservadas, então o card continua com a
+  largura que teria numa lista cheia.
+*/
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  justify-content: start;
   gap: var(--space-5);
 }
 .card {

@@ -16,7 +16,7 @@ número é medido por varredura do repositório, não estimado — o script est�
 | `src/domain/roadmap`      |      85 | ✅ títulos e descrições traduzidos     |
 | `src/components/openings` |      84 | ⚠️ catálogo traduzido; jornada não     |
 | `src/components/endgames` |      73 | ⚠️ biblioteca traduzida; treinador não |
-| `src/components/training` |      62 | ❌ Hoje, hub e revisão                 |
+| `src/components/training` |     ~40 | ⚠️ Hoje e a sessão de revisão          |
 | `src/content/diagnostic`  |      60 | ❌ banco do diagnóstico                |
 | `src/app/[lang]`          |      54 | ⚠️ layout e metadata traduzidos        |
 | `src/domain/puzzles`      |      51 | ❌ explicações de puzzle               |
@@ -35,7 +35,21 @@ Estas telas podem ser usadas inteiras em inglês:
   oficiais das 6 aberturas;
 - **Biblioteca de Finais**: filtros, status, níveis e os nomes dos 14 finais;
 - **Jornada de lições**: trilha, etapas, estados e as quatro frases de modo;
-- **Casca da jornada** (Aberturas e Finais): contagem de etapas e o aviso de modo.
+- **Casca da jornada** (Aberturas e Finais): contagem de etapas e o aviso de modo;
+- **Revisar** (a aba inteira): o que venceu, a previsão, a origem de cada card, o
+  que vem caindo, o histórico das sessões e a explicação da regra. A aba nasceu
+  traduzida — ela substituiu o hub "Treinar", que estava 100% em português cru;
+- **Conta**: título, descrição, formulário de entrada e cadastro, perfil, exportação
+  e o bloco de exclusão — inclusive a frase de confirmação, que é `APAGAR CONTA`
+  em português e `DELETE ACCOUNT` em inglês. O servidor aceita as duas.
+
+  Ela era a maior exceção do app: estava inteira em português fixo, e um aluno em
+  inglês lia "Excluir definitivamente" ao lado de um campo pedindo "APAGAR CONTA"
+  — na tela onde errar é irreversível. A única coisa que continua chegando em
+  inglês nos dois idiomas é a mensagem de erro do Supabase, e de propósito:
+  traduzi-la por tabela exigiria manter a lista de um serviço que muda sem avisar,
+  e uma tradução errada de "invalid login credentials" manda a pessoa investigar a
+  coisa errada.
 
 ## O que NÃO está, e por quê
 
@@ -58,8 +72,12 @@ A prioridade é a do plano (§163–168), com o que já foi feito riscado:
 
 1. ~~Casca: navegação, botões, estados~~ ✅
 2. ~~Roadmap~~ ✅
-3. **Hoje e Treinar** — `src/components/training` (62)
-4. **Revisão** — `ReviewSession`, incluindo "Fora do repertório" (parte dos 62)
+   2b. ~~Conta~~ ✅ (fora de ordem: a tela toca dado e exclusão, e texto errado ali
+   custa mais que numa lição)
+3. **Hoje** — `DailyPlanView` e o card de atividade
+4. **A sessão de revisão** — `ReviewSession`, incluindo "Fora do repertório". A
+   CASA da revisão (`/revisao`) já nasceu traduzida; o que falta é a fila por
+   dentro, que é a tela de 1018 linhas
 5. **Lições** — `src/content/lessons` (558). O maior item, e o mais delicado
 6. **Aberturas**: comentários, planos, erros comuns (154)
 7. **Finais**: princípios, técnica, feedback (137)

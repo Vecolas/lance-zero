@@ -1,0 +1,112 @@
+/*
+  UMA ETAPA POR VEZ.
+
+  O que estava aqui era uma faixa com DEZ rótulos lado a lado. Ela comia a
+  largura que o tabuleiro deveria ter — numa tela em que o tabuleiro é o
+  conteúdo — e transformava a jornada numa coleção de abas.
+
+  Agora é uma linha: nome da etapa, posição, progresso e o botão do Mapa. A
+  moldura não muda quando o aluno avança; só o texto dentro dela. É o que dá a
+  sensação de curso contínuo em vez de troca de tela.
+*/
+.cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.identidade {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.nome {
+  margin: 0;
+  font-size: 1.375rem;
+  color: var(--text-strong);
+}
+
+/*
+  O CONTADOR É PARTE DO NOME, e não uma etiqueta ao lado.
+
+  "Reconhecer — 2/10" é lido como uma coisa só; "Reconhecer" com um "2/10"
+  flutuando noutro canto obriga o olho a juntar os dois. Peso menor e tabular
+  para os números não dançarem de etapa para etapa.
+*/
+.contador {
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.objetivo {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.direita {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* A barra mede CONCLUSÃO, não posição do cursor. Ver a nota no componente. */
+.barra {
+  width: 7rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.barra > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.concluidas {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/*
+  O MAPA É UMA SAÍDA LATERAL, não o próximo passo.
+
+  Peso de botão cheio aqui competiria com o "Continuar" do rodapé e sugeriria
+  que consultar o índice é o caminho — quando o caminho é seguir a sequência.
+*/
+.mapa {
+  min-height: 2.5rem;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mapa:hover {
+  background: var(--surface-sunken);
+}
+
+.mapa:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}

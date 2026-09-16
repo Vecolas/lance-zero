@@ -26,7 +26,6 @@
     "skipToContent": "Pular para o conteúdo",
     "mainNav": "Navegação principal",
     "today": "Hoje",
-    "training": "Treinar",
     "games": "Partidas",
     "openings": "Aberturas",
     "endgames": "Finais",
@@ -38,7 +37,8 @@
     "diagnostic": "Diagnóstico",
     "settings": "Ajustes",
     "tagline": "Treine o que perde suas partidas.",
-    "licenses": "Licenças e fontes de dados"
+    "licenses": "Licenças e fontes de dados",
+    "review": "Revisar"
   },
   "appearance": {
     "groupLabel": "Aparência e idioma",
@@ -143,6 +143,15 @@
         "relearn": "Este conteúdo voltou a falhar em partida, então ele é ensinado de novo — do começo da etapa que ficou devendo."
       },
       "missingLessonDescription": "A lição \"{licao}\" não está no catálogo. Isso é erro de configuração do currículo, não do seu progresso."
+    },
+    "stageCounter": "{indice}/{total}",
+    "studyMap": "Mapa do estudo",
+    "studyMapHelp": "Todo o conteúdo desta jornada, sempre aberto. A ordem abaixo é a que recomendamos — você pode abrir qualquer etapa agora.",
+    "recommendedLater": "Recomendado depois das anteriores.",
+    "stageStates": {
+      "completed": "Concluída",
+      "current": "Etapa atual",
+      "available": "Disponível"
     }
   },
   "errors": {
@@ -229,5 +238,93 @@
       "reviewLesson": "Rever lição"
     },
     "resuming": "Retomando de onde você parou…"
+  },
+  "account": {
+    "title": "Conta",
+    "description": "Acesse seus dados salvos com segurança. Sem conta, o LanceZero continua funcionando localmente.",
+    "unavailableTitle": "Conta online indisponível",
+    "unavailableBody": "Configure o Supabase para ativar o acesso à conta. Seus dados locais continuam disponíveis em Ajustes.",
+    "signIn": "Entrar",
+    "signUp": "Criar conta",
+    "recover": "Recuperar acesso",
+    "email": "E-mail",
+    "password": "Senha",
+    "submitSignIn": "Entrar",
+    "submitSignUp": "Cadastrar",
+    "submitRecover": "Enviar recuperação",
+    "haveAccount": "Já tenho conta",
+    "forgotPassword": "Esqueci a senha",
+    "profile": "Perfil",
+    "signedInAs": "Você está conectado como:",
+    "authenticated": "Conta autenticada",
+    "downloadData": "Baixar meus dados",
+    "signOut": "Sair",
+    "securityTitle": "Segurança e privacidade",
+    "deleteTitle": "Excluir conta",
+    "deleteBody": "Esta ação remove a conta, os dados persistidos e o banco local deste aparelho.",
+    "deletePhrase": "APAGAR CONTA",
+    "deleteLabel": "Digite {frase}",
+    "deleteButton": "Excluir definitivamente",
+    "checkEmail": "Confira seu e-mail.",
+    "signedUp": "Cadastro criado. Confirme seu e-mail se necessário.",
+    "signedIn": "Login realizado.",
+    "sessionExpired": "Sessão expirada.",
+    "exportFailed": "Não foi possível exportar a conta.",
+    "exportDone": "Exportação baixada.",
+    "deleteConfirmRequired": "Digite {frase} para confirmar.",
+    "deleteFailed": "Não foi possível excluir a conta."
+  },
+  "review": {
+    "title": "Revisar",
+    "description": "A revisão espaçada é o que faz o que você aprendeu continuar seu. Aqui está o que venceu, o que vem e o que você vem esquecendo.",
+    "dueNone": "Nada vencido agora",
+    "dueCount": "{n, plural, one {# revisão vencida} other {# revisões vencidas}}",
+    "start": "Revisar agora",
+    "emptyWhy": "Volte quando algum item vencer. Antecipar revisão não ajuda a fixar.",
+    "overdueWarning": "{n, plural, one {# está atrasada} other {# estão atrasadas}} — já passaram do dia em que o intervalo terminava.",
+    "upcomingTitle": "O que vem",
+    "upcomingHelp": "Cards agendados, não previsão de acerto.",
+    "today": "Hoje",
+    "tomorrow": "Amanhã",
+    "sevenDays": "Próximos 7 dias",
+    "later": "Depois",
+    "upcomingEmpty": "Nada agendado ainda. Os cards nascem do que você erra e do que você estuda.",
+    "originTitle": "De onde vem o que você revisa",
+    "originHelp": "Nenhum card aparece aqui por sorteio — cada um tem uma origem.",
+    "kinds": {
+      "posicao-exata": "Tática que você errou",
+      "posicao-exataHelp": "Um puzzle que você não resolveu, ou resolveu com dica.",
+      "erro-de-partida": "Erro de partida",
+      "erro-de-partidaHelp": "Um lance que você jogou de verdade e a engine apontou.",
+      "final": "Final",
+      "finalHelp": "Uma posição da lição de finais que você estudou.",
+      "conceito": "Conceito",
+      "conceitoHelp": "Currículo: só entra aqui o que já te foi ensinado.",
+      "repertorio": "Repertório",
+      "repertorioHelp": "O lance que você mesmo escolheu para a sua linha."
+    },
+    "originCount": "{total} no total · {vencidos} vencidos",
+    "lapsingTitle": "Voltando a cair",
+    "lapsingHelp": "Estes você já esqueceu mais de uma vez. Não é fracasso: é o sinal de que o conceito merece uma aula de novo, não mais uma tentativa.",
+    "lapsingEmpty": "Nada voltando a cair. O que você revisou tem se sustentado.",
+    "relearning": "Em reaprendizado",
+    "lapses": "{n, plural, one {esquecido # vez} other {esquecido # vezes}}",
+    "historyTitle": "Já revisado",
+    "historyHelp": "As suas últimas sessões, e como cada uma terminou.",
+    "historyEmpty": "Nenhuma revisão ainda. A primeira aparece assim que algum card vencer.",
+    "historyItems": "{n, plural, one {# item} other {# itens}}",
+    "outcomes": {
+      "recalled": "lembrados",
+      "recalled-with-hint": "com dica",
+      "failed": "errados",
+      "declared-forgotten": "esquecidos",
+      "voluntary-relearn": "reaprendidos por escolha",
+      "relearned": "reaprendidos"
+    },
+    "howTitle": "Como a revisão funciona aqui",
+    "howBody": "Tentar antes de ver a resposta é o que fixa — por isso a solução só aparece depois. Antecipar não ajuda: o intervalo existe para você quase esquecer. E errar nunca rebaixa o que você já aprendeu; o que muda é quando aquele card volta.",
+    "sessionTitle": "Sessão de revisão",
+    "sessionDescription": "A revisão começa pelas vencidas. Tente antes de ver a resposta: é a recuperação que fixa.",
+    "backToReview": "Voltar para Revisar"
   }
 }

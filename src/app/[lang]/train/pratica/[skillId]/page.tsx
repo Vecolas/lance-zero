@@ -1,21 +1,18 @@
-import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
-import { PraticaDeHabilidade } from '@/components/training/PraticaDeHabilidade'
-import { getSkill } from '@/domain/skills/catalog'
+import { redirect } from 'next/navigation'
 import { SKILL_IDS, type SkillId } from '@/domain/types'
-import { PageHeader } from '@/components/ui/primitives'
 
 /**
- * Prática de uma habilidade, com endereço próprio.
+ * O endereço antigo da prática. Ela mudou para `/pratica/{skillId}` quando a
+ * aba "Treinar" deixou de existir — ficar sob `/train` apontaria para uma seção
+ * que não existe mais.
  *
- * Pelo mesmo motivo da rota de lição: o card do Hoje precisa MANDAR o aluno a
- * um lugar concreto, e "abra Treinar e procure" não é um destino. A URL também
- * é o que permite recarregar sem perder o lugar e o que dá ao E2E algo para
- * apontar.
+ * Como o de `/train/revisao`, este desvio protege PLANOS JÁ GRAVADOS: o card de
+ * prática do plano do dia guarda o href, e um plano de ontem não muda porque o
+ * app mudou.
  *
- * A rota NÃO decide o que mostrar. Quem decide é o estágio da habilidade, lido
- * pelo componente — ver o cabeçalho dele. Uma rota que já soubesse se é guiada
- * ou independente teria de ler o estado no servidor, e o estado é local.
+ * `dynamicParams = false` e `generateStaticParams` continuam aqui pelo mesmo
+ * motivo da rota nova: o id de habilidade tem ponto (`tactics.fork`), e sem a
+ * lista explícita o Next tentaria resolver qualquer coisa como parâmetro.
  */
 export const dynamicParams = false
 
@@ -23,25 +20,11 @@ export function generateStaticParams(): { skillId: string }[] {
   return SKILL_IDS.map((skillId) => ({ skillId }))
 }
 
-export async function generateMetadata({
+export default async function PraticaAntigaPage({
   params,
 }: {
   params: Promise<{ skillId: string }>
-}): Promise<Metadata> {
+}) {
   const { skillId } = await params
-  const valido = SKILL_IDS.includes(skillId as SkillId)
-  return { title: valido ? `Praticar: ${getSkill(skillId as SkillId).label}` : 'Praticar' }
-}
-
-export default async function PraticaPage({ params }: { params: Promise<{ skillId: string }> }) {
-  const { skillId } = await params
-  if (!SKILL_IDS.includes(skillId as SkillId)) notFound()
-  const skill = getSkill(skillId as SkillId)
-
-  return (
-    <>
-      <PageHeader title={skill.label} description={skill.description} />
-      <PraticaDeHabilidade skillId={skillId as SkillId} />
-    </>
-  )
+  redirect(`/pratica/${skillId as SkillId}`)
 }

@@ -196,10 +196,18 @@ function ConteudoDeEtapa({
         </>
       )
 
+    /*
+      TABULEIRO À ESQUERDA, INSTRUÇÃO À DIREITA — em toda etapa que tem posição.
+
+      Estas etapas empilhavam `<Tabuleiro>` e `<p>` dentro da coluna única da
+      casca. Em desktop isso produzia exatamente o layout que o contrato V5.1
+      declara incorreto: tabuleiro à esquerda, texto embaixo dele, e metade da
+      tela vazia à direita. A `MesaDeEstudo` é a mesma usada pela lição e pela
+      jornada de abertura — uma regra, um componente.
+    */
     case 'reconhecer':
-      return (
-        <>
-          {primeira ? <Tabuleiro posicao={primeira} /> : null}
+      return primeira ? (
+        <MesaDeEstudo tabuleiro={<Tabuleiro posicao={primeira} />}>
           <p className={styles.texto}>
             Antes de procurar um lance, a pergunta é outra:{' '}
             <strong>o que importa nesta posição?</strong> Quem está melhor, o que decide o
@@ -209,7 +217,13 @@ function ConteudoDeEtapa({
             Reconhecer o tipo de posição é o que permite jogar finais que você nunca viu — decorar
             uma sequência só serve para a posição exata em que ela foi decorada.
           </p>
-        </>
+        </MesaDeEstudo>
+      ) : (
+        <p className={styles.texto}>
+          Antes de procurar um lance, a pergunta é outra:{' '}
+          <strong>o que importa nesta posição?</strong> Quem está melhor, o que decide o resultado,
+          e qual é o plano de cada lado.
+        </p>
       )
 
     case 'principio':
@@ -223,16 +237,18 @@ function ConteudoDeEtapa({
       )
 
     case 'demonstracao':
-      return (
-        <>
-          {primeira ? <Tabuleiro posicao={primeira} /> : null}
+      return primeira ? (
+        <MesaDeEstudo tabuleiro={<Tabuleiro posicao={primeira} />}>
           <PassosDaLicao conteudo={conteudo} tipos={['demonstration']} />
-        </>
+        </MesaDeEstudo>
+      ) : (
+        <PassosDaLicao conteudo={conteudo} tipos={['demonstration']} />
       )
 
-    case 'progredir':
-      return (
-        <>
+    case 'progredir': {
+      const doAtaque = ataque[0] ?? primeira
+      return doAtaque ? (
+        <MesaDeEstudo tabuleiro={<Tabuleiro posicao={doAtaque} />}>
           <p className={styles.texto}>
             Como CONVERTER: com o lado forte, o objetivo não é dar mate agora — é progredir sem
             devolver o que já está ganho.
@@ -244,12 +260,18 @@ function ConteudoDeEtapa({
               </li>
             ))}
           </ul>
-        </>
+        </MesaDeEstudo>
+      ) : (
+        <p className={styles.texto}>
+          Como CONVERTER: com o lado forte, o objetivo não é dar mate agora — é progredir sem
+          devolver o que já está ganho.
+        </p>
       )
+    }
 
     case 'defender':
       return defesa.length > 0 ? (
-        <>
+        <MesaDeEstudo tabuleiro={<Tabuleiro posicao={defesa[0]} />}>
           <p className={styles.texto}>
             Como SEGURAR: com o lado fraco, empatar é vitória. O que muda é o critério de sucesso.
           </p>
@@ -260,7 +282,7 @@ function ConteudoDeEtapa({
               </li>
             ))}
           </ul>
-        </>
+        </MesaDeEstudo>
       ) : (
         <p className={styles.texto}>
           {/*

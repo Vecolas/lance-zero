@@ -30,7 +30,15 @@ export function MesaDeEstudo({ tabuleiro, children }: MesaDeEstudoProps) {
   return (
     <div className={styles.mesa}>
       <div className={styles.tabuleiro}>{tabuleiro}</div>
-      <div className={styles.instrucao}>{children}</div>
+      {/*
+        `data-testid` porque a regra "instrução AO LADO do tabuleiro" só existe
+        se for medida. Sem um alvo estável, o portão visual teria de adivinhar
+        qual bloco de texto é o painel — e passaria a reprovar na primeira
+        mudança de classe.
+      */}
+      <div className={styles.instrucao} data-testid="instrucao-do-estudo">
+        {children}
+      </div>
     </div>
   )
 }

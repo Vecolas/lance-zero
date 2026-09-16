@@ -40,14 +40,23 @@ export const mainNav: NavItem[] = [
     primaryMobile: true,
   },
   {
-    href: '/train',
-    label: 'Treinar',
-    labelKey: 'navigation.training',
-    // "Sessão só" descrevia o desenho antigo, em que abrir a aba já jogava o
-    // aluno numa posição. Agora são quatro coisas com nomes diferentes, e a
-    // descrição precisa dizer isso — ela aparece na landing e nos estados
-    // vazios, que é onde o aluno forma a expectativa antes de clicar.
-    description: 'Aprender, praticar, revisar e analisar — cada coisa com o seu nome.',
+    href: '/revisao',
+    label: 'Revisar',
+    labelKey: 'navigation.review',
+    /*
+      A ABA ERA "TREINAR", E ERA UM ROTEADOR.
+
+      Seis blocos, e cinco só apontavam para um lugar que já existia: a
+      Biblioteca (continuar e currículo por área), a landing (diagnóstico) e a
+      aba Partidas. O único sem outra casa era a prática por habilidade, que
+      passou para o card do Roadmap.
+
+      No lugar entra a revisão espaçada, que é princípio inegociável do produto e
+      não tinha casa nenhuma — era uma linha dentro do hub levando a uma fila sem
+      contexto. O nome acompanha o conteúdo: chamar de "Treinar" uma tela que só
+      revisa faria o aluno procurar prática ali e não achar.
+    */
+    description: 'O que venceu, o que vem, de onde veio e o que você vem esquecendo.',
     phase: 5,
     primaryMobile: true,
   },

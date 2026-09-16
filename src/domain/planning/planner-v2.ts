@@ -48,6 +48,7 @@ import {
   type SkillState,
 } from '@/domain/aprendizado'
 import { cardPodeSerRevisado } from '@/domain/review/elegibilidade'
+import { isSkillStateReviewEligible } from '@/domain/roadmap'
 import { getSkill } from '@/domain/skills/catalog'
 import type { ReviewCard, SkillId, SkillMastery, UserProfile } from '@/domain/types'
 import { createRng } from './rng'
@@ -336,10 +337,18 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
     Conteúdo presente no catálogo, ou um card legado, não prova ensino: sem
     estado persistido a conta começa em zero exposições.
   */
+  /*
+    O PREDICADO É O COMPARTILHADO, e antes era uma cópia.
+
+    Escrito à mão aqui ele dizia `exposureCount > 0 && !precisaDeReensino` e
+    ESQUECIA o `stage !== 'unseen'` que `isSkillStateReviewEligible` tem. As duas
+    versões concordavam quase sempre — e discordavam exatamente no caso que a
+    regra existe para pegar: uma habilidade com exposição registrada e estágio
+    ainda em `unseen`. O plano do dia a considerava ensinada; a fila de revisão,
+    não. Mesma pergunta, duas respostas, nenhum erro em lugar nenhum.
+  */
   const habilidadesEnsinadas = new Set<SkillId>(
-    contexto.skillStates
-      .filter((estado) => estado.exposureCount > 0 && !estado.precisaDeReensino)
-      .map((estado) => estado.skillId),
+    contexto.skillStates.filter(isSkillStateReviewEligible).map((estado) => estado.skillId),
   )
 
   const vencidos = contexto.dueCards
@@ -378,7 +387,7 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
         pedagogicalStage: 'review',
         contentVersion: 1,
         completionRule: { tipo: 'itens', total: vencidos.length },
-        href: '/train/revisao',
+        href: '/revisao/sessao',
       },
       motivo:
         `${vencidos.length} ${vencidos.length === 1 ? 'revisão venceu' : 'revisões venceram'}. ` +
@@ -431,7 +440,7 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
         pedagogicalStage: estado?.stage ?? 'unseen',
         contentVersion: 1,
         completionRule: { tipo: kind === 'licao' ? 'etapas' : 'itens', total: 4 },
-        href: kind === 'licao' ? `/lessons/${skillId}` : `/train/pratica/${skillId}`,
+        href: kind === 'licao' ? `/lessons/${skillId}` : `/pratica/${skillId}`,
       },
       motivo:
         kind === 'licao'
@@ -633,7 +642,7 @@ function candidatas(contexto: PlannerV2Context, config: PlannerV2Config): Candid
         pedagogicalStage: estado.stage,
         contentVersion: 1,
         completionRule: { tipo: 'itens', total: 4 },
-        href: `/train/pratica/${skillId}`,
+        href: `/pratica/${skillId}`,
       },
       motivo:
         kind === 'pratica-guiada'

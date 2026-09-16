@@ -105,7 +105,7 @@ describe('trocar de idioma continua no mesmo lugar', () => {
   it('traduz o nome da seção e preserva o resto', () => {
     expect(traduzirRota('/dashboard', 'en')).toBe('/en/today')
     expect(traduzirRota('/en/today', 'pt-BR')).toBe('/dashboard')
-    expect(traduzirRota('/train/revisao', 'en')).toBe('/en/training/review')
+    expect(traduzirRota('/revisao/sessao', 'en')).toBe('/en/review/session')
   })
 
   /**
@@ -157,7 +157,7 @@ describe('trocar de idioma continua no mesmo lugar', () => {
       '/aberturas/italiana',
       '/finais/oposicao',
       '/lessons/jornada/candidatos',
-      '/train/revisao',
+      '/revisao/sessao',
     ]) {
       expect(traduzirRota(traduzirRota(caminho, 'en'), 'pt-BR'), caminho).toBe(caminho)
     }

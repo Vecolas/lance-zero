@@ -1,6 +1,4 @@
 .header {
-  /* `sticky` já cria o bloco de contenção que `.tools` usa para se ancorar no
-     canto: um `relative` extra aqui seria linha morta afirmando o contrário. */
   position: sticky;
   top: 0;
   z-index: 20;
@@ -13,11 +11,26 @@
   max-width: var(--content-max);
   margin: 0 auto;
   padding: var(--space-3) var(--space-4);
-  /* Espaço reservado para o botão de tema, que é posicionado no canto. */
-  padding-right: calc(var(--space-4) + 3.25rem);
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-3);
+  /*
+    O CABEÇALHO ENVOLVE EM VEZ DE SOBREPOR.
+
+    A versão anterior ancorava o canto direito com `position: absolute` e
+    reservava o espaço dele com um `padding-right` fixo de 3.25rem — a largura
+    do botão de tema, e só dele. Quando "Conta" e o seletor de idioma entraram
+    naquele canto, o grupo passou a ser MUITO mais largo que o espaço reservado
+    e imprimiu por cima da navegação: em inglês, "Library" e "Account" saíam um
+    sobre o outro.
+
+    O defeito não era a medida errada: era medir à mão uma largura que muda com
+    o idioma, com o tamanho de fonte do sistema e com cada controle novo. Em
+    fluxo normal nada disso precisa ser sabido de antemão — e se um dia não
+    couber, o cabeçalho ganha uma linha em vez de esconder um pedaço de si.
+  */
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
 }
 
 .brand {
@@ -110,26 +123,28 @@
 }
 
 /*
-  O botão de tema fica no CANTO DA TELA, não no fim do conteúdo.
+  O canto direito: idioma e tema, lado a lado.
 
-  `.headerInner` tem largura máxima e centraliza; em telas largas isso deixaria
-  o botão flutuando no meio do vazio, longe da borda. Posicionar contra o
-  `.header` — que ocupa a largura toda — põe o controle onde a mão vai procurar.
-
-  O `padding-right` reservado em `.headerInner` existe para o botão absoluto não
-  cobrir o último item da navegação quando o conteúdo chega perto da borda.
+  `margin-left: auto` empurra o grupo para o fim da linha SEM tirá-lo do fluxo —
+  é o que distingue "fica no canto" de "flutua sobre o que estiver ali". Abaixo
+  de 60 rem a navegação de topo some (ela vira a barra inferior) e este grupo
+  passa a ser o único vizinho da marca, o que continua correto.
 */
 .tools {
-  position: absolute;
-  right: var(--space-3);
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin-left: auto;
+  flex: none;
 }
 
+/* Com a navegação presente, é ela que absorve o espaço livre; o grupo só
+   acompanha. Sem esta linha, os dois disputariam a mesma `auto` e o resultado
+   dependeria da ordem de cálculo. */
 @media (min-width: 60rem) {
+  .tools {
+    margin-left: 0;
+  }
 }
 
 /*

@@ -166,11 +166,27 @@
   filtro suspenso sair da barra em vez de ser cortado por ela. Filtro quebra em
   duas linhas sem problema — cada botão continua sendo uma escolha independente.
 */
+/*
+  O ESPAÇO EMBAIXO MORA AQUI, e não em cada tela que usa a barra.
+
+  Ele não morava em lugar nenhum: a fileira de filtros encostava na primeira
+  fileira de cards — o botão "Brancas" grudado no topo do card. Cada tela se
+  virava por conta própria (Finais tinha margem na sua `.toolbar`, a Biblioteca
+  compensava com `margin-top` na grade, Aberturas não tinha nada), e o resultado
+  era um espaçamento diferente em cada aba para o mesmo controle.
+
+  O espaço EMBAIXO é maior que o de cima, e é a mesma proporção que a `.toolbar`
+  de Finais já usava. A fileira de filtros é uma barra de controle: encostada nos
+  cards ela parece um cabeçalho do primeiro card em vez de um controle da lista
+  inteira — que era exatamente o que se via, com "Brancas" grudado no topo do
+  cartão.
+*/
 .filterBar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+  margin: var(--space-5) 0 var(--space-6);
   min-width: 0;
   overflow: visible;
 }

@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useIdioma } from '@/components/providers/LocaleProvider'
+import { AccountLink } from '@/components/ui/AccountLink'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import type { AppLocale } from '@/lib/i18n/locales'
 import type { Tradutor } from '@/lib/i18n/mensagens'
 import { traduzirRota } from '@/lib/i18n/rotas'
-import { mainNav, mobilePrimaryNav, secondaryNav, type NavItem } from '@/lib/navigation'
+import { mainNav, mobilePrimaryNav, type NavItem } from '@/lib/navigation'
 import styles from './SiteNav.module.css'
 
 function isActive(pathname: string, href: string): boolean {
@@ -86,12 +87,17 @@ export function SiteHeader() {
           O grupo tem rótulo próprio para que, num leitor de tela, os dois
           cheguem anunciados como o que são — e não como dois controles soltos no
           meio da navegação.
+
+          A CONTA FICA FORA DO GRUPO, e por último. Ela não é preferência de
+          apresentação: é onde o aluno cuida dos próprios dados, e anunciá-la
+          dentro de "Aparência e idioma" seria descrevê-la errado. Visualmente
+          ela é o ícone mais à direita do cabeçalho.
         */}
         <div className={styles.tools} role="group" aria-label={t('appearance.groupLabel')}>
-          {navLink(secondaryNav[0], pathname, styles.link, styles.linkActive, t, locale)}
           <LanguageSwitcher />
           <ThemeToggle />
         </div>
+        <AccountLink />
       </div>
     </header>
   )

@@ -29,9 +29,23 @@
   color: var(--on-accent);
   border-color: var(--accent-strong);
 }
+/*
+  `auto-fill` E NÃO `auto-fit`, e a diferença só aparece quando sobram poucos
+  cards.
+
+  As duas palavras montam a mesma grade quando ela está cheia. Com um card só,
+  `auto-fit` COLAPSA as colunas vazias e o card estica para a largura inteira da
+  tela — um cartão de 1150 px com um tabuleiro no meio e o título perdido num
+  canto. Era o que acontecia ao filtrar Aberturas por "Brancas" e sobrar uma.
+
+  `auto-fill` mantém as colunas vazias reservadas, então o card continua com a
+  largura que teria numa lista cheia. `justify-content: start` encosta o que
+  sobrou à esquerda, em vez de centralizar um item solto no meio do vazio.
+*/
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  justify-content: start;
   gap: var(--space-5);
 }
 .card {

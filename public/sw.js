@@ -1,10 +1,20 @@
-const SHELL_CACHE = 'lancezero-shell-v1'
+/*
+  A VERSÃO DO CACHE SOBE JUNTO COM A LISTA.
+
+  `/train` virou `/revisao` quando a aba deixou de ser um hub. Trocar a lista sem
+  subir a versão seria a pior falha possível aqui: o worker instalado continuaria
+  servindo a casca antiga do cache, o app pareceria inteiro, e a aba que o
+  cabeçalho anuncia simplesmente não existiria — offline e sem nenhum erro.
+
+  A versão é o único sinal que o worker tem de que a casca mudou.
+*/
+const SHELL_CACHE = 'lancezero-shell-v2'
 const RUNTIME_CACHE = 'lancezero-runtime-v1'
 const SHELL = [
   '/',
   '/dashboard',
   '/puzzles',
-  '/train',
+  '/revisao',
   '/calculate',
   '/endgames',
   '/openings',

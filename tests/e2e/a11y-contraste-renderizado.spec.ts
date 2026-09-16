@@ -60,7 +60,7 @@ const TEMAS = ['light', 'dark'] as const
 const ROTAS = [
   '/',
   '/dashboard',
-  '/train',
+  '/revisao',
   '/puzzles',
   '/calculate',
   '/endgames',

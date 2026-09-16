@@ -1,0 +1,166 @@
+/*
+  O MAPA DO ESTUDO.
+
+  Ele é PEDIDO: ocupa a tela por um momento e sai. É por isso que ver as dez
+  etapas ao mesmo tempo funciona aqui e não funcionava na faixa fixa da página —
+  lá elas disputavam largura com o tabuleiro em toda etapa, o tempo inteiro.
+*/
+.fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-5) var(--space-4);
+  /*
+    O VÉU SAI DO TOKEN, não de um hexadecimal cravado.
+
+    `--navy-950` é a cor mais escura da marca e existe nos dois temas. Escrever
+    `#071521` aqui como reserva seria a mesma cor escrita duas vezes — e é
+    exatamente o que o portão `design-identidade` reprova, porque a segunda
+    cópia é a que sobrevive quando a paleta muda.
+  */
+  background: color-mix(in srgb, var(--navy-950) 55%, transparent);
+  overflow-y: auto;
+}
+
+.painel {
+  width: min(100%, 32rem);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+.topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--text-strong);
+}
+
+.fechar {
+  min-height: 2.5rem;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.fechar:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+.ajuda {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.lista {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+  TODA ETAPA É UM BOTÃO. Nenhuma é um `span` inerte.
+
+  A versão anterior desta lista tornava clicável só o que já estava concluído, e
+  anunciava o resto como "ainda não aberta". A palavra saiu do produto: o estado
+  agora diz onde o aluno está no caminho recomendado, não o que ele tem
+  permissão de ver.
+*/
+.etapa {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.etapa:hover {
+  background: var(--surface-sunken);
+}
+
+.etapa:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+/* A etapa atual é marcada por borda E símbolo E texto — nunca só por cor. */
+.item[data-estado='atual'] .etapa {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.marca {
+  flex: none;
+  width: 1.25rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.item[data-estado='concluida'] .marca {
+  color: var(--success-on-tint);
+}
+
+.item[data-estado='atual'] .marca {
+  color: var(--accent-strong);
+}
+
+.texto {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.nome {
+  font-weight: 600;
+}
+
+.estado {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+/*
+  A SUGESTÃO, e não um aviso. Ela informa que o caminho recomendado passa antes
+  por outra etapa — e o botão continua clicável. Orientar, não aprisionar.
+*/
+.sugestao {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .etapa {
+    transition: none;
+  }
+}

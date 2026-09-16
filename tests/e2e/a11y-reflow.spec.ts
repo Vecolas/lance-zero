@@ -54,7 +54,7 @@ const ZOOM_200 = { width: 640, height: 360 } as const
 const ROTAS_360 = [
   '/',
   '/dashboard',
-  '/train',
+  '/revisao',
   '/puzzles',
   '/calculate',
   '/endgames',
@@ -65,6 +65,34 @@ const ROTAS_360 = [
   '/onboarding',
   '/settings',
   '/licenses',
+  '/account',
+] as const
+
+/**
+ * As mesmas telas em inglês.
+ *
+ * POR QUE MEDIR OS DOIS IDIOMAS e não confiar no português: a largura do texto é
+ * o que empurra um layout, e ela muda de idioma para idioma. "Finais" tem 6
+ * caracteres; "Endgames" tem 8. "Biblioteca" vira "Library", mas "Treinar" vira
+ * "Train" — encolhe num lugar e cresce no outro, então nenhum dos dois idiomas é
+ * o pior caso do outro.
+ *
+ * Isso não é hipotético: foi exatamente em inglês que o cabeçalho passou a
+ * imprimir "Library" e "Account" um sobre o outro, porque a soma dos rótulos
+ * ficou maior que o espaço que alguém tinha reservado à mão.
+ *
+ * A LISTA É MENOR que a portuguesa de propósito. A casca é a mesma em todas as
+ * rotas, e o que varia por tela é o conteúdo — que em boa parte do app ainda não
+ * foi traduzido (ver `docs/i18n-audit.md`). Estas seis são as que já trocam de
+ * idioma de verdade, e é nelas que medir diz alguma coisa.
+ */
+const ROTAS_360_EN = [
+  '/en/today',
+  '/en/roadmap',
+  '/en/lessons',
+  '/en/openings',
+  '/en/endgames',
+  '/en/account',
 ] as const
 
 const PGN_REVISAO = `[Event "Refluxo"]
@@ -119,6 +147,14 @@ test.describe('360 px — a régua escrita no CLAUDE.md', () => {
   test.use({ viewport: VIEWPORT_360 })
 
   for (const rota of ROTAS_360) {
+    test(`${rota} cabe em 360 px sem rolar na horizontal`, async ({ page }) => {
+      await page.goto(rota)
+      await esperaConteudo(page)
+      await semRolagemHorizontal(page, rota)
+    })
+  }
+
+  for (const rota of ROTAS_360_EN) {
     test(`${rota} cabe em 360 px sem rolar na horizontal`, async ({ page }) => {
       await page.goto(rota)
       await esperaConteudo(page)
@@ -212,7 +248,7 @@ test.describe('zoom de 200% — onde o aluno passa o tempo', () => {
   })
 
   test('o treino do dia continua utilizável com 200% de zoom', async ({ page }) => {
-    await page.goto('/train')
+    await page.goto('/revisao')
     await esperaConteudo(page)
     await semRolagemHorizontal(page, '/train @200%')
   })

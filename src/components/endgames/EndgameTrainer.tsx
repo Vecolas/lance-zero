@@ -70,6 +70,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { useIdioma } from '@/components/providers/LocaleProvider'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import {
   avaliarObjetivo,
@@ -86,6 +87,7 @@ import {
 import { gravarTentativaDeFinal } from '@/domain/endgames/persistencia'
 import { legalMoves, normalizeUci, parseUci } from '@/lib/chess'
 import { applyMove, positionStatus, type PromotionPiece, type SquareName } from '@/lib/chess'
+import { traduzirRota } from '@/lib/i18n/rotas'
 import { LichessTablebaseProvider } from '@/lib/tablebase'
 import { descreverLinhaModelo } from './linha-modelo-legivel'
 import {
@@ -166,6 +168,7 @@ export interface EndgameTrainerProps {
 
 export function EndgameTrainer({ licao, posicao, onVoltar, probe, opponent }: EndgameTrainerProps) {
   const { profile, repo, refresh, status: statusDoArmazenamento } = useRepository()
+  const { locale } = useIdioma()
   const [tentativa, setTentativa] = useState<Tentativa>(() => tentativaInicial(posicao))
   const [fase, setFase] = useState<Fase>('jogando')
   const [dicasReveladas, setDicasReveladas] = useState(0)
@@ -718,13 +721,18 @@ export function EndgameTrainer({ licao, posicao, onVoltar, probe, opponent }: En
             {gravacao === 'na-revisao' ? (
               <p className={styles.fonteTexto}>
                 {/*
-                  Aponta para a REVISÃO, e não mais para `/train`.
-                  `/train` virou o hub — abrir a aba deixou de disparar a fila de
-                  revisão, que é a correção que o Treino V2 trouxe. Um link
-                  prometendo "a posição está na sua revisão" que leva a um menu
-                  faria o aluno procurar sozinho o que o link dizia entregar.
+                  Aponta para a FILA, e não para a casa da revisão.
+
+                  Um link que promete "a posição está na sua revisão" e leva a um
+                  painel faria o aluno procurar sozinho o que o link dizia
+                  entregar. A sessão tem endereço próprio justamente para isto.
+
+                  E passa por `traduzirRota`: sem ela, um aluno lendo em inglês
+                  seria jogado para a árvore em português e perderia o idioma no
+                  meio do treino — defeito que este link tinha junto com quase
+                  todos os outros do app.
                 */}
-                <Link href="/train/revisao">Revisar agora</Link>
+                <Link href={traduzirRota('/revisao/sessao', locale)}>Revisar agora</Link>
               </p>
             ) : null}
           </div>

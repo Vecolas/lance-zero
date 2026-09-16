@@ -7,5 +7,6 @@
  */
 
 export * from './StudyJourneyShell'
-export * from './StudyProgressRail'
+export * from './StudyStageHeader'
+export * from './StudyContentIndex'
 export * from './RoundResultPanel'

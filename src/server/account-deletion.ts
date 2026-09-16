@@ -6,7 +6,21 @@ import { createSecretClient } from '@/server/supabase'
 const AVATAR_BUCKET = 'avatars'
 const PAGE_SIZE = 100
 const REMOVE_BATCH_SIZE = 100
-const CONFIRMATION = 'APAGAR CONTA'
+/**
+ * As frases que confirmam a exclusão — uma por idioma do produto.
+ *
+ * O QUE SE VALIDA AQUI É O ATO DELIBERADO DO ALUNO, e por isso a frase precisa
+ * existir no idioma em que ele está lendo a tela. A alternativa era o cliente
+ * traduzir a frase digitada para um token único antes de enviar; aí o servidor
+ * passaria a validar um token que o cliente fabrica, e não o gesto de quem
+ * escreveu "APAGAR CONTA" letra por letra — que é a única coisa que essa
+ * checagem existe para exigir.
+ *
+ * `APAGAR CONTA` continua primeiro e continua aceita SEMPRE, inclusive para quem
+ * está lendo em inglês: ela é a frase que já foi publicada, e qualquer script ou
+ * anotação de quem usa o app hoje depende dela.
+ */
+const CONFIRMATIONS = ['APAGAR CONTA', 'DELETE ACCOUNT'] as const
 
 type StorageObject = { name: string }
 
@@ -89,7 +103,8 @@ export async function deleteAccount(
   admin?: AccountDeletionAdmin,
 ): Promise<AccountDeletionResult> {
   if (!isSessionValida(session)) return { ok: false, code: 'unauthorized' }
-  if (confirmation !== CONFIRMATION) return { ok: false, code: 'confirmation-required' }
+  if (!CONFIRMATIONS.some((frase) => frase === confirmation))
+    return { ok: false, code: 'confirmation-required' }
 
   // Só constrói o cliente privilegiado depois das guardas. Uma sessão inválida
   // nunca deve sequer tentar carregar configuração ou preparar admin client.
