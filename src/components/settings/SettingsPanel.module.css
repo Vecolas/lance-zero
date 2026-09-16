@@ -23,6 +23,7 @@
   flex-wrap: wrap;
   gap: var(--space-3);
   align-items: center;
+  min-width: 0;
 }
 
 /*
@@ -80,7 +81,20 @@
   cursor: not-allowed;
 }
 
+/*
+  O CAMPO DE ARQUIVO É O WIDGET NATIVO DO NAVEGADOR, e ele não encolhe sozinho.
+
+  "Escolher arquivo | Nenhum arquivo selecionado" é desenhado pelo sistema, e no
+  Linux sai mais largo que no Windows — 312 px dentro de uma coluna de 278 em
+  360 px de tela. `max-width: 100%` é o que faz o widget respeitar a coluna em
+  vez de empurrar a página inteira.
+
+  `min-width: 0` no pai pelo mesmo motivo do botão ao lado: item de flex não
+  cede abaixo do próprio conteúdo sem ele.
+*/
 .fileInput {
+  min-width: 0;
+  max-width: 100%;
   font: inherit;
   font-size: 0.9rem;
   color: var(--text-muted);
