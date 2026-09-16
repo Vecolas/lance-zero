@@ -24,9 +24,14 @@ export function RoadmapView() {
         const [skillStates, dueCards] = await Promise.all([repository.getSkillStates(), repository.getDueCards(new Date())])
         const bySkill = new Map(skillStates.map((state) => [state.skillId, state]))
         const dueSkills = new Set(dueCards.flatMap((card) => card.skillIds))
+        const completedLearningObjects = new Set(skillStates.filter((state) => state.exposureCount > 0).map((state) => `skill:${state.skillId}`))
         const next = ROADMAP_DEFINITION.nodes.map((node) => {
           const state = node.skillId ? userLearningStateFromSkill(bySkill.get(node.skillId), node.learningObjectId) : undefined
-          const view = deriveRoadmapNode(node, state)
+          const unmet = node.prerequisiteIds
+            .map((id) => ROADMAP_DEFINITION.nodes.find((candidate) => candidate.id === id))
+            .filter((candidate) => candidate && !completedLearningObjects.has(candidate.learningObjectId))
+            .filter((candidate): candidate is (typeof ROADMAP_DEFINITION.nodes)[number] => Boolean(candidate))
+          const view = deriveRoadmapNode(node, state, unmet)
           return view.completed && view.reviewEligible && node.skillId && dueSkills.has(node.skillId) && view.state === 'completed' ? { ...view, state: 'review' as const, action: 'revisar' as const } : view
         })
         if (!cancelled) setNodes(next)

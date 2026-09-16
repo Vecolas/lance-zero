@@ -320,6 +320,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const [feitas, setFeitas] = useState(0)
   const [julgamento, setJulgamento] = useState<EstadoDoJulgamento>(SEM_JUIZ)
   const [erroDeLance, setErroDeLance] = useState<string | null>(null)
+  const [declarouEsquecimento, setDeclarouEsquecimento] = useState(false)
 
   /**
    * Marca a revisão em curso. Resposta da tablebase que chega depois de avançar
@@ -393,29 +394,44 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
               now: new Date(),
               reviewEligible: (card) => card.skillIds.some((skillId) => eligibleSkillIds.has(skillId)),
             }).items
-        const indiceSalvo = salvo?.indice ?? 0
+        const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
+        const relearning = (() => {
+          try {
+            const raw = globalThis.localStorage.getItem(markerKey)
+            if (!raw) return null
+            const parsed = JSON.parse(raw) as { itemId?: string; completed?: boolean }
+            return parsed.completed === true && typeof parsed.itemId === 'string' ? parsed : null
+          } catch { return null }
+        })()
+        const itemReaprendido = relearning ? plano.findIndex((item) => item.id === relearning.itemId) : -1
+        const planoAposReaprendizado = itemReaprendido >= 0
+          ? plano.map((item, itemIndex) => itemIndex === itemReaprendido ? { ...item, status: 'completed' as const, outcome: 'relearned' as const } : item)
+          : plano
+        const indiceSalvo = itemReaprendido >= 0 ? itemReaprendido + 1 : salvo?.indice ?? 0
         const indiceInicial = Math.min(Math.max(0, indiceSalvo), Math.max(0, plano.length - 1))
         const passoInicial = Math.min(
           Math.max(0, salvo?.passoInterno ?? 0),
           Math.max(0, (plano[indiceInicial]?.steps.length ?? 1) - 1),
         )
-        setFila(plano)
+        setFila(planoAposReaprendizado)
         setIndice(indiceInicial)
         setPassoInterno(passoInicial)
-        setFeitas(salvo?.feitas ?? 0)
+        setFeitas((salvo?.feitas ?? 0) + (itemReaprendido >= 0 ? 1 : 0))
         setJulgamento(SEM_JUIZ)
+        setDeclarouEsquecimento(false)
+        if (itemReaprendido >= 0) globalThis.localStorage.removeItem(markerKey)
         // A recusa e o rascunho pertencem à revisão que estava na tela. Fila
         // nova com a frase antiga faria a tela recusar um lance que ninguém
         // jogou nesta posição.
         setErroDeLance(null)
         setSessao(
-          salvo?.sessao?.card && plano[indiceInicial]?.steps[passoInicial]?.card.id === salvo.sessao.card.id
+          salvo?.sessao?.card && planoAposReaprendizado[indiceInicial]?.steps[passoInicial]?.card.id === salvo.sessao.card.id
             ? salvo.sessao
-            : plano[indiceInicial]?.steps[passoInicial]
-              ? createReviewSession(plano[indiceInicial].steps[passoInicial].card)
+            : planoAposReaprendizado[indiceInicial]?.steps[passoInicial]
+              ? createReviewSession(planoAposReaprendizado[indiceInicial].steps[passoInicial].card)
             : null,
         )
-        setFase(plano.length > 0 ? 'revisando' : 'concluida')
+        setFase(indiceInicial < planoAposReaprendizado.length ? 'revisando' : 'concluida')
       } catch (e) {
         if (!cancelado) {
           setFalha(e instanceof Error ? e.message : 'Não consegui ler suas revisões.')
@@ -447,6 +463,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const avancar = useCallback(() => {
     geracao.current += 1
     setJulgamento(SEM_JUIZ)
+    setDeclarouEsquecimento(false)
     // Mesma razão do recarregar: a recusa é da revisão anterior.
     setErroDeLance(null)
     const proximoPasso = passoInterno + 1
@@ -486,6 +503,13 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
           reviewedAt: agora.toISOString(),
           rating,
           elapsedMs: 0,
+          outcome: declarouEsquecimento
+            ? 'declared-forgotten'
+            : sessao.phase === 'errou'
+              ? 'failed'
+              : rating === 'again'
+                ? 'recalled-with-hint'
+                : 'recalled',
         })
 
         // O acerto com desconto (#62) usa o mecanismo que JÁ existe: o evento
@@ -520,7 +544,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         setFase('erro')
       }
     },
-    [avancar, julgamento, repo, sessao],
+    [avancar, declarouEsquecimento, julgamento, repo, sessao],
   )
 
   /**
@@ -756,7 +780,10 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
             <button
               type="button"
               className={styles.ghost}
-              onClick={() => setSessao(giveUpReview(sessao))}
+              onClick={() => {
+                setDeclarouEsquecimento(true)
+                setSessao(giveUpReview(sessao))
+              }}
             >
               Não lembro
             </button>
@@ -813,9 +840,17 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
             {blocoDoGrau}
             {sessao.card.skillIds[0] ? (
               <p className={styles.relearnActions}>
-                <Link href={`/lessons/${sessao.card.skillIds[0]}`} className={styles.relearnLink}>
+                <button
+                  type="button"
+                  className={styles.relearnLink}
+                  onClick={() => {
+                    const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
+                    globalThis.localStorage.setItem(markerKey, JSON.stringify({ itemId: itemAtual?.id, completed: false }))
+                    window.location.assign(`/lessons/${sessao.card.skillIds[0]}?relearn=1`)
+                  }}
+                >
                   Reaprender agora
-                </Link>
+                </button>
                 <span className={styles.hint}>ou escolha uma nota para continuar a revisão.</span>
               </p>
             ) : null}
