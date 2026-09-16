@@ -14,6 +14,7 @@
 import type { PlanoDoDia } from '@/domain/aprendizado/plano'
 import type { SkillState } from '@/domain/aprendizado/skill-state'
 import type { OpeningProgress } from '@/domain/openings'
+import type { RecallOutcome } from '@/domain/roadmap'
 
 // Reexportados para que a persistência continue tendo UMA fronteira. Os
 // repositórios já importam todo o resto do contrato daqui; obrigá-los a
@@ -119,6 +120,8 @@ export interface ReviewLog {
   reviewedAt: string
   rating: ReviewRating
   elapsedMs: number
+  /** Resultado pedagógico, separado da nota FSRS. Opcional para logs legados. */
+  outcome?: RecallOutcome
 }
 
 export type Side = 'w' | 'b'

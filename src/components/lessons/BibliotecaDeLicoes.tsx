@@ -45,7 +45,7 @@ export function BibliotecaDeLicoes({
   licaoInicialId,
   estagios,
 }: BibliotecaDeLicoesProps = {}) {
-  const { repo, refresh } = useRepository()
+  const { repo, profile, refresh } = useRepository()
   const [abertaId, setAbertaId] = useState<string | null>(licaoInicialId ?? null)
 
   const visiveis = area
@@ -59,10 +59,26 @@ export function BibliotecaDeLicoes({
       <LicaoPlayer
         licao={aberta}
         aoAvancar={(evento) => {
-          if (evento.etapa !== 'resumo' || !repo) return
-          void registrarEnsino(repo, aberta.habilidade as SkillId, new Date()).then(() => refresh())
+          if (evento.etapa !== 'resumo') return
+          if (typeof window !== 'undefined') {
+            const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
+            try {
+              const raw = window.localStorage.getItem(markerKey)
+              if (raw) window.localStorage.setItem(markerKey, JSON.stringify({ ...JSON.parse(raw), completed: true }))
+            } catch { /* a lição continua concluída mesmo sem storage */ }
+          }
+          if (repo) void registrarEnsino(repo, aberta.habilidade as SkillId, new Date()).then(() => refresh())
         }}
-        aoFechar={() => setAbertaId(null)}
+        aoFechar={() => {
+          setAbertaId(null)
+          if (typeof window !== 'undefined') {
+            const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
+            try {
+              const raw = window.localStorage.getItem(markerKey)
+              if (raw && JSON.parse(raw).completed === true) window.location.assign('/train/revisao')
+            } catch { /* navegação normal da biblioteca */ }
+          }
+        }}
       />
     )
   }

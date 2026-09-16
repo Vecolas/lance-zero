@@ -131,16 +131,58 @@ const skillNodes: RoadmapNode[] = SKILL_CATALOG.map((skill, index) => ({
   version: 1,
 }))
 
+const curriculumNodes: RoadmapNode[] = [
+  ['fundamentos.attacked', 'Pecas atacadas e defendidas', 'Contar atacantes e defensores antes de trocar.', 'fundamentos'],
+  ['fundamentos.loose', 'Pecas indefesas', 'Encontrar o alvo que ficou sem protecao.', 'fundamentos'],
+  ['fundamentos.trades', 'Trocas', 'Trocar por uma razao concreta, nao por reflexo.', 'fundamentos'],
+  ['fundamentos.king', 'Seguranca do rei', 'Reconhecer quando o proprio rei precisa de atencao.', 'fundamentos'],
+  ['fundamentos.development', 'Desenvolvimento', 'Colocar as pecas em jogo com proposito.', 'fundamentos'],
+  ['fundamentos.center', 'Controle do centro', 'Usar o centro como espaco e nao so como contagem de peoes.', 'fundamentos'],
+  ['process.threats', 'Ameacas do adversario', 'Perguntar o que o ultimo lance tornou possivel.', 'processo'],
+  ['process.cct', 'CCT: xeques, capturas e ameacas', 'Comecar a busca por candidatos pelos lances forcados.', 'processo'],
+  ['process.candidates', 'Geracao de candidatos', 'Escolher poucos lances que merecem calculo.', 'processo'],
+  ['process.blunder-check', 'Blunder check', 'Verificar a posicao final antes de jogar.', 'processo'],
+  ['calculation.visualize', 'Visualizar uma resposta', 'Calcular sem mover as pecas.', 'cálculo'],
+  ['calculation.forcing', 'Lances forcados', 'Priorizar a resposta adversaria mais exigente.', 'cálculo'],
+  ['calculation.compare', 'Comparar linhas', 'Escolher a posicao final mais saudavel.', 'cálculo'],
+  ['calculation.three-ply', 'Calculo de tres plies', 'Aprofundar apenas quando a posicao exigir.', 'cálculo'],
+  ['strategy.isolated-pawn', 'Peao isolado', 'Planos e casas fracas criados por uma estrutura isolada.', 'estratégia'],
+  ['strategy.open-files', 'Colunas abertas', 'Colocar torres onde a estrutura permite acao.', 'estratégia'],
+  ['strategy.outpost', 'Posto avancado', 'Usar uma casa forte que nao pode ser expulsa por peao.', 'estratégia'],
+  ['strategy.good-bad-piece', 'Peca boa e peca ruim', 'Melhorar a pior peca antes de procurar combinacoes.', 'estratégia'],
+  ['analysis.engine-later', 'Analisar sem engine primeiro', 'Construir uma explicacao propria antes da validacao.', 'análise'],
+  ['analysis.classify', 'Classificar o erro', 'Separar tatica, calculo, estrategia e decisao de abertura.', 'análise'],
+  ['analysis.turn-error', 'Transformar erro em treino', 'Converter um momento critico em exercicio recuperavel.', 'análise'],
+  ['transfer.repertoire', 'Aplicar o repertorio', 'Reconhecer a transicao da abertura para o meio-jogo.', 'transferência'],
+  ['transfer.endgame', 'Converter uma vantagem', 'Levar uma tecnica estudada para uma partida real.', 'transferência'],
+].map(([id, title, description, area], index) => ({
+  id, learningObjectId: `roadmap:${id}`, title, shortDescription: description,
+  area: area as RoadmapArea, prerequisiteIds: id === 'calculation.three-ply' ? ['calculation.visualize'] : [], contentType: TYPE_BY_AREA[area as RoadmapArea],
+  roadmapRole: 'core' as const, order: 20 + index, version: 1,
+}))
+
+const repertoireChoiceNodes: RoadmapNode[] = [
+  ['opening.italian', 'Abertura Italiana', 'Desenvolvimento rapido, pressao em f7 e ruptura d4', 'aberturas'],
+  ['opening.scotch', 'Jogo Escoces', 'Centro aberto e desenvolvimento ativo desde cedo.', 'aberturas'],
+  ['opening.london', 'Sistema Londres', 'Estrutura solida, planos claros e desenvolvimento consistente.', 'aberturas'],
+  ['opening.caro-kann', 'Caro-Kann', 'Resposta solida contra 1.e4, com estrutura e contrajogo.', 'aberturas'],
+  ['opening.qgd', 'Gambito da Dama Recusado', 'Controle central e desenvolvimento seguro contra 1.d4.', 'aberturas'],
+].map(([id, title, description, area], index) => ({
+  id, learningObjectId: `roadmap:${id}`, title, shortDescription: description,
+  area: area as RoadmapArea, prerequisiteIds: [], contentType: 'opening' as const,
+  roadmapRole: 'choice' as const, order: 60 + index, version: 1,
+}))
+
 export const ROADMAP_DEFINITION: RoadmapDefinition = {
   version: 1,
   areas: ROADMAP_AREAS,
-  nodes: [...foundationalNodes, ...skillNodes],
+  nodes: [...foundationalNodes, ...curriculumNodes, ...repertoireChoiceNodes, ...skillNodes],
   choiceGroups: [
     {
       id: 'choice.opening.white',
       title: 'Escolha um repertório de Brancas',
       minimumSelections: 1,
-      nodeIds: skillNodes.filter((node) => node.area === 'aberturas').map((node) => node.id),
+      nodeIds: repertoireChoiceNodes.slice(0, 3).map((node) => node.id),
     },
   ],
 }
@@ -172,7 +214,7 @@ export function userLearningStateFromSkill(state: SkillState | undefined, learni
 
 export function deriveRoadmapNode(node: RoadmapNode, state: UserLearningState | undefined, prerequisites: readonly RoadmapNode[] = []): RoadmapNodeView {
   const completed = Boolean(state?.lessonCompleted || state?.masteryCheckPassed || state?.importedKnownValidated)
-  const locked = prerequisites.some((item) => !item)
+  const locked = prerequisites.length > 0
   const current: RoadmapStage = locked ? 'locked' : state?.needsRelearning ? 'needs_relearning' : state?.reviewEligible && state.stage === 'review' ? 'review' : completed ? 'completed' : state?.lastStudiedAt ? 'learning' : 'available'
   return {
     ...node,
