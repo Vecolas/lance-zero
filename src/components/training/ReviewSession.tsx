@@ -322,6 +322,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
   const [julgamento, setJulgamento] = useState<EstadoDoJulgamento>(SEM_JUIZ)
   const [erroDeLance, setErroDeLance] = useState<string | null>(null)
   const [declarouEsquecimento, setDeclarouEsquecimento] = useState(false)
+  const [resultados, setResultados] = useState<Partial<Record<RecallOutcome, number>>>({})
 
   /**
    * Marca a revisão em curso. Resposta da tablebase que chega depois de avançar
@@ -378,6 +379,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
               indice?: number
               passoInterno?: number
               feitas?: number
+              resultados?: Partial<Record<RecallOutcome, number>>
               sessao?: ReviewSessionState
             }
             return parsed.plannerVersion === 2 && Array.isArray(parsed.items) ? parsed : null
@@ -418,6 +420,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         setIndice(indiceInicial)
         setPassoInterno(passoInicial)
         setFeitas((salvo?.feitas ?? 0) + (itemReaprendido >= 0 ? 1 : 0))
+        setResultados({ ...(salvo?.resultados ?? {}), ...(itemReaprendido >= 0 ? { relearned: (salvo?.resultados?.relearned ?? 0) + 1 } : {}) })
         setJulgamento(SEM_JUIZ)
         setDeclarouEsquecimento(false)
         if (itemReaprendido >= 0) globalThis.localStorage.removeItem(markerKey)
@@ -454,12 +457,12 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
     try {
       globalThis.localStorage.setItem(
         reviewStorageKey,
-        JSON.stringify({ plannerVersion: 2, items: fila, indice, passoInterno, feitas, sessao }),
+        JSON.stringify({ plannerVersion: 2, items: fila, indice, passoInterno, feitas, resultados, sessao }),
       )
     } catch {
       // A revisão continua local-first mesmo quando o navegador bloqueia storage.
     }
-  }, [fase, fila, indice, passoInterno, feitas, sessao, reviewStorageKey])
+  }, [fase, fila, indice, passoInterno, feitas, resultados, sessao, reviewStorageKey])
 
   const avancar = useCallback(() => {
     geracao.current += 1
@@ -498,20 +501,22 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
       const agora = new Date()
       try {
         const atualizado = applyReview(sessao.card, rating, agora)
+        const outcome: RecallOutcome = outcomeOverride ?? (declarouEsquecimento
+          ? 'declared-forgotten'
+          : sessao.phase === 'errou'
+            ? 'failed'
+            : rating === 'again'
+              ? 'recalled-with-hint'
+              : 'recalled')
         await repo.saveReviewCard(atualizado)
         await repo.saveReviewLog({
           cardId: sessao.card.id,
           reviewedAt: agora.toISOString(),
           rating,
           elapsedMs: 0,
-          outcome: outcomeOverride ?? (declarouEsquecimento
-            ? 'declared-forgotten'
-            : sessao.phase === 'errou'
-              ? 'failed'
-              : rating === 'again'
-                ? 'recalled-with-hint'
-                : 'recalled'),
+          outcome,
         })
+        setResultados((current) => ({ ...current, [outcome]: (current[outcome] ?? 0) + 1 }))
 
         // O acerto com desconto (#62) usa o mecanismo que JÁ existe: o evento
         // de maestria carrega `porCaminhoMaisLongo` e quem decide o quanto vale
@@ -686,6 +691,11 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
             ? 'Nada vencido agora. Revisão espaçada só funciona se ela não aparecer todo dia.'
             : `${feitas} ${feitas === 1 ? 'revisão concluída' : 'revisões concluídas'}. O próximo intervalo já está agendado.`}
         </p>
+        {feitas > 0 ? (
+          <p className={styles.summary} data-testid="resumo-da-revisao">
+            {resultados.recalled ?? 0} lembrados · {resultados['recalled-with-hint'] ?? 0} com dica · {resultados.failed ?? 0} com dificuldade · {resultados['declared-forgotten'] ?? 0} esquecidos · {resultados.relearned ?? 0} reaprendidos
+          </p>
+        ) : null}
         <p>
           As revisões nascem dos seus erros. Enquanto não houver puzzles resolvidos nem partidas
           importadas, esta fila fica vazia — e isso é o comportamento certo, não uma tela quebrada.
