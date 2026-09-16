@@ -25,6 +25,25 @@
   align-items: center;
 }
 
+/*
+  O BOTÃO CEDE ANTES DE ESTOURAR A CAIXA.
+
+  `flex-wrap: wrap` no pai manda o botão para a linha de baixo, mas não ajuda
+  quando é UM botão sozinho mais largo que a coluna: item de flex não encolhe
+  abaixo do próprio conteúdo sem `min-width: 0`.
+
+  Em 360 px com a métrica de fonte do Linux — mais larga que a do Windows — a
+  seção estourava por 10 px, e o portão de vazamento pegou. `max-width: 100%`
+  com `min-width: 0` faz o rótulo quebrar dentro do botão em vez de empurrar a
+  página.
+*/
+.primary,
+.ghost,
+.option {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .primary,
 .ghost {
   min-height: 2.75rem;

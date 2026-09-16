@@ -167,9 +167,21 @@
   list-style: none;
 }
 
+/*
+  DUAS COLUNAS SÓ QUANDO CABEM.
+
+  Era `1fr auto` incondicional, com o número em `nowrap`. Em 360 px e com a
+  métrica de fonte do Linux — mais larga que a do Windows, onde isto passou — o
+  par nome + número estourava a caixa em 24 px. O `1fr` não resolve: por padrão
+  ele é `minmax(auto, 1fr)`, e o `auto` recusa encolher abaixo do min-content do
+  nome.
+
+  A regra agora é a mesma do resto do app: empilhar quando não couber, nunca
+  espremer. E `min-width: 0` nas duas colunas para o `1fr` poder de fato ceder.
+*/
 .origem {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1) var(--space-3);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--border);
@@ -181,15 +193,30 @@
 }
 
 .origemNome {
+  min-width: 0;
   font-weight: 650;
   color: var(--text);
+  /* Nome longo quebra em vez de empurrar a caixa. */
+  overflow-wrap: anywhere;
 }
 
 .origemNumero {
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: 0.875rem;
   color: var(--text-muted);
-  white-space: nowrap;
+}
+
+/* A partir daqui o par cabe lado a lado, e o número pode voltar a ser uma
+   linha só — a coluna `auto` se dimensiona pelo conteúdo. */
+@media (min-width: 26rem) {
+  .origem {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .origemNumero {
+    white-space: nowrap;
+  }
 }
 
 .origemAjuda {
@@ -215,12 +242,18 @@
   color: var(--text);
 }
 
+/*
+  `flex: none` com `nowrap` é a mesma armadilha da origem: a marca recusa
+  encolher e o irmão não tem como ceder o bastante. O `flex-wrap` do pai já
+  manda a marca para a linha de baixo quando precisa — o que faltava era
+  permitir que ela participe disso.
+*/
 .reincidenteMarca {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--attention-on-tint);
   font-size: 0.875rem;
   font-weight: 600;
-  white-space: nowrap;
 }
 
 /* ---------------------------------------------------------- 5. já revisado */

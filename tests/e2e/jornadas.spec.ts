@@ -146,6 +146,17 @@ test('o card da abertura mostra o estado da jornada e o CTA certo', async ({ pag
     .click()
   await page.getByRole('button', { name: /Continuar/ }).click()
 
+  /*
+    ESPERA A ETAPA AVANÇAR ANTES DE SAIR DA PÁGINA.
+
+    Clicar em Continuar dispara a gravação da jornada no IndexedDB, e navegar no
+    mesmo instante corre com ela. No Windows passava; no runner do Linux, com
+    menos folga de CPU, o card voltava dizendo "Estudar" porque o avanço ainda
+    não tinha sido gravado. O cabeçalho mudando é o sinal de que a etapa nova
+    está em vigor.
+  */
+  await expect(page.getByRole('heading', { level: 2 }).first()).toContainText(/—\s*2\/\d+/)
+
   await page.goto('/aberturas')
   // Começou: o CTA muda, e o aluno não precisa lembrar onde parou.
   await expect(page.getByText('Continuar estudo →').first()).toBeVisible()
