@@ -191,6 +191,32 @@ describe('exportacao de backup', () => {
     expect(JSON.stringify(arquivo.repertorios)).toContain(IDEIA_DO_ALUNO)
   })
 
+  /*
+    O CHECKPOINT DA LICAO ATRAVESSA O BACKUP.
+
+    As licoes CONCLUIDAS ja sobreviviam — elas viram `skillStates`. O que se
+    perdia era a licao pela metade: quem trocava de aparelho na etapa 6 de 9
+    voltava para a etapa 1 e a biblioteca oferecia "Aprender". Nada errava; o
+    aluno e que refazia o que ja tinha feito.
+  */
+  it('leva o checkpoint de uma licao pela metade', async () => {
+    const origem = new MemoryTrainingRepository()
+    await origem.saveLessonProgress({
+      lessonId: 'peca-pendurada',
+      stepIndex: 5,
+      contentVersion: 1,
+      updatedAt: EXPORTADO_EM.toISOString(),
+    })
+
+    const destino = novoIndexedDb()
+    await importBackup(
+      destino,
+      parseBackup(serializeBackup(await exportBackup(origem, EXPORTADO_EM))),
+    )
+
+    expect((await destino.getLessonProgress('peca-pendurada'))?.stepIndex).toBe(5)
+  })
+
   it('exporta um repositorio vazio sem quebrar', async () => {
     const arquivo = await exportBackup(new MemoryTrainingRepository(), EXPORTADO_EM)
     expect(arquivo.profile).toBeNull()
@@ -225,6 +251,7 @@ describe('ida e volta do backup', () => {
       skillStates: 0,
       planosDoDia: 0,
       openingProgress: 0,
+      lessonProgress: 0,
     })
 
     const cardOriginal = (await origem.listReviewCards())[0]

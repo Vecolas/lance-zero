@@ -74,10 +74,29 @@ export interface LicaoPlayerProps {
    */
   aoAvancar?: (evento: EventoDaLicao) => void
   aoFechar?: () => void
+  /**
+   * Onde retomar. Vem do checkpoint gravado; ausente é começar do início.
+   *
+   * O LEITOR NÃO LÊ O CHECKPOINT SOZINHO. Ele recebe o índice pronto, pelo mesmo
+   * motivo de não gravar nada: quem o hospeda é que conhece o repositório. Um
+   * leitor que lesse o banco por conta própria não daria para montar em teste
+   * nem para reaproveitar no plano do dia.
+   */
+  etapaInicial?: number
 }
 
-export function LicaoPlayer({ licao, aoAvancar, aoFechar }: LicaoPlayerProps) {
-  const [indice, setIndice] = useState(0)
+export function LicaoPlayer({ licao, aoAvancar, aoFechar, etapaInicial }: LicaoPlayerProps) {
+  /*
+    O ÍNDICE INICIAL É SANEADO AQUI, e não em quem grava.
+
+    Um checkpoint pode apontar para fora: conteúdo reescrito, banco editado à
+    mão, versão antiga. `Math.min` com o fim da lista é o que impede a lição de
+    abrir numa etapa inexistente e renderizar vazio — que seria um falso verde
+    perfeito, porque nada erra e a tela fica em branco.
+  */
+  const [indice, setIndice] = useState(() =>
+    Math.min(Math.max(etapaInicial ?? 0, 0), ETAPAS_DA_LICAO.length - 1),
+  )
   const etapa = ETAPAS_DA_LICAO[indice]
   const ultima = indice === ETAPAS_DA_LICAO.length - 1
 

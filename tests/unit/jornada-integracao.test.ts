@@ -118,23 +118,34 @@ describe('O DEEP LINK NÃO É ATALHO', () => {
 
 describe('o verbo e o resumo são os MESMOS em toda tela', () => {
   it('cobre os três estados do Hoje', () => {
-    expect(verboDoHoje(null, ETAPAS)).toBe('Aprender')
-    expect(verboDoHoje(nova(), ETAPAS)).toBe('Aprender')
-    expect(verboDoHoje(concluirEtapa(nova(), ETAPAS, AGORA), ETAPAS)).toBe('Continuar')
-    expect(verboDoHoje(ateOTreino(), ETAPAS)).toBe('Treinar')
+    // O VERBO É UMA ESCOLHA, NÃO UMA PALAVRA: quem escreve "Aprender" ou "Learn"
+    // é a tela, que sabe o idioma. O domínio devolve a decisão.
+    expect(verboDoHoje(null, ETAPAS)).toBe('aprender')
+    expect(verboDoHoje(nova(), ETAPAS)).toBe('aprender')
+    expect(verboDoHoje(concluirEtapa(nova(), ETAPAS, AGORA), ETAPAS)).toBe('continuar')
+    expect(verboDoHoje(ateOTreino(), ETAPAS)).toBe('treinar')
   })
 
+  /**
+   * O RESUMO DEVOLVE NÚMEROS, NÃO FRASE.
+   *
+   * Ele já devolveu "1 de 3 etapas" pronto, e a frase não atravessa idioma: em
+   * inglês a ordem muda e o plural de "etapa" muda com o número. Quem monta o
+   * texto é a tela, que sabe o idioma; aqui ficam os dois números, que não mudam.
+   */
   it('o resumo conta etapas cumpridas, não visitadas', () => {
     const resumo = resumoDaJornada(concluirEtapa(nova(), ETAPAS, AGORA), ETAPAS)
-    expect(resumo.progresso).toBe('1 de 3 etapas')
-    expect(resumo.rotulo).toBe('Continuar estudo')
+    expect(resumo.concluidas).toBe(1)
+    expect(resumo.total).toBe(3)
+    expect(resumo.rotulo).toBe('continuar')
     expect(resumo.concluida).toBe(false)
   })
 
   it('sem jornada, o resumo diz o tamanho do estudo', () => {
     const resumo = resumoDaJornada(null, ETAPAS)
-    expect(resumo.progresso).toBe('3 etapas')
-    expect(resumo.rotulo).toBe('Estudar')
+    expect(resumo.concluidas).toBe(0)
+    expect(resumo.total).toBe(3)
+    expect(resumo.rotulo).toBe('estudar')
     expect(resumo.etapaAtual).toBeNull()
   })
 
@@ -150,7 +161,7 @@ describe('o verbo e o resumo são os MESMOS em toda tela', () => {
   it('rodada FALHA não deixa a jornada parecer concluída', () => {
     const falhou = registrarRodada(ateOTreino(), 'treino-final', 'mainline', 'falhou')
     expect(resumoDaJornada(falhou, ETAPAS).concluida).toBe(false)
-    expect(verboDoHoje(falhou, ETAPAS)).toBe('Treinar')
+    expect(verboDoHoje(falhou, ETAPAS)).toBe('treinar')
   })
 })
 

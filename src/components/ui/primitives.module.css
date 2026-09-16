@@ -143,16 +143,36 @@
 .stateAction {
   margin-top: var(--space-4);
 }
-.tabs,
-.filterBar {
+/* A barra de abas rola na horizontal: abas são uma fila, e quebrá-las em duas
+   linhas desfaz a leitura de "onde eu estou". */
+.tabs {
   display: flex;
   gap: var(--space-2);
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: thin;
-}
-.tabs {
   border-bottom: 1px solid var(--border);
+}
+
+/*
+  UMA declaração só, e ela já foi duas.
+
+  `.filterBar` aparecia agrupada com `.tabs` (com `overflow-x: auto`) e de novo
+  mais abaixo (com `overflow: visible`) — a segunda cancelava parte da primeira em
+  silêncio, e quem lesse só uma delas acreditaria num comportamento que não
+  existia.
+
+  `overflow: visible` é o que vale, e agora é explícito: é ele que deixa o menu do
+  filtro suspenso sair da barra em vez de ser cortado por ela. Filtro quebra em
+  duas linhas sem problema — cada botão continua sendo uma escolha independente.
+*/
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow: visible;
 }
 .tab,
 .tabActive {
@@ -173,11 +193,6 @@
 }
 .tabActive {
   border-bottom-color: var(--accent);
-}
-.filterBar {
-  flex-wrap: wrap;
-  overflow: visible;
-  align-items: center;
 }
 @keyframes shimmer {
   50% {

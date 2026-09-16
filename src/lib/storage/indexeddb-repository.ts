@@ -19,6 +19,7 @@ import type {
   StudyJourney,
   UserProfile,
   OpeningProgress,
+  LessonProgress,
 } from '@/domain/types'
 import { StorageError, type BackupRepository } from './repository'
 import {
@@ -45,6 +46,7 @@ export const STORES = {
   planosDoDia: 'planosDoDia',
   openingProgress: 'openingProgress',
   studyJourneys: 'studyJourneys',
+  lessonProgress: 'lessonProgress',
 } as const
 
 export type StoreName = (typeof STORES)[keyof typeof STORES]
@@ -61,7 +63,7 @@ export const INDEXES = {
 export const INDEXEDDB_CONFIG = {
   databaseName: 'lance-zero',
   /** Versão do schema. Incrementar sempre junto de um novo `case` em `migrate`. */
-  schemaVersion: 5,
+  schemaVersion: 6,
 } as const
 
 export interface IndexedDbRepositoryOptions {
@@ -114,6 +116,9 @@ function migrate(db: IDBDatabase, oldVersion: number): void {
     // falls through
     case 4:
       createSchemaV5(db)
+    // falls through
+    case 5:
+      createSchemaV6(db)
   }
 }
 
@@ -199,6 +204,23 @@ function createSchemaV4(db: IDBDatabase): void {
  */
 function createSchemaV5(db: IDBDatabase): void {
   db.createObjectStore(STORES.studyJourneys, { keyPath: 'id' })
+}
+
+/**
+ * V6: o checkpoint da lição.
+ *
+ * A LACUNA QUE ELA FECHA: entre abrir uma lição e terminá-la o app não guardava
+ * nada. `SkillState` só registra o FIM — quem fechava a aba na etapa 6 de 9
+ * voltava para a etapa 1, e a biblioteca oferecia "Aprender" a quem já estava no
+ * meio. O estado `em-andamento` existia no modelo do card e nunca acontecia.
+ *
+ * Chaveada por `lessonId`: uma lição, um checkpoint. Guardar histórico de
+ * tentativas aqui seria outra store — esta responde só "onde ele parou".
+ *
+ * Só ACRESCENTA. Um banco na versão 5 sobe para a 6 sem tocar em nada gravado.
+ */
+function createSchemaV6(db: IDBDatabase): void {
+  db.createObjectStore(STORES.lessonProgress, { keyPath: 'lessonId' })
 }
 
 export class IndexedDbTrainingRepository implements BackupRepository {
@@ -514,6 +536,30 @@ export class IndexedDbTrainingRepository implements BackupRepository {
   async saveStudyJourney(jornada: StudyJourney): Promise<void> {
     await this.run([STORES.studyJourneys], 'readwrite', async (tx) => {
       await requestToPromise(tx.objectStore(STORES.studyJourneys).put(jornada))
+    })
+  }
+
+  async getLessonProgress(lessonId: string): Promise<LessonProgress | null> {
+    const progresso = await this.run([STORES.lessonProgress], 'readonly', (tx) =>
+      requestToPromise<LessonProgress | undefined>(
+        tx.objectStore(STORES.lessonProgress).get(lessonId) as IDBRequest<
+          LessonProgress | undefined
+        >,
+      ),
+    )
+    return progresso ?? null
+  }
+
+  async listLessonProgress(): Promise<LessonProgress[]> {
+    // Ordem canônica pelo id, pelo mesmo motivo das jornadas: a biblioteca lê
+    // daqui e não pode depender da ordem que o IndexedDB devolveu.
+    const itens = await this.readAll<LessonProgress>(STORES.lessonProgress)
+    return itens.sort((a, b) => a.lessonId.localeCompare(b.lessonId))
+  }
+
+  async saveLessonProgress(progresso: LessonProgress): Promise<void> {
+    await this.run([STORES.lessonProgress], 'readwrite', async (tx) => {
+      await requestToPromise(tx.objectStore(STORES.lessonProgress).put(progresso))
     })
   }
 

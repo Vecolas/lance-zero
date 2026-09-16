@@ -1,0 +1,7 @@
+/* A contagem do catálogo: nota de contexto, não manchete. Ela sobe para junto da
+   descrição da página, que já tem o respiro do `PageHeader`. */
+.contagem {
+  margin: calc(var(--space-5) * -1) 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}

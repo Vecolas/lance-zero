@@ -1,12 +1,14 @@
+/* Uma fileira só: os botões e o filtro de status moram juntos nela. A coluna
+   existia para empilhar a fileira de status embaixo, e ela não existe mais. */
 .toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
   margin: var(--space-5) 0 var(--space-6);
 }
+/* align-items: center porque o botão de filtro e os chips têm alturas
+   diferentes, e sem ele o ícone fica alinhado pelo topo. */
 .filters {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
 }
 .filter,
@@ -23,21 +25,6 @@
   background: var(--accent-strong);
   border-color: var(--accent-strong);
   color: var(--on-accent);
-}
-.statusFilter {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-.statusFilter select {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  padding: 0.45rem 0.65rem;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
 }
 .grid {
   display: grid;

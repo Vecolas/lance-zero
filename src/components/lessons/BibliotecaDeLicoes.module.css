@@ -1,213 +1,64 @@
-.lista {
+/*
+  A GRADE DA BIBLIOTECA.
+
+  `minmax(min(100%, 17rem), 1fr)` com `auto-fit` dá, na prática, o que o plano
+  pede sem número mágico de colunas: quatro em telas largas, três em desktop
+  comum, duas em tablet e uma no celular. O `min(100%, …)` é o que impede a
+  coluna de ficar mais larga que a tela em 360 px — sem ele, `17rem` vira rolagem
+  horizontal no aparelho mais estreito que o projeto suporta.
+
+  `align-items: stretch` (o padrão do grid) somado ao `1fr` interno do card é o
+  que mantém o rodapé colado embaixo em toda a fileira. É daí que vem o "ritmo
+  visual estável": os CTAs ficam alinhados mesmo quando um título ocupa duas
+  linhas e o vizinho ocupa uma.
+*/
+.grade {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
   gap: var(--space-4);
-  grid-template-columns: 1fr;
-  margin: 0;
+  margin: var(--space-5) 0 0;
   padding: 0;
   list-style: none;
 }
 
-@media (min-width: 48rem) {
-  .lista {
-    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
-  }
-}
-
-.cartao,
-.licao {
+.grade > li {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-card);
-}
-
-.habilidade {
-  align-self: flex-start;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface-sunken);
-  font-size: 0.75rem;
-  font-weight: 650;
-  color: var(--text-muted);
-}
-
-.tituloCartao {
-  margin: 0;
-  font-size: 1.0625rem;
-  font-weight: 650;
-  color: var(--text-strong);
-}
-
-.conceito,
-.texto {
-  margin: 0;
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  color: var(--text-muted);
-}
-
-.minutos {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--text-faint);
-}
-
-.etapa {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
-}
-
-.etapaTitulo {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-faint);
-}
-
-.comTabuleiro {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: 1fr;
-  align-items: start;
-}
-
-@media (min-width: 52rem) {
-  .comTabuleiro {
-    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
-  }
-}
-
-.tabuleiro {
   min-width: 0;
 }
 
-.aoLado {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+.grade > li > * {
+  width: 100%;
 }
 
-.linha {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.9375rem;
-  color: var(--text);
-}
-
-.linhaRotulo {
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-faint);
-}
-
-.opcoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.opcao {
-  min-height: 2.75rem;
-  min-width: 4.5rem;
-  padding: var(--space-2) var(--space-4);
+/* Os chips do filtro: os mesmos de Aberturas e Finais. */
+.filtro,
+.filtroAtivo {
+  flex: 0 0 auto;
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.opcao:hover {
-  border-color: var(--accent-strong);
-  background: var(--surface-sunken);
-}
-
-.opcao[aria-pressed='true'] {
-  border-color: var(--accent-strong);
-  background: var(--accent-soft);
-  color: var(--accent-readable);
-}
-
-.veredito {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-sunken);
-}
-
-.acertou,
-.errou {
-  margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 650;
-}
-
-.acertou {
-  color: var(--positive);
-}
-
-.errou {
-  color: var(--danger);
-}
-
-.primario,
-.ghost,
-.voltar {
-  align-self: flex-start;
-  min-height: 2.75rem;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
-  font: inherit;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.primario {
-  border: 1px solid transparent;
-  background: var(--accent-strong);
-  color: var(--on-accent);
-}
-
-.primario:hover {
-  background: var(--accent-hover);
-}
-
-.ghost {
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  color: var(--text);
-}
-
-.voltar {
-  padding-left: 0;
-  border: 0;
-  background: none;
-  color: var(--link);
-}
-
-.vazio {
-  margin: 0;
-  font-size: 0.9375rem;
+  border-radius: 999px;
+  background: transparent;
   color: var(--text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.filtro:hover,
+.filtroAtivo:hover {
+  color: var(--text-strong);
+}
+
+.filtro:focus-visible,
+.filtroAtivo:focus-visible {
+  outline: var(--focus-ring) solid var(--accent);
+  outline-offset: 2px;
+}
+
+.filtroAtivo {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-strong);
+  font-weight: 700;
 }

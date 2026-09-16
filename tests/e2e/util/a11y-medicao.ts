@@ -341,20 +341,22 @@ export const EXCECOES_MEDIDAS: Excecao[] = [
     dono: 'src/components/chess/** (fora da fronteira desta frente)',
     razao: 'coordenadas do react-chessboard na paleta padrão da biblioteca sobre as casas da marca',
   },
-  {
-    id: 'openings-token-de-tema-claro-no-escuro',
-    // `RepertorioCard.module.css` usa `--accent-text` e `--info-text` CRUS.
-    // Esses tokens só existem para texto sobre fundo CLARO; no tema escuro
-    // ninguém os redefine, então a cor de tema claro é pintada sobre o cartão
-    // escuro. Medido: 3,21:1 e 3,34:1. O papel semântico certo já existe
-    // (`--accent-readable`, `--note`) e é redefinido nos dois blocos de tema.
-    reconhece: (j) =>
-      j.amostra.tema === 'dark' &&
-      ['#007999', '#3075b9'].includes(j.frenteHex.toLowerCase()) &&
-      j.amostra.rota.startsWith('/openings'),
-    dono: 'src/components/openings/** (fora da fronteira desta frente)',
-    razao: 'token de TEXTO do tema claro usado cru dentro do tema escuro',
-  },
+  /*
+    AQUI MORAVA `openings-token-de-tema-claro-no-escuro`, e ela SAIU PORQUE O
+    DEFEITO FOI CONSERTADO.
+
+    `RepertorioCard.module.css` usava `--accent-text` e `--info-text` crus —
+    tokens de texto sobre fundo CLARO, que ninguém redefine no tema escuro. A cor
+    do tema claro era pintada sobre o cartão escuro: 3,21:1 e 3,34:1.
+
+    Os papéis semânticos certos já existiam (`--accent-readable` e `--note`) e são
+    redefinidos nos dois blocos de tema. A troca foi de duas linhas.
+
+    A exceção foi apagada e não "atualizada": exceção que parou de reproduzir é
+    peneira aberta — ela deixaria de proteger o defeito conhecido e passaria a
+    esconder um defeito novo parecido. Foi o próprio portão de exceções obsoletas
+    que apontou isto.
+  */
   {
     id: 'accent-text-em-fundo-que-nao-e-o-bg-primary',
     // `--accent-text` (#007999) foi calibrado contra `--bg-primary` e

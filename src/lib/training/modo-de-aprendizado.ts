@@ -26,17 +26,3 @@ export function modoDaUrl(): ModoDeAprendizado | null {
   if (typeof window === 'undefined') return null
   return lerModo(window.location.search)
 }
-
-/**
- * A frase que a tela mostra ao chegar em cada modo.
- *
- * `aprender` não tem frase: é o caso padrão, e um aviso dizendo "você está
- * aprendendo" na tela de aprender é ruído que ensina a ignorar avisos.
- */
-export const AVISO_DO_MODO: Record<Exclude<ModoDeAprendizado, 'aprender'>, string> = {
-  continuar: 'Você retomou de onde parou. As etapas já vencidas continuam vencidas.',
-  revisar:
-    'Você já concluiu este conteúdo. Está revendo — nada aqui derruba o que você já conquistou.',
-  reaprender:
-    'Este conteúdo voltou a falhar nas suas partidas, então ele é ensinado de novo. Não é punição: é o app admitindo que a primeira passagem não fixou.',
-}

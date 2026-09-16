@@ -72,26 +72,14 @@
   display: block;
   font-size: 0.84rem;
 }
-.filters,
+/* Aqui moravam `.filters`, `.filter` e `.activeFilter` — a barra de cinco botões
+   que pedia ao aluno que dissesse o que queria ver antes de ver qualquer coisa.
+   Ela saiu junto com o JSX: quem responde essa pergunta agora é a ordem da lista,
+   com o concluído indo para o fim. */
 .legend {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-.filter,
-.activeFilter {
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  padding: 0.45rem 0.75rem;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.activeFilter {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--text-strong);
-  font-weight: 700;
 }
 .legend {
   color: var(--text-muted);
@@ -125,9 +113,20 @@
   color: var(--text-muted);
   font-size: 0.78rem;
 }
+/*
+  A COLUNA PRECISA CABER O TEXTO, e 18 rem não cabia.
+
+  O card é uma fileira: ícone + corpo + ação. Com 18 rem de coluna, o corpo ficava
+  com pouco mais de 10 rem e títulos como "Valor e atividade das peças" quebravam
+  em uma palavra por linha — o card virava uma coluna de palavras soltas.
+
+  22 rem dá ao corpo largura de frase. E `auto-fit` continua fazendo o resto: onde
+  não couberem duas colunas, vira uma de largura inteira, que é melhor que duas
+  espremidas.
+*/
 .nodes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   gap: 0.75rem;
 }
 .node {
@@ -158,49 +157,50 @@
   min-width: 0;
   flex: 1;
 }
+/*
+  `text-wrap: balance` no título e `pretty` na descrição.
+
+  O primeiro reparte as linhas do título em vez de deixar uma palavra sozinha na
+  última; o segundo evita a órfã no fim do parágrafo. São duas linhas de CSS que
+  fazem o card parecer escrito em vez de espremido.
+*/
 .nodeBody h4 {
   margin: 0;
   color: var(--text-strong);
   font-size: 0.98rem;
+  text-wrap: balance;
 }
 .nodeBody p {
   margin: 0.25rem 0 0.45rem;
   font-size: 0.82rem;
   line-height: 1.4;
+  text-wrap: pretty;
 }
 .state {
   color: var(--text-muted);
   font-size: 0.76rem;
   font-weight: 700;
 }
+/*
+  O RÓTULO DE AÇÃO NÃO QUEBRA E NÃO ENCOLHE.
+
+  "Aprender", "Continuar", "Reaprender" são curtos, e quebrá-los deixa o card com
+  uma linha órfã. `flex-shrink: 0` é o que impede o inverso — o rótulo ser
+  espremido a ponto de virar uma coluna de letras.
+*/
 .action,
 .locked {
+  flex: 0 0 auto;
   align-self: end;
   color: var(--link);
   font-size: 0.8rem;
   font-weight: 700;
+  white-space: nowrap;
   text-decoration: none;
 }
-/* O RÓTULO DE AÇÃO NÃO QUEBRA: "Aprender", "Continuar", "Reaprender" são curtos
-   e quebrá-los deixa o card com uma linha órfã. */
-.action {
-  white-space: nowrap;
-}
-/*
-  A AUSÊNCIA DE CONTEÚDO É UMA FRASE, e frase quebra linha.
-
-  Ela herdava `white-space: nowrap` junto com a ação, e "Este conteúdo ainda não
-  possui uma lição disponível." numa linha só empurrava o card para além da tela:
-  a 360 px o Roadmap passou a rolar na horizontal, e os cliques no celular caíam
-  fora da área visível. Um texto explicativo não tem o mesmo comportamento de um
-  rótulo de botão, e tratar os dois igual foi o que quebrou.
-*/
 .locked {
-  max-width: 14rem;
   color: var(--text-muted);
   font-weight: 400;
-  text-align: right;
-  text-wrap: pretty;
 }
 .choice {
   display: grid;

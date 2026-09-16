@@ -7,8 +7,12 @@ import { useEffect, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { FilterBar, StatePanel } from '@/components/ui/primitives'
+import { FiltroSuspenso } from '@/components/ui/FiltroSuspenso'
 import { OPENING_COURSES } from '@/content/openings/course'
-import { progressoDaJornada, rotuloDeRetomada, type StudyJourney } from '@/domain/jornada'
+import { progressoDaJornada, retomadaDaJornada, type StudyJourney } from '@/domain/jornada'
+import { useIdioma, useTraduzir } from '@/components/providers/LocaleProvider'
+import { nomeDaAbertura } from '@/lib/i18n/nomes-de-conteudo'
+import { CHAVE_DA_RETOMADA } from '@/lib/i18n/retomada'
 import { construirJornadaDeAbertura } from '@/domain/openings/jornada'
 import { idDaJornadaDeAbertura } from '@/components/openings/OpeningStudyJourney'
 import type {
@@ -20,16 +24,22 @@ import type {
 import styles from './OpeningCatalog.module.css'
 
 type Filter = 'all' | OpeningSide
-type StatusFilter = 'all' | OpeningStatus
+
+/**
+ * O filtro secundário das aberturas é SÓ O NÍVEL.
+ *
+ * Havia também "Primeiro lance" e "Status". Os dois saíram, e a razão é a mesma
+ * dos dois: eles respondiam perguntas que o card já responde. O primeiro lance
+ * está no mini-tabuleiro de cada card, e o status aparece escrito dentro dele.
+ * Três seletores para um catálogo de seis aberturas é mais peneira que conteúdo.
+ */
 type DifficultyFilter = 'all' | 'beginner' | 'intermediate' | 'advanced'
-type FirstMoveFilter = 'all' | 'e4' | 'd4' | 'c4' | 'Nf3'
 
 export function OpeningCatalog() {
+  const t = useTraduzir()
   const { repo } = useRepository()
   const [filter, setFilter] = useState<Filter>('all')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
-  const [firstMoveFilter, setFirstMoveFilter] = useState<FirstMoveFilter>('all')
   const [progress, setProgress] = useState<Record<string, OpeningProgress>>({})
   const [jornadas, setJornadas] = useState<Record<string, StudyJourney>>({})
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -71,41 +81,41 @@ export function OpeningCatalog() {
     return (
       <StatePanel
         kind="loading"
-        title="Carregando aberturas"
-        description="Preparando a biblioteca e seu progresso."
+        title={t('openings.loadingTitle')}
+        description={t('openings.loadingDescription')}
       />
     )
   }
   if (state === 'error') {
     return (
-      <StatePanel
-        kind="error"
-        title="Não consegui carregar as aberturas"
-        description={error ?? undefined}
-      />
+      <StatePanel kind="error" title={t('openings.errorTitle')} description={error ?? undefined} />
     )
   }
   const courses = OPENING_COURSES.filter((opening) => {
-    const current = progress[opening.id]
-    const status = current?.status ?? 'not_started'
     const difficulty =
       opening.difficulty <= 1 ? 'beginner' : opening.difficulty === 2 ? 'intermediate' : 'advanced'
-    const firstMove = opening.mainline[0]?.san
     return (
       (filter === 'all' || opening.side === filter) &&
-      (statusFilter === 'all' || status === statusFilter) &&
-      (difficultyFilter === 'all' || difficulty === difficultyFilter) &&
-      (firstMoveFilter === 'all' || firstMove === firstMoveFilter)
+      (difficultyFilter === 'all' || difficulty === difficultyFilter)
     )
   })
   return (
     <section aria-labelledby="catalogo-aberturas">
-      <FilterBar label="Filtrar aberturas">
+      {/*
+        OS BOTÕES E O FILTRO NA MESMA FILEIRA.
+
+        Havia aqui uma segunda fileira de seletores, puxada para cima por uma
+        margem negativa para fingir que era a mesma linha. Quando os botões
+        quebravam, as duas se sobrepunham — texto por cima de texto. O filtro
+        secundário passou a morar DENTRO desta fileira, depois do último botão,
+        que é onde o olho já está quando termina de ler as opções.
+      */}
+      <FilterBar label={t('openings.filterLabel')}>
         {(
           [
-            ['all', 'Todas'],
-            ['white', 'Brancas'],
-            ['black', 'Pretas'],
+            ['all', t('openings.all')],
+            ['white', t('openings.white')],
+            ['black', t('openings.black')],
           ] as const
         ).map(([value, label]) => (
           <button
@@ -118,50 +128,22 @@ export function OpeningCatalog() {
             {label}
           </button>
         ))}
+        <FiltroSuspenso
+          titulo={t('openings.level')}
+          rotuloDoBotao={t('openings.filterByLevel')}
+          valor={difficultyFilter}
+          valorNeutro="all"
+          aoEscolher={setDifficultyFilter}
+          opcoes={[
+            { valor: 'all', rotulo: t('openings.allMasculine') },
+            { valor: 'beginner', rotulo: t('openings.beginner') },
+            { valor: 'intermediate', rotulo: t('openings.intermediate') },
+            { valor: 'advanced', rotulo: t('openings.advanced') },
+          ]}
+        />
       </FilterBar>
-      <div className={styles.selectFilters} aria-label="Filtros detalhados">
-        <label>
-          Primeiro lance
-          <select
-            value={firstMoveFilter}
-            onChange={(event) => setFirstMoveFilter(event.target.value as FirstMoveFilter)}
-          >
-            <option value="all">Todos</option>
-            <option value="e4">1.e4</option>
-            <option value="d4">1.d4</option>
-            <option value="c4">1.c4</option>
-            <option value="Nf3">1.Cf3</option>
-          </select>
-        </label>
-        <label>
-          Nível
-          <select
-            value={difficultyFilter}
-            onChange={(event) => setDifficultyFilter(event.target.value as DifficultyFilter)}
-          >
-            <option value="all">Todos</option>
-            <option value="beginner">Iniciante</option>
-            <option value="intermediate">Intermediária</option>
-            <option value="advanced">Avançada</option>
-          </select>
-        </label>
-        <label>
-          Status
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-          >
-            <option value="all">Todos</option>
-            <option value="not_started">Não iniciadas</option>
-            <option value="learning">Aprendendo</option>
-            <option value="training">Treinando</option>
-            <option value="consolidating">Consolidando</option>
-            <option value="active_repertoire">Repertório ativo</option>
-          </select>
-        </label>
-      </div>
       <h2 id="catalogo-aberturas" className="sr-only">
-        Cursos de abertura
+        {t('openings.catalogHeading')}
       </h2>
       <div className={styles.grid}>
         {courses.map((opening) => (
@@ -176,8 +158,8 @@ export function OpeningCatalog() {
       {courses.length === 0 ? (
         <StatePanel
           kind="empty"
-          title="Nenhuma abertura corresponde aos filtros"
-          description="Tente remover um filtro para ver mais cursos."
+          title={t('openings.emptyTitle')}
+          description={t('openings.emptyDescription')}
         />
       ) : null}
     </section>
@@ -193,13 +175,20 @@ function OpeningCard({
   progress?: OpeningProgress
   jornada?: StudyJourney
 }) {
+  const { locale, t } = useIdioma()
+  /*
+    O NOME DA ABERTURA É TRADUZIDO; O ID, NÃO. `italiana` continua `italiana` no
+    endereço e no progresso gravado — o que muda é "Abertura Italiana" virar
+    "Italian Game". Traduzir o id quebraria o link e o histórico do aluno junto.
+  */
+  const nome = nomeDaAbertura(opening.id, locale)
   const status = progress?.status ?? 'not_started'
   const labels = {
-    not_started: 'Não iniciada',
-    learning: 'Aprendendo',
-    training: 'Treinando',
-    consolidating: 'Consolidando',
-    active_repertoire: 'Repertório ativo',
+    not_started: t('openings.status.notStarted'),
+    learning: t('openings.status.learning'),
+    training: t('openings.status.training'),
+    consolidating: t('openings.status.consolidating'),
+    active_repertoire: t('openings.status.activeRepertoire'),
   } as const
 
   /*
@@ -219,7 +208,7 @@ function OpeningCard({
     <Link
       href={`/aberturas/${opening.slug}`}
       className={styles.card}
-      aria-label={`${rotuloDeRetomada(jornada ?? null)}: ${opening.name}`}
+      aria-label={`${t(CHAVE_DA_RETOMADA[retomadaDaJornada(jornada ?? null)])}: ${nome}`}
     >
       <div className={styles.preview}>
         <ChessBoardView
@@ -230,10 +219,10 @@ function OpeningCard({
       </div>
       <div className={styles.body}>
         <div className={styles.meta}>
-          <span>{opening.side === 'white' ? 'Brancas' : 'Pretas'}</span>
-          <span>Essencial</span>
+          <span>{opening.side === 'white' ? t('openings.white') : t('openings.black')}</span>
+          <span>{t('openings.essential')}</span>
         </div>
-        <h3>{opening.name}</h3>
+        <h3>{nome}</h3>
         <p>{opening.description}</p>
         <span className={styles.status}>
           {/* Símbolo + texto: o estado nunca depende só da forma nem só da cor. */}
@@ -242,16 +231,19 @@ function OpeningCard({
         </span>
         <span>
           {etapas === null
-            ? `${stages.length} etapas`
-            : `${etapas.concluidas} de ${etapas.total} etapas`}
+            ? t('journey.stagesTotal', { count: stages.length })
+            : t('journey.stagesProgress', { done: etapas.concluidas, total: etapas.total })}
         </span>
         {/*
-          O CTA é a única ação do card, e o rótulo vem do domínio
-          (`rotuloDeRetomada`): Aberturas e Finais precisam dizer a mesma coisa
+          O CTA é a única ação do card, e QUAL rótulo usar vem do domínio
+          (`retomadaDaJornada`): Aberturas e Finais precisam dizer a mesma coisa
           nos mesmos estados, e uma escada de `if` copiada nos dois catálogos
-          divergiria na primeira correção.
+          divergiria na primeira correção. A PALAVRA vem do dicionário, porque
+          domínio não fala idioma.
         */}
-        <span className={styles.cta}>{rotuloDeRetomada(jornada ?? null)} →</span>
+        <span className={styles.cta}>
+          {t(CHAVE_DA_RETOMADA[retomadaDaJornada(jornada ?? null)])} →
+        </span>
       </div>
     </Link>
   )

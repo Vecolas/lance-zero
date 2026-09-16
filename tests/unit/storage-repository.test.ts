@@ -393,6 +393,66 @@ describe.each(implementacoes)('contrato do repositorio ($nome)', (impl) => {
     lido[0].definicao.titulo = 'mexido por fora'
     expect((await repo.listRepertorios())[0].definicao.titulo).toBe('Brancas de teste')
   })
+
+  /*
+    O CHECKPOINT DA LICAO.
+
+    A pergunta que estes casos protegem e a distincao entre "nunca abriu" e
+    "abriu e parou na etapa 0". Elas sao estados diferentes do aluno e produzem
+    cards diferentes na biblioteca — "Aprender" contra "Continuar". Um
+    repositorio que devolvesse zero para quem nunca abriu apagaria a diferenca
+    silenciosamente, e a biblioteca ofereceria estreia a quem ja comecou.
+  */
+  it('devolve nulo para licao nunca aberta', async () => {
+    await expect(repo.getLessonProgress('peca-pendurada')).resolves.toBeNull()
+  })
+
+  it('distingue nunca aberta de aberta na etapa zero', async () => {
+    await repo.saveLessonProgress({
+      lessonId: 'peca-pendurada',
+      stepIndex: 0,
+      contentVersion: 1,
+      updatedAt: AGORA.toISOString(),
+    })
+    const lido = await repo.getLessonProgress('peca-pendurada')
+    expect(lido).not.toBeNull()
+    expect(lido?.stepIndex).toBe(0)
+  })
+
+  it('regrava o checkpoint no lugar, sem acumular', async () => {
+    await repo.saveLessonProgress({
+      lessonId: 'peca-pendurada',
+      stepIndex: 2,
+      contentVersion: 1,
+      updatedAt: AGORA.toISOString(),
+    })
+    await repo.saveLessonProgress({
+      lessonId: 'peca-pendurada',
+      stepIndex: 6,
+      contentVersion: 1,
+      updatedAt: AGORA.toISOString(),
+    })
+    expect((await repo.getLessonProgress('peca-pendurada'))?.stepIndex).toBe(6)
+    expect(await repo.listLessonProgress()).toHaveLength(1)
+  })
+
+  it('lista os checkpoints em ordem canonica pelo id', async () => {
+    // Gravados fora de ordem de proposito: a ordem da listagem nao pode
+    // depender de como o IndexedDB devolveu.
+    for (const lessonId of ['garfo-de-cavalo', 'peca-pendurada', 'cravada']) {
+      await repo.saveLessonProgress({
+        lessonId,
+        stepIndex: 1,
+        contentVersion: 1,
+        updatedAt: AGORA.toISOString(),
+      })
+    }
+    expect((await repo.listLessonProgress()).map((item) => item.lessonId)).toEqual([
+      'cravada',
+      'garfo-de-cavalo',
+      'peca-pendurada',
+    ])
+  })
 })
 
 describe('erros tipados de armazenamento', () => {

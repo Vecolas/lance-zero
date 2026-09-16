@@ -1,0 +1,43 @@
+/*
+  A MESA DE ESTUDO: tabuleiro grande à esquerda, instrução ao lado.
+
+  É a mesma regra da lição, aplicada a Aberturas e Finais. Ela não vinha de graça
+  da casca da jornada: `StudyJourneyShell` só monta duas colunas quando recebe o
+  slot `tabuleiro`, e as duas jornadas desenham o tabuleiro DENTRO do conteúdo da
+  etapa — então elas caíam na coluna única, com o tabuleiro preso em 28 rem e o
+  texto empilhado embaixo.
+
+  O tabuleiro leva a coluna maior e o texto fica com largura de LEITURA. Num
+  estudo de abertura ou de final o conteúdo É a posição: a variante da Italiana, a
+  oposição em rei e peão. O texto diz o que observar nela.
+
+  ABAIXO DE 60 rem vira coluna única, e o tabuleiro continua vindo primeiro
+  porque ele vem primeiro no DOM. A prioridade dele não muda com a largura da
+  tela — muda só o arranjo.
+*/
+.mesa {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 60rem) {
+  .mesa {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 24rem);
+  }
+}
+
+/* O tabuleiro cresce com a coluna. O teto evita que ele vire pôster na tela
+   larga, onde o olho passaria a varrer demais entre um canto e outro. */
+.tabuleiro {
+  min-width: 0;
+  max-width: 40rem;
+}
+
+/* A coluna de texto: conteúdo empilhado, colado no topo. */
+.instrucao {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  min-width: 0;
+}

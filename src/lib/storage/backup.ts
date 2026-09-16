@@ -20,6 +20,7 @@ import type {
   SkillState,
   UserProfile,
   OpeningProgress,
+  LessonProgress,
 } from '@/domain/types'
 import { idDeRepertorioEhUsavel } from '@/domain/repertoire'
 import { StorageError, UnsupportedBackupVersionError, type BackupRepository } from './repository'
@@ -84,6 +85,20 @@ export interface BackupFile {
    */
   planosDoDia: PlanoDoDia[]
   openingProgress?: OpeningProgress[]
+  /**
+   * Onde o aluno parou dentro de cada lição.
+   *
+   * SEM ISTO, TROCAR DE APARELHO REINICIARIA TODA LIÇÃO PELA METADE. As
+   * concluídas sobrevivem — elas viram `skillStates` —, mas quem estava na etapa
+   * 6 de 9 voltaria para a etapa 1 e a biblioteca diria "Aprender". Nada erraria;
+   * o aluno é que refaria o que já tinha feito.
+   *
+   * Opcional pelo mesmo motivo de `openingProgress`: a versão do backup NÃO sobe,
+   * porque `validateBackupFile` exige a versão exata e subir recusaria todo
+   * arquivo já baixado. Campo ausente vira lista vazia, que é o estado correto de
+   * quem exportou antes de o checkpoint existir.
+   */
+  lessonProgress?: LessonProgress[]
 }
 
 export interface ImportCounts {
@@ -98,6 +113,7 @@ export interface ImportCounts {
   skillStates: number
   planosDoDia: number
   openingProgress: number
+  lessonProgress: number
 }
 
 export interface ImportResult {
@@ -123,6 +139,7 @@ export async function exportBackup(
     skillStates,
     planosDoDia,
     openingProgress,
+    lessonProgress,
   ] = await Promise.all([
     repo.getProfile(),
     repo.listGames(),
@@ -138,6 +155,7 @@ export async function exportBackup(
     // antigos de um backup que o aluno acha completo.
     repo.listPlanosDoDia(),
     repo.listOpeningProgress(),
+    repo.listLessonProgress(),
   ])
 
   return {
@@ -154,6 +172,7 @@ export async function exportBackup(
     skillStates,
     planosDoDia,
     openingProgress,
+    lessonProgress,
   }
 }
 
@@ -198,6 +217,9 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
   for (const progress of parsed.openingProgress ?? []) {
     await repo.saveOpeningProgress(progress)
   }
+  for (const progresso of parsed.lessonProgress ?? []) {
+    await repo.saveLessonProgress(progresso)
+  }
 
   return {
     version: parsed.version,
@@ -214,6 +236,7 @@ export async function importBackup(repo: BackupRepository, file: unknown): Promi
       skillStates: parsed.skillStates.length,
       planosDoDia: parsed.planosDoDia.length,
       openingProgress: parsed.openingProgress?.length ?? 0,
+      lessonProgress: parsed.lessonProgress?.length ?? 0,
     },
   }
 }
@@ -477,6 +500,18 @@ export function validateBackupFile(file: unknown): BackupFile {
     return item as unknown as OpeningProgress
   })
 
+  const lessonProgress = readRecords(file, 'lessonProgress').map((item, index) => {
+    const where = `lessonProgress[${index}]`
+    // `lessonId` é a CHAVE da store: sem ela o checkpoint seria gravado sob
+    // `undefined` e nenhuma lição conseguiria lê-lo de volta.
+    readString(item, 'lessonId', where)
+    readString(item, 'updatedAt', where)
+    if (typeof item['stepIndex'] !== 'number' || typeof item['contentVersion'] !== 'number') {
+      throw invalid(`${where} deveria ter stepIndex e contentVersion numéricos.`)
+    }
+    return item as unknown as LessonProgress
+  })
+
   return {
     version,
     exportedAt,
@@ -491,6 +526,7 @@ export function validateBackupFile(file: unknown): BackupFile {
     skillStates,
     planosDoDia,
     openingProgress,
+    lessonProgress,
   }
 }
 

@@ -1,0 +1,121 @@
+.caixa {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+/*
+  O BOTÃO TEM O TAMANHO DE UM ALVO DE TOQUE, não o do ícone.
+
+  2,5 rem nos dois eixos é a régua do projeto. Um ícone de 18 px com área de
+  clique de 18 px é o erro clássico de barra de filtro no celular.
+*/
+.botao {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.botao:hover {
+  color: var(--text-strong);
+}
+
+.botao:focus-visible {
+  outline: var(--focus-ring) solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Filtro em vigor. A cor sozinha não conta — ver o ponto e o `aria-label`. */
+.ativo {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+.icone {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.ponto {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--accent-strong);
+}
+
+/*
+  O MENU FLUTUA, e é por isso que `.filterBar` precisa de `overflow: visible`.
+
+  Ele é ancorado à direita do botão para não sair da tela quando o botão está no
+  fim de uma fileira larga — que é onde ele sempre está, por desenho.
+*/
+.menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 30;
+  display: grid;
+  gap: 2px;
+  min-width: 12rem;
+  padding: var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card);
+}
+
+.titulo {
+  margin: 0 0 var(--space-1);
+  padding: 0 var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.opcao,
+.opcaoAtiva {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcao:hover,
+.opcaoAtiva:hover {
+  background: var(--surface-sunken);
+}
+
+.opcao:focus-visible,
+.opcaoAtiva:focus-visible {
+  outline: var(--focus-ring) solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* A opção em vigor: marca de seleção + peso, além do fundo. */
+.opcaoAtiva {
+  background: var(--accent-soft);
+  font-weight: 700;
+}

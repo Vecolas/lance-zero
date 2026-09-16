@@ -31,9 +31,19 @@ test('TESTE A — "Peças indefesas" abre a lição, e não a biblioteca', async
   await card(page, 'Pecas indefesas').getByRole('link').click()
 
   await expect(page).toHaveURL(/\/lessons\/peca-pendurada$/)
-  // Chegou NA lição: o título dela está na tela, e não uma lista de cartões.
-  await expect(page.getByText('A peça que ninguém está defendendo')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Abrir lição' })).toBeHidden()
+  /*
+    Chegou NA lição: o título dela está na tela, e não uma lista de cartões.
+
+    A asserção é pelo CABEÇALHO e não por texto solto. Com a lição ganhando
+    endereço próprio ela ganhou também `<title>`, e o anunciador de rota do Next
+    passou a repetir o mesmo texto num `role="alert"` — dois nós, e o texto solto
+    virou ambíguo. O cabeçalho é o que o aluno vê; o anunciador é para leitor de
+    tela.
+  */
+  await expect(
+    page.getByRole('heading', { name: 'A peça que ninguém está defendendo' }),
+  ).toBeVisible()
+  await expect(page.getByRole('link', { name: /^Lição: / })).toHaveCount(0)
 })
 
 test('TESTE B — "Geracao de candidatos" abre a primeira lição da jornada', async ({ page }) => {
@@ -107,6 +117,14 @@ test('a biblioteca continua existindo para exploração livre', async ({ page })
   // §25 do plano: o que muda é o Roadmap parar de usá-la como roteador, não a
   // biblioteca deixar de existir.
   await page.goto('/lessons')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Biblioteca')
-  await expect(page.getByRole('button', { name: 'Abrir lição' }).first()).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Biblioteca de lições')
+  /*
+    O CARD INTEIRO É O LINK, e por isso a asserção mudou de botão para link.
+
+    O "Abrir lição" que existia aqui era um botão dentro de um card que não
+    levava a lugar nenhum sozinho: o alvo de clique era pequeno no celular e o
+    resto do card — título, descrição, prévia — não fazia nada. Cartão de
+    biblioteca É um destino; o elemento inteiro ser o link é o que diz isso.
+  */
+  await expect(page.getByRole('link', { name: /^Lição: / }).first()).toBeVisible()
 })

@@ -19,21 +19,51 @@ import { etapasDoConteudo } from '@/lib/training/etapas-do-conteudo'
 import { learningTargetOf } from '@/domain/roadmap/learning-objects'
 import type { ModoDeAprendizado } from '@/domain/roadmap/learning-target'
 import { rotaDeAprendizado } from '@/lib/training/rota-de-aprendizado'
+import { useIdioma, useTraduzir } from '@/components/providers/LocaleProvider'
+import type { ChaveDeMensagem } from '@/lib/i18n/mensagens'
+import { textoDoNo } from '@/lib/i18n/nos-do-roadmap'
+import { CHAVE_DA_RETOMADA } from '@/lib/i18n/retomada'
 import styles from './RoadmapView.module.css'
 
-type Filter = 'todos' | 'em-andamento' | 'disponiveis' | 'revisar' | 'concluidos'
-const stateLabel: Record<RoadmapNodeView['state'], string> = {
-  locked: 'Bloqueado',
-  available: 'Disponível',
-  learning: 'Em aprendizado',
-  completed: 'Concluído',
-  review: 'Revisar',
-  needs_relearning: 'Reaprender recomendado',
+/**
+ * A ORDEM DENTRO DE CADA ÁREA: o que falta fazer primeiro, o concluído por
+ * último.
+ *
+ * ELA SUBSTITUI A BARRA DE FILTROS. Havia cinco botões — Todos, Em andamento,
+ * Disponíveis, Revisar, Concluídos — e eles pediam ao aluno que dissesse o que
+ * queria ver antes de ver qualquer coisa. Num mapa de currículo a resposta é
+ * sempre a mesma: o que ainda não foi feito. Ordenar responde isso sem perguntar,
+ * e sem esconder o resto: o concluído continua na tela, no fim, onde serve de
+ * histórico em vez de ocupar o topo.
+ *
+ * Dentro de cada grupo a ordem do currículo é preservada — ela é a sequência
+ * pedagógica, e embaralhá-la por estado desfaria o que o roadmap ensina.
+ */
+function pesoNaLista(node: RoadmapNodeView): number {
+  if (node.completed) return 2
+  if (node.state === 'locked') return 1
+  return 0
+}
+
+const CHAVE_DO_ESTADO: Record<RoadmapNodeView['state'], ChaveDeMensagem> = {
+  locked: 'roadmap.stages.locked',
+  available: 'roadmap.stages.available',
+  learning: 'roadmap.stages.learning',
+  completed: 'roadmap.stages.completed',
+  review: 'roadmap.stages.review',
+  needs_relearning: 'roadmap.stages.needs_relearning',
+}
+
+const CHAVE_DA_ACAO: Record<Exclude<RoadmapNodeView['action'], 'bloqueado'>, ChaveDeMensagem> = {
+  aprender: 'common.actions.learn',
+  continuar: 'common.actions.continue',
+  revisar: 'common.actions.review',
+  reaprender: 'common.actions.relearn',
 }
 
 export function RoadmapView() {
+  const t = useTraduzir()
   const { status, repo, erro, revision } = useRepository()
-  const [filter, setFilter] = useState<Filter>('todos')
   const [nodes, setNodes] = useState<RoadmapNodeView[]>([])
   const [jornadas, setJornadas] = useState<Record<string, StudyJourney>>({})
   const [failed, setFailed] = useState<string | null>(null)
@@ -92,33 +122,26 @@ export function RoadmapView() {
       cancelled = true
     }
   }, [repo, revision])
-  const filtered = useMemo(
-    () =>
-      nodes.filter(
-        (node) =>
-          filter === 'todos' ||
-          (filter === 'em-andamento' && node.state === 'learning') ||
-          (filter === 'disponiveis' && node.state === 'available') ||
-          (filter === 'revisar' &&
-            (node.state === 'review' || node.state === 'needs_relearning')) ||
-          (filter === 'concluidos' && node.completed),
-      ),
-    [filter, nodes],
+  /*
+    ORDENAR, E NÃO FILTRAR. Concluir qualquer coisa manda o card para o fim da
+    lista da área dele — o topo fica com o que ainda pede trabalho.
+
+    `sort` sobre uma CÓPIA: `nodes` é estado, e ordenar no lugar mutaria o array
+    que o React guarda. A ordem do currículo (`order`) é o desempate, então
+    dentro de cada grupo a sequência pedagógica continua de pé.
+  */
+  const ordenados = useMemo(
+    () => [...nodes].sort((a, b) => pesoNaLista(a) - pesoNaLista(b) || a.order - b.order),
+    [nodes],
   )
   const progress = roadmapProgress(nodes)
   if (status === 'carregando')
-    return (
-      <StatePanel
-        kind="loading"
-        title="Abrindo seu roadmap"
-        description="Lendo o currículo e seu estado de aprendizagem."
-      />
-    )
+    return <StatePanel kind="loading" title={t('roadmap.loadingTitle')} />
   if (status === 'erro' || failed)
     return (
       <StatePanel
         kind="error"
-        title="Não consegui abrir seu roadmap"
+        title={t('roadmap.errorTitle')}
         description={failed ?? erro ?? undefined}
       />
     )
@@ -126,61 +149,32 @@ export function RoadmapView() {
     <div className={styles.root}>
       <div className={styles.summary}>
         <div>
-          <p className={styles.kicker}>Trajetória de aprendizagem</p>
-          <h2>O que existe para aprender e onde você está</h2>
-          <p className={styles.muted}>
-            A conclusão mostra o que já foi estudado. Revisar e reaprender mostram a retenção atual.
-          </p>
+          <p className={styles.kicker}>{t('roadmap.kicker')}</p>
+          <h2>{t('roadmap.summaryHeading')}</h2>
+          <p className={styles.muted}>{t('roadmap.summaryHelp')}</p>
         </div>
         <p className={styles.count}>
-          <strong>{progress.completed}</strong> de {progress.total}
-          <span> conteúdos estudados</span>
+          <strong>{progress.completed}</strong> {t('roadmap.of')} {progress.total}
+          <span> {t('roadmap.studiedCount')}</span>
         </p>
       </div>
-      <div className={styles.filters} aria-label="Filtrar roadmap">
-        {(['todos', 'em-andamento', 'disponiveis', 'revisar', 'concluidos'] as Filter[]).map(
-          (value) => (
-            <button
-              key={value}
-              type="button"
-              className={filter === value ? styles.activeFilter : styles.filter}
-              onClick={() => setFilter(value)}
-            >
-              {
-                {
-                  todos: 'Todos',
-                  'em-andamento': 'Em andamento',
-                  disponiveis: 'Disponíveis',
-                  revisar: 'Revisar',
-                  concluidos: 'Concluídos',
-                }[value]
-              }
-            </button>
-          ),
-        )}
-      </div>
       <div className={styles.legend}>
-        <span>✓ Concluído</span>
-        <span>◔ Em aprendizado</span>
-        <span>○ Disponível</span>
-        <span>↻ Reaprender recomendado</span>
+        <span>{t('roadmap.legend.completed')}</span>
+        <span>{t('roadmap.legend.learning')}</span>
+        <span>{t('roadmap.legend.available')}</span>
+        <span>{t('roadmap.legend.relearn')}</span>
       </div>
-      <aside className={styles.choice} aria-label="Escolhas de repertório">
-        <strong>Escolha um repertório de Brancas</strong>
-        <span>
-          Você precisa estudar uma opção para avançar; as outras continuam disponíveis para
-          explorar.
-        </span>
+      <aside className={styles.choice} aria-label={t('roadmap.choiceTitle')}>
+        <strong>{t('roadmap.choiceTitle')}</strong>
+        <span>{t('roadmap.choiceHelp')}</span>
       </aside>
       <div className={styles.areas}>
         {ROADMAP_AREAS.map((area) => {
-          const areaNodes = filtered.filter((node) => node.area === area.id)
+          const areaNodes = ordenados.filter((node) => node.area === area.id)
           return areaNodes.length ? (
             <RoadmapAreaSection
               key={area.id}
               area={area.id}
-              title={area.title}
-              description={area.description}
               nodes={areaNodes}
               jornadas={jornadas}
             />
@@ -193,32 +187,31 @@ export function RoadmapView() {
 
 function RoadmapAreaSection({
   area,
-  title,
-  description,
   nodes,
   jornadas,
 }: {
   area: RoadmapArea
-  title: string
-  description: string
   nodes: RoadmapNodeView[]
   jornadas: Record<string, StudyJourney>
 }) {
+  const t = useTraduzir()
   return (
     <section className={styles.area} aria-labelledby={`roadmap-${area}`}>
       <div className={styles.areaHeading}>
         <div>
-          <h3 id={`roadmap-${area}`}>{title}</h3>
-          <p>{description}</p>
+          {/* O nome da área vem do dicionário e não do currículo: `area.id` é o
+              identificador, e é ele que indexa a tradução. */}
+          <h3 id={`roadmap-${area}`}>{t(`roadmap.areas.${area}.title` as ChaveDeMensagem)}</h3>
+          <p>{t(`roadmap.areas.${area}.description` as ChaveDeMensagem)}</p>
         </div>
-        <span>{nodes.length} conteúdos</span>
+        <span>{t('roadmap.contentCount', { count: nodes.length })}</span>
       </div>
+      {/* A ordem JÁ VEM PRONTA de cima (ver `pesoNaLista`). Reordenar por
+          `order` aqui desfaria a conclusão que manda o card para o fim. */}
       <div className={styles.nodes}>
-        {[...nodes]
-          .sort((a, b) => a.order - b.order)
-          .map((node) => (
-            <RoadmapNodeCard key={node.id} node={node} jornadas={jornadas} />
-          ))}
+        {nodes.map((node) => (
+          <RoadmapNodeCard key={node.id} node={node} jornadas={jornadas} />
+        ))}
       </div>
     </section>
   )
@@ -264,6 +257,8 @@ function RoadmapNodeCard({
   node: RoadmapNodeView
   jornadas: Record<string, StudyJourney>
 }) {
+  const { locale, t } = useIdioma()
+  const texto = textoDoNo(node, locale)
   const target = learningTargetOf(node)
   const conteudo = conteudoDoTarget(target)
   const jornada = conteudo ? (jornadas[conteudo.jornadaId] ?? null) : null
@@ -286,14 +281,10 @@ function RoadmapNodeCard({
   const destino = target ? rotaDeAprendizado(target, { modo, etapa }) : null
 
   const rotulo = resumo
-    ? resumo.rotulo
-    : node.action === 'reaprender'
-      ? 'Reaprender'
-      : node.action === 'revisar'
-        ? 'Revisar'
-        : node.action === 'continuar'
-          ? 'Continuar'
-          : 'Aprender'
+    ? t(CHAVE_DA_RETOMADA[resumo.rotulo])
+    : node.action === 'bloqueado'
+      ? t('common.actions.learn')
+      : t(CHAVE_DA_ACAO[node.action])
 
   return (
     <article className={`${styles.node} ${styles[`state-${node.state}`]}`}>
@@ -307,35 +298,40 @@ function RoadmapNodeCard({
               : '○'}
       </div>
       <div className={styles.nodeBody}>
-        <h4>{node.title}</h4>
-        <p>{node.shortDescription}</p>
-        <span className={styles.state}>
+        <h4>{texto.title}</h4>
+        <p>{texto.shortDescription}</p>
+        {/*
+          SEM CONTEÚDO, SEM BOTÃO — e a frase ocupa a LINHA DE ESTADO, não uma
+          coluna ao lado.
+
+          Ela morava fora do corpo do card, como irmã do link de ação. Numa
+          coluna estreita as duas disputavam a largura, e o título do nó passou a
+          quebrar em uma palavra por linha: "Como / ler / o / tabuleiro". Texto
+          explicativo não compete por largura com um rótulo de botão — ele é
+          texto, e texto ocupa a linha inteira.
+
+          A frase também SUBSTITUI o estado em vez de se somar a ele. Antes o card
+          dizia "Sem lição ainda" e, ao lado, "Este conteúdo ainda não possui uma
+          lição disponível" — a mesma informação duas vezes, em dois lugares.
+        */}
+        <span className={styles.state} data-testid={destino === null ? 'sem-conteudo' : undefined}>
           {resumo
-            ? `${resumo.concluida ? 'Concluído' : 'Em andamento'} · ${resumo.progresso}`
+            ? `${t(resumo.concluida ? 'common.states.completed' : 'common.states.inProgress')} · ${t(
+                'journey.stagesProgress',
+                { done: resumo.concluidas, total: resumo.total },
+              )}`
             : destino === null
-              ? 'Sem lição ainda'
-              : stateLabel[node.state]}
+              ? t('roadmap.noContentMessage')
+              : t(CHAVE_DO_ESTADO[node.state])}
         </span>
       </div>
-      {destino === null ? (
-        /*
-          SEM CONTEÚDO, SEM BOTÃO — e com a frase inteira, não só a ausência.
-
-          O catálogo tem doze lições para um currículo de cinquenta e sete nós. A
-          alternativa de manter o botão apontando para a biblioteca é o que
-          existia antes, e ela transformava a falta de conteúdo numa caça ao
-          tesouro. Dizer "ainda não há" é pior de ler e melhor de usar.
-        */
-        <span className={styles.locked} data-testid="sem-conteudo">
-          Este conteúdo ainda não possui uma lição disponível.
-        </span>
-      ) : node.action !== 'bloqueado' || resumo ? (
+      {destino !== null && (node.action !== 'bloqueado' || resumo) ? (
         <Link className={styles.action} href={destino}>
           {rotulo}
         </Link>
-      ) : (
-        <span className={styles.locked}>Pré-requisitos</span>
-      )}
+      ) : destino !== null ? (
+        <span className={styles.locked}>{t('common.states.locked')}</span>
+      ) : null}
     </article>
   )
 }

@@ -1,11 +1,11 @@
 'use client'
 
 import { useCallback, useSyncExternalStore } from 'react'
+import { useTraduzir } from '@/components/providers/LocaleProvider'
 import {
   alternar,
   isThemePreference,
   resolveTheme,
-  THEME_LABEL,
   THEME_STORAGE_KEY,
   type ThemeAplicado,
   type ThemePreference,
@@ -94,6 +94,7 @@ function persist(escolhido: ThemeAplicado) {
 }
 
 export function ThemeToggle() {
+  const t = useTraduzir()
   const aplicado = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   const trocar = useCallback(() => persist(alternar(aplicado)), [aplicado])
 
@@ -102,9 +103,7 @@ export function ThemeToggle() {
       type="button"
       className={styles.button}
       onClick={trocar}
-      aria-label={`Tema ${THEME_LABEL[aplicado].toLowerCase()}. Trocar para ${THEME_LABEL[
-        alternar(aplicado)
-      ].toLowerCase()}.`}
+      aria-label={aplicado === 'dark' ? t('appearance.themeToLight') : t('appearance.themeToDark')}
     >
       <svg
         className={`${styles.icon} ${styles.sol}`}

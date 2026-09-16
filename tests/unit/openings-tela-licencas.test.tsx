@@ -37,7 +37,7 @@ async function paginaCom(planned: Linhas): Promise<() => React.JSX.Element> {
     runtimeDependencies: UMA_LINHA,
     plannedDependencies: planned,
   }))
-  const modulo = await import('@/app/licenses/page')
+  const modulo = await import('@/app/[lang]/licenses/page')
   return modulo.default
 }
 

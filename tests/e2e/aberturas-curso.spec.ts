@@ -122,14 +122,58 @@ test('o Explorer continua sendo enriquecimento sob demanda', async ({ page }) =>
   expect(consultas).toBe(1)
 })
 
-test('catálogo filtra por primeiro lance, nível e status', async ({ page }) => {
+/**
+ * O CATÁLOGO FILTRA POR LADO E POR NÍVEL — e só.
+ *
+ * Havia três seletores: primeiro lance, nível e status. Os dois que saíram
+ * respondiam perguntas que o card já responde — o primeiro lance está no
+ * mini-tabuleiro e o status vem escrito dentro do card. Três peneiras para seis
+ * aberturas é mais peneira que conteúdo.
+ *
+ * E eles moravam numa SEGUNDA fileira, puxada para cima por uma margem negativa
+ * para parecer a mesma linha dos botões. Quando os botões quebravam, as duas se
+ * sobrepunham: texto por cima de texto.
+ */
+test('o catálogo filtra por lado e por nível, na mesma fileira', async ({ page }) => {
   await page.goto('/aberturas')
   await expect(page.getByRole('link', { name: /Abertura Italiana/ })).toBeVisible()
-  await page.getByLabel('Primeiro lance').selectOption('d4')
-  await expect(page.getByRole('link', { name: /Sistema Londres/ })).toBeVisible()
+
+  // O lado: botões, visíveis o tempo todo.
+  await page.getByRole('button', { name: 'Pretas', exact: true }).click()
+  await expect(page.getByRole('link', { name: /Defesa Caro-Kann/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /Abertura Italiana/ })).toBeHidden()
-  await page.getByLabel('Status').selectOption('learning')
+
+  // O nível: atrás do ícone de filtro, no fim da MESMA fileira.
+  await page.getByRole('button', { name: 'Todas', exact: true }).click()
+  await page.getByRole('button', { name: /Filtrar por nível/ }).click()
+  await page.getByRole('button', { name: 'Avançada' }).click()
   await expect(page.getByText(/Nenhuma abertura corresponde aos filtros/)).toBeVisible()
+})
+
+test('o filtro de nível avisa que está ativo, e não só por cor', async ({ page }) => {
+  await page.goto('/aberturas')
+  const botao = page.getByRole('button', { name: /Filtrar por nível/ })
+
+  await botao.click()
+  await page.getByRole('button', { name: 'Iniciante' }).click()
+
+  // O rótulo acessível passa a dizer QUAL nível está em vigor. Sem isso, quem
+  // não vê o ponto no canto do botão não tem como saber que há filtro ligado.
+  await expect(page.getByRole('button', { name: 'Filtrar por nível: Iniciante' })).toBeVisible()
+})
+
+test('o menu do filtro fecha com Escape e devolve o foco', async ({ page }) => {
+  await page.goto('/aberturas')
+  const botao = page.getByRole('button', { name: /Filtrar por nível/ })
+
+  await botao.click()
+  await expect(page.getByRole('group', { name: 'Nível' })).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('group', { name: 'Nível' })).toBeHidden()
+  // O foco VOLTA ao botão: fechar e largar o foco no nada faz a navegação por
+  // teclado recomeçar do topo da página.
+  await expect(botao).toBeFocused()
 })
 
 test('quem já conhece a abertura recebe uma verificação curta, e não um atalho', async ({

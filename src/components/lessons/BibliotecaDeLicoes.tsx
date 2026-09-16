@@ -1,130 +1,184 @@
 'use client'
 
 /**
- * Biblioteca de microlições: a LISTA. Quem conduz a lição aberta é
- * `LicaoPlayer`.
+ * A BIBLIOTECA: uma página de ESCOLHA, não uma lista de títulos.
  *
- * A SEPARAÇÃO É NOVA E É O PONTO. A versão anterior era um arquivo só, e a
- * lição aberta vivia dentro dele — o que significava que a lição só existia
- * dentro da biblioteca. Quando o plano do dia passou a mandar o aluno para uma
- * lição específica, e quando o Treino Hub passou a oferecer "continuar
- * aprendendo", as duas precisavam da MESMA lição, com o mesmo fluxo de nove
- * etapas. Reimplementar o fluxo em cada tela seria três cópias da regra
- * pedagógica, divergindo na primeira correção.
+ * O QUE ELA ERA. Uma lista de cartões com título, conceito e um botão "Abrir
+ * lição" — e o botão não navegava: ele trocava o conteúdo da própria tela pelo
+ * player. Numa biblioteca de XADREZ, onde cada lição é uma posição e a posição
+ * existe no conteúdo desde sempre, o aluno lia "A peça que ninguém está
+ * defendendo" e só descobria do que se tratava depois de abrir.
  *
- * Aqui mora só a escolha; lá mora o ensino.
+ * O QUE MUDOU, e são duas coisas:
  *
- * ESTADO VAZIO: quando não há lição do assunto procurado, a tela aponta para o
- * treino do dia, não para o catálogo. Catálogo vazio que oferece mais catálogo
- * é o desenho que o produto recusa.
+ * 1. CADA CARD MOSTRA A POSIÇÃO. Garfo se vê, cravada se vê, oposição se vê —
+ *    nenhuma frase identifica um padrão de xadrez tão rápido quanto o desenho
+ *    dele. Ver `LessonCard`.
+ *
+ * 2. A LIÇÃO TEM ENDEREÇO. O card é um LINK para `/lessons/{id}`, e não um botão
+ *    que troca o miolo da página. Abrir uma lição passa a ser navegação de
+ *    verdade: o link se compartilha, o voltar do navegador volta, e recarregar
+ *    não devolve o aluno para a lista.
+ *
+ * O FILTRO POR ÁREA fica na mesma fileira, com o mesmo desenho de Aberturas e
+ * Finais. Doze lições ainda cabem na tela sem filtro nenhum; ele existe porque a
+ * issue #11 pede trinta, e a biblioteca que funciona com doze e não com trinta é
+ * uma biblioteca que vai precisar ser refeita.
  */
 
 import Link from 'next/link'
-import { useState } from 'react'
-import { LicaoPlayer } from '@/components/lessons/LicaoPlayer'
+import { useEffect, useMemo, useState } from 'react'
+import { LessonCard } from '@/components/lessons/LessonCard'
+import { useIdioma } from '@/components/providers/LocaleProvider'
+import { StatePanel, FilterBar } from '@/components/ui/primitives'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { CATALOGO_DE_LICOES } from '@/content/lessons'
-import { estimarMinutos } from '@/domain/lessons'
-import { ROTULO_DO_ESTAGIO, type LearningStage } from '@/domain/aprendizado'
+import { cardDeLicao, type ProgressoDaLicao } from '@/domain/lessons'
 import { getSkill } from '@/domain/skills/catalog'
 import type { SkillArea, SkillId } from '@/domain/types'
-import { registrarEnsino } from '@/lib/training/registrar-tentativa'
+import type { ChaveDeMensagem } from '@/lib/i18n/mensagens'
+import { traduzirRota } from '@/lib/i18n/rotas'
 import styles from './BibliotecaDeLicoes.module.css'
 
 export interface BibliotecaDeLicoesProps {
   /** Recorte por área, vindo da URL. Ausente mostra tudo. */
   area?: SkillArea
-  /** Abre direto nesta lição. Usado pelo plano do dia e pelo hub. */
-  licaoInicialId?: string
-  /** Estágio por habilidade, para a lista dizer onde o aluno está. */
-  estagios?: ReadonlyMap<string, LearningStage>
 }
 
-export function BibliotecaDeLicoes({
-  area,
-  licaoInicialId,
-  estagios,
-}: BibliotecaDeLicoesProps = {}) {
-  const { repo, profile, refresh } = useRepository()
-  const [abertaId, setAbertaId] = useState<string | null>(licaoInicialId ?? null)
+/** As áreas que o catálogo de fato tem hoje. Área vazia não vira filtro. */
+function areasDoCatalogo(): SkillArea[] {
+  const vistas = new Set<SkillArea>()
+  for (const licao of CATALOGO_DE_LICOES) vistas.add(getSkill(licao.habilidade).area)
+  return [...vistas]
+}
 
-  const visiveis = area
-    ? CATALOGO_DE_LICOES.filter((licao) => getSkill(licao.habilidade).area === area)
-    : CATALOGO_DE_LICOES
+/**
+ * O que a biblioteca leu do repositório, nas duas chaves em que a resposta vive.
+ */
+interface LeituraDaBiblioteca {
+  porHabilidade: ReadonlyMap<SkillId, ProgressoDaLicao>
+  porLicao: ReadonlyMap<string, number>
+}
 
-  const aberta = CATALOGO_DE_LICOES.find((licao) => licao.id === abertaId) ?? null
+const SEM_LEITURA: LeituraDaBiblioteca = { porHabilidade: new Map(), porLicao: new Map() }
 
-  if (aberta) {
-    return (
-      <LicaoPlayer
-        licao={aberta}
-        aoAvancar={(evento) => {
-          if (evento.etapa !== 'resumo') return
-          if (typeof window !== 'undefined') {
-            const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
-            try {
-              const raw = window.localStorage.getItem(markerKey)
-              if (raw)
-                window.localStorage.setItem(
-                  markerKey,
-                  JSON.stringify({ ...JSON.parse(raw), completed: true }),
-                )
-            } catch {
-              /* a lição continua concluída mesmo sem storage */
-            }
-          }
-          if (repo)
-            void registrarEnsino(repo, aberta.habilidade as SkillId, new Date()).then(() =>
-              refresh(),
-            )
-        }}
-        aoFechar={() => {
-          setAbertaId(null)
-          if (typeof window !== 'undefined') {
-            const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
-            try {
-              const raw = window.localStorage.getItem(markerKey)
-              if (raw && JSON.parse(raw).completed === true)
-                window.location.assign('/train/revisao')
-            } catch {
-              /* navegação normal da biblioteca */
-            }
-          }
-        }}
-      />
-    )
-  }
+/** Quem nunca treinou a habilidade. Não é erro nem ausência de dado. */
+const SEM_PROGRESSO_DA_HABILIDADE: ProgressoDaLicao = {
+  ensinada: false,
+  precisaDeReensino: false,
+  revisaoVencida: false,
+}
 
-  if (visiveis.length === 0) {
-    return (
-      <p className={styles.vazio}>
-        Ainda não há lição escrita para este assunto. O treino de hoje continua funcionando sem ela.{' '}
-        <Link href="/dashboard">Ir para o treino de hoje</Link>
-      </p>
-    )
-  }
+export function BibliotecaDeLicoes({ area }: BibliotecaDeLicoesProps = {}) {
+  const { locale, t } = useIdioma()
+  const { repo, revision } = useRepository()
+  const [filtro, setFiltro] = useState<SkillArea | 'todas'>(area ?? 'todas')
+  const [progresso, setProgresso] = useState<LeituraDaBiblioteca>(SEM_LEITURA)
+
+  /*
+    UMA leitura para a biblioteca inteira, e não uma por card.
+
+    Doze cards consultando o repositório por conta própria seriam doze aberturas
+    de IndexedDB para montar uma lista — e trinta, quando o catálogo crescer.
+
+    SÃO DUAS PERGUNTAS DIFERENTES, e por isso duas chaves diferentes. "Esta
+    habilidade foi ensinada?" é por HABILIDADE e vale para o app inteiro. "Onde
+    ele parou nesta lição?" é por LIÇÃO — duas lições da mesma habilidade têm
+    checkpoints independentes, e juntar as duas numa chave só faria abrir uma
+    delas mover o marcador da outra.
+  */
+  useEffect(() => {
+    if (!repo) return
+    let cancelado = false
+    void Promise.all([
+      repo.getSkillStates(),
+      repo.getDueCards(new Date()),
+      repo.listLessonProgress(),
+    ])
+      .then(([estados, vencidos, checkpoints]) => {
+        if (cancelado) return
+        const vencidasPorHabilidade = new Set(vencidos.flatMap((card) => card.skillIds))
+        setProgresso({
+          porHabilidade: new Map(
+            estados.map((estado) => [
+              estado.skillId as SkillId,
+              {
+                ensinada: estado.exposureCount > 0,
+                precisaDeReensino: estado.precisaDeReensino,
+                revisaoVencida: vencidasPorHabilidade.has(estado.skillId),
+              },
+            ]),
+          ),
+          porLicao: new Map(checkpoints.map((item) => [item.lessonId, item.stepIndex])),
+        })
+      })
+      .catch(() => {
+        // Sem progresso a biblioteca continua útil: todo card aparece como
+        // disponível, que é o estado verdadeiro de quem nunca estudou.
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [repo, revision])
+
+  const cards = useMemo(
+    () =>
+      CATALOGO_DE_LICOES.filter(
+        (licao) => filtro === 'todas' || getSkill(licao.habilidade).area === filtro,
+      ).map((licao) => {
+        const daHabilidade = progresso.porHabilidade.get(licao.habilidade)
+        const etapasVencidas = progresso.porLicao.get(licao.id)
+        /*
+          O CHECKPOINT SÓ ENTRA QUANDO EXISTE. `undefined` e `0` são respostas
+          diferentes: quem nunca abriu não tem checkpoint nenhum e o card diz
+          "Aprender"; quem abriu e fechou na primeira tela tem checkpoint zero e
+          o card diz "Continuar". Passar `?? 0` apagaria a diferença e faria a
+          biblioteca oferecer estreia a quem já tinha começado.
+        */
+        return cardDeLicao(licao, {
+          ...(daHabilidade ?? SEM_PROGRESSO_DA_HABILIDADE),
+          ...(etapasVencidas === undefined ? {} : { etapasVencidas }),
+        })
+      }),
+    [filtro, progresso],
+  )
+
+  const areas = areasDoCatalogo()
 
   return (
-    <ul className={styles.lista}>
-      {visiveis.map((licao) => {
-        const estagio = estagios?.get(licao.habilidade)
-        return (
-          <li key={licao.id} className={styles.cartao}>
-            <span className={styles.habilidade}>
-              {getSkill(licao.habilidade).label}
-              {estagio ? <> · {ROTULO_DO_ESTAGIO[estagio]}</> : null}
-            </span>
-            <h2 className={styles.tituloCartao}>{licao.titulo}</h2>
-            <p className={styles.conceito}>{licao.objetivo}</p>
-            <span className={styles.minutos}>
-              {estimarMinutos(licao)} min · termina em exercício sem ajuda
-            </span>
-            <button type="button" className={styles.primario} onClick={() => setAbertaId(licao.id)}>
-              Abrir lição
-            </button>
-          </li>
-        )
-      })}
-    </ul>
+    <>
+      {/* Um filtro só, e na mesma fileira — o mesmo desenho de Aberturas e
+          Finais, para o aluno não reaprender o controle em cada aba. */}
+      <FilterBar label={t('lessons.filterLabel')}>
+        {(['todas', ...areas] as const).map((valor) => (
+          <button
+            key={valor}
+            type="button"
+            className={filtro === valor ? styles.filtroAtivo : styles.filtro}
+            aria-pressed={filtro === valor}
+            onClick={() => setFiltro(valor)}
+          >
+            {valor === 'todas' ? t('lessons.all') : t(`lessons.areas.${valor}` as ChaveDeMensagem)}
+          </button>
+        ))}
+      </FilterBar>
+
+      {cards.length === 0 ? (
+        <StatePanel
+          kind="empty"
+          title={t('lessons.emptyTitle')}
+          description={t('lessons.emptyDescription')}
+          action={<Link href={traduzirRota('/dashboard', locale)}>{t('lessons.goToToday')}</Link>}
+        />
+      ) : (
+        <ul className={styles.grade} aria-label={t('lessons.gridLabel')}>
+          {cards.map((card) => (
+            <li key={card.lessonId}>
+              <LessonCard card={card} href={traduzirRota(`/lessons/${card.lessonId}`, locale)} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   )
 }

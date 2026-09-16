@@ -5,7 +5,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { ENDGAME_DEFINITIONS } from '@/content/endgames/biblioteca'
-import { rotuloDeRetomada, type StudyJourney } from '@/domain/jornada'
+import { retomadaDaJornada, type StudyJourney } from '@/domain/jornada'
+import { useIdioma, useTraduzir } from '@/components/providers/LocaleProvider'
+import { FiltroSuspenso } from '@/components/ui/FiltroSuspenso'
+import type { ChaveDeMensagem } from '@/lib/i18n/mensagens'
+import { nomeDoFinal } from '@/lib/i18n/nomes-de-conteudo'
+import { CHAVE_DA_RETOMADA } from '@/lib/i18n/retomada'
 import { idDaJornadaDeFinal } from '@/components/endgames/EndgameStudyJourney'
 import type { EndgameCategory, EndgameDefinition, EndgameStatus } from '@/domain/endgames'
 import styles from './EndgameLibrary.module.css'
@@ -22,15 +27,23 @@ const FILTERS: Array<[string, string, (d: EndgameDefinition) => boolean]> = [
   ['conversion', 'Conversão', (d) => d.category === 'conversion' || d.tags.includes('Conversão')],
 ]
 
-const STATUS: Record<EndgameStatus, string> = {
-  'not-started': 'Não iniciado',
-  learning: 'Aprendendo',
-  practicing: 'Praticando',
-  review: 'Revisar',
-  consolidated: 'Consolidado',
+/**
+ * A CHAVE de cada status, e não a palavra.
+ *
+ * O status é um valor do domínio; o texto é apresentação. Guardar a palavra aqui
+ * amarraria a lista de status a um idioma — e o `select` passaria a mostrar
+ * português dentro de uma tela em inglês.
+ */
+const CHAVE_DO_STATUS: Record<EndgameStatus, ChaveDeMensagem> = {
+  'not-started': 'endgames.status.not-started',
+  learning: 'endgames.status.learning',
+  practicing: 'endgames.status.practicing',
+  review: 'endgames.status.review',
+  consolidated: 'endgames.status.consolidated',
 }
 
 export function EndgameLibrary() {
+  const t = useTraduzir()
   const { repo } = useRepository()
   const [filter, setFilter] = useState('all')
   const [status, setStatus] = useState<EndgameStatus | 'all'>('all')
@@ -75,8 +88,17 @@ export function EndgameLibrary() {
   }, [filter, status, statuses])
   return (
     <section aria-labelledby="biblioteca-finais">
+      {/*
+        O FILTRO DE STATUS ENTROU NA FILEIRA, depois do último botão.
+
+        Ele era um `<select>` rotulado numa SEGUNDA linha, abaixo das categorias
+        — o que empurrava a grade para baixo e, quando os botões quebravam,
+        colidia com eles. Como ícone no fim da mesma fileira, ele fica onde o olho
+        já está ao terminar de ler as categorias, e a tela volta a ter uma linha
+        de filtro em vez de duas.
+      */}
       <div className={styles.toolbar}>
-        <div className={styles.filters} aria-label="Filtrar finais">
+        <div className={styles.filters} aria-label={t('endgames.filterLabel')}>
           {FILTERS.map(([id, label]) => (
             <button
               key={id}
@@ -88,24 +110,24 @@ export function EndgameLibrary() {
               {label}
             </button>
           ))}
+          <FiltroSuspenso
+            titulo={t('endgames.statusLabel')}
+            rotuloDoBotao={t('endgames.filterByStatus')}
+            valor={status}
+            valorNeutro="all"
+            aoEscolher={setStatus}
+            opcoes={[
+              { valor: 'all' as const, rotulo: t('endgames.all') },
+              ...Object.entries(CHAVE_DO_STATUS).map(([id, chave]) => ({
+                valor: id as EndgameStatus,
+                rotulo: t(chave),
+              })),
+            ]}
+          />
         </div>
-        <label className={styles.statusFilter}>
-          Status
-          <select
-            value={status}
-            onChange={(event) => setStatus(event.target.value as EndgameStatus | 'all')}
-          >
-            <option value="all">Todos</option>
-            {Object.entries(STATUS).map(([id, label]) => (
-              <option key={id} value={id}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
       <h2 id="biblioteca-finais" className="sr-only">
-        Biblioteca de finais
+        {t('endgames.libraryHeading')}
       </h2>
       <div className={styles.grid}>
         {definitions.map((definition) => (
@@ -130,20 +152,28 @@ function EndgameCard({
   status: EndgameStatus
   jornada?: StudyJourney
 }) {
+  const { locale, t } = useIdioma()
   /*
-    O MESMO CTA das aberturas, vindo do MESMO lugar (`rotuloDeRetomada`). Os
-    dois módulos são separados no currículo e na validação, mas o aluno tem de
-    ler a mesma palavra no mesmo estado — uma escada de `if` copiada aqui
-    divergiria da outra na primeira correção de texto.
+    O MESMO CTA das aberturas, e QUAL rótulo usar vem do MESMO lugar
+    (`retomadaDaJornada`). Os dois módulos são separados no currículo e na
+    validação, mas o aluno tem de ler a mesma palavra no mesmo estado — uma
+    escada de `if` copiada aqui divergiria da outra na primeira correção.
+
+    O NOME DO FINAL é traduzido; o id (`opposition`) não muda nunca: ele indexa o
+    progresso do aluno e o endereço da jornada.
   */
+  const nome = nomeDoFinal(definition.id, locale)
   const etapas = jornada
-    ? `${jornada.completedStageIds.length} de ${jornada.stageIds.length} etapas`
+    ? t('journey.stagesProgress', {
+        done: jornada.completedStageIds.length,
+        total: jornada.stageIds.length,
+      })
     : null
   return (
     <Link
       href={`/finais/${definition.slug}`}
       className={styles.card}
-      aria-label={`${rotuloDeRetomada(jornada ?? null)}: ${definition.name}`}
+      aria-label={`${t(CHAVE_DA_RETOMADA[retomadaDaJornada(jornada ?? null)])}: ${nome}`}
     >
       <div className={styles.preview}>
         <ChessBoardView fen={definition.previewFen} orientation="w" interactive={false} />
@@ -152,23 +182,25 @@ function EndgameCard({
         <div className={styles.meta}>
           <span>
             {definition.level === 'essential'
-              ? 'Essencial'
+              ? t('endgames.level.essential')
               : definition.level === 'fundamental'
-                ? 'Fundamental'
-                : 'Avançado'}
+                ? t('endgames.level.fundamental')
+                : t('endgames.level.advanced')}
           </span>
-          <span>{definition.tags[1] ?? 'Princípios'}</span>
+          <span>{definition.tags[1] ?? t('endgames.principles')}</span>
         </div>
-        <h3>{definition.name}</h3>
+        <h3>{nome}</h3>
         <p>{definition.description}</p>
         <span className={styles.status}>
           <span aria-hidden="true">
             {jornada?.status === 'concluida' ? '✓' : status === 'review' ? '↻' : '○'}
           </span>{' '}
-          {STATUS[status]}
+          {t(CHAVE_DO_STATUS[status])}
         </span>
         {etapas ? <span>{etapas}</span> : null}
-        <span className={styles.cta}>{rotuloDeRetomada(jornada ?? null)} →</span>
+        <span className={styles.cta}>
+          {t(CHAVE_DA_RETOMADA[retomadaDaJornada(jornada ?? null)])} →
+        </span>
       </div>
     </Link>
   )

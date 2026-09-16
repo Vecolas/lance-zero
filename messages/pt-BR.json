@@ -1,0 +1,233 @@
+{
+  "common": {
+    "actions": {
+      "learn": "Aprender",
+      "continue": "Continuar",
+      "review": "Revisar",
+      "relearn": "Reaprender",
+      "practice": "Praticar",
+      "study": "Estudar",
+      "continueStudy": "Continuar estudo",
+      "train": "Treinar",
+      "trainAgain": "Treinar novamente",
+      "back": "Voltar",
+      "close": "Fechar",
+      "openLesson": "Abrir lição",
+      "backToRoadmap": "Voltar ao roadmap"
+    },
+    "states": {
+      "loading": "Carregando",
+      "locked": "Pré-requisitos",
+      "completed": "Concluído",
+      "inProgress": "Em andamento"
+    }
+  },
+  "navigation": {
+    "skipToContent": "Pular para o conteúdo",
+    "mainNav": "Navegação principal",
+    "today": "Hoje",
+    "training": "Treinar",
+    "games": "Partidas",
+    "openings": "Aberturas",
+    "endgames": "Finais",
+    "roadmap": "Roadmap",
+    "library": "Biblioteca",
+    "account": "Conta",
+    "puzzles": "Puzzles",
+    "calculate": "Cálculo",
+    "diagnostic": "Diagnóstico",
+    "settings": "Ajustes",
+    "tagline": "Treine o que perde suas partidas.",
+    "licenses": "Licenças e fontes de dados"
+  },
+  "appearance": {
+    "groupLabel": "Aparência e idioma",
+    "themeToLight": "Tema escuro. Trocar para claro.",
+    "themeToDark": "Tema claro. Trocar para escuro."
+  },
+  "language": {
+    "label": "Idioma",
+    "change": "Alterar idioma",
+    "ptBR": "Português (Brasil)",
+    "en": "English"
+  },
+  "roadmap": {
+    "title": "Roadmap",
+    "loadingTitle": "Abrindo seu roadmap",
+    "errorTitle": "Não consegui abrir seu roadmap",
+    "description": "Veja tudo o que o LanceZero ensina e acompanhe sua evolução.",
+    "kicker": "Trajetória de aprendizagem",
+    "summaryHeading": "O que existe para aprender e onde você está",
+    "summaryHelp": "A conclusão mostra o que já foi estudado. Revisar e reaprender mostram a retenção atual.",
+    "studiedCount": "conteúdos estudados",
+    "of": "de",
+    "legend": {
+      "completed": "✓ Concluído",
+      "learning": "◔ Em aprendizado",
+      "available": "○ Disponível",
+      "relearn": "↻ Reaprender recomendado"
+    },
+    "choiceTitle": "Escolha um repertório de Brancas",
+    "choiceHelp": "Você precisa estudar uma opção para avançar; as outras continuam disponíveis para explorar.",
+    "contentCount": "{count, plural, one {# conteúdo} other {# conteúdos}}",
+    "noContentMessage": "Este conteúdo ainda não possui uma lição disponível.",
+    "stages": {
+      "locked": "Bloqueado",
+      "available": "Disponível",
+      "learning": "Em aprendizado",
+      "completed": "Concluído",
+      "review": "Revisar",
+      "needs_relearning": "Reaprender recomendado"
+    },
+    "areas": {
+      "fundamentos": {
+        "title": "Fundamentos",
+        "description": "As ideias que tornam cada posição legível."
+      },
+      "processo": {
+        "title": "Processo de pensamento",
+        "description": "Como pensar antes de escolher um lance."
+      },
+      "tática": {
+        "title": "Tática",
+        "description": "Padrões concretos para encontrar oportunidades."
+      },
+      "cálculo": {
+        "title": "Cálculo",
+        "description": "Visualizar, comparar e verificar variantes."
+      },
+      "aberturas": {
+        "title": "Aberturas",
+        "description": "Ideias, planos e repertórios escolhidos."
+      },
+      "finais": {
+        "title": "Finais",
+        "description": "Técnicas para converter e defender posições."
+      },
+      "análise": {
+        "title": "Análise de partidas",
+        "description": "Transformar erros reais em treino."
+      },
+      "estratégia": {
+        "title": "Estratégia",
+        "description": "Planos, estruturas e decisões de longo prazo."
+      },
+      "transferência": {
+        "title": "Aplicação em partidas reais",
+        "description": "Levar o conhecimento para o tabuleiro."
+      }
+    }
+  },
+  "journey": {
+    "stageOf": "Etapa {current} de {total}",
+    "stagesTotal": "{count, plural, one {# etapa} other {# etapas}}",
+    "stagesProgress": "{done} de {total} etapas",
+    "modes": {
+      "continue": "Você retomou de onde parou. As etapas já vencidas continuam vencidas.",
+      "review": "Você já concluiu este conteúdo. Está revendo — nada aqui derruba o que você já conquistou.",
+      "relearn": "Este conteúdo voltou a falhar nas suas partidas, então ele é ensinado de novo. Não é punição: é o app admitindo que a primeira passagem não fixou."
+    },
+    "lessonJourney": {
+      "stagesLabel": "Etapas deste conteúdo",
+      "now": "Agora",
+      "stageNumber": "Etapa {number}",
+      "completedTitle": "Você já venceu todas as etapas deste conteúdo",
+      "completedDescription": "Concluir não é dominar: o que fixa é a revisão espaçada, e ela já está agendada.",
+      "loading": "Lendo o que você já estudou",
+      "errorTitle": "Não consegui abrir esta jornada",
+      "missingLessonTitle": "Esta jornada aponta para uma lição que não existe",
+      "intro": {
+        "learn": "As etapas vêm na ordem. Ao terminar uma, a próxima abre sozinha.",
+        "continue": "Você retoma de onde parou. As etapas já vencidas não voltam.",
+        "review": "Revendo o que já foi estudado. Nada aqui muda o seu progresso para pior.",
+        "relearn": "Este conteúdo voltou a falhar em partida, então ele é ensinado de novo — do começo da etapa que ficou devendo."
+      },
+      "missingLessonDescription": "A lição \"{licao}\" não está no catálogo. Isso é erro de configuração do currículo, não do seu progresso."
+    }
+  },
+  "errors": {
+    "genericTitle": "Algo não saiu como esperado",
+    "notFound": "Não encontramos esta página."
+  },
+  "contentNotice": {
+    "title": "Este conteúdo ainda está em português",
+    "body": "A tradução das lições está em andamento. O texto abaixo continua em português para não entregar uma versão automática — no LanceZero, explicação inventada é pior que explicação ausente."
+  },
+  "openings": {
+    "loadingTitle": "Carregando aberturas",
+    "loadingDescription": "Preparando a biblioteca e seu progresso.",
+    "errorTitle": "Não consegui carregar as aberturas",
+    "filterLabel": "Filtrar aberturas",
+    "catalogHeading": "Cursos de abertura",
+    "emptyTitle": "Nenhuma abertura corresponde aos filtros",
+    "emptyDescription": "Tente remover um filtro para ver mais cursos.",
+    "all": "Todas",
+    "white": "Brancas",
+    "black": "Pretas",
+    "essential": "Essencial",
+    "level": "Nível",
+    "allMasculine": "Todos",
+    "beginner": "Iniciante",
+    "intermediate": "Intermediária",
+    "advanced": "Avançada",
+    "statusLabel": "Status",
+    "status": {
+      "notStarted": "Não iniciada",
+      "learning": "Aprendendo",
+      "training": "Treinando",
+      "consolidating": "Consolidando",
+      "activeRepertoire": "Repertório ativo"
+    },
+    "filterByLevel": "Filtrar por nível"
+  },
+  "endgames": {
+    "filterLabel": "Filtrar finais",
+    "statusLabel": "Status",
+    "all": "Todos",
+    "libraryHeading": "Biblioteca de finais",
+    "principles": "Princípios",
+    "level": {
+      "essential": "Essencial",
+      "fundamental": "Fundamental",
+      "advanced": "Avançado"
+    },
+    "status": {
+      "not-started": "Não iniciado",
+      "learning": "Aprendendo",
+      "practicing": "Praticando",
+      "review": "Revisar",
+      "consolidated": "Consolidado"
+    },
+    "filterByStatus": "Filtrar por status"
+  },
+  "lessons": {
+    "title": "Biblioteca de lições",
+    "description": "Microlições curtas: conceito, exemplo resolvido e exercício sem ajuda. Tentar responder ensina.",
+    "countWritten": "{escritas, plural, one {# lição escrita} other {# lições escritas}} até agora; faltam pelo menos {faltam} para fechar o currículo planejado.",
+    "emptyTitle": "Ainda não há lição escrita para este assunto",
+    "emptyDescription": "O treino de hoje continua funcionando sem ela.",
+    "goToToday": "Ir para o treino de hoje",
+    "gridLabel": "Lições disponíveis",
+    "cardLabel": "Lição: {titulo}. Estado: {estado}.",
+    "stepsAndTime": "{etapas} etapas · ~{minutos} min",
+    "filterLabel": "Filtrar lições",
+    "all": "Todas",
+    "areas": {
+      "tactics": "Tática",
+      "calculation": "Cálculo",
+      "endgame": "Finais",
+      "opening": "Aberturas"
+    },
+    "states": {
+      "available": "Disponível",
+      "inProgress": "Em andamento",
+      "completed": "Concluída",
+      "review": "Revisar",
+      "relearn": "Reaprender recomendado"
+    },
+    "actions": {
+      "reviewLesson": "Rever lição"
+    },
+    "resuming": "Retomando de onde você parou…"
+  }
+}

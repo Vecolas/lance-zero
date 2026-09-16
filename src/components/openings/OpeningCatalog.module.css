@@ -1,9 +1,6 @@
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: var(--space-5) 0 var(--space-6);
-}
+/* `.filters` saiu: a fileira de filtros passou a ser a `FilterBar` compartilhada,
+   a mesma de Finais e da Biblioteca. Duas fileiras com desenhos próprios eram o
+   motivo de o aluno ter de reaprender o controle em cada aba. */
 .filter,
 .filterActive {
   border: 1px solid var(--border-strong);
@@ -14,27 +11,19 @@
   cursor: pointer;
   font: inherit;
 }
-.selectFilters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin: calc(var(--space-6) * -1) 0 var(--space-6);
-}
-.selectFilters label {
-  display: grid;
-  gap: var(--space-1);
-  color: var(--text-muted);
-  font-size: 0.82rem;
-}
-.selectFilters select {
-  min-width: 9rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  padding: 0.5rem 0.65rem;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-}
+/*
+  AQUI MORAVA `.selectFilters`, e com ele o defeito.
+
+  Era uma segunda fileira de seletores com `margin-top: -2rem` — uma margem
+  negativa para fingir que estava na mesma linha dos botões. Na largura em que os
+  botões quebravam para a segunda linha, as duas fileiras se sobrepunham: texto
+  por cima de texto.
+
+  Não foi ajustada; foi removida. O filtro secundário passou a morar DENTRO da
+  fileira dos botões (ver `FiltroSuspenso`), e aí não há duas fileiras para
+  colidir. Posicionar um bloco por cima de outro com margem negativa só funciona
+  enquanto os dois têm a altura que alguém supôs.
+*/
 .filterActive {
   background: var(--accent-strong);
   color: var(--on-accent);

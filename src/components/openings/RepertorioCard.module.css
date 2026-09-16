@@ -73,11 +73,16 @@
   color: var(--text-strong);
 }
 
-/* De quem é o lance: cor + ícone + texto. O texto vem do componente. */
+/* De quem é o lance: cor + ícone + texto. O texto vem do componente.
+
+   O PAPEL SEMÂNTICO, e não o token cru. "--accent-text" é um token de TEXTO
+   SOBRE FUNDO CLARO, e ninguém o redefine no tema escuro — a cor do tema claro
+   era pintada sobre o cartão escuro, medindo 3,21:1 e reprovando em AA.
+   "--accent-readable" troca de valor com o tema; o token cru não troca nunca. */
 .meu {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--accent-text);
+  color: var(--accent-readable);
 }
 
 .dele {
@@ -97,10 +102,12 @@
   font-size: 0.9375rem;
 }
 
+/* "--note" pelo mesmo motivo de ".meu": "--info-text" é token de tema claro, e
+   no escuro ele ficava em 3,34:1. */
 .transposicao {
   margin: 0;
   font-size: 0.8125rem;
-  color: var(--info-text);
+  color: var(--note);
 }
 
 /* --- frequência --------------------------------------------------------- */
