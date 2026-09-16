@@ -81,6 +81,26 @@ const PGN_REVISAO = `[Event "Contraste"]
 
 1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7# 1-0`
 
+/**
+ * Espera a tela ASSENTAR antes de medir.
+ *
+ * O `h1` vem do servidor e aparece de imediato; o conteúdo que depende do banco
+ * local aparece depois. Medir entre um e outro é medir o painel "Carregando",
+ * não a tela — e o resultado passava a depender de quem estava mais rápido
+ * naquele instante.
+ *
+ * Foi assim que o Roadmap atravessou esta varredura: ele pintava o título da
+ * tela em `#102a43` sobre `#07131c` no modo escuro — 1.28:1, invisível — e o
+ * portão ficava verde na minha máquina e vermelho no CI, sem que nada tivesse
+ * mudado entre as duas execuções. Um portão que depende de sorte não é portão.
+ *
+ * `state-loading` é a classe do `StatePanel` de carregamento, e é a mesma em
+ * toda tela porque ele é uma primitiva só.
+ */
+async function esperarAssentar(page: Page): Promise<void> {
+  await expect(page.locator('[class*="state-loading"]')).toHaveCount(0, { timeout: 20_000 })
+}
+
 async function amostrasDa(
   page: Page,
   rota: string,
@@ -104,6 +124,7 @@ test('o contraste de texto renderizado passa em WCAG AA nas telas principais', a
       for (const rota of ROTAS) {
         await page.goto(rota)
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 20_000 })
+        await esperarAssentar(page)
         julgamentos.push(...(await amostrasDa(page, rota, tema)).map(julgar))
       }
 

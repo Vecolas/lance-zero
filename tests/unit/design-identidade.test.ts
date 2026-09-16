@@ -15,7 +15,7 @@
  *    de uma recalibração passariam a defender o defeito.
  */
 
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { SEVERITY_LABEL } from '@/domain/games/comparison'
@@ -276,5 +276,50 @@ describe('card de habilidade', () => {
     const attempts = SKILL_CARD_CONFIG.minimoDeTentativas
     expect(readSkill({ mastery: 1.4, attempts }).percentual).toBe(100)
     expect(readSkill({ mastery: -0.2, attempts }).percentual).toBe(0)
+  })
+})
+
+/**
+ * NENHUMA FOLHA DE COMPONENTE INVENTA COR.
+ *
+ * `RoadmapView.module.css` tinha vinte e nove hexadecimais escritos à mão, de
+ * uma paleta que não é a da marca. Como hexadecimal não troca com o tema, o
+ * título da tela ficava em `#102a43` sobre `#07131c` no modo escuro: 1.28:1 —
+ * invisível, não "pouco contraste". Os filtros davam 2.17:1 e a legenda 2.91:1.
+ *
+ * A varredura de contraste renderizada pega o EFEITO, mas só depois de subir o
+ * app inteiro em dois temas e duas larguras. Este teste pega a CAUSA, em
+ * milissegundos, e diz o que fazer: a cor vem do token.
+ *
+ * O QUE CONTINUA PERMITIDO, porque não é cor de tema: sombra e contorno em
+ * `rgba()`, e hexadecimal dentro de gradiente decorativo. A regra mira `color` e
+ * `background` — o que o aluno lê, e o que fica atrás do que ele lê.
+ */
+describe('as folhas de componente não inventam cor', () => {
+  const FOLHAS = readdirSync('src', { recursive: true, encoding: 'utf8' })
+    .filter((caminho) => caminho.endsWith('.module.css'))
+    .map((caminho) => join('src', caminho))
+
+  it('a varredura encontrou folhas de estilo', () => {
+    // Piso grosseiro de propósito: afirma que HOUVE varredura. Um glob que
+    // parasse de casar deixaria este portão verde por vacuidade.
+    expect(FOLHAS.length).toBeGreaterThan(20)
+  })
+
+  it('`color` e `background` saem de token, nunca de hexadecimal cravado', () => {
+    const infracoes: string[] = []
+
+    for (const caminho of FOLHAS) {
+      readFileSync(caminho, 'utf8')
+        .split('\n')
+        .forEach((linha, i) => {
+          const semComentario = linha.replace(/\/\*.*?\*\//g, '')
+          if (/^\s*(color|background(-color)?)\s*:\s*[^;]*#[0-9a-fA-F]{3,8}/.test(semComentario)) {
+            infracoes.push(`${caminho}:${i + 1} — ${linha.trim()}`)
+          }
+        })
+    }
+
+    expect(infracoes, `cor cravada fora dos tokens:\n${infracoes.join('\n')}`).toEqual([])
   })
 })

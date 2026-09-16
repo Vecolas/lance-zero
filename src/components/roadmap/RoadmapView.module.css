@@ -1,3 +1,25 @@
+/*
+ * ESTA FOLHA NÃO TEM COR PRÓPRIA, e até aqui ela tinha vinte e nove.
+ *
+ * Eram hexadecimais escritos à mão de uma paleta que não é a da marca —
+ * `#102a43`, `#334e68`, `#52606d`, `#829ab1`, `#627d98`, `#087ea4` — e nenhum
+ * deles respondia ao tema. No modo escuro o título da tela ficava em `#102a43`
+ * sobre `#07131c`: 1.28:1. Não era "pouco contraste", era invisível. Os filtros
+ * davam 2.17:1 e a legenda 2.91:1; no claro, o rótulo de estado dos cards dava
+ * 4.28:1 e reprovava em AA.
+ *
+ * O CLAUDE.md pede que toda tela funcione nos dois temas, e a razão de os tokens
+ * existirem é exatamente esta: um papel semântico (`--text-strong`,
+ * `--text-muted`, `--border`) troca de valor com o tema sozinho, e um hexadecimal
+ * não troca nunca. Onde a cor vem do token, o modo escuro passa a existir de
+ * graça — e não por alguém lembrar de escrever um segundo bloco.
+ *
+ * Os pares foram MEDIDOS, não escolhidos por parecerem certos. O caso apertado é
+ * `.activeFilter`: texto sobre `--accent-soft`. `--accent-strong` ali dá 4.06:1 e
+ * reprova, então o rótulo ativo usa `--text-strong` — o estado já é dito pela
+ * borda, pelo fundo e pelo peso da fonte, e nenhum deles depende de cor sozinha.
+ */
+
 .root {
   display: grid;
   gap: 1.5rem;
@@ -8,13 +30,13 @@
   gap: 2rem;
   align-items: end;
   padding: 1.25rem;
-  border: 1px solid var(--border-subtle, #d9e2ec);
-  border-radius: 1rem;
-  background: var(--surface, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface-raised);
 }
 .kicker {
   margin: 0 0 0.35rem;
-  color: #087ea4;
+  color: var(--accent-readable);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -22,13 +44,13 @@
 }
 .summary h2 {
   margin: 0;
-  color: #102a43;
+  color: var(--text-strong);
   font-size: clamp(1.35rem, 2.5vw, 2rem);
 }
 .muted,
 .areaHeading p,
 .nodeBody p {
-  color: #52606d;
+  color: var(--text-muted);
 }
 .muted {
   margin: 0.45rem 0 0;
@@ -36,13 +58,13 @@
 }
 .count {
   margin: 0;
-  color: #52606d;
+  color: var(--text-muted);
   text-align: right;
   white-space: nowrap;
 }
 .count strong {
   display: block;
-  color: #102a43;
+  color: var(--text-strong);
   font-size: 2rem;
   line-height: 1;
 }
@@ -58,21 +80,21 @@
 }
 .filter,
 .activeFilter {
-  border: 1px solid #bcccdc;
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
   background: transparent;
-  color: #334e68;
+  color: var(--text-muted);
   cursor: pointer;
 }
 .activeFilter {
-  border-color: #087ea4;
-  background: #e6f6fa;
-  color: #075985;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-strong);
   font-weight: 700;
 }
 .legend {
-  color: #52606d;
+  color: var(--text-muted);
   font-size: 0.82rem;
   gap: 1rem;
 }
@@ -92,7 +114,7 @@
 }
 .areaHeading h3 {
   margin: 0;
-  color: #102a43;
+  color: var(--text-strong);
   font-size: 1.15rem;
 }
 .areaHeading p {
@@ -100,7 +122,7 @@
   font-size: 0.9rem;
 }
 .areaHeading > span {
-  color: #829ab1;
+  color: var(--text-muted);
   font-size: 0.78rem;
 }
 .nodes {
@@ -114,20 +136,20 @@
   gap: 0.75rem;
   min-height: 7rem;
   padding: 0.9rem;
-  border: 1px solid #d9e2ec;
-  border-radius: 0.85rem;
-  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
 }
 .state-review {
-  border-color: #61c0d6;
-  box-shadow: 0 0 0 2px #e6f6fa;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 .state-needs_relearning {
-  border-color: #e0a458;
+  border-color: var(--warning);
 }
 .nodeIcon {
   flex: 0 0 1.5rem;
-  color: #087ea4;
+  color: var(--accent-readable);
   font-size: 1.25rem;
   font-weight: 700;
   text-align: center;
@@ -138,7 +160,7 @@
 }
 .nodeBody h4 {
   margin: 0;
-  color: #243b53;
+  color: var(--text-strong);
   font-size: 0.98rem;
 }
 .nodeBody p {
@@ -147,33 +169,33 @@
   line-height: 1.4;
 }
 .state {
-  color: #627d98;
+  color: var(--text-muted);
   font-size: 0.76rem;
   font-weight: 700;
 }
 .action,
 .locked {
   align-self: end;
-  color: #087ea4;
+  color: var(--link);
   font-size: 0.8rem;
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
 }
 .locked {
-  color: #829ab1;
+  color: var(--text-muted);
 }
 .choice {
   display: grid;
   gap: 0.2rem;
   padding: 0.8rem 1rem;
-  border-left: 3px solid #61c0d6;
-  background: #f0fbfc;
-  color: #334e68;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-muted);
   font-size: 0.88rem;
 }
 .choice strong {
-  color: #102a43;
+  color: var(--text-strong);
 }
 @media (max-width: 600px) {
   .summary {

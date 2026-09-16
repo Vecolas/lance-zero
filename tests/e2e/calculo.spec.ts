@@ -32,7 +32,8 @@ test('o treino de cálculo alimenta o progresso', async ({ page }) => {
   await page.getByRole('button', { name: 'Conferir' }).click()
   await expect(page.getByText(/lances? forçantes? nesta posição/)).toBeVisible()
 
-  await page.goto('/progress')
+  // A evolução mora no Roadmap: `/progress` virou redirecionamento.
+  await page.goto('/roadmap')
   await expect(page.getByText(/Ainda não há o que medir/)).toBeHidden()
   await expect(page.getByRole('rowheader', { name: /Xeques, capturas/ })).toBeVisible()
 })
