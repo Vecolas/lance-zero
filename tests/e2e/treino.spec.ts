@@ -168,8 +168,16 @@ test('a lição ensina antes de cobrar, e o exercício só aparece depois', asyn
   ).toBeVisible()
 })
 
-test('o progresso admite que ainda não há o que medir', async ({ page }) => {
-  await page.goto('/progress')
+/**
+ * A EVOLUÇÃO MORA NO ROADMAP. `/progress` foi uma tela e virou redirecionamento;
+ * o teste passa a ir onde o conteúdo está.
+ *
+ * Enquanto ele apontava para `/progress`, chegava numa página que não tinha
+ * aquilo — o redirecionamento existia, mas ninguém tinha remontado a evolução no
+ * destino. É como o conteúdo ficou órfão sem nada apontar.
+ */
+test('a evolução admite que ainda não há o que medir', async ({ page }) => {
+  await page.goto('/roadmap')
   await expect(page.getByRole('heading', { name: 'Últimos 7 dias' })).toBeVisible()
   await expect(page.getByText(/Ainda não há atividade registrada nesta semana/)).toBeVisible()
   await expect(page.getByText(/Ainda não há o que medir/)).toBeVisible()

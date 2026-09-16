@@ -19,6 +19,25 @@ test('o skip link leva ao conteúdo principal', async ({ page }) => {
   await expect(page).toHaveURL(/#conteudo$/)
 })
 
+/**
+ * O ENDEREÇO ANTIGO CONTINUA CHEGANDO NO CONTEÚDO, e não só numa página.
+ *
+ * `/progress` foi uma tela e virou `redirect('/roadmap')`. Por um tempo o
+ * redirecionamento funcionou e o destino NÃO tinha a evolução: `ProgressView`
+ * ficou órfã, sem nenhum componente que a renderizasse. Quem tinha o link salvo
+ * chegava numa página que não era a que ele prometia, e nada reprovava.
+ *
+ * Por isso o teste não se contenta com a URL: ele confere que o conteúdo está
+ * lá do outro lado.
+ */
+test('o endereço antigo do progresso leva ao Roadmap, com a evolução dentro', async ({ page }) => {
+  await page.goto('/progress')
+
+  await expect(page).toHaveURL(/\/roadmap$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Roadmap')
+  await expect(page.getByRole('heading', { name: 'Últimos 7 dias' })).toBeVisible()
+})
+
 test('a página de licenças lista as obrigações', async ({ page }) => {
   await page.goto('/licenses')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Licenças e fontes de dados')
