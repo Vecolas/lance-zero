@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { BibliotecaDeLicoes } from '@/components/lessons/BibliotecaDeLicoes'
+import { LicaoAberta } from '@/components/lessons/LicaoAberta'
 import { CATALOGO_DE_LICOES } from '@/content/lessons'
 import { getSkill } from '@/domain/skills/catalog'
 import { SKILL_IDS, type SkillId } from '@/domain/types'
@@ -72,7 +72,7 @@ export default async function LicaoPage({ params }: { params: Promise<{ licao: s
         title={getSkill(encontrada.habilidade).label}
         description="Conceito, exemplo resolvido e exercícios, com a ajuda diminuindo a cada etapa."
       />
-      <BibliotecaDeLicoes licaoInicialId={encontrada.id} />
+      <LicaoAberta licao={encontrada} />
     </>
   )
 }

@@ -27,6 +27,9 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { LicaoPlayer } from '@/components/lessons/LicaoPlayer'
 import { useRepository } from '@/components/providers/RepositoryProvider'
+import { useIdioma } from '@/components/providers/LocaleProvider'
+import type { ChaveDeMensagem } from '@/lib/i18n/mensagens'
+import { traduzirRota } from '@/lib/i18n/rotas'
 import { StatePanel } from '@/components/ui/primitives'
 import { CATALOGO_DE_LICOES } from '@/content/lessons'
 import { licaoDeEntrada, progressoDaJornadaDeLicoes } from '@/domain/roadmap/lesson-journey'
@@ -42,13 +45,15 @@ export interface JornadaDeLicoesProps {
   modo?: ModoDeAprendizado
 }
 
-/** A frase de abertura de cada modo. O destino é o mesmo; o enquadramento não. */
-const ABERTURA_POR_MODO: Record<ModoDeAprendizado, string> = {
-  aprender: 'Três etapas, na ordem. Ao terminar uma, a próxima abre sozinha.',
-  continuar: 'Você retoma de onde parou. As etapas já vencidas não voltam.',
-  revisar: 'Revendo o que já foi estudado. Nada aqui muda o seu progresso para pior.',
-  reaprender:
-    'Este conteúdo voltou a falhar em partida, então ele é ensinado de novo — do começo da etapa que ficou devendo.',
+/**
+ * A CHAVE da frase de abertura de cada modo. O destino é o mesmo; o
+ * enquadramento não — e a frase vem do dicionário, porque a tela tem idioma.
+ */
+const CHAVE_DA_ABERTURA: Record<ModoDeAprendizado, ChaveDeMensagem> = {
+  aprender: 'journey.lessonJourney.intro.learn',
+  continuar: 'journey.lessonJourney.intro.continue',
+  revisar: 'journey.lessonJourney.intro.review',
+  reaprender: 'journey.lessonJourney.intro.relearn',
 }
 
 function licaoPorId(lessonId: string) {
@@ -56,6 +61,7 @@ function licaoPorId(lessonId: string) {
 }
 
 export function JornadaDeLicoes({ target, etapaPedida, modo = 'aprender' }: JornadaDeLicoesProps) {
+  const { locale, t } = useIdioma()
   const { status, repo, erro, refresh } = useRepository()
   const [ensinadas, setEnsinadas] = useState<ReadonlySet<SkillId> | null>(null)
   /**
@@ -126,22 +132,24 @@ export function JornadaDeLicoes({ target, etapaPedida, modo = 'aprender' }: Jorn
     return (
       <StatePanel
         kind="error"
-        title="Não consegui abrir esta jornada"
+        title={t('journey.lessonJourney.errorTitle')}
         description={falha ?? erro ?? undefined}
       />
     )
 
   if (status === 'carregando' || ensinadas === null || licaoEmAberto === undefined)
-    return <StatePanel kind="loading" title="Lendo o que você já estudou" />
+    return <StatePanel kind="loading" title={t('journey.lessonJourney.loading')} />
 
   // `null` aqui é a jornada ENCERRADA: a última lição acabou de ser vencida.
   if (licaoEmAberto === null)
     return (
       <StatePanel
         kind="completed"
-        title="Você já venceu todas as etapas deste conteúdo"
-        description="Concluir não é dominar: o que fixa é a revisão espaçada, e ela já está agendada."
-        action={<Link href="/roadmap">Voltar ao roadmap</Link>}
+        title={t('journey.lessonJourney.completedTitle')}
+        description={t('journey.lessonJourney.completedDescription')}
+        action={
+          <Link href={traduzirRota('/roadmap', locale)}>{t('common.actions.backToRoadmap')}</Link>
+        }
       />
     )
 
@@ -150,8 +158,10 @@ export function JornadaDeLicoes({ target, etapaPedida, modo = 'aprender' }: Jorn
     return (
       <StatePanel
         kind="error"
-        title="Esta jornada aponta para uma lição que não existe"
-        description={`A lição "${licaoEmAberto}" não está no catálogo. Isso é erro de configuração do currículo, não do seu progresso.`}
+        title={t('journey.lessonJourney.missingLessonTitle')}
+        description={t('journey.lessonJourney.missingLessonDescription', {
+          licao: licaoEmAberto,
+        })}
       />
     )
 
@@ -161,11 +171,11 @@ export function JornadaDeLicoes({ target, etapaPedida, modo = 'aprender' }: Jorn
     <>
       <p className={styles.trilha} data-testid="trilha-da-jornada">
         <span className={styles.passo}>
-          Etapa {posicao} de {target.lessonIds.length}
+          {t('journey.stageOf', { current: posicao, total: target.lessonIds.length })}
         </span>{' '}
-        · {ABERTURA_POR_MODO[modo]}
+        · {t(CHAVE_DA_ABERTURA[modo])}
       </p>
-      <ol className={styles.etapas} aria-label="Etapas deste conteúdo">
+      <ol className={styles.etapas} aria-label={t('journey.lessonJourney.stagesLabel')}>
         {target.lessonIds.map((lessonId, indice) => {
           const licao = licaoPorId(lessonId)
           const vencida = concluidas.has(lessonId)
@@ -180,7 +190,11 @@ export function JornadaDeLicoes({ target, etapaPedida, modo = 'aprender' }: Jorn
               <span aria-hidden="true">{vencida ? '✓' : atual ? '◔' : '○'}</span>{' '}
               <span className={styles.nomeDaEtapa}>{licao?.titulo ?? lessonId}</span>
               <span className={styles.estadoDaEtapa}>
-                {vencida ? 'Concluída' : atual ? 'Agora' : `Etapa ${indice + 1}`}
+                {vencida
+                  ? t('common.states.completed')
+                  : atual
+                    ? t('journey.lessonJourney.now')
+                    : t('journey.lessonJourney.stageNumber', { number: indice + 1 })}
               </span>
             </li>
           )

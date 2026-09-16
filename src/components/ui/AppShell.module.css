@@ -18,16 +18,26 @@
   }
 }
 
+/*
+  NOTA DE RODAPÉ, e não uma seção.
+
+  Ele tinha borda no topo, 1,5 rem de respiro em cima e embaixo e texto de
+  0,875 rem — o peso de um bloco de conteúdo, repetido em toda tela. Num app de
+  treino isso compete com o que importa.
+
+  Agora: sem borda, texto pequeno e esmaecido, respiro mínimo, e só na tela
+  Hoje. O link continua lá porque a atribuição das licenças é obrigação (o
+  Stockfish é GPL-3.0) — mas obrigação cumprida não precisa gritar.
+*/
 .footer {
-  border-top: 1px solid var(--border);
-  padding: var(--space-5) var(--space-4) calc(var(--bottom-nav-height) + var(--space-5));
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  padding: var(--space-3) var(--space-4) calc(var(--bottom-nav-height) + var(--space-3));
+  color: var(--text-faint);
+  font-size: 0.75rem;
 }
 
 @media (min-width: 60rem) {
   .footer {
-    padding-bottom: var(--space-5);
+    padding-bottom: var(--space-3);
   }
 }
 
@@ -36,7 +46,16 @@
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--space-1) var(--space-3);
   align-items: baseline;
-  justify-content: space-between;
+}
+
+/* O link não usa o azul de link: aqui ele é referência, não ação. O sublinhado
+   continua, então ele segue reconhecível como link sem puxar o olho. */
+.footerInner a {
+  color: inherit;
+}
+
+.footerInner a:hover {
+  color: var(--text-muted);
 }

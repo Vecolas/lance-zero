@@ -9,23 +9,12 @@
 }
 
 /*
-  A HIERARQUIA VISUAL É O INVERSO DA SEMÂNTICA, e de propósito. O `h1` é o
-  conteúdo ("Abertura Italiana") porque é ele que identifica a página; mas o que
-  o aluno precisa ler primeiro é ONDE ELE ESTÁ AGORA. Então o `h1` fica pequeno
-  como um sobretítulo e o `h2` da etapa recebe o peso.
+  O `h1` DA JORNADA NÃO MORA MAIS AQUI, e a classe que o estilizava saiu junto.
 
-  Isso não é maquiar hierarquia: a ordem de leitura de um leitor de tela segue o
-  DOM e continua "Abertura Italiana → Visão e objetivo", que é a leitura certa.
+  Ele é o nome do conteúdo ("Abertura Italiana") e passou a ser renderizado pela
+  PÁGINA, no servidor — ver a nota no componente. Manter a regra órfã convidaria
+  alguém a reintroduzir um `h1` que muda a cada Continuar.
 */
-.titulo {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
 .etapa {
   margin: 0;
   font-size: 1.5rem;
@@ -77,20 +66,36 @@
   maior fatia; no celular vai para cima, antes do texto, porque é o objeto do
   estudo — texto primeiro empurraria o tabuleiro para fora da dobra.
 */
+/*
+  A MESMA REGRA DA LIÇÃO: tabuleiro grande, instrução ao lado.
+
+  Era `1.1fr` contra `1fr` — praticamente meio a meio, e meio a meio num estudo de
+  abertura ou de final significa um tabuleiro pequeno ao lado de um bloco de texto
+  do mesmo tamanho. Aqui o conteúdo É a posição: a variante da Italiana, a
+  oposição em rei e peão. O texto diz o que observar nela.
+
+  O painel ganha largura de LEITURA e para de crescer; o tabuleiro fica com o
+  resto. Abaixo de 60 rem vira coluna única com o tabuleiro primeiro, que é a
+  ordem do DOM — a prioridade dele não muda com a largura da tela.
+*/
 .area {
   display: grid;
   gap: var(--space-5);
   align-items: start;
 }
 
+/* Só quem USA o slot do tabuleiro ganha a segunda coluna. Ver a nota no
+   componente: reservá-la sem tabuleiro espremia o conteúdo em metade da área. */
 @media (min-width: 60rem) {
-  .area {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  .areaComTabuleiro {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 24rem);
   }
 }
 
 .tabuleiro {
   min-width: 0;
+  /* Teto para a tela larga: passando disso o tabuleiro vira pôster. */
+  max-width: 40rem;
 }
 
 .painel {

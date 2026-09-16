@@ -99,7 +99,16 @@ export function ChessBoardView({
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.board}>
+      {/*
+        `data-testid` no invólucro do tabuleiro, e não numa classe de módulo.
+
+        O nome da classe é gerado no build (`ChessBoardView-module__xYz__board`) e
+        muda quando o arquivo muda — um teste ancorado nele quebra por refatoração
+        e não por defeito. O `data-testid` é contrato: ele existe para ser mirado,
+        e é o que permite MEDIR o tabuleiro, que é como a regra "tabuleiro grande"
+        deixa de ser uma frase que ninguém confere.
+      */}
+      <div className={styles.board} data-testid="chessboard">
         <Chessboard
           options={{
             id: 'lancezero-board',

@@ -33,7 +33,7 @@ import {
   registrarRodada,
   rodadaFoiSucesso,
   rodadaTerminou,
-  rotuloDeRetomada,
+  retomadaDaJornada,
   voltarParaEtapa,
   type StudyStage,
 } from '@/domain/jornada'
@@ -243,13 +243,16 @@ describe('o progresso e o trilho são derivados', () => {
 
 describe('o rótulo do botão diz o estado sem o aluno precisar deduzir', () => {
   it('cobre os três estados', () => {
-    expect(rotuloDeRetomada(null)).toBe('Estudar')
-    expect(rotuloDeRetomada(jornadaNova())).toBe('Estudar')
+    // O DOMÍNIO DEVOLVE A ESCOLHA, NÃO A PALAVRA. Quem escreve "Estudar" ou
+    // "Study" é a tela, que sabe em que idioma está — e o teste passou a cobrar
+    // a decisão, que é a parte que não muda com o idioma.
+    expect(retomadaDaJornada(null)).toBe('estudar')
+    expect(retomadaDaJornada(jornadaNova())).toBe('estudar')
 
     const comecada = concluirEtapa(jornadaNova(), ETAPAS, AGORA)
-    expect(rotuloDeRetomada(comecada)).toBe('Continuar estudo')
+    expect(retomadaDaJornada(comecada)).toBe('continuar')
 
-    expect(rotuloDeRetomada({ ...comecada, status: 'concluida' })).toBe('Treinar novamente')
+    expect(retomadaDaJornada({ ...comecada, status: 'concluida' })).toBe('treinar-de-novo')
   })
 })
 

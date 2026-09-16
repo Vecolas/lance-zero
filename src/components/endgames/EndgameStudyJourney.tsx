@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { StudyJourneyShell } from '@/components/jornada/StudyJourneyShell'
+import { MesaDeEstudo } from '@/components/jornada/MesaDeEstudo'
 import { RoundResultPanel } from '@/components/jornada/RoundResultPanel'
 import { ModoReferencia } from '@/components/jornada/ModoReferencia'
 import {
@@ -519,8 +520,8 @@ function TreinoDoFinal({
   const terminou = round.desfecho !== 'ativa'
 
   return (
-    <>
-      <div className={styles.tabuleiroEmbutido}>
+    <MesaDeEstudo
+      tabuleiro={
         <ChessBoardView
           fen={round.currentFen}
           orientation={round.userRole === 'atacante' ? 'w' : 'b'}
@@ -549,8 +550,8 @@ function TreinoDoFinal({
           }}
           interactive={!terminou}
         />
-      </div>
-
+      }
+    >
       {terminou ? (
         <RoundResultPanel
           desfecho={round.desfecho as 'sucesso' | 'falhou'}
@@ -582,7 +583,7 @@ function TreinoDoFinal({
           </p>
         </>
       )}
-    </>
+    </MesaDeEstudo>
   )
 }
 

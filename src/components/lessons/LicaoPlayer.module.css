@@ -1,19 +1,12 @@
-.lista {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: 1fr;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
+/*
+  ESTE ARQUIVO ESTILIZA A LIÇÃO ABERTA, e só ela.
 
-@media (min-width: 48rem) {
-  .lista {
-    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
-  }
-}
-
-.cartao,
+  O que saiu daqui: `.lista`, `.cartao`, `.tituloCartao`, `.conceito`, `.minutos`
+  e `.vazio` — a grade e o card da BIBLIOTECA, que moravam aqui porque a lição
+  era aberta dentro dela. Com a lição virando página e o card virando
+  `LessonCard`, essas classes ficaram órfãs: nenhum componente as usava, e CSS
+  órfão é a forma mais barata de alguém copiar um estilo que não vale mais.
+*/
 .licao {
   display: flex;
   flex-direction: column;
@@ -36,25 +29,11 @@
   color: var(--text-muted);
 }
 
-.tituloCartao {
-  margin: 0;
-  font-size: 1.0625rem;
-  font-weight: 650;
-  color: var(--text-strong);
-}
-
-.conceito,
 .texto {
   margin: 0;
   font-size: 0.9375rem;
   line-height: 1.6;
   color: var(--text-muted);
-}
-
-.minutos {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--text-faint);
 }
 
 .etapa {
@@ -74,6 +53,23 @@
   color: var(--text-faint);
 }
 
+/*
+  O TABULEIRO É O NÚCLEO DA LIÇÃO, e por muito tempo ele não foi.
+
+  A regra anterior era `minmax(0, 20rem) minmax(0, 1fr)`: o tabuleiro preso em
+  320 px e o TEXTO levando todo o resto da largura. Numa aula de xadrez isso
+  inverte a pergunta — o aluno precisa OLHAR a posição, e o texto existe para
+  dizer o que olhar nela. Um tabuleiro de 320 px ao lado de um parágrafo de 700 px
+  ensina que o parágrafo é o conteúdo.
+
+  Agora o tabuleiro leva a coluna maior, e o painel de instrução fica ao lado, com
+  largura de leitura (`minmax(0, 24rem)` é perto das 60–70 colunas em que se lê
+  confortavelmente). O tabuleiro cresce com a tela; o texto não precisa crescer.
+
+  NO CELULAR a ordem é tabuleiro primeiro, texto abaixo — que é o que a coluna
+  única já faz, porque o tabuleiro vem antes no DOM. A prioridade dele não muda
+  com a largura.
+*/
 .comTabuleiro {
   display: grid;
   gap: var(--space-4);
@@ -83,12 +79,15 @@
 
 @media (min-width: 52rem) {
   .comTabuleiro {
-    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 24rem);
   }
 }
 
 .tabuleiro {
   min-width: 0;
+  /* Teto para a tela larga: passando disso o tabuleiro vira pôster e o olho
+     precisa varrer demais entre um canto e outro. */
+  max-width: 40rem;
 }
 
 .aoLado {
@@ -204,12 +203,6 @@
   border: 0;
   background: none;
   color: var(--link);
-}
-
-.vazio {
-  margin: 0;
-  font-size: 0.9375rem;
-  color: var(--text-muted);
 }
 
 /* --- leitor V2: as nove etapas ---------------------------------------- */

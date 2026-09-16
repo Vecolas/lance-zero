@@ -15,9 +15,17 @@ describe('mapa de rotas', () => {
     }
   })
 
+  /**
+   * A ÁRVORE DE ROTAS GANHOU UM SEGMENTO DE IDIOMA.
+   *
+   * `src/app/[lang]/...` é o que permite o inglês existir com URL própria e o
+   * `<html lang>` sair certo do servidor. O `href` do catálogo continua sendo o
+   * português sem prefixo — que é o endereço real — e a página correspondente
+   * mora um nível abaixo.
+   */
   it('todo href tem uma página correspondente no disco', () => {
     for (const item of allNav) {
-      const page = join(process.cwd(), 'src/app', item.href.slice(1), 'page.tsx')
+      const page = join(process.cwd(), 'src/app/[lang]', item.href.slice(1), 'page.tsx')
       expect(existsSync(page), `${item.href} → ${page}`).toBe(true)
     }
   })

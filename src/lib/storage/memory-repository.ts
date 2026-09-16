@@ -25,6 +25,7 @@ import type {
   SkillMastery,
   SkillState,
   StudyJourney,
+  LessonProgress,
   UserProfile,
   OpeningProgress,
 } from '@/domain/types'
@@ -54,6 +55,7 @@ export class MemoryTrainingRepository implements BackupRepository {
   private readonly planosDoDia = new Map<string, PlanoDoDia>()
   private readonly openingProgress = new Map<string, OpeningProgress>()
   private readonly studyJourneys = new Map<string, StudyJourney>()
+  private readonly lessonProgress = new Map<string, LessonProgress>()
 
   async getProfile(): Promise<UserProfile | null> {
     return this.profile ? cloneJson(this.profile) : null
@@ -211,6 +213,22 @@ export class MemoryTrainingRepository implements BackupRepository {
       .map((item) => cloneJson(item))
   }
 
+  async getLessonProgress(lessonId: string): Promise<LessonProgress | null> {
+    const progresso = this.lessonProgress.get(lessonId)
+    return progresso ? cloneJson(progresso) : null
+  }
+
+  async listLessonProgress(): Promise<LessonProgress[]> {
+    // Mesma ordem canônica do IndexedDB, pelo mesmo motivo.
+    return [...this.lessonProgress.values()]
+      .sort((a, b) => a.lessonId.localeCompare(b.lessonId))
+      .map((item) => cloneJson(item))
+  }
+
+  async saveLessonProgress(progresso: LessonProgress): Promise<void> {
+    this.lessonProgress.set(progresso.lessonId, cloneJson(progresso))
+  }
+
   /** Apaga tudo. Existe para os testes, não faz parte do contrato. */
   clear(): void {
     this.profile = null
@@ -225,5 +243,6 @@ export class MemoryTrainingRepository implements BackupRepository {
     this.planosDoDia.clear()
     this.openingProgress.clear()
     this.studyJourneys.clear()
+    this.lessonProgress.clear()
   }
 }

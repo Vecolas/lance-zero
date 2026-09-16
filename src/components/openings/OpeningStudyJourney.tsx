@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { StudyJourneyShell } from '@/components/jornada/StudyJourneyShell'
+import { MesaDeEstudo } from '@/components/jornada/MesaDeEstudo'
 import { RoundResultPanel } from '@/components/jornada/RoundResultPanel'
 import { RepertoireDeviationFeedback } from '@/components/openings/RepertoireDeviationFeedback'
 import { ModoReferencia } from '@/components/jornada/ModoReferencia'
@@ -518,14 +519,15 @@ function LinhaComentada({
   const lance = lances[Math.min(indice, lances.length - 1)]
 
   return (
-    <>
-      <div className={styles.tabuleiroEmbutido}>
+    <MesaDeEstudo
+      tabuleiro={
         <ChessBoardView
           fen={fens[Math.min(indice + 1, fens.length - 1)] ?? opening.rootFen}
           orientation={opening.side === 'white' ? 'w' : 'b'}
           interactive={false}
         />
-      </div>
+      }
+    >
       <p className={styles.lanceAtual}>
         {indice + 1}. {lance?.san}
       </p>
@@ -552,7 +554,7 @@ function LinhaComentada({
           Próximo lance →
         </button>
       </div>
-    </>
+    </MesaDeEstudo>
   )
 }
 
@@ -757,8 +759,16 @@ function TreinoDaAbertura({
   const terminou = round.desfecho !== 'ativa'
 
   return (
-    <>
-      <div className={styles.tabuleiroEmbutido}>
+    /*
+      A MESA DE ESTUDO: tabuleiro grande, instrução ao lado.
+
+      É a etapa em que o aluno JOGA. Antes disso o tabuleiro ficava preso em
+      28 rem, com o texto empilhado embaixo — num treino de repertório, onde a
+      única coisa que importa é enxergar a posição e escolher o lance, isso punha
+      o conteúdo em segundo plano.
+    */
+    <MesaDeEstudo
+      tabuleiro={
         <ChessBoardView
           fen={round.currentFen}
           orientation={round.userSide === 'white' ? 'w' : 'b'}
@@ -778,8 +788,8 @@ function TreinoDaAbertura({
           }}
           interactive={!terminou && vezDoAluno(round)}
         />
-      </div>
-
+      }
+    >
       {terminou ? (
         <RoundResultPanel
           desfecho={round.desfecho as 'sucesso' | 'falhou'}
@@ -813,7 +823,7 @@ function TreinoDaAbertura({
           </p>
         </>
       )}
-    </>
+    </MesaDeEstudo>
   )
 }
 

@@ -25,9 +25,23 @@ import {
   type StudyJourney,
   type StudyStage,
 } from '@/domain/jornada'
-import { AVISO_DO_MODO, modoDaUrl } from '@/lib/training/modo-de-aprendizado'
+import type { ModoDeAprendizado } from '@/domain/roadmap/learning-target'
+import { modoDaUrl } from '@/lib/training/modo-de-aprendizado'
+import { useTraduzir } from '@/components/providers/LocaleProvider'
+import type { ChaveDeMensagem } from '@/lib/i18n/mensagens'
 import { StudyProgressRail } from './StudyProgressRail'
 import styles from './StudyJourneyShell.module.css'
+
+/**
+ * A CHAVE do aviso de cada modo. `aprender` não tem aviso: é o caso padrão, e
+ * dizer "você está aprendendo" na tela de aprender é ruído que ensina a ignorar
+ * avisos.
+ */
+const CHAVE_DO_AVISO: Record<Exclude<ModoDeAprendizado, 'aprender'>, ChaveDeMensagem> = {
+  continuar: 'journey.modes.continue',
+  revisar: 'journey.modes.review',
+  reaprender: 'journey.modes.relearn',
+}
 
 export interface StudyJourneyShellProps {
   /** Nome do conteúdo: "Abertura Italiana", "Oposição". */
@@ -78,6 +92,7 @@ export function StudyJourneyShell({
   aoSair,
   aoRever,
 }: StudyJourneyShellProps) {
+  const t = useTraduzir()
   /*
     O modo vem da URL, e é lido com `useSyncExternalStore`.
 
@@ -132,7 +147,8 @@ export function StudyJourneyShell({
           onde o aluno está.
         */}
         <p className={styles.passo} role="status">
-          Etapa {progresso.atual} de {progresso.total} — {stage.objetivo}
+          {t('journey.stageOf', { current: progresso.atual, total: progresso.total })} —{' '}
+          {stage.objetivo}
         </p>
         {/*
           O MODO COM QUE O ALUNO CHEGOU, quando não é o padrão.
@@ -145,7 +161,7 @@ export function StudyJourneyShell({
         */}
         {modo && modo !== 'aprender' ? (
           <p className={styles.modo} data-testid="modo-de-aprendizado">
-            {AVISO_DO_MODO[modo]}
+            {t(CHAVE_DO_AVISO[modo])}
           </p>
         ) : null}
         {aoRever ? (
@@ -157,7 +173,17 @@ export function StudyJourneyShell({
 
       <StudyProgressRail jornada={jornada} stages={stages} aoEscolher={aoVoltarEtapa} />
 
-      <div className={styles.area}>
+      {/*
+        DUAS COLUNAS SÓ QUANDO HÁ TABULEIRO NO SLOT.
+
+        A regra era incondicional, e o efeito era invisível até alguém medir: sem
+        `tabuleiro`, a área continuava com duas colunas e o painel ocupava só a
+        primeira — a segunda ficava reservada e vazia. As jornadas de Aberturas e
+        Finais desenham o tabuleiro DENTRO do conteúdo, então elas caíam
+        exatamente nesse caso, e o tabuleiro delas herdava uma fração de uma
+        fração: 312 px numa tela de 1440.
+      */}
+      <div className={tabuleiro ? `${styles.area} ${styles.areaComTabuleiro}` : styles.area}>
         {tabuleiro ? <div className={styles.tabuleiro}>{tabuleiro}</div> : null}
         <div className={styles.painel}>{children}</div>
       </div>

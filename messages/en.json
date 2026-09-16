@@ -1,0 +1,233 @@
+{
+  "common": {
+    "actions": {
+      "learn": "Learn",
+      "continue": "Continue",
+      "review": "Review",
+      "relearn": "Relearn",
+      "practice": "Practice",
+      "study": "Study",
+      "continueStudy": "Continue studying",
+      "train": "Train",
+      "trainAgain": "Train again",
+      "back": "Back",
+      "close": "Close",
+      "openLesson": "Open lesson",
+      "backToRoadmap": "Back to roadmap"
+    },
+    "states": {
+      "loading": "Loading",
+      "locked": "Prerequisites",
+      "completed": "Completed",
+      "inProgress": "In progress"
+    }
+  },
+  "navigation": {
+    "skipToContent": "Skip to content",
+    "mainNav": "Main navigation",
+    "today": "Today",
+    "training": "Train",
+    "games": "Games",
+    "openings": "Openings",
+    "endgames": "Endgames",
+    "roadmap": "Roadmap",
+    "library": "Library",
+    "account": "Account",
+    "puzzles": "Puzzles",
+    "calculate": "Calculation",
+    "diagnostic": "Diagnostic",
+    "settings": "Settings",
+    "tagline": "Train what loses your games.",
+    "licenses": "Licences and data sources"
+  },
+  "appearance": {
+    "groupLabel": "Appearance and language",
+    "themeToLight": "Dark theme. Switch to light.",
+    "themeToDark": "Light theme. Switch to dark."
+  },
+  "language": {
+    "label": "Language",
+    "change": "Change language",
+    "ptBR": "Português (Brasil)",
+    "en": "English"
+  },
+  "roadmap": {
+    "title": "Roadmap",
+    "loadingTitle": "Opening your roadmap",
+    "errorTitle": "I could not open your roadmap",
+    "description": "See everything LanceZero teaches, and where you stand.",
+    "kicker": "Learning path",
+    "summaryHeading": "What there is to learn, and where you are",
+    "summaryHelp": "Completion shows what you have studied. Review and relearn show how well it stuck.",
+    "studiedCount": "topics studied",
+    "of": "of",
+    "legend": {
+      "completed": "✓ Completed",
+      "learning": "◔ Learning",
+      "available": "○ Available",
+      "relearn": "↻ Relearning recommended"
+    },
+    "choiceTitle": "Choose a White repertoire",
+    "choiceHelp": "You need to study one option to move on; the others stay available to explore.",
+    "contentCount": "{count, plural, one {# topic} other {# topics}}",
+    "noContentMessage": "This topic does not have a lesson available yet.",
+    "stages": {
+      "locked": "Locked",
+      "available": "Available",
+      "learning": "Learning",
+      "completed": "Completed",
+      "review": "Review",
+      "needs_relearning": "Relearning recommended"
+    },
+    "areas": {
+      "fundamentos": {
+        "title": "Fundamentals",
+        "description": "The ideas that make a position readable."
+      },
+      "processo": {
+        "title": "Thinking process",
+        "description": "How to think before choosing a move."
+      },
+      "tática": {
+        "title": "Tactics",
+        "description": "Concrete patterns for spotting opportunities."
+      },
+      "cálculo": {
+        "title": "Calculation",
+        "description": "Visualise, compare and verify lines."
+      },
+      "aberturas": {
+        "title": "Openings",
+        "description": "Ideas, plans and the repertoire you chose."
+      },
+      "finais": {
+        "title": "Endgames",
+        "description": "Technique for converting and defending positions."
+      },
+      "análise": {
+        "title": "Game review",
+        "description": "Turning real mistakes into training."
+      },
+      "estratégia": {
+        "title": "Strategy",
+        "description": "Plans, structures and long-term decisions."
+      },
+      "transferência": {
+        "title": "Applying it in real games",
+        "description": "Taking what you know to the board."
+      }
+    }
+  },
+  "journey": {
+    "stageOf": "Stage {current} of {total}",
+    "stagesTotal": "{count, plural, one {# stage} other {# stages}}",
+    "stagesProgress": "{done} of {total} stages",
+    "modes": {
+      "continue": "You picked up where you left off. Stages you already cleared stay cleared.",
+      "review": "You have already completed this. You are reviewing — nothing here takes away what you earned.",
+      "relearn": "This came up wrong in your games again, so it is taught from scratch. It is not a penalty: it is the app admitting the first pass did not stick."
+    },
+    "lessonJourney": {
+      "stagesLabel": "Stages in this topic",
+      "now": "Now",
+      "stageNumber": "Stage {number}",
+      "completedTitle": "You have cleared every stage in this topic",
+      "completedDescription": "Finishing is not mastering: what makes it stick is spaced review, and it is already scheduled.",
+      "loading": "Reading what you have studied",
+      "errorTitle": "I could not open this journey",
+      "missingLessonTitle": "This journey points to a lesson that does not exist",
+      "intro": {
+        "learn": "The stages come in order. Finish one and the next opens on its own.",
+        "continue": "You pick up where you left off. Stages you cleared do not come back.",
+        "review": "Reviewing what you already studied. Nothing here can make your progress worse.",
+        "relearn": "This came up wrong in a game again, so it is taught from scratch — starting at the stage that did not stick."
+      },
+      "missingLessonDescription": "The lesson \"{licao}\" is not in the catalogue. That is a curriculum configuration error, not a problem with your progress."
+    }
+  },
+  "errors": {
+    "genericTitle": "Something did not go as expected",
+    "notFound": "We could not find this page."
+  },
+  "contentNotice": {
+    "title": "This lesson is still in Portuguese",
+    "body": "Lesson translation is in progress. The text below stays in Portuguese rather than shipping a machine version — in LanceZero, an invented explanation is worse than a missing one."
+  },
+  "openings": {
+    "loadingTitle": "Loading openings",
+    "loadingDescription": "Preparing the library and your progress.",
+    "errorTitle": "I could not load the openings",
+    "filterLabel": "Filter openings",
+    "catalogHeading": "Opening courses",
+    "emptyTitle": "No opening matches these filters",
+    "emptyDescription": "Try removing a filter to see more courses.",
+    "all": "All",
+    "white": "White",
+    "black": "Black",
+    "essential": "Essential",
+    "level": "Level",
+    "allMasculine": "All",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "statusLabel": "Status",
+    "status": {
+      "notStarted": "Not started",
+      "learning": "Learning",
+      "training": "Training",
+      "consolidating": "Consolidating",
+      "activeRepertoire": "Active repertoire"
+    },
+    "filterByLevel": "Filter by level"
+  },
+  "endgames": {
+    "filterLabel": "Filter endgames",
+    "statusLabel": "Status",
+    "all": "All",
+    "libraryHeading": "Endgame library",
+    "principles": "Principles",
+    "level": {
+      "essential": "Essential",
+      "fundamental": "Fundamental",
+      "advanced": "Advanced"
+    },
+    "status": {
+      "not-started": "Not started",
+      "learning": "Learning",
+      "practicing": "Practising",
+      "review": "Review",
+      "consolidated": "Consolidated"
+    },
+    "filterByStatus": "Filter by status"
+  },
+  "lessons": {
+    "title": "Lesson library",
+    "description": "Short lessons: the concept, a worked example and an exercise with no help. Trying to answer is what teaches.",
+    "countWritten": "{escritas, plural, one {# lesson written} other {# lessons written}} so far; at least {faltam} more to complete the planned curriculum.",
+    "emptyTitle": "No lesson has been written for this topic yet",
+    "emptyDescription": "Today's training works without it.",
+    "goToToday": "Go to today's training",
+    "gridLabel": "Available lessons",
+    "cardLabel": "Lesson: {titulo}. State: {estado}.",
+    "stepsAndTime": "{etapas} stages · ~{minutos} min",
+    "filterLabel": "Filter lessons",
+    "all": "All",
+    "areas": {
+      "tactics": "Tactics",
+      "calculation": "Calculation",
+      "endgame": "Endgames",
+      "opening": "Openings"
+    },
+    "states": {
+      "available": "Available",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "review": "Review",
+      "relearn": "Relearning recommended"
+    },
+    "actions": {
+      "reviewLesson": "Review lesson"
+    },
+    "resuming": "Picking up where you left off…"
+  }
+}

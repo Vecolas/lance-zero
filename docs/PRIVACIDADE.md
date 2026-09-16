@@ -38,6 +38,7 @@ telemetria, não há analytics.
 | `planosDoDia`               | os planos de treino já montados, com o que você concluiu em cada dia                                                             | idem                        |
 | `openingProgress`           | o que você já aprendeu e treinou em cada abertura do seu repertório                                                              | idem                        |
 | `studyJourneys`             | onde você parou em cada jornada de abertura e de final: etapa atual, etapas concluídas e as linhas que você já demonstrou        | idem                        |
+| `lessonProgress`            | onde você parou dentro de cada lição da biblioteca: a etapa em que fechou e contra qual versão do conteúdo                       | idem                        |
 
 Nada disso é enviado para lugar nenhum enquanto você não criar conta.
 

@@ -281,14 +281,22 @@ export function estadoNoTrilho(jornada: StudyJourney, stage: StudyStage): Estado
 }
 
 /**
- * O rótulo do botão principal no card do conteúdo (plano §10 e §11).
+ * QUAL rótulo o botão principal do card usa (plano §10 e §11).
  *
  * Um lugar só decide, para Aberturas e Finais dizerem a mesma coisa nos mesmos
  * estados — e para a tela de Hoje e o Roadmap poderem reusar sem copiar a
  * escada de `if`.
+ *
+ * DEVOLVE A ESCOLHA, NÃO O TEXTO. O domínio não fala idioma: ele sabe que o
+ * estado pede "estudar", "retomar" ou "treinar de novo", e quem escreve isso em
+ * português ou em inglês é a camada de apresentação. Enquanto a frase morava
+ * aqui, internacionalizar o card exigiria traduzir dentro do domínio — que é
+ * onde a regra vive, e onde idioma não tem nada a fazer.
  */
-export function rotuloDeRetomada(jornada: StudyJourney | null): string {
-  if (jornada === null || jornada.status === 'nao-iniciada') return 'Estudar'
-  if (jornada.status === 'concluida') return 'Treinar novamente'
-  return 'Continuar estudo'
+export type RetomadaDaJornada = 'estudar' | 'continuar' | 'treinar-de-novo'
+
+export function retomadaDaJornada(jornada: StudyJourney | null): RetomadaDaJornada {
+  if (jornada === null || jornada.status === 'nao-iniciada') return 'estudar'
+  if (jornada.status === 'concluida') return 'treinar-de-novo'
+  return 'continuar'
 }

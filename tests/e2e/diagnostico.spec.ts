@@ -100,9 +100,13 @@ test('o tom não é de cassino e nada é enviado para fora', async ({ page }) =>
 
 test('a lição ENSINA antes de cobrar, e a ordem das etapas é a do esquema', async ({ page }) => {
   await page.goto('/lessons')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Biblioteca')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Biblioteca de lições')
 
-  await page.getByRole('button', { name: 'Abrir lição' }).first().click()
+  // O card inteiro é o link para a lição — não há mais um botão dentro dele.
+  await page
+    .getByRole('link', { name: /^Lição: / })
+    .first()
+    .click()
 
   /**
    * A LIÇÃO TEM NOVE ETAPAS, e não mais três.

@@ -612,6 +612,40 @@ export interface TrainingRepository {
   getStudyJourney(id: string): Promise<StudyJourney | null>
   saveStudyJourney(jornada: StudyJourney): Promise<void>
   listStudyJourneys(): Promise<StudyJourney[]>
+
+  /**
+   * Onde o aluno parou dentro de uma lição.
+   *
+   * `null` é "nunca abriu", e é diferente de um checkpoint na etapa 0 — quem
+   * abriu e fechou na primeira tela tem progresso, mesmo que seja zero, e o card
+   * dele diz "Continuar". Sem a distinção, os dois casos seriam indistinguíveis
+   * e a biblioteca diria "Aprender" para quem já começou.
+   */
+  getLessonProgress(lessonId: string): Promise<LessonProgress | null>
+  listLessonProgress(): Promise<LessonProgress[]>
+  saveLessonProgress(progresso: LessonProgress): Promise<void>
+}
+
+/**
+ * O checkpoint de uma lição.
+ *
+ * POR QUE ELE EXISTE, e por que não bastava o `SkillState`: `SkillState` responde
+ * "esta habilidade foi ensinada?", e a resposta só vira `true` quando a lição
+ * CHEGA AO FIM. Entre abrir a lição e terminá-la — nove etapas, alguns minutos —
+ * o app não guardava nada. Quem fechava a aba na etapa 6 voltava para a etapa 1,
+ * e a biblioteca dizia "Aprender" como se nada tivesse acontecido.
+ *
+ * `contentVersion` é a defesa contra retomar no vazio: se a lição foi reescrita e
+ * passou a ter menos etapas, um checkpoint na etapa 8 apontaria para o nada.
+ * Versão diferente significa recomeçar, o que é honesto — o conteúdo mudou.
+ */
+export interface LessonProgress {
+  lessonId: string
+  /** Índice da PRÓXIMA etapa a mostrar. Zero é "abriu e não avançou". */
+  stepIndex: number
+  /** Contra qual versão do conteúdo este checkpoint foi feito. */
+  contentVersion: number
+  updatedAt: string
 }
 
 // ----------------------------------------------------------------- importação
