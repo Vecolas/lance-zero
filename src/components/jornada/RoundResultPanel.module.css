@@ -1,0 +1,85 @@
+.painel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+/*
+  Sucesso e falha NÃO compartilham identidade visual (plano §204). A falha de
+  repertório usa o tom de ATENÇÃO, e não o de perigo: sair do repertório não é
+  um blunder, e pintá-lo de vermelho ensinaria ao aluno que o lance é ruim no
+  xadrez — que muitas vezes não é verdade.
+*/
+.painel[data-desfecho='sucesso'] {
+  border-left-color: var(--positive);
+}
+
+.painel[data-desfecho='falhou'] {
+  border-left-color: var(--warning, var(--attention));
+}
+
+.titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 650;
+}
+
+.painel[data-desfecho='sucesso'] .marca {
+  color: var(--positive);
+}
+
+.painel[data-desfecho='falhou'] .marca {
+  color: var(--warning, var(--attention));
+}
+
+.resumo,
+.cobertura {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 60ch;
+}
+
+.cobertura {
+  font-size: 0.875rem;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.primario,
+.secundario {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.primario {
+  border: 1px solid transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.secundario {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.primario:focus-visible,
+.secundario:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}

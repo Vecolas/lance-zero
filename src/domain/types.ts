@@ -14,6 +14,7 @@
 import type { PlanoDoDia } from '@/domain/aprendizado/plano'
 import type { SkillState } from '@/domain/aprendizado/skill-state'
 import type { OpeningProgress } from '@/domain/openings'
+import type { StudyJourney } from '@/domain/jornada/jornada'
 import type { RecallOutcome } from '@/domain/roadmap'
 
 // Reexportados para que a persistência continue tendo UMA fronteira. Os
@@ -21,6 +22,7 @@ import type { RecallOutcome } from '@/domain/roadmap'
 // importar dois tipos de outro endereço criaria duas portas para a mesma sala.
 export type { PlanoDoDia, SkillState }
 export type { OpeningProgress }
+export type { StudyJourney }
 
 // ---------------------------------------------------------------- habilidades
 
@@ -593,6 +595,23 @@ export interface TrainingRepository {
   getOpeningProgress(openingId: string): Promise<OpeningProgress | null>
   listOpeningProgress(): Promise<OpeningProgress[]>
   saveOpeningProgress(progress: OpeningProgress): Promise<void>
+
+  /**
+   * A jornada de estudo de uma abertura ou de um final.
+   *
+   * UMA porta para os DOIS domínios, porque a FORMA de uma jornada é a mesma —
+   * etapas, cursor, cobertura — e é só a forma que a persistência conhece. As
+   * regras continuam separadas onde elas moram. Ver `@/domain/jornada`.
+   *
+   * O `id` carrega o domínio (`abertura:italiana`, `final:oposicao`): chavear
+   * pelo slug puro faria uma abertura e um final homônimos se sobrescreverem.
+   *
+   * `null` significa "nunca começou", que é o gatilho de criação — e é diferente
+   * de uma jornada existente com zero etapas concluídas.
+   */
+  getStudyJourney(id: string): Promise<StudyJourney | null>
+  saveStudyJourney(jornada: StudyJourney): Promise<void>
+  listStudyJourneys(): Promise<StudyJourney[]>
 }
 
 // ----------------------------------------------------------------- importação

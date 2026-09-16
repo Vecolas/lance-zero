@@ -36,6 +36,8 @@ telemetria, não há analytics.
 | `repertorios`               | o repertório de aberturas que você montou, com as ideias que você escreveu em cada lance                                         | idem                        |
 | `skillStates`               | em que ponto do aprendizado você está em cada habilidade: o que já te foi ensinado, o que você já resolveu com apoio e sem apoio | idem                        |
 | `planosDoDia`               | os planos de treino já montados, com o que você concluiu em cada dia                                                             | idem                        |
+| `openingProgress`           | o que você já aprendeu e treinou em cada abertura do seu repertório                                                              | idem                        |
+| `studyJourneys`             | onde você parou em cada jornada de abertura e de final: etapa atual, etapas concluídas e as linhas que você já demonstrou        | idem                        |
 
 Nada disso é enviado para lugar nenhum enquanto você não criar conta.
 

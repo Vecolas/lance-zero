@@ -1,0 +1,91 @@
+/*
+  Tom de ATENÇÃO, nunca de perigo. Sair do repertório não é blunder, e pintar
+  isto com a cor de erro grave ensinaria ao aluno que o lance é ruim no xadrez —
+  o que muitas vezes não é verdade, e é como um app perde autoridade.
+*/
+.painel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--attention, var(--warning));
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  color: var(--attention-text, var(--attention, var(--warning)));
+}
+
+.icone {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.texto {
+  margin: 0;
+  color: var(--text);
+  max-width: 60ch;
+}
+
+.porque {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.porque summary {
+  cursor: pointer;
+  min-height: 2.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.porque summary:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+.porque .texto {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+}
+
+/*
+  A consequência enxadrística é visualmente SEPARADA do desvio de repertório.
+  São duas afirmações diferentes, e fundi-las num bloco só é o que o componente
+  existe para impedir.
+*/
+.consequencia {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.consequenciaTitulo {
+  margin: 0 0 var(--space-1);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+.acao {
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.acao:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}

@@ -165,7 +165,11 @@ const repertoireChoiceNodes: RoadmapNode[] = [
   ['opening.italian', 'Abertura Italiana', 'Desenvolvimento rapido, pressao em f7 e ruptura d4', 'aberturas'],
   ['opening.scotch', 'Jogo Escoces', 'Centro aberto e desenvolvimento ativo desde cedo.', 'aberturas'],
   ['opening.london', 'Sistema Londres', 'Estrutura solida, planos claros e desenvolvimento consistente.', 'aberturas'],
-  ['opening.caro-kann', 'Caro-Kann', 'Resposta solida contra 1.e4, com estrutura e contrajogo.', 'aberturas'],
+  // "Defesa Caro-Kann" e não "Caro-Kann": o nome é o MESMO do catálogo de
+  // conteúdo (`@/content/openings/course`), e é por nome que o Roadmap acha a
+  // jornada. Duas grafias para a mesma abertura obrigavam uma busca aproximada,
+  // e busca aproximada é onde nasce o link que leva à abertura errada.
+  ['opening.caro-kann', 'Defesa Caro-Kann', 'Resposta solida contra 1.e4, com estrutura e contrajogo.', 'aberturas'],
   ['opening.qgd', 'Gambito da Dama Recusado', 'Controle central e desenvolvimento seguro contra 1.d4.', 'aberturas'],
 ].map(([id, title, description, area], index) => ({
   id, learningObjectId: `roadmap:${id}`, title, shortDescription: description,

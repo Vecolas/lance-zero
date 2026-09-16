@@ -98,3 +98,17 @@
   color: var(--text-muted);
   font-size: 0.85rem;
 }
+
+/*
+  O CTA fecha o card e é a única ação dele. Fica com a cor de acento porque é o
+  que o aluno procura ao voltar: "onde eu continuo?". O card inteiro já é o
+  link, então isto é rótulo — não um segundo alvo de toque disputando o mesmo
+  espaço.
+*/
+.cta {
+  margin-top: auto;
+  padding-top: var(--space-2);
+  color: var(--accent-strong);
+  font-weight: 650;
+  font-size: 0.9375rem;
+}

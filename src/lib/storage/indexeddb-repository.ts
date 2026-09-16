@@ -16,6 +16,7 @@ import type {
   ReviewLog,
   SkillMastery,
   SkillState,
+  StudyJourney,
   UserProfile,
   OpeningProgress,
 } from '@/domain/types'
@@ -43,6 +44,7 @@ export const STORES = {
   skillStates: 'skillStates',
   planosDoDia: 'planosDoDia',
   openingProgress: 'openingProgress',
+  studyJourneys: 'studyJourneys',
 } as const
 
 export type StoreName = (typeof STORES)[keyof typeof STORES]
@@ -59,7 +61,7 @@ export const INDEXES = {
 export const INDEXEDDB_CONFIG = {
   databaseName: 'lance-zero',
   /** Versão do schema. Incrementar sempre junto de um novo `case` em `migrate`. */
-  schemaVersion: 4,
+  schemaVersion: 5,
 } as const
 
 export interface IndexedDbRepositoryOptions {
@@ -109,6 +111,9 @@ function migrate(db: IDBDatabase, oldVersion: number): void {
     // falls through
     case 3:
       createSchemaV4(db)
+    // falls through
+    case 4:
+      createSchemaV5(db)
   }
 }
 
@@ -174,6 +179,26 @@ function createSchemaV3(db: IDBDatabase): void {
 /** V4: progresso de cursos de abertura por posição. */
 function createSchemaV4(db: IDBDatabase): void {
   db.createObjectStore(STORES.openingProgress, { keyPath: 'openingId' })
+}
+
+/**
+ * V5: as jornadas de estudo de Aberturas e Finais.
+ *
+ * UMA STORE PARA OS DOIS DOMÍNIOS, e a chave é o `id` da jornada — que carrega
+ * o domínio dentro (`abertura:italiana`, `final:oposicao`). Duas stores
+ * separadas seriam a mesma tabela escrita duas vezes: a FORMA é idêntica, e é
+ * só a forma que a persistência conhece. As regras continuam separadas onde
+ * elas moram, em `@/domain/openings` e `@/domain/endgames`.
+ *
+ * Chavear por `learningObjectId` puro seria o defeito: uma abertura e um final
+ * com o mesmo slug colidiriam, e o aluno perderia uma das duas jornadas sem
+ * nada acusar.
+ *
+ * Só ACRESCENTA. Um banco na versão 4 sobe para a 5 sem tocar em nada do que já
+ * estava gravado.
+ */
+function createSchemaV5(db: IDBDatabase): void {
+  db.createObjectStore(STORES.studyJourneys, { keyPath: 'id' })
 }
 
 export class IndexedDbTrainingRepository implements BackupRepository {
@@ -475,6 +500,29 @@ export class IndexedDbTrainingRepository implements BackupRepository {
     await this.run([STORES.openingProgress], 'readwrite', async (tx) => {
       await requestToPromise(tx.objectStore(STORES.openingProgress).put(progress))
     })
+  }
+
+  async getStudyJourney(id: string): Promise<StudyJourney | null> {
+    const jornada = await this.run([STORES.studyJourneys], 'readonly', (tx) =>
+      requestToPromise<StudyJourney | undefined>(
+        tx.objectStore(STORES.studyJourneys).get(id) as IDBRequest<StudyJourney | undefined>,
+      ),
+    )
+    return jornada ?? null
+  }
+
+  async saveStudyJourney(jornada: StudyJourney): Promise<void> {
+    await this.run([STORES.studyJourneys], 'readwrite', async (tx) => {
+      await requestToPromise(tx.objectStore(STORES.studyJourneys).put(jornada))
+    })
+  }
+
+  async listStudyJourneys(): Promise<StudyJourney[]> {
+    // Ordem canônica pelo id: o Roadmap e o Hoje leem daqui, e uma ordem que
+    // dependesse de como o IndexedDB devolveu faria a lista trocar de ordem
+    // entre navegadores sem nada ter mudado de verdade.
+    const jornadas = await this.readAll<StudyJourney>(STORES.studyJourneys)
+    return jornadas.sort((a, b) => a.id.localeCompare(b.id))
   }
 
   /** Fecha a conexão. Necessário antes de apagar o banco em testes. */

@@ -93,8 +93,9 @@ import {
 import { getSkill } from '@/domain/skills/catalog'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
 import { isSkillStateReviewEligible } from '@/domain/roadmap'
+import { cardPodeSerRevisado } from '@/domain/review/elegibilidade'
 import type { RecallOutcome } from '@/domain/roadmap'
-import type { ReviewRating, SkillMastery } from '@/domain/types'
+import type { ReviewCard, ReviewRating, SkillMastery } from '@/domain/types'
 import {
   applyMove,
   normalizeUci,
@@ -362,7 +363,13 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         const eligibleSkillIds = new Set(
           skillStates.filter((state) => isSkillStateReviewEligible(state)).map((state) => state.skillId),
         )
-        const eligibleCards = cards.filter((card) => card.skillIds.some((skillId) => eligibleSkillIds.has(skillId)))
+        // A regra mora em `@/domain/review/elegibilidade`, e mora num lugar só:
+        // ela era escrita DUAS vezes aqui (este filtro e o `reviewEligible`
+        // abaixo) e uma terceira no planner do dia. As cópias divergiram.
+        const cardEhElegivel = (card: ReviewCard): boolean =>
+          cardPodeSerRevisado(card, eligibleSkillIds)
+
+        const eligibleCards = cards.filter(cardEhElegivel)
         if (cancelado) return
         // A fila recarregada é uma revisão NOVA: uma consulta em voo pertence à
         // anterior, e deixá-la pousar aqui mostraria o veredito de um lance
@@ -394,8 +401,10 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         const plano = salvoCompatível && salvo?.items && salvo.items.length > 0
           ? salvo.items
           : createReviewSessionV2(eligibleCards, {
+              // A MESMA função do filtro acima. Repetir a expressão aqui foi o
+              // que fez a regra divergir de si mesma.
               now: new Date(),
-              reviewEligible: (card) => card.skillIds.some((skillId) => eligibleSkillIds.has(skillId)),
+              reviewEligible: cardEhElegivel,
             }).items
         const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
         const relearning = (() => {
@@ -769,8 +778,18 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
       </div>
 
       <div className={styles.panel}>
+        {/* ONDE O ALUNO ESTÁ, e não quantas ele já fez.
+
+            Esta linha mostrou `feitas` por um tempo, e o efeito era a fila de um
+            card só anunciar "Revisão 0 de 1" do começo ao fim — nunca chegava a
+            1, porque assim que a primeira era concluída a tela saía da fila. Ela
+            fica logo acima do enunciado do card ATUAL e ao lado de "Parte X de
+            Y", que é posicional: as duas precisam contar a mesma coisa.
+
+            `feitas` continua certo na tela de encerramento, que é onde a
+            pergunta é mesmo "quantas?". */}
         <p className={styles.counter}>
-          Revisão {feitas} de {fila.length}
+          Revisão {indice + 1} de {fila.length}
         </p>
         <p className={styles.eyebrow}>{itemAtual ? reviewItemLabel(itemAtual.kind) : 'Revisão'}</p>
         <p className={styles.prompt}>{sessao.card.prompt}</p>
