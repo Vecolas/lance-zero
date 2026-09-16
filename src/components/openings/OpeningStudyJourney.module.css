@@ -1,0 +1,158 @@
+.estado {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+
+.texto,
+.nota,
+.linha {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.texto {
+  color: var(--text);
+}
+
+.nota {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.linha {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.lista {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  max-width: 62ch;
+  color: var(--text);
+}
+
+.bloco {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.blocoTitulo {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/*
+  O tabuleiro embutido aparece dentro do painel de conteúdo quando a etapa tem
+  posição. A casca já reserva a coluna dele no desktop; aqui só garantimos que
+  ele nunca estoure a largura em 360 px.
+*/
+.tabuleiroEmbutido {
+  max-width: min(28rem, 100%);
+}
+
+.lanceAtual {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.navegacaoDaLinha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.opcao,
+.primario,
+.secundario {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font: inherit;
+  cursor: pointer;
+}
+
+.opcao,
+.secundario {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.opcao[aria-pressed='true'] {
+  border-color: var(--accent-strong);
+}
+
+.opcao:disabled,
+.secundario:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.primario {
+  border: 1px solid transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-weight: 650;
+  justify-self: start;
+}
+
+.opcao:focus-visible,
+.primario:focus-visible,
+.secundario:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+.veredito {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+/* Cor + símbolo + texto: o estado nunca depende só da cor. */
+.acertou,
+.errou {
+  margin: 0;
+  font-weight: 650;
+}
+
+.acertou {
+  color: var(--positive);
+}
+
+.errou {
+  color: var(--attention-text, var(--attention, var(--warning)));
+}

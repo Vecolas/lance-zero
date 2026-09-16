@@ -1,12 +1,111 @@
-.toolbar { display: flex; flex-direction: column; gap: var(--space-3); margin: var(--space-5) 0 var(--space-6); }
-.filters { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.filter, .active { border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: .55rem .85rem; background: var(--surface); color: var(--text); cursor: pointer; font: inherit; }
-.active { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--on-accent); }
-.statusFilter { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: .875rem; }
-.statusFilter select { border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: .45rem .65rem; background: var(--surface); color: var(--text); font: inherit; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-5); }
-.card { display: flex; flex-direction: column; overflow: hidden; color: inherit; text-decoration: none; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); transition: transform 160ms ease, border-color 160ms ease; }
-.card:hover { transform: translateY(-2px); border-color: var(--accent); color: inherit; }
-.preview { aspect-ratio: 1; max-width: 19rem; width: 100%; margin: 0 auto; padding: var(--space-3); background: var(--surface-soft); }
-.body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); }
-.body h3, .body p { margin: 0; }.body p { color: var(--text-muted); font-size: .9rem; }.meta { display: flex; justify-content: space-between; color: var(--text-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }.status { color: var(--text-muted); font-size: .85rem; }
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 var(--space-6);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.filter,
+.active {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.85rem;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+.active {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--on-accent);
+}
+.statusFilter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+.statusFilter select {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 0.45rem 0.65rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: var(--space-5);
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  color: inherit;
+}
+.preview {
+  aspect-ratio: 1;
+  max-width: 19rem;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-3);
+  background: var(--surface-soft);
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+.body h3,
+.body p {
+  margin: 0;
+}
+.body p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.status {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+/*
+  O CTA fecha o card e é a única ação dele — a mesma forma do catálogo de
+  aberturas, porque o aluno tem de ler a mesma palavra no mesmo estado nos dois
+  módulos. O card inteiro já é o link; isto é rótulo, não um segundo alvo.
+*/
+.cta {
+  margin-top: auto;
+  padding-top: var(--space-2);
+  color: var(--accent-strong);
+  font-weight: 650;
+  font-size: 0.9375rem;
+}

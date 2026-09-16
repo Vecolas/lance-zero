@@ -24,6 +24,7 @@ import type {
   ReviewLog,
   SkillMastery,
   SkillState,
+  StudyJourney,
   UserProfile,
   OpeningProgress,
 } from '@/domain/types'
@@ -52,6 +53,7 @@ export class MemoryTrainingRepository implements BackupRepository {
   private readonly skillStates = new Map<string, SkillState>()
   private readonly planosDoDia = new Map<string, PlanoDoDia>()
   private readonly openingProgress = new Map<string, OpeningProgress>()
+  private readonly studyJourneys = new Map<string, StudyJourney>()
 
   async getProfile(): Promise<UserProfile | null> {
     return this.profile ? cloneJson(this.profile) : null
@@ -192,6 +194,23 @@ export class MemoryTrainingRepository implements BackupRepository {
     this.openingProgress.set(progress.openingId, cloneJson(progress))
   }
 
+  async getStudyJourney(id: string): Promise<StudyJourney | null> {
+    const jornada = this.studyJourneys.get(id)
+    return jornada ? cloneJson(jornada) : null
+  }
+
+  async saveStudyJourney(jornada: StudyJourney): Promise<void> {
+    this.studyJourneys.set(jornada.id, cloneJson(jornada))
+  }
+
+  async listStudyJourneys(): Promise<StudyJourney[]> {
+    // Mesma ordem canônica do IndexedDB. Divergir aqui faria o teste de
+    // contrato passar e as duas implementações mentirem em produção.
+    return [...this.studyJourneys.values()]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((item) => cloneJson(item))
+  }
+
   /** Apaga tudo. Existe para os testes, não faz parte do contrato. */
   clear(): void {
     this.profile = null
@@ -205,5 +224,6 @@ export class MemoryTrainingRepository implements BackupRepository {
     this.skillStates.clear()
     this.planosDoDia.clear()
     this.openingProgress.clear()
+    this.studyJourneys.clear()
   }
 }

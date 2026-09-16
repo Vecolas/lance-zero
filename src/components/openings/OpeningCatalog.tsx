@@ -8,6 +8,9 @@ import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { FilterBar, StatePanel } from '@/components/ui/primitives'
 import { OPENING_COURSES } from '@/content/openings/course'
+import { progressoDaJornada, rotuloDeRetomada, type StudyJourney } from '@/domain/jornada'
+import { construirJornadaDeAbertura } from '@/domain/openings/jornada'
+import { idDaJornadaDeAbertura } from '@/components/openings/OpeningStudyJourney'
 import type {
   OpeningDefinition,
   OpeningProgress,
@@ -28,6 +31,7 @@ export function OpeningCatalog() {
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
   const [firstMoveFilter, setFirstMoveFilter] = useState<FirstMoveFilter>('all')
   const [progress, setProgress] = useState<Record<string, OpeningProgress>>({})
+  const [jornadas, setJornadas] = useState<Record<string, StudyJourney>>({})
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
@@ -36,11 +40,22 @@ export function OpeningCatalog() {
       return () => {
         cancelled = true
       }
-    void repo
-      .listOpeningProgress()
-      .then((items) => {
+    // As duas leituras juntas: o card mostra progresso E estado da jornada, e
+    // carregá-las em momentos diferentes faria o CTA piscar de "Estudar" para
+    // "Continuar estudo" depois que a tela já apareceu.
+    void Promise.all([repo.listOpeningProgress(), repo.listStudyJourneys()])
+      .then(([items, todasAsJornadas]) => {
         if (cancelled) return
         setProgress(Object.fromEntries(items.map((item) => [item.openingId, item])))
+        setJornadas(
+          Object.fromEntries(
+            todasAsJornadas
+              // Só as de ABERTURA. A store é compartilhada com os finais, e
+              // misturar os dois aqui é exatamente o que o produto não quer.
+              .filter((jornada) => jornada.dominio === 'abertura')
+              .map((jornada) => [jornada.id, jornada]),
+          ),
+        )
         setState('ready')
       })
       .catch((reason: unknown) => {
@@ -150,7 +165,12 @@ export function OpeningCatalog() {
       </h2>
       <div className={styles.grid}>
         {courses.map((opening) => (
-          <OpeningCard key={opening.id} opening={opening} progress={progress[opening.id]} />
+          <OpeningCard
+            key={opening.id}
+            opening={opening}
+            progress={progress[opening.id]}
+            jornada={jornadas[idDaJornadaDeAbertura(opening.id)]}
+          />
         ))}
       </div>
       {courses.length === 0 ? (
@@ -167,12 +187,12 @@ export function OpeningCatalog() {
 function OpeningCard({
   opening,
   progress,
+  jornada,
 }: {
   opening: OpeningDefinition
   progress?: OpeningProgress
+  jornada?: StudyJourney
 }) {
-  const learned = progress?.learnedNodeIds.length ?? 0
-  const total = opening.mainline.length
   const status = progress?.status ?? 'not_started'
   const labels = {
     not_started: 'Não iniciada',
@@ -181,11 +201,25 @@ function OpeningCard({
     consolidating: 'Consolidando',
     active_repertoire: 'Repertório ativo',
   } as const
+
+  /*
+    O PROGRESSO QUE O CARD MOSTRA É O DA JORNADA, e não mais "N de M posições
+    ensinadas". A contagem antiga media o que o aluno tinha clicado na aba
+    Aprender — um número que subia sem ele ter treinado nada, e que por isso
+    dizia muito pouco sobre onde ele parou. "5 de 9 etapas" responde a pergunta
+    que o aluno de fato tem ao voltar: quanto falta para terminar isto.
+
+    As etapas são derivadas da abertura, e não de uma contagem escrita à mão —
+    uma variação nova muda a jornada e o card acompanha sozinho.
+  */
+  const stages = construirJornadaDeAbertura(opening)
+  const etapas = jornada ? progressoDaJornada(jornada, stages) : null
+
   return (
     <Link
       href={`/aberturas/${opening.slug}`}
       className={styles.card}
-      aria-label={`Abrir curso ${opening.name}`}
+      aria-label={`${rotuloDeRetomada(jornada ?? null)}: ${opening.name}`}
     >
       <div className={styles.preview}>
         <ChessBoardView
@@ -202,11 +236,22 @@ function OpeningCard({
         <h3>{opening.name}</h3>
         <p>{opening.description}</p>
         <span className={styles.status}>
-          <span aria-hidden="true">{learned > 0 ? '✓' : '○'}</span> {labels[status]}
+          {/* Símbolo + texto: o estado nunca depende só da forma nem só da cor. */}
+          <span aria-hidden="true">{jornada?.status === 'concluida' ? '✓' : '○'}</span>{' '}
+          {labels[status]}
         </span>
-        <span aria-label={`${learned} de ${total} posições ensinadas`}>
-          {learned} de {total} posições
+        <span>
+          {etapas === null
+            ? `${stages.length} etapas`
+            : `${etapas.concluidas} de ${etapas.total} etapas`}
         </span>
+        {/*
+          O CTA é a única ação do card, e o rótulo vem do domínio
+          (`rotuloDeRetomada`): Aberturas e Finais precisam dizer a mesma coisa
+          nos mesmos estados, e uma escada de `if` copiada nos dois catálogos
+          divergiria na primeira correção.
+        */}
+        <span className={styles.cta}>{rotuloDeRetomada(jornada ?? null)} →</span>
       </div>
     </Link>
   )

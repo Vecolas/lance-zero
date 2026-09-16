@@ -1,0 +1,149 @@
+.pagina {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cabecalho {
+  display: grid;
+  gap: var(--space-1);
+}
+
+/*
+  A HIERARQUIA VISUAL É O INVERSO DA SEMÂNTICA, e de propósito. O `h1` é o
+  conteúdo ("Abertura Italiana") porque é ele que identifica a página; mas o que
+  o aluno precisa ler primeiro é ONDE ELE ESTÁ AGORA. Então o `h1` fica pequeno
+  como um sobretítulo e o `h2` da etapa recebe o peso.
+
+  Isso não é maquiar hierarquia: a ordem de leitura de um leitor de tela segue o
+  DOM e continua "Abertura Italiana → Visão e objetivo", que é a leitura certa.
+*/
+.titulo {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.etapa {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.passo {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 62ch;
+}
+
+/*
+  O TABULEIRO É DOMINANTE (plano §201). No desktop ele fica à esquerda com a
+  maior fatia; no celular vai para cima, antes do texto, porque é o objeto do
+  estudo — texto primeiro empurraria o tabuleiro para fora da dobra.
+*/
+.area {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 60rem) {
+  .area {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+}
+
+.tabuleiro {
+  min-width: 0;
+}
+
+.painel {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+.rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.direita {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.primario,
+.secundario,
+.discreto {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  font: inherit;
+  cursor: pointer;
+}
+
+.primario {
+  border: 1px solid transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-weight: 650;
+}
+
+/*
+  Desabilitado precisa PARECER desabilitado sem sumir: o aluno tem de ver que a
+  ação existe e ainda não está liberada. A frase abaixo do rodapé diz por quê.
+*/
+.primario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secundario {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.discreto {
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  padding-inline: var(--space-3);
+}
+
+.primario:focus-visible,
+.secundario:focus-visible,
+.discreto:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+.pendente {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+@media (max-width: 40rem) {
+  .rodape {
+    justify-content: stretch;
+  }
+
+  .direita {
+    margin-left: auto;
+  }
+
+  .pendente {
+    text-align: left;
+  }
+}
