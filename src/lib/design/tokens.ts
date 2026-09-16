@@ -51,6 +51,28 @@ export const lightTextColors = {
   'muted-text': '#68727A',
 } as const
 
+/**
+ * Variantes para uso como TEXTO SOBRE A TINTA DA PRÓPRIA COR.
+ *
+ * As de cima são calibradas contra `#F7F9FB`, e a margem delas é curta de
+ * propósito: `attention-text` dá 4.64:1 sobre a página. Basta o texto pousar num
+ * fundo levemente tingido — o selo de "Revisar" no Treinar é a cor dele a 13%
+ * sobre a seção — para o contraste cair para 3.94:1 e REPROVAR.
+ *
+ * É a armadilha destas variantes: o nome diz "sobre fundo claro", e um selo
+ * tingido ainda parece um fundo claro. Não é.
+ *
+ * Estas são as mesmas cores escurecidas em direção ao navy, mantendo o matiz, e
+ * medidas contra o pior fundo plausível (a tinta sobre `--surface-sunken`): ficam
+ * entre 4.7:1 e 5.2:1. No modo escuro a tinta é escura e as cores originais já
+ * passam, então lá elas continuam valendo direto.
+ */
+export const tintedTextColors = {
+  'success-on-tint': '#117151',
+  'attention-on-tint': '#7C5D1C',
+  'error-on-tint': '#A03B38',
+} as const
+
 /** Modo escuro. Nunca preto absoluto. */
 export const darkColors = {
   'dark-background': '#07131C',
@@ -81,6 +103,7 @@ export const designTokens = {
   ...brandColors,
   ...semanticColors,
   ...lightTextColors,
+  ...tintedTextColors,
   ...darkColors,
   ...boardColors,
   ...evaluationColors,

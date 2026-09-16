@@ -36,6 +36,13 @@
   --info-text: #3075b9;
   --muted-text: #68727a;
 
+  /* Variantes de TEXTO sobre a TINTA da própria cor (selos, chips).
+     As de cima são calibradas contra #f7f9fb e a margem delas é curta: sobre um
+     fundo levemente tingido elas reprovam. Ver `tintedTextColors`. */
+  --success-on-tint: #117151;
+  --attention-on-tint: #7c5d1c;
+  --error-on-tint: #a03b38;
+
   /* Modo escuro — nunca preto absoluto */
   --dark-background: #07131c;
   --dark-surface: #0c1c28;
@@ -82,6 +89,10 @@
   --warning: var(--attention-text);
   --danger: var(--error-text);
   --note: var(--info-text);
+  /* Os mesmos papéis, para texto que pousa sobre a tinta da própria cor. */
+  --positive-on-tint: var(--success-on-tint);
+  --warning-on-tint: var(--attention-on-tint);
+  --danger-on-tint: var(--error-on-tint);
   --shadow-card: 0 1px 2px rgba(7, 21, 33, 0.03), 0 6px 18px rgba(7, 21, 33, 0.05);
   --shadow-modal: 0 20px 50px rgba(7, 21, 33, 0.14);
 
@@ -135,6 +146,10 @@
     --warning: var(--attention);
     --danger: var(--error);
     --note: var(--info);
+    /* No escuro a tinta é escura: as cores originais já passam. */
+    --positive-on-tint: var(--positive);
+    --warning-on-tint: var(--warning);
+    --danger-on-tint: var(--danger);
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.3);
     --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.5);
   }
@@ -161,6 +176,10 @@
   --warning: var(--attention);
   --danger: var(--error);
   --note: var(--info);
+  /* No escuro a tinta é escura: as cores originais já passam. */
+  --positive-on-tint: var(--positive);
+  --warning-on-tint: var(--warning);
+  --danger-on-tint: var(--danger);
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.3);
   --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.5);
 }

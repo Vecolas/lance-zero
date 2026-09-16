@@ -50,15 +50,29 @@ test('as rotas públicas continuam utilizáveis depois de perder a rede', async 
   test.skip(process.env.E2E_TARGET !== 'prod', 'service worker só é registrado em produção')
 
   await page.goto('/dashboard')
+
+  /*
+    ESPERA PELO CONTROLADOR, e não por um `reload` que "deve dar tempo".
+
+    Antes daqui o teste registrava, esperava só a REGISTRO existir e recarregava
+    a página, confiando que o recarregamento chegaria depois da ativação. Isso é
+    corrida: o registro existe no instante em que `register()` resolve, muito
+    antes de o worker instalar. Quando a instalação passou a guardar também os
+    assets do shell — que é o que faz a rota abrir offline de verdade — ela
+    ficou mais longa, o recarregamento passou na frente e o teste virou
+    `ERR_INTERNET_DISCONNECTED`: ninguém estava no comando para responder.
+
+    `navigator.serviceWorker.controller` só deixa de ser nulo depois de instalar
+    E ativar. Esperar por ele é esperar exatamente a condição que o resto do
+    teste precisa — e, de quebra, garante que a pré-carga terminou, porque a
+    ativação só acontece depois da instalação.
+  */
   await expect
-    .poll(
-      () => page.evaluate(async () => Boolean(await navigator.serviceWorker.getRegistration('/'))),
-      { timeout: 15_000 },
-    )
+    .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)), {
+      timeout: 30_000,
+    })
     .toBe(true)
 
-  // A primeira visita registra; o reload deixa o worker controlar a página.
-  await page.reload()
   await context.setOffline(true)
   await page.goto('/puzzles')
 

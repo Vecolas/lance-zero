@@ -42,8 +42,55 @@ async function guardarResposta(request, resposta) {
   return resposta
 }
 
+/**
+ * Os assets que cada página do shell precisa para HIDRATAR.
+ *
+ * GUARDAR SÓ O HTML NÃO ENTREGA A PROMESSA. `SHELL` lista treze rotas e diz que
+ * elas continuam utilizáveis sem rede; só que o HTML sozinho não roda. Sem a
+ * rede, o documento de `/puzzles` era servido do cache, o Next pedia os chunks
+ * dele, o pedido falhava e o aluno via a página de erro — depois de o app ter
+ * prometido que aquela rota funcionava offline.
+ *
+ * O cache de execução (`podeGuardarAsset`) não resolve: ele só guarda o que já
+ * foi buscado, então só a rota JÁ VISITADA funcionava. A promessa era das treze.
+ *
+ * Os endereços saem do próprio HTML recém-guardado. São imutáveis (o nome do
+ * arquivo carrega o hash do conteúdo), então guardá-los na instalação é guardar
+ * exatamente a versão que aquele HTML espera.
+ *
+ * FALHA DE UM NÃO DERRUBA A INSTALAÇÃO. `cache.addAll` é tudo-ou-nada: um único
+ * endereço que não responda deixaria o worker sem instalar e o app sem offline
+ * nenhum. Aqui cada um vai por conta própria, e o que falhar volta pelo cache de
+ * execução na primeira visita com rede.
+ */
+async function guardarAssetsDoShell(cache) {
+  const paginas = SHELL.filter((rota) => !rota.includes('.'))
+  const enderecos = new Set()
+
+  for (const rota of paginas) {
+    const guardada = await cache.match(rota)
+    if (!guardada) continue
+    const html = await guardada.clone().text()
+    for (const [, endereco] of html.matchAll(/(?:src|href)="(\/_next\/static\/[^"]+)"/g)) {
+      enderecos.add(endereco.replace(/&amp;/g, '&'))
+    }
+  }
+
+  await Promise.all([...enderecos].map((endereco) => cache.add(endereco).catch(() => {})))
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL)))
+  event.waitUntil(
+    caches
+      .open(SHELL_CACHE)
+      .then(async (cache) => {
+        await cache.addAll(SHELL)
+        await guardarAssetsDoShell(cache)
+      })
+      // Sem shell o app continua funcionando com rede; falhar a instalação aqui
+      // só tiraria a chance de tentar de novo na próxima visita.
+      .catch(() => {}),
+  )
   self.skipWaiting()
 })
 
