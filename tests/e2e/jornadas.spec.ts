@@ -171,12 +171,24 @@ test('NENHUMA tela de jornada escreve "Atividade concluída" — o bug de origem
     .first()
     .click()
 
-  // Percorre a jornada inteira até o treino, conferindo a cada etapa.
+  /*
+    Percorre a jornada inteira até o treino, conferindo a cada etapa.
+
+    O `if (await continuar.isDisabled()) break` QUE MORAVA AQUI FOI REMOVIDO, e
+    a remoção é a correção de um portão desligado: ele fazia este teste desistir
+    em silêncio na primeira etapa travada e continuar verde. Foi assim que três
+    becos sem saída nas jornadas de Finais atravessaram a suíte inteira.
+
+    Etapa travada agora REPROVA aqui, com o nome da etapa. Quem prova que ela
+    tem saída — e destrava de verdade — é `jornada-sem-beco.spec.ts`; este
+    arquivo só se recusa a passar por cima do problema.
+  */
   for (let i = 0; i < 8; i += 1) {
     await expect(page.locator('main')).not.toContainText(FRASES_DE_CONCLUSAO)
     const continuar = page.getByRole('button', { name: /Continuar/ })
     if ((await continuar.count()) === 0) break
-    if (await continuar.isDisabled()) break
+    const titulo = await page.getByRole('heading', { level: 2 }).first().textContent()
+    await expect(continuar, `etapa "${titulo}" travou o Continuar`).toBeEnabled()
     await continuar.click()
   }
 

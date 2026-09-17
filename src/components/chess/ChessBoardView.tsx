@@ -117,6 +117,16 @@ export function ChessBoardView({
         o `draggable` do HTML. Sem este atributo, um portão que quisesse provar
         "a etapa que cobra lance é jogável" teria de adivinhar pela estrutura
         interna de uma dependência.
+
+        `data-fen` está aqui pelo MESMO motivo: um portão que precisa jogar um
+        lance tem de saber que posição está na tela. Sem ele, o e2e só descobria
+        o lance por força bruta — clicar casa a casa até alguma virar lance legal
+        — e um portão que leva trinta segundos para achar um clique é um portão
+        que alguém vai desligar.
+
+        A alternativa seria cravar o UCI no teste, e ela é pior: amarraria o
+        portão a uma FEN do catálogo, e ele passaria a reprovar quando o CONTEÚDO
+        mudasse — reprovando o código certo, que é o pior tipo de portão.
       */}
       <div
         className={styles.board}

@@ -98,6 +98,20 @@ Um aluno que faz cinco exercícios e erra três termina a atividade com ✓ e fi
 com a habilidade marcada como precisando de reforço. O planner agenda o reforço
 depois. Exigir 80% para poder sair da tela é o desenho que produz o chute.
 
+### Uma etapa só cobra o que a tela oferece
+
+O outro lado da regra acima. Uma etapa que exige **cinco** exercícios de uma
+tela que desenha **três** não é rigor: é uma porta trancada por dentro. O aluno
+lê "faltam dois", não encontra nada para responder, e conclui que o app travou.
+
+Por isso o total de uma etapa **nasce da contagem dos itens que existem**, nunca
+de um número escrito à mão — e nunca de um `Math.max(conteúdo, PISO)`, que é a
+forma exata em que esse defeito nasce. Etapa sem item é etapa de **leitura**, e
+dizer isso é mais honesto que cobrar um exercício inexistente.
+
+Ver ADR-0017. O portão que sustenta a regra é
+`tests/unit/jornada-exige-o-que-a-tela-oferece.test.ts`.
+
 ### Recuperação antes de explicação
 
 No modo misto, o tema **não** aparece antes da resposta. Mostrar "garfo" antes do

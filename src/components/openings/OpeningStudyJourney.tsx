@@ -58,6 +58,7 @@ import {
   respostaDoComputador,
   type OpeningTrainingRound,
 } from '@/domain/openings/jornada'
+import { itensDaPraticaGuiadaDeAbertura } from '@/domain/openings/itens-da-etapa'
 import {
   activateOpeningRepertoire,
   emptyOpeningProgress,
@@ -804,8 +805,20 @@ function PraticaGuiada({
   jornada: StudyJourney
   aoResponder: (proxima: StudyJourney) => void
 }) {
-  const total = stage.regra.tipo === 'itens' ? stage.regra.total : 0
-  const feitos = jornada.itensRespondidos[stage.id]?.length ?? 0
+  /*
+    OS ITENS VÊM DO DOMÍNIO, e são a MESMA lista que contou o total desta etapa
+    (`regraDeItens(itensDaPraticaGuiadaDeAbertura(opening))`). A tela não pode ter
+    a sua própria contagem: duas contagens da mesma coisa divergem no dia em que
+    só uma for corrigida, e o que aparece é uma etapa que nunca fecha.
+
+    É daqui que sai o ID do item gravado. Um contador paralelo à lista — que era
+    o que esta tela tinha — aponta para o item errado assim que o conteúdo muda
+    de tamanho entre duas sessões.
+  */
+  const itens = useMemo(() => itensDaPraticaGuiadaDeAbertura(opening), [opening])
+  const total = itens.length
+  const respondidos = jornada.itensRespondidos[stage.id] ?? []
+  const feitos = respondidos.length
 
   /*
     A LINHA É A PRINCIPAL INTEIRA, e o lado do aluno é o da abertura. Quem
@@ -850,10 +863,16 @@ function PraticaGuiada({
         contagem — e o total da etapa é exatamente o número de decisões do aluno
         na principal.
       */
-      aoResponder(registrarItem(jornada, stage.id, `guiada-${estado.indice}`))
+      /*
+        O ID É O DO ITEM, e não um índice cru: `itensDaPraticaGuiadaDeAbertura`
+        carrega o índice na linha dentro do próprio id, então acrescentar um
+        lance antes não remexe o que já está gravado em `itensRespondidos`.
+      */
+      const doItem = itens.find((candidato) => candidato.indiceNaLinha === estado.indice)
+      if (doItem) aoResponder(registrarItem(jornada, stage.id, doItem.id))
       return true
     },
-    [estado, jornada, linha, stage.id, aoResponder],
+    [estado, itens, jornada, linha, stage.id, aoResponder],
   )
 
   /*
