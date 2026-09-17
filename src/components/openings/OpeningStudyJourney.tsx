@@ -71,6 +71,15 @@ import {
   variacoesDoAluno,
   type RamificacaoDaVariacao,
 } from '@/domain/openings/variacoes'
+import {
+  iniciarSequencia,
+  jogarNaSequencia,
+  // Este arquivo já tem um `lanceEsperado` — o do GRAFO, que responde "qual é a
+  // continuação principal a partir deste nó". O da linha responde outra coisa:
+  // "qual é o próximo lance DESTA sequência". Dois nomes, duas perguntas.
+  lanceEsperado as lanceEsperadoNaLinha,
+  type LinhaTreinavel,
+} from '@/domain/exercicios'
 import { applyMove, legalMoves, type PromotionPiece, type SquareName } from '@/lib/chess'
 import styles from './OpeningStudyJourney.module.css'
 
@@ -768,10 +777,21 @@ function ultimoLance(sequencia: string): string {
 }
 
 /**
- * Prática guiada: responder com apoio, antes do treino sem rede.
+ * Prática guiada: jogar a linha principal com o computador do outro lado.
  *
- * A etapa conclui por RESPONDER, não por acertar — a regra `itens` do domínio
- * não tem como ler acerto. Prender a saída no desempenho é o que produz o chute.
+ * COMO ELA ERA, e os dois defeitos andavam juntos: a etapa pedia UM ply por vez
+ * e cobrava um clique em `Continuar` entre cada um. Como o índice do item era o
+ * índice do lance, ela pedia também os lances do ADVERSÁRIO — o aluno jogava os
+ * dois lados, um lance por tela, contra ninguém.
+ *
+ * AGORA É UMA PARTIDA. O aluno joga só os lances dele; o computador responde os
+ * dele na mesma transição, pelo mesmo motor que as lições usam. Não há botão
+ * entre lances: o que avança a etapa é o tabuleiro.
+ *
+ * ERRAR NÃO ENCERRA NADA, e é isso que faz o degrau ser "com apoio": a peça
+ * volta, a explicação do lance do repertório aparece, e a posição continua a
+ * mesma até o aluno acertar. A etapa conclui por RESPONDER, não por acertar de
+ * primeira — prender a saída no desempenho é o que produz o chute.
  */
 function PraticaGuiada({
   opening,
@@ -786,103 +806,123 @@ function PraticaGuiada({
 }) {
   const total = stage.regra.tipo === 'itens' ? stage.regra.total : 0
   const feitos = jornada.itensRespondidos[stage.id]?.length ?? 0
-  const indice = Math.min(feitos, Math.max(0, total - 1))
-  const doRepertorio = opening.mainline[indice]
-
-  const fens = useMemo(
-    () => posicoesDaLinha(opening.rootFen, opening.mainline),
-    [opening.rootFen, opening.mainline],
-  )
-  const [escolhido, setEscolhido] = useState<string | null>(null)
-  const fen = fens[indice] ?? opening.rootFen
 
   /*
-    QUALQUER LANCE LEGAL É UMA RESPOSTA, certa ou errada.
-
-    O tabuleiro só recusa o que não é lance. Devolver a peça porque o aluno jogou
-    fora do repertório transformaria "errei" em "o app travou" — e é justamente
-    errar aqui que abre a explicação do lance estudado.
+    A LINHA É A PRINCIPAL INTEIRA, e o lado do aluno é o da abertura. Quem
+    decide de quem é cada lance é o motor, lendo o FEN — então um repertório de
+    pretas abre com o computador jogando de brancas, sem nenhum caso especial
+    aqui.
   */
+  const linha = useMemo<LinhaTreinavel>(
+    () => ({
+      fenInicial: opening.rootFen,
+      ladoDoAluno: opening.side === 'white' ? 'w' : 'b',
+      lances: opening.mainline.map((lance) => lance.uci),
+    }),
+    [opening],
+  )
+
+  const [estado, setEstado] = useState(() => iniciarSequencia(linha))
+  /** O lance errado mais recente. Some no acerto seguinte. */
+  const [errou, setErrou] = useState<string | null>(null)
+
+  const esperado = lanceEsperadoNaLinha(linha, estado)
+  const licaoEsperada = opening.mainline[estado.indice]
+  const licaoAnterior = estado.indice > 0 ? opening.mainline[estado.indice - 1] : undefined
+
   const tentar = useCallback(
     (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
-      const uci = `${origem}${destino}${promocao ?? ''}`
-      if (!applyMove(fen, uci)) return false
-      setEscolhido(uci)
+      const resultado = jogarNaSequencia(linha, estado, `${origem}${destino}${promocao ?? ''}`)
+
+      // Não virou lance: o tabuleiro devolve a peça e nada é registrado.
+      if (resultado.tipo === 'ilegal') return false
+
+      if (resultado.tipo === 'fora-da-linha') {
+        setErrou(resultado.uci)
+        return false
+      }
+
+      setErrou(null)
+      setEstado(resultado.estado)
+      /*
+        UM ITEM POR DECISÃO, com id derivado do índice do lance. `registrarItem`
+        deduplica, então repetir a linha depois de sair e voltar não infla a
+        contagem — e o total da etapa é exatamente o número de decisões do aluno
+        na principal.
+      */
+      aoResponder(registrarItem(jornada, stage.id, `guiada-${estado.indice}`))
       return true
     },
-    [fen],
+    [estado, jornada, linha, stage.id, aoResponder],
   )
 
   /*
     O HOOK VEM ANTES DO EARLY RETURN, e a ordem não é estilo: chamar um hook
     depois de um `return` condicional muda a ordem entre renderizações e o React
-    proíbe. A primeira versão desta mudança colocou o `useLanceNoTabuleiro`
-    abaixo da saída de "prática concluída" — e o lint pegou.
+    proíbe. A primeira versão desta tela pôs o `useLanceNoTabuleiro` abaixo da
+    saída de "prática concluída" — e o lint pegou.
   */
   const lance = useLanceNoTabuleiro({
-    fen,
-    ativo: escolhido === null,
+    fen: estado.fen,
+    ativo: esperado !== null,
     aoTentar: (origem, destino) => tentar(origem, destino),
   })
 
-  if (!doRepertorio || feitos >= total) {
+  if (feitos >= total || esperado === null) {
     return (
-      <p className={styles.texto} role="status">
-        Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
-      </p>
+      <ComTabuleiro opening={opening}>
+        <p className={styles.texto} role="status">
+          Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
+        </p>
+      </ComTabuleiro>
     )
   }
 
   return (
-    <>
-      <div className={styles.tabuleiroEmbutido}>
+    <MesaDeEstudo
+      tabuleiro={
         <ChessBoardView
-          fen={fen}
+          fen={estado.fen}
           orientation={opening.side === 'white' ? 'w' : 'b'}
-          interactive={escolhido === null}
+          interactive
           selected={lance.selecionada}
           targets={lance.destinos}
           onMove={tentar}
           onSquareClick={lance.aoClicarNaCasa}
         />
-      </div>
+      }
+    >
       <p className={styles.texto}>
-        Lance {indice + 1}: qual é o lance do repertório aqui? Jogue no tabuleiro — este é o degrau
-        com apoio, então errar aqui abre a explicação em vez de encerrar a etapa.
+        Jogue a linha principal no tabuleiro. O computador responde pelo outro lado, e este é o
+        degrau com apoio: errar abre a explicação em vez de encerrar a etapa.
       </p>
+
+      <p className={styles.nota} role="status">
+        {errou !== null
+          ? 'Esse não é o lance do repertório. A posição não mudou — tente de novo.'
+          : licaoAnterior
+            ? `Decisão ${feitos} de ${total} — sua vez.`
+            : 'Jogue o lance no tabuleiro.'}
+      </p>
+
       {/*
-        O APOIO DESTE DEGRAU MUDOU DE FORMA, e não desapareceu.
-
-        Ele era a lista de lances à mostra: o aluno lia três notações e apontava
-        uma. Isso não é "praticar com apoio" — é reconhecer uma string entre
-        três, e dá para acertar sem olhar a posição.
-
-        O apoio agora é o que a etapa já oferecia por baixo: errar abre a
-        explicação do lance do repertório em vez de fechar a etapa. O aluno joga
-        de verdade e continua amparado.
+        O APOIO DESTE DEGRAU: errar mostra a razão do lance ESTUDADO, e não o
+        lance em si. A explicação é o que sobra quando a notação sai da tela.
       */}
-      {escolhido === null ? <p className={styles.nota}>Jogue o lance no tabuleiro.</p> : null}
-      {escolhido !== null ? (
-        <div className={styles.veredito} role="status">
-          <p className={escolhido === doRepertorio.uci ? styles.acertou : styles.errou}>
-            {escolhido === doRepertorio.uci
-              ? '✓ É o lance do repertório.'
-              : '✕ Não é o lance estudado.'}
-          </p>
-          <p className={styles.texto}>{doRepertorio.comment}</p>
-          <button
-            type="button"
-            className={styles.primario}
-            onClick={() => {
-              setEscolhido(null)
-              aoResponder(registrarItem(jornada, stage.id, `guiada-${indice}`))
-            }}
-          >
-            Continuar
-          </button>
+      {errou !== null && licaoEsperada ? (
+        <div className={styles.veredito}>
+          <p className={styles.errou}>✕ Não é o lance estudado.</p>
+          <p className={styles.texto}>{licaoEsperada.comment}</p>
         </div>
       ) : null}
-    </>
+
+      {errou === null && licaoAnterior ? (
+        <div className={styles.veredito}>
+          <p className={styles.acertou}>✓ É o lance do repertório.</p>
+          <p className={styles.texto}>{licaoAnterior.comment}</p>
+        </div>
+      ) : null}
+    </MesaDeEstudo>
   )
 }
 

@@ -70,31 +70,6 @@
   única já faz, porque o tabuleiro vem antes no DOM. A prioridade dele não muda
   com a largura.
 */
-.comTabuleiro {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: 1fr;
-  align-items: start;
-}
-
-@media (min-width: 52rem) {
-  .comTabuleiro {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 24rem);
-  }
-}
-
-.tabuleiro {
-  min-width: 0;
-  /* Teto para a tela larga: passando disso o tabuleiro vira pôster e o olho
-     precisa varrer demais entre um canto e outro. */
-  max-width: 40rem;
-}
-
-.aoLado {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
 
 .linha {
   margin: 0;
@@ -145,33 +120,7 @@
   color: var(--accent-readable);
 }
 
-.veredito {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-sunken);
-}
-
-.acertou,
-.errou {
-  margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 650;
-}
-
-.acertou {
-  color: var(--positive);
-}
-
-.errou {
-  color: var(--danger);
-}
-
 .primario,
-.ghost,
 .voltar {
   align-self: flex-start;
   min-height: 2.75rem;
@@ -190,12 +139,6 @@
 
 .primario:hover {
   background: var(--accent-hover);
-}
-
-.ghost {
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  color: var(--text);
 }
 
 .voltar {
@@ -271,32 +214,10 @@
   max-width: 60ch;
 }
 
-.dicas {
-  margin: var(--space-3) 0;
-  padding-left: var(--space-5);
-  display: grid;
-  gap: var(--space-2);
-  font-size: 0.9375rem;
-  color: var(--text-muted);
-}
-
-.dicaDegrau {
-  font-weight: 650;
-  color: var(--text);
-}
-
 /*
   A pergunta mental é o que o aluno leva embora. Ela ganha destaque tipográfico
   porque é a única parte do feedback que vale para a próxima posição.
 */
-.pergunta {
-  margin: var(--space-3) 0 0;
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--accent-strong);
-  background: var(--surface-raised);
-  color: var(--text);
-  max-width: 60ch;
-}
 
 .nota {
   margin: var(--space-2) 0;
@@ -309,3 +230,20 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/*
+  AS GRADES DE DUAS COLUNAS SAÍRAM DAQUI. Ver ADR-0019.
+
+  Este arquivo tinha `.comTabuleiro`/`.tabuleiro`/`.aoLado` — tabuleiro à
+  esquerda, texto à direita — a partir de 52 rem. `MesaDeEstudo` faz a mesma
+  coisa a partir de 60 rem, e era ela que as jornadas de Abertura e Final já
+  usavam. Duas respostas para a mesma pergunta, livres para divergir.
+
+  Quem precisa de tabuleiro ao lado do texto usa `MesaDeEstudo`. Não recriar.
+*/
+
+/*
+  AS REGRAS DO EXERCÍCIO SAÍRAM DAQUI com o componente que as usava — veredito,
+  escada de dicas, botões. Elas vivem em `ExercicioNoTabuleiro.module.css`.
+  Ver ADR-0019.
+*/

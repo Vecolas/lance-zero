@@ -28,22 +28,11 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
-import { ChessBoardView } from '@/components/chess/ChessBoardView'
-import { useLanceNoTabuleiro } from '@/components/chess/useLanceNoTabuleiro'
+import { ExercicioNoTabuleiro } from '@/components/exercicios/ExercicioNoTabuleiro'
 import { CATALOGO_DE_LICOES } from '@/content/lessons'
-import {
-  feedbackGenerico,
-  foiIndependente,
-  nivelDeApoio,
-  responderAoErro,
-  visaoDaHabilidade,
-  type VisaoDaHabilidade,
-} from '@/domain/aprendizado'
-import { acertou } from '@/domain/diagnostic'
-import { julgarLanceDaLicao, type ExercicioPosicional } from '@/domain/exercicios'
+import { foiIndependente, visaoDaHabilidade, type VisaoDaHabilidade } from '@/domain/aprendizado'
+import type { ExercicioPosicional } from '@/domain/exercicios'
 import { getSkill } from '@/domain/skills/catalog'
-import { parseUci } from '@/lib/chess'
-import type { PromotionPiece, SquareName } from '@/lib/chess'
 import { registrarTentativa } from '@/lib/training/registrar-tentativa'
 import type { SkillId } from '@/domain/types'
 import styles from './PraticaDeHabilidade.module.css'
@@ -177,178 +166,41 @@ export function PraticaDeHabilidade({ skillId }: { skillId: SkillId }) {
           : 'Com dicas disponíveis: você viu este conceito há pouco, e retirar o apoio agora seria cedo.'}{' '}
         Item {indice + 1} de {itens.length}.
       </p>
-      <ItemDePratica
+      <ExercicioNoTabuleiro
         key={item.exercicio.id}
-        item={item}
-        aoConcluir={async (resultado) => {
-          if (repo) {
-            await registrarTentativa(repo, {
-              skillId,
-              acertou: resultado.acertou,
-              apoio: resultado.apoio,
-              guiada: !visao.podeCobrarSemApoio,
-              agora: new Date(),
-            })
-          }
-          setIndice((n) => n + 1)
+        exercicio={item.exercicio}
+        enunciado={item.enunciado}
+        explicacao={item.explicacao}
+        dicas={item.dicas}
+        rotuloDeSaida="Próximo"
+        aoConcluir={(resultado) => {
+          void (async () => {
+            if (repo) {
+              await registrarTentativa(repo, {
+                skillId,
+                acertou: resultado.acertou,
+                apoio: resultado.apoio,
+                guiada: !visao.podeCobrarSemApoio,
+                agora: new Date(),
+              })
+            }
+            setIndice((n) => n + 1)
+          })()
         }}
       />
     </>
   )
 }
 
-function ItemDePratica({
-  item,
-  aoConcluir,
-}: {
-  item: Item
-  aoConcluir: (resultado: { acertou: boolean; apoio: ReturnType<typeof nivelDeApoio> }) => void
-}) {
-  const [escolhido, setEscolhido] = useState<string | null>(null)
-  const [erros, setErros] = useState(0)
-  const [dicasAbertas, setDicasAbertas] = useState(0)
-  const [revelou, setRevelou] = useState(false)
-  /** O último arraste que não era lance. Discreto, e some no lance seguinte. */
-  const [recusa, setRecusa] = useState<string | null>(null)
+/*
+  O `ItemDePratica` VIROU `@/components/exercicios/ExercicioNoTabuleiro`.
 
-  /*
-    A SOLUÇÃO DESENHADA NO TABULEIRO, e não escrita como "Rxc6". Um aluno que lê
-    a notação aprende a notação; um que vê as duas casas acesas aprende o lance.
-  */
-  const casasDaSolucao = useMemo(() => {
-    const chave = item.exercicio.lancesAceitos[0]
-    const lance = chave ? parseUci(chave) : null
-    return lance ? [lance.from, lance.to] : []
-  }, [item.exercicio.lancesAceitos])
+  Ele era uma cópia quase literal do `Tabuleiro` da lição — as duas telas
+  julgavam um lance solto e mantinham a posição congelada —, e as duas cópias já
+  tinham divergido: aqui a grade punha o TABULEIRO na coluna estreita de 20 rem
+  e o texto na larga, que é o contrário do que a regra do projeto manda.
 
-  const certo = escolhido !== null && acertou(item.exercicio, escolhido)
-  const apoio = nivelDeApoio(dicasAbertas, revelou)
-  const resposta = erros > 0 && !certo ? responderAoErro(erros, dicasAbertas) : null
-  const mostrarSolucao =
-    revelou || resposta?.acao === 'mostrar-solucao' || resposta?.acao === 'trocar-posicao'
-  const feedback = feedbackGenerico()
-
-  /**
-   * O aluno soltou uma peça.
-   *
-   * Devolve `false` quando não houve lance: é o que faz o tabuleiro devolver a
-   * peça à origem em vez de aceitá-la. Ver `julgarLanceDaLicao` — legalidade e
-   * pedagogia são duas perguntas, e só a segunda conta como erro.
-   */
-  function soltar(origem: SquareName, destino: SquareName, promocao?: PromotionPiece): boolean {
-    if (certo || mostrarSolucao) return false
-
-    const veredito = julgarLanceDaLicao(item.exercicio, origem, destino, promocao)
-    if (veredito.tipo === 'ilegal') {
-      setRecusa(`${origem}${destino}`)
-      return false
-    }
-
-    setRecusa(null)
-    escolher(veredito.uci)
-    return true
-  }
-
-  function escolher(uci: string) {
-    setEscolhido(uci)
-    if (acertou(item.exercicio, uci)) return
-    const proximo = erros + 1
-    setErros(proximo)
-    const reacao = responderAoErro(proximo, dicasAbertas)
-    if (reacao.acao === 'dica' && item.dicas.length > 0) {
-      setDicasAbertas((n) => Math.min(n + 1, item.dicas.length))
-    }
-    if (reacao.acao === 'mostrar-solucao' || reacao.acao === 'trocar-posicao') setRevelou(true)
-  }
-
-  /* Clique em duas casas, a outra porta da mesma resposta. */
-  const lance = useLanceNoTabuleiro({
-    fen: item.exercicio.fen,
-    ativo: !certo && !mostrarSolucao,
-    aoTentar: (origem, destino) => soltar(origem, destino),
-  })
-
-  return (
-    <div className={styles.comTabuleiro}>
-      <div className={styles.tabuleiro}>
-        {/*
-          O TABULEIRO É A ÚNICA FORMA DE RESPONDER — a mesma regra da lição.
-
-          Aqui havia `[Rxc6] [Rxd5] [Qxd4]`, e com três strings na tela o aluno
-          não resolve a posição: ele lê e escolhe. Prática independente com
-          múltipla escolha mede reconhecimento de string, não de padrão.
-        */}
-        <ChessBoardView
-          fen={item.exercicio.fen}
-          orientation={item.exercicio.ladoDoAluno}
-          interactive={!certo && !mostrarSolucao}
-          selected={lance.selecionada}
-          targets={lance.destinos}
-          onMove={soltar}
-          onSquareClick={lance.aoClicarNaCasa}
-          onIllegalMove={(origem, destino) => setRecusa(`${origem}${destino}`)}
-          lastMove={mostrarSolucao ? casasDaSolucao : undefined}
-        />
-      </div>
-      <div className={styles.aoLado}>
-        <p className={styles.texto}>{item.enunciado}</p>
-        {escolhido === null && !mostrarSolucao ? (
-          <p className={styles.nota}>Jogue o lance no tabuleiro.</p>
-        ) : null}
-
-        {/* Lance ilegal não é erro conceitual: é um gesto que não virou lance. */}
-        {recusa !== null && escolhido === null ? (
-          <p className={styles.nota} role="status" data-testid="recusa-do-lance">
-            Esse lance não é legal nesta posição.
-          </p>
-        ) : null}
-
-        {dicasAbertas > 0 ? (
-          <ol className={styles.dicas} aria-label="Dicas abertas">
-            {item.dicas.slice(0, dicasAbertas).map((dica) => (
-              <li key={dica.degrau}>{dica.texto}</li>
-            ))}
-          </ol>
-        ) : null}
-
-        {item.dicas.length > dicasAbertas && !certo && !mostrarSolucao ? (
-          <button
-            type="button"
-            className={styles.ghost}
-            onClick={() => setDicasAbertas((n) => n + 1)}
-          >
-            Abrir uma dica
-          </button>
-        ) : null}
-
-        {escolhido !== null ? (
-          <div className={styles.veredito} role="status">
-            <p className={certo ? styles.acertou : styles.errou}>
-              {certo ? '✓ Cumpriu o objetivo.' : '✕ Não cumpre o objetivo.'}
-            </p>
-            {certo || mostrarSolucao ? (
-              <p className={styles.texto}>{item.explicacao}</p>
-            ) : (
-              <>
-                <p className={styles.texto}>{feedback.oQueAconteceu}</p>
-                <p className={styles.nota}>{feedback.porQueParecia}</p>
-                <p className={styles.pergunta}>{feedback.perguntaQueEvitaria}</p>
-              </>
-            )}
-            {certo || mostrarSolucao ? (
-              <button
-                type="button"
-                className={styles.primario}
-                onClick={() => aoConcluir({ acertou: certo, apoio })}
-              >
-                Continuar
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  )
-}
+  Não recriar aqui.
+*/
 
 export { foiIndependente }

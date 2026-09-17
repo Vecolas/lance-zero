@@ -678,6 +678,35 @@ export function jogarNaRodadaDeFinal(
 }
 
 /**
+ * Aplica a resposta do ADVERSÁRIO na rodada.
+ *
+ * SEPARADA DE `jogarNaRodadaDeFinal`, e a separação é o ponto: aquela função
+ * julga o lance DO ALUNO e pode reprovar a rodada — objetivo perdido, alvo
+ * técnico perdido, lance ilegal. Passar o lance do computador por ela faria o
+ * adversário reprovar o aluno ao jogar bem, que é o avesso do que um treino de
+ * final mede.
+ *
+ * Aqui não há veredito nenhum: o lance do computador só avança a posição e entra
+ * no histórico. Quem decide se o objetivo caiu continua sendo o lance seguinte
+ * do aluno.
+ *
+ * Rodada encerrada não recebe lance: um clique atrasado da tela não ressuscita
+ * uma rodada que já terminou.
+ */
+export function aplicarRespostaDoAdversarioNoFinal(
+  round: EndgameTrainingRound,
+  uci: string,
+  fenDepois: string,
+): EndgameTrainingRound {
+  if (rodadaTerminou(round.desfecho)) return round
+  return {
+    ...round,
+    currentFen: fenDepois,
+    playedMoves: [...round.playedMoves, normalizeUci(uci)],
+  }
+}
+
+/**
  * Grava o desfecho da rodada na jornada.
  *
  * A ÚNICA PORTA entre rodada e etapa, e ela só sabe chamar `registrarRodada` —

@@ -34,6 +34,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
 import { ExercicioNoTabuleiro } from '@/components/exercicios/ExercicioNoTabuleiro'
+import { MesaDeEstudo } from '@/components/jornada/MesaDeEstudo'
 import {
   ETAPAS_DA_LICAO,
   TITULO_DA_ETAPA,
@@ -252,11 +253,12 @@ function Exemplo({ licao, aoSeguir }: { licao: Licao; aoSeguir: () => void }) {
   const acabou = passo >= exemplo.raciocinio.length
 
   return (
-    <div className={styles.comTabuleiro}>
-      <div className={styles.tabuleiro}>
+    <MesaDeEstudo
+      tabuleiro={
         <ChessBoardView fen={fenAtual} orientation={exemplo.ladoDoAluno} interactive={false} />
-      </div>
-      <div className={styles.aoLado}>
+      }
+    >
+      <>
         <ol className={styles.raciocinio}>
           {exemplo.raciocinio.slice(0, passo + 1).map((linha, i) => (
             <li key={i} className={i === passo ? styles.raciocinioAtual : undefined}>
@@ -281,8 +283,8 @@ function Exemplo({ licao, aoSeguir }: { licao: Licao; aoSeguir: () => void }) {
             Próximo passo
           </button>
         )}
-      </div>
-    </div>
+      </>
+    </MesaDeEstudo>
   )
 }
 
@@ -291,15 +293,16 @@ function Contraste({ licao, aoSeguir }: { licao: Licao; aoSeguir: () => void }) 
   const san = useMemo(() => sanDe(contraste.fen, contraste.lanceQueFalha), [contraste])
 
   return (
-    <div className={styles.comTabuleiro}>
-      <div className={styles.tabuleiro}>
+    <MesaDeEstudo
+      tabuleiro={
         <ChessBoardView
           fen={contraste.fen}
           orientation={contraste.ladoDoAluno}
           interactive={false}
         />
-      </div>
-      <div className={styles.aoLado}>
+      }
+    >
+      <>
         <p className={styles.texto}>
           Parece a mesma posição do exemplo, e o mesmo lance ({san}) não funciona aqui.
         </p>
@@ -311,8 +314,8 @@ function Contraste({ licao, aoSeguir }: { licao: Licao; aoSeguir: () => void }) 
         <button type="button" className={styles.primario} onClick={aoSeguir}>
           Continuar
         </button>
-      </div>
-    </div>
+      </>
+    </MesaDeEstudo>
   )
 }
 

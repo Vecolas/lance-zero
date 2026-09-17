@@ -29,6 +29,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { MesaDeEstudo } from '@/components/jornada/MesaDeEstudo'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { BANCO_DE_DIAGNOSTICO } from '@/content/diagnostic'
 import {
@@ -267,9 +268,11 @@ export function DiagnosticoWizard() {
 
   if (etapa === 'itens' && item) {
     return (
-      <section className={styles.layout} aria-labelledby="diagnostico-posicao">
-        <div className={styles.tabuleiro}>
-          {/*
+      <section aria-labelledby="diagnostico-posicao">
+        <MesaDeEstudo
+          tabuleiro={
+            <>
+              {/*
             O DIAGNÓSTICO TAMBÉM SE RESPONDE NO TABULEIRO.
 
             Ele media o que o aluno reconhece entre três notações — e dá para
@@ -281,17 +284,18 @@ export function DiagnosticoWizard() {
             durante as respostas (ver o cabeçalho do arquivo). O lance é
             registrado e a próxima posição entra.
           */}
-          <ChessBoardView
-            fen={item.fen}
-            orientation={item.ladoDoAluno}
-            interactive
-            selected={lance.selecionada}
-            targets={lance.destinos}
-            onMove={tentar}
-            onSquareClick={lance.aoClicarNaCasa}
-          />
-        </div>
-        <div className={styles.painel}>
+              <ChessBoardView
+                fen={item.fen}
+                orientation={item.ladoDoAluno}
+                interactive
+                selected={lance.selecionada}
+                targets={lance.destinos}
+                onMove={tentar}
+                onSquareClick={lance.aoClicarNaCasa}
+              />
+            </>
+          }
+        >
           <p className={styles.progresso}>
             Posição {indice + 1} de {BANCO_DE_DIAGNOSTICO.length}
           </p>
@@ -301,7 +305,13 @@ export function DiagnosticoWizard() {
           <p className={styles.ajuda}>
             {item.ladoDoAluno === 'w' ? 'Brancas' : 'Pretas'} jogam. Jogue o lance no tabuleiro.
           </p>
-        </div>
+          {/*
+            O DIAGNÓSTICO CONTINUA SEM ADVERSÁRIO, e é de propósito: ele MEDE, não
+            treina. Uma resposta do computador entre as posições daria ao aluno
+            uma informação que o teste não pode dar sem contaminar o que vem
+            depois. Ver ADR-0019.
+          */}
+        </MesaDeEstudo>
       </section>
     )
   }

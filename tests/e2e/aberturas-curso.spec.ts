@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { legalMoves } from '@/lib/chess'
+import { OPENING_COURSE_BY_SLUG } from '@/content/openings/course'
+import { posicoesDaLinha } from '@/domain/openings/variacoes'
 
 /**
  * A jornada da abertura, medida no navegador.
@@ -33,6 +35,23 @@ import { legalMoves } from '@/lib/chess'
  * pelo caminho. O ajudante responde, e é por isso que ele existe: sem ele, cada
  * teste reimplementaria essa travessia e uma das cópias ficaria para trás.
  */
+/**
+ * O lance que a linha principal da Italiana prevê nesta posição.
+ *
+ * Derivado do CONTEÚDO, e não cravado no teste: quem reescrever a abertura não
+ * precisa lembrar de vir aqui, e um teste com a linha copiada seria a segunda
+ * fonte da mesma verdade — livre para divergir em silêncio.
+ */
+function lanceDaPrincipal(fen: string): { from: string; to: string } | undefined {
+  const italiana = OPENING_COURSE_BY_SLUG.get('italiana')
+  if (!italiana) return undefined
+  const posicoes = posicoesDaLinha(italiana.rootFen, italiana.mainline)
+  const indice = posicoes.indexOf(fen)
+  const lance = indice >= 0 ? italiana.mainline[indice] : undefined
+  if (!lance) return undefined
+  return { from: lance.uci.slice(0, 2), to: lance.uci.slice(2, 4) }
+}
+
 async function irAteEtapa(page: import('@playwright/test').Page, titulo: RegExp) {
   for (let i = 0; i < 24; i += 1) {
     /*
@@ -50,21 +69,33 @@ async function irAteEtapa(page: import('@playwright/test').Page, titulo: RegExp)
     if (titulo.test(atual)) return
 
     /*
-      ETAPA QUE COBRA RESPOSTA: joga no tabuleiro.
+      ETAPA QUE COBRA RESPOSTA: joga o lance que o repertório espera.
 
-      Antes o ajudante clicava na primeira opção de uma lista de notação. A
-      lista saiu — a resposta é um lance —, e o que ele faz agora é jogar o
-      primeiro lance legal da posição. Ele não tenta acertar: a travessia existe
-      para CHEGAR a uma etapa, e os testes que medem acerto o fazem por conta
-      própria.
+      DUAS VERSÕES FICARAM PARA TRÁS. A primeira clicava na primeira opção de uma
+      lista de notação; a lista saiu. A segunda jogava o primeiro lance LEGAL e
+      confirmava com `Continuar` — o que funcionava porque a etapa aceitava
+      qualquer lance e pedia confirmação.
+
+      Hoje a prática guiada é uma partida: lance fora da linha faz snapback e não
+      existe mais botão por lance. Tentar lances ao acaso também não serve, e a
+      razão é o próprio tabuleiro: recusar um destino MANTÉM a peça selecionada,
+      então uma segunda tentativa que comece pela mesma casa a DESSELECIONA. As
+      tentativas ficam fora de fase e o ajudante nunca chega ao lance certo.
+
+      Então ele não adivinha: acha a posição atual dentro da linha principal e
+      joga o lance que ela prevê.
     */
     const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
     if (await tabuleiro.isVisible().catch(() => false)) {
       const fen = await tabuleiro.getAttribute('data-fen')
-      const lance = fen ? legalMoves(fen)[0] : undefined
+      const doRepertorio = fen ? lanceDaPrincipal(fen) : undefined
+      const lance = doRepertorio ?? (fen ? legalMoves(fen)[0] : undefined)
       if (lance) {
         await page.locator('#lancezero-board-square-' + lance.from).click()
         await page.locator('#lancezero-board-square-' + lance.to).click()
+        await page.waitForTimeout(80)
+        // Etapas que ainda confirmam o item com um botão — a verificação curta
+        // da visão, por exemplo — continuam honradas.
         const confirmar = page.getByRole('button', { name: 'Continuar', exact: true })
         if ((await confirmar.count()) > 0) await confirmar.first().click()
         continue

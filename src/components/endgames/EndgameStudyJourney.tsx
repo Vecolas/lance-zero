@@ -50,13 +50,21 @@ import {
   papelDaPosicao,
   posicoesDeAtaque,
   posicoesDeDefesa,
+  aplicarRespostaDoAdversarioNoFinal,
   registrarRodadaDeFinal,
   type ConteudoDoFinal,
   type EndgameTrainingRound,
   type VereditoDeLanceDeFinal,
 } from '@/domain/endgames/jornada'
 import type { EndgameDefinition, EndgamePosition } from '@/domain/endgames'
-import { applyMove, legalMoves, type SquareName } from '@/lib/chess'
+import { APRESENTACAO_POR_FONTE } from '@/components/endgames/textos'
+import {
+  escolherRespostaDoAdversario,
+  type FonteDaResposta,
+  type Sonda,
+} from '@/components/endgames/resposta-do-adversario'
+import { LichessTablebaseProvider } from '@/lib/tablebase'
+import { applyMove, legalMoves, parseUci, positionStatus, type SquareName } from '@/lib/chess'
 import styles from './EndgameStudyJourney.module.css'
 
 /** O id da jornada carrega o domínio. Ver o contrato em `@/domain/types`. */
@@ -381,7 +389,21 @@ function PassosDaLicao({
   )
 }
 
-/** Reconhecimento: perguntas da lição, respondidas com apoio. */
+/**
+ * Reconhecimento: perguntas da lição, respondidas com apoio — E COM A POSIÇÃO
+ * NA TELA.
+ *
+ * O DEFEITO QUE ISTO CORRIGE: a pergunta diz "qual é o elemento crítico DESTA
+ * posição?" e não havia posição nenhuma na tela. O aluno lia três frases e
+ * escolhia a que soasse melhor — dava para acertar sem olhar um tabuleiro,
+ * porque não havia um.
+ *
+ * POR QUE ELA CONTINUA SENDO ESCOLHA, e não um lance: a pergunta não é sobre um
+ * lance. "Atividade e relação dos reis" não se joga no tabuleiro. A regra do
+ * projeto é que a pergunta RESPONDÍVEL COM UM LANCE se responde no tabuleiro —
+ * transformar esta aqui num arraste exigiria inventar um lance que o conteúdo
+ * não tem, e ensinaria que reconhecer é mover.
+ */
 function PraticaGuiada({
   conteudo,
   stage,
@@ -401,18 +423,25 @@ function PraticaGuiada({
   const pergunta = perguntas[Math.min(feitos, perguntas.length - 1)]
   const [escolhida, setEscolhida] = useState<number | null>(null)
 
+  const posicao = conteudo.posicoes[0]
+
   if (!pergunta || feitos >= total) {
-    return (
+    const concluida = (
       <p className={styles.texto} role="status">
         Prática guiada concluída. O treino final vem a seguir, e lá você joga a posição até o fim.
       </p>
+    )
+    return posicao ? (
+      <MesaDeEstudo tabuleiro={<Tabuleiro posicao={posicao} />}>{concluida}</MesaDeEstudo>
+    ) : (
+      concluida
     )
   }
 
   const opcoes = 'options' in pergunta ? pergunta.options : []
   const correta = 'answer' in pergunta ? pergunta.answer : -1
 
-  return (
+  const painel = (
     <>
       <p className={styles.texto}>{'question' in pergunta ? pergunta.question : stage.objetivo}</p>
       <ul className={styles.opcoes} aria-label="Respostas possíveis">
@@ -451,6 +480,12 @@ function PraticaGuiada({
         </div>
       ) : null}
     </>
+  )
+
+  return posicao ? (
+    <MesaDeEstudo tabuleiro={<Tabuleiro posicao={posicao} />}>{painel}</MesaDeEstudo>
+  ) : (
+    painel
   )
 }
 
@@ -492,10 +527,27 @@ function TreinoDoFinal({
   )
   const [aviso, setAviso] = useState<string | null>(null)
   const [selecionada, setSelecionada] = useState<SquareName | null>(null)
+  /** De onde veio o lance do computador. Nunca escondida: ver ADR-0019. */
+  const [fonteDaResposta, setFonteDaResposta] = useState<FonteDaResposta | null>(null)
+  const [pensando, setPensando] = useState(false)
+
+  /*
+    Um provider por instância da tela: cache de tablebase por sessão de estudo,
+    e nenhum estado global disfarçado de constante de módulo. Mesmo desenho do
+    `EndgameTrainer` — o `fetch` entra como função para o módulo não explodir no
+    render em ambiente sem `fetch` global.
+  */
+  const sonda = useMemo<Sonda>(() => {
+    const provider = new LichessTablebaseProvider({
+      fetchFn: (...args) => globalThis.fetch(...args),
+    })
+    return (fen) => provider.probe(fen)
+  }, [])
 
   const novaRodada = useCallback(() => {
     setAviso(null)
     setSelecionada(null)
+    setFonteDaResposta(null)
     setRound(abrirRodada(endgame, conteudo, cobertura.cobertos))
   }, [conteudo, cobertura.cobertos, endgame])
 
@@ -540,11 +592,61 @@ function TreinoDoFinal({
       // `registrarRodadaDeFinal` recusa rodada falha, como no domínio de
       // abertura. Não existe caminho daqui até "etapa concluída" com erro.
       aoRegistrar(registrarRodadaDeFinal(jornada, stage.id, proximo))
+      return true
+    }
+
+    /*
+      E AGORA O ADVERSÁRIO JOGA.
+
+      O DEFEITO QUE ISTO CORRIGE ERA MUDO: o tabuleiro continuava interativo
+      depois do lance do aluno, e quem estava do outro lado era ele mesmo. O app
+      pedia "conduza a posição até o fim" e entregava um tabuleiro de análise —
+      o aluno "ganhava" todo final movendo as peças pretas para onde convinha, e
+      nada na tela dizia que não havia adversário nenhum.
+
+      A escolha vem de `escolherRespostaDoAdversario`, que já existia pronta e
+      testada para o `EndgameTrainer`, com a procedência declarada. A tela MOSTRA
+      essa procedência: um final resolvido contra "um lance legal qualquer" não é
+      o mesmo que um resolvido contra a tablebase, e esconder a diferença seria
+      dizer ao aluno que ele converteu contra a defesa correta quando não foi.
+    */
+    setPensando(true)
+    try {
+      const resposta = await escolherRespostaDoAdversario({
+        fen: proximo.currentFen,
+        /*
+          SEM LINHA MODELO, e é declarado em vez de inventado: `EndgamePosition`
+          não guarda uma. A defesa sai da tablebase, que cobre estas posições de
+          poucas peças — e quando ela não responde, a procedência aparece na
+          tela em vez de o app fingir que jogou a defesa correta.
+        */
+        linhaModelo: [],
+        lancesJogados: proximo.playedMoves,
+        probe: sonda,
+      })
+      const entrada = resposta === null ? null : parseUci(resposta.uci)
+      const doAdversario = entrada === null ? null : applyMove(proximo.currentFen, entrada)
+      if (resposta !== null && doAdversario !== null) {
+        setFonteDaResposta(resposta.fonte)
+        setRound(
+          aplicarRespostaDoAdversarioNoFinal(proximo, doAdversario.move.uci, doAdversario.fenAfter),
+        )
+      }
+      // `resposta === null` significa posição sem lance legal — fim de partida.
+      // A rodada fica como está e o lance seguinte do aluno não existe.
+    } finally {
+      setPensando(false)
     }
     return true
   }
 
   const terminou = round.desfecho !== 'ativa'
+  /*
+    A VEZ É DO ALUNO? Enquanto não for, o tabuleiro não aceita lance — e é isso
+    que impede a tela de voltar a ser um tabuleiro de análise onde ele joga os
+    dois lados.
+  */
+  const minhaVez = !pensando && positionStatus(round.currentFen).turn === ladoDoAluno(round)
 
   return (
     <MesaDeEstudo
@@ -575,7 +677,7 @@ function TreinoDoFinal({
             }
             setSelecionada(legalMoves(round.currentFen, casa).length > 0 ? casa : null)
           }}
-          interactive={!terminou}
+          interactive={!terminou && minhaVez}
         />
       }
     >
@@ -595,6 +697,22 @@ function TreinoDoFinal({
             {round.userRole === 'atacante'
               ? 'Conduza a posição até o fim. Um lance bom não encerra o final: a conversão precisa ser jogada.'
               : 'Segure o empate. Aqui empatar é vitória, e o critério de sucesso é outro.'}
+          </p>
+          {/*
+            DE QUEM É A VEZ, e de onde veio a defesa.
+
+            As duas informações andam juntas porque respondem à mesma dúvida do
+            aluno olhando um tabuleiro que se moveu sozinho: quem jogou aquilo, e
+            quanto vale. Um final convertido contra "um lance legal qualquer" não
+            é um final convertido — e esconder a procedência diria que foi.
+          */}
+          <p className={styles.nota} role="status">
+            {pensando
+              ? 'O adversário está respondendo…'
+              : minhaVez
+                ? 'Sua vez — jogue no tabuleiro.'
+                : 'Aguarde a resposta do adversário.'}
+            {fonteDaResposta ? ` · ${APRESENTACAO_POR_FONTE[fonteDaResposta].rotulo}` : null}
           </p>
           {aviso ? (
             <p className={styles.aviso} role="status">
@@ -646,6 +764,18 @@ function abrirRodada(
     positionFamilyId: endgame.drillIds[0] ?? endgame.id,
     posicao,
   })
+}
+
+/**
+ * De que cor o aluno joga nesta rodada.
+ *
+ * Lida do FEN INICIAL, e não do papel: `atacante` não é sinônimo de brancas —
+ * uma posição de defesa pode ser jogada de qualquer lado, e é o conteúdo que
+ * decide. A orientação do tabuleiro usa o papel porque ali basta uma
+ * aproximação; de quem é a VEZ não admite aproximação nenhuma.
+ */
+function ladoDoAluno(round: EndgameTrainingRound): 'w' | 'b' {
+  return positionStatus(round.startFen).turn
 }
 
 function Tabuleiro({ posicao }: { posicao: EndgamePosition }) {
