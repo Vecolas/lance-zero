@@ -54,6 +54,19 @@ pnpm security:check
 websocket para o runtime do Next. Uma violação exclusiva de produção passa
 batida em `next dev`.
 
+**E2E vermelho que passa quando rodado sozinho não é "flaky" até prova em
+contrário.** Antes de reexecutar, de acrescentar espera ou de declarar
+instabilidade, leia `docs/TESTE-QUE-PARECE-INSTAVEL.md` e siga a ordem de
+investigação de lá. Essa regra existe porque um defeito de layout real — o
+cabeçalho da jornada rolando de lado em 360 px, já publicado — foi tratado como
+instabilidade por várias rodadas, e duas tentativas de "estabilizar o teste"
+criaram regressões novas antes de alguém olhar para a coisa certa.
+
+O primeiro passo de lá cabe aqui, porque vale para qualquer portão que você
+escrever: **a mensagem de falha nomeia o item, nunca só o veredito.** "Alguma
+coisa ultrapassa a viewport" custa horas; "389px contra 360px —
+`DIV.StudyStageHeader.direita`" custa minutos.
+
 ### 3. Uma fase por vez
 
 O `CLAUDE.md` manda: nunca implementar mais de uma fase numerada sem instrução

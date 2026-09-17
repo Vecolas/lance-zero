@@ -341,7 +341,8 @@ rotulado como chance humana de vitória.
 - `pnpm security:check` — segredo com prefixo público e RLS.
 
 O estilo dos testes aqui é específico e vale entender antes de escrever um:
-**um portão precisa morder dos dois lados**. Vários arquivos existem só para
+**um portão precisa morder dos dois lados**, e **a mensagem de falha nomeia o
+item, nunca só o veredito** — ver `docs/TESTE-QUE-PARECE-INSTAVEL.md`. Vários arquivos existem só para
 provar que o verificador reprova de verdade — porque uma função que devolve `[]`
 sempre passa em todo portão que varre conteúdo correto.
 
@@ -355,9 +356,17 @@ Dito sem eufemismo, porque é isto que decide o que fazer a seguir:
    É o maior buraco do produto hoje.
 2. **A rota do final não passa `julgar`**: o treino aceita o lance e diz que não
    comparou. O adversário existe; o juiz do lance, não.
-3. **`frontend-visual.spec.ts` e `idioma.spec.ts` são instáveis sob carga** —
-   reprovam na suíte completa e passam isolados. Teste que passa em quatro
-   execuções de cinco não é portão.
+3. **`pipeline.spec.ts` pode reprovar por contenção de CPU na máquina local.**
+   Ele roda o Stockfish de verdade, e com os dois workers padrão o WASM disputa
+   núcleo: isolado leva 7 s, na suíte cheia 46 s, e um lance pode estourar o
+   orçamento de 30 s. No CI, com um worker, não acontece. Ver
+   `docs/TESTE-QUE-PARECE-INSTAVEL.md` antes de tratar isso como defeito.
+
+   (O que estava aqui antes — "`frontend-visual` e `idioma` são instáveis" —
+   estava ERRADO, e o erro é instrutivo. O primeiro era um overflow real a
+   360 px no cabeçalho da jornada; o segundo dependia de o ambiente não ter
+   Supabase. Nenhum dos dois era instabilidade.)
+
 4. **`PraticaDeHabilidade.module.css` tem ~25 regras mortas**, resto de uma tela
    que encolheu.
 5. **A proteção de branch não está ativa** (exige GitHub Pro em repositório
