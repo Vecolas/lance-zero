@@ -183,6 +183,7 @@ function OpeningCard({
   */
   const nome = nomeDaAbertura(opening.id, locale)
   const status = progress?.status ?? 'not_started'
+  const concluida = jornada?.status === 'concluida'
   const labels = {
     not_started: t('openings.status.notStarted'),
     learning: t('openings.status.learning'),
@@ -224,10 +225,22 @@ function OpeningCard({
         </div>
         <h3>{nome}</h3>
         <p>{opening.description}</p>
+        {/*
+          O ✓ E O TEXTO VÊM DA MESMA FONTE, e antes não vinham.
+
+          O símbolo lia a JORNADA e o rótulo lia o `OpeningProgress` — duas
+          verdades sobre perguntas diferentes. Quem terminava de estudar via um
+          ✓ ao lado de "Não iniciada", porque o progresso de repertório só muda
+          quando o aluno ADOTA a abertura, e estudar não é adotar.
+
+          Concluir o estudo passa a mandar no rótulo. O estado de repertório
+          continua existindo e continua aparecendo — mas depois, quando ele for a
+          informação mais nova sobre esta abertura.
+        */}
         <span className={styles.status}>
           {/* Símbolo + texto: o estado nunca depende só da forma nem só da cor. */}
-          <span aria-hidden="true">{jornada?.status === 'concluida' ? '✓' : '○'}</span>{' '}
-          {labels[status]}
+          <span aria-hidden="true">{concluida ? '✓' : '○'}</span>{' '}
+          {concluida && status === 'not_started' ? t('openings.status.completed') : labels[status]}
         </span>
         <span>
           {etapas === null

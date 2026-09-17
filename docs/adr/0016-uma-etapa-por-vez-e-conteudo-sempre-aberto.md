@@ -93,9 +93,13 @@ O plano V5.1 pede mais, e o resto é trabalho à parte, com escopo próprio:
 
 - fundir a etapa **"Respostas"** da abertura à linha principal e às variações
   (a jornada tem 9 etapas hoje; o plano prevê 8);
-- transformar **Variações** numa biblioteca real, com mini tabuleiro, ponto de
-  ramificação e tabuleiro jogável por variação;
-- transformar **Posições típicas** dos Finais no equivalente dessa biblioteca.
+- ~~transformar **Variações** numa biblioteca real, com mini tabuleiro, ponto de
+  ramificação e tabuleiro jogável por variação~~ — **descartado.** A variação
+  passou a ser ensinada na própria etapa, no tabuleiro grande e na posição do
+  desvio, e o bot do treino passou a jogá-la. Ver ADR-0017;
+- transformar **Posições típicas** dos Finais no equivalente dessa biblioteca —
+  pelo mesmo motivo do item acima, se for feito será na etapa, e não numa
+  galeria de miniaturas.
 
 São mudanças de CONTEÚDO pedagógico, não de casca, e misturá-las aqui faria um
 diff em que nem a arquitetura nem o currículo seriam revisáveis.

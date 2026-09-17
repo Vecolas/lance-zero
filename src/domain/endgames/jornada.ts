@@ -278,10 +278,25 @@ interface DescritorDeEtapa {
  * responder, certo ou errado — reconhecer é diagnóstico, e reprovar aqui
  * transformaria a primeira pergunta da jornada num muro.
  */
+/**
+ * Quantos itens a etapa de reconhecimento pode COBRAR.
+ *
+ * ZERO É UMA RESPOSTA VÁLIDA, e não cobri-la era um beco sem saída.
+ *
+ * O `Math.max(respondiveis, 1)` que estava aqui exigia um item mesmo quando o
+ * conteúdo não tinha nenhum passo de reconhecimento escrito — e HOJE NENHUM
+ * final tem. O efeito: a etapa pedia uma resposta que a tela não tinha como
+ * oferecer, o "Continuar" nascia desabilitado e o aluno ficava preso na segunda
+ * etapa de toda jornada de final, sem nada para clicar.
+ *
+ * Uma regra de conclusão que o conteúdo não consegue satisfazer não é rigor: é
+ * uma porta trancada por dentro. O mínimo só vale quando há o que cobrar.
+ */
 function itensDeReconhecimento(conteudo: ConteudoDoFinal): number {
   const respondiveis = (conteudo.passosDaLicao ?? []).filter(
     (passo) => passo.type === 'recognition' || passo.type === 'decision',
   ).length
+  if (respondiveis === 0) return 0
   return Math.max(respondiveis, JORNADA_DE_FINAL_CONFIG.itensDeReconhecimentoPadrao)
 }
 
@@ -303,7 +318,18 @@ function descritores(conteudo: ConteudoDoFinal): DescritorDeEtapa[] {
       titulo: 'Reconhecer o tipo',
       rotuloCurto: 'Reconhecer',
       objetivo: 'Dizer que final é este e o que ele decide, sem calcular.',
-      regra: { tipo: 'itens', total: itensDeReconhecimento(conteudo) },
+      /*
+        SEM ITEM PARA COBRAR, A ETAPA É DE LEITURA.
+
+        Manter `{ tipo: 'itens', total: 0 }` funcionaria por acidente — zero de
+        zero é cumprido — mas descreveria a etapa errado para todo mundo que
+        lesse a jornada. Ela é, de fato, uma etapa de leitura enquanto o final
+        não tiver perguntas de reconhecimento escritas.
+      */
+      regra:
+        itensDeReconhecimento(conteudo) > 0
+          ? { tipo: 'itens', total: itensDeReconhecimento(conteudo) }
+          : { tipo: 'leitura' },
     },
     {
       id: 'principio',

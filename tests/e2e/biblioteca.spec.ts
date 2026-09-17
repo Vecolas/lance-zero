@@ -116,6 +116,34 @@ test('TESTE CARD LONGO — título comprido não quebra o card', async ({ page }
   expect(estouros, 'cards com conteúdo maior que a própria caixa').toBe(0)
 })
 
+/**
+ * Avança a lição até a primeira etapa COM tabuleiro, e devolve o tabuleiro.
+ *
+ * NASCEU DE UM FALSO VERMELHO. Os dois testes abaixo clicavam em `Continuar`
+ * exatamente três vezes e mediam o que estivesse na tela. Passavam sozinhos e
+ * reprovavam na suíte inteira: com doze processos disputando a máquina, o
+ * primeiro clique podia chegar antes de a lição terminar de hidratar, cair no
+ * vazio, e as três tentativas paravam uma etapa antes do tabuleiro.
+ *
+ * O teste então acusava "o tabuleiro sumiu" num layout que estava correto — e o
+ * próximo a ver isso gastaria a tarde procurando um defeito de CSS.
+ *
+ * Contar cliques também amarra o teste ao número de etapas do conteúdo: uma
+ * etapa nova na lição reprovaria a medida de layout sem nada de layout ter
+ * mudado. O teste da jornada de abertura, mais abaixo, já fazia assim.
+ */
+async function avancarAteOTabuleiro(page: import('@playwright/test').Page) {
+  const tabuleiro = page.locator('[data-testid="chessboard"]').first()
+
+  for (let tentativa = 0; tentativa < 8; tentativa += 1) {
+    if (await tabuleiro.isVisible().catch(() => false)) break
+    await page.getByRole('button', { name: 'Continuar' }).click()
+  }
+
+  await expect(tabuleiro).toBeVisible()
+  return tabuleiro
+}
+
 test('TESTE LIÇÃO — o tabuleiro é a coluna DOMINANTE, com a instrução ao lado', async ({
   page,
 }) => {
@@ -125,13 +153,8 @@ test('TESTE LIÇÃO — o tabuleiro é a coluna DOMINANTE, com a instrução ao 
   )
 
   await page.goto('/lessons/peca-pendurada')
-  // A primeira etapa com tabuleiro é o exemplo resolvido.
-  await page.getByRole('button', { name: 'Continuar' }).click()
-  await page.getByRole('button', { name: 'Continuar' }).click()
-  await page.getByRole('button', { name: 'Continuar' }).click()
 
-  const tabuleiro = page.locator('[data-testid="chessboard"]').first()
-  await expect(tabuleiro).toBeVisible()
+  await avancarAteOTabuleiro(page)
 
   /*
     A MEDIÇÃO É O PONTO. "Tabuleiro em destaque" é uma frase que todo mundo
@@ -146,12 +169,8 @@ test('TESTE RESPONSIVO — no celular o tabuleiro vem primeiro', async ({ page }
   test.skip(test.info().project.name !== 'mobile', 'a regra é do celular')
 
   await page.goto('/lessons/peca-pendurada')
-  await page.getByRole('button', { name: 'Continuar' }).click()
-  await page.getByRole('button', { name: 'Continuar' }).click()
-  await page.getByRole('button', { name: 'Continuar' }).click()
 
-  const tabuleiro = page.locator('[data-testid="chessboard"]').first()
-  await expect(tabuleiro).toBeVisible()
+  const tabuleiro = await avancarAteOTabuleiro(page)
 
   // Em coluna única a prioridade não muda: o tabuleiro vem ANTES do texto.
   const topo = await tabuleiro.evaluate((el) => el.getBoundingClientRect().top)

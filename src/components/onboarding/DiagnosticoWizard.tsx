@@ -36,26 +36,26 @@ import {
   estimarDiagnostico,
   masteryInicial,
   montarPrimeiraSemana,
-  opcoesDe,
   perfilDoDiagnostico,
   type EstimativaDeDiagnostico,
-  type ItemDeDiagnostico,
   type RespostaDeDiagnostico,
 } from '@/domain/diagnostic'
+import { julgarLanceDaLicao } from '@/domain/exercicios'
+import { useLanceNoTabuleiro } from '@/components/chess/useLanceNoTabuleiro'
+import type { PromotionPiece, SquareName } from '@/lib/chess'
 import { BUDGET_OPTIONS, type BudgetMinutes } from '@/domain/profile'
 import { getSkill } from '@/domain/skills/catalog'
-import { legalMoves } from '@/lib/chess'
 import type { SkillMastery, UserProfile } from '@/domain/types'
 import styles from './DiagnosticoWizard.module.css'
 
 type Etapa = 'inicio' | 'itens' | 'resultado'
 
-/** Notação curta de cada lance oferecido. Derivada da posição, nunca escrita à mão. */
-function notacoesDe(item: ItemDeDiagnostico): Map<string, string> {
-  const mapa = new Map<string, string>()
-  for (const lance of legalMoves(item.fen)) mapa.set(lance.uci, lance.san)
-  return mapa
-}
+/*
+  `notacoesDe` e `opcoesDe` SAÍRAM com a lista de múltipla escolha.
+
+  Elas montavam os rótulos dos botões de lance. A resposta passou a ser jogada
+  no tabuleiro, e manter o gerador convidaria alguém a reintroduzir a lista.
+*/
 
 interface ResultadoPronto {
   estimativa: EstimativaDeDiagnostico
@@ -162,6 +162,32 @@ export function DiagnosticoWizard() {
     [indice, comecouEm],
   )
 
+  /*
+    O ARRASTE E O CLIQUE ENTRAM PELA MESMA PORTA.
+
+    `tentar` é chamada pelos dois caminhos e devolve `false` quando não houve
+    lance — é isso que faz a peça voltar para a casa de origem no arraste e o
+    clique não virar resposta. Lance ilegal não diz nada sobre o que o aluno
+    sabe, então não é registrado.
+  */
+  const tentar = useCallback(
+    (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
+      const atual = BANCO_DE_DIAGNOSTICO[indice]
+      if (!atual) return false
+      const veredito = julgarLanceDaLicao(atual, origem, destino, promocao)
+      if (veredito.tipo === 'ilegal') return false
+      responder(veredito.uci)
+      return true
+    },
+    [indice, responder],
+  )
+
+  const lance = useLanceNoTabuleiro({
+    fen: BANCO_DE_DIAGNOSTICO[indice]?.fen ?? '',
+    ativo: etapa === 'itens',
+    aoTentar: tentar,
+  })
+
   if (status === 'carregando') {
     return <p className={styles.state}>Abrindo seus dados locais…</p>
   }
@@ -240,11 +266,30 @@ export function DiagnosticoWizard() {
   }
 
   if (etapa === 'itens' && item) {
-    const notacoes = notacoesDe(item)
     return (
       <section className={styles.layout} aria-labelledby="diagnostico-posicao">
         <div className={styles.tabuleiro}>
-          <ChessBoardView fen={item.fen} orientation={item.ladoDoAluno} interactive={false} />
+          {/*
+            O DIAGNÓSTICO TAMBÉM SE RESPONDE NO TABULEIRO.
+
+            Ele media o que o aluno reconhece entre três notações — e dá para
+            acertar um garfo lendo `Nxe5` sem localizar o cavalo. Como o
+            resultado calibra a primeira semana inteira, medir a coisa errada
+            aqui contamina tudo que vem depois.
+
+            SEM VEREDITO, como já era: o diagnóstico não diz certo nem errado
+            durante as respostas (ver o cabeçalho do arquivo). O lance é
+            registrado e a próxima posição entra.
+          */}
+          <ChessBoardView
+            fen={item.fen}
+            orientation={item.ladoDoAluno}
+            interactive
+            selected={lance.selecionada}
+            targets={lance.destinos}
+            onMove={tentar}
+            onSquareClick={lance.aoClicarNaCasa}
+          />
         </div>
         <div className={styles.painel}>
           <p className={styles.progresso}>
@@ -254,17 +299,8 @@ export function DiagnosticoWizard() {
             {item.enunciado}
           </h2>
           <p className={styles.ajuda}>
-            {item.ladoDoAluno === 'w' ? 'Brancas' : 'Pretas'} jogam. Escolha um lance.
+            {item.ladoDoAluno === 'w' ? 'Brancas' : 'Pretas'} jogam. Jogue o lance no tabuleiro.
           </p>
-          <ul className={styles.opcoes} aria-label="Lances possíveis">
-            {opcoesDe(item).map((uci) => (
-              <li key={uci}>
-                <button type="button" className={styles.opcao} onClick={() => responder(uci)}>
-                  {notacoes.get(uci) ?? uci}
-                </button>
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
     )

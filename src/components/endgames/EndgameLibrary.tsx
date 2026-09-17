@@ -191,11 +191,18 @@ function EndgameCard({
         </div>
         <h3>{nome}</h3>
         <p>{definition.description}</p>
+        {/*
+          O ✓ E O TEXTO VÊM DA MESMA FONTE — ver a nota equivalente no catálogo
+          de Aberturas. O símbolo lia a jornada e o rótulo lia o estado de
+          treino, e quem terminava de estudar via um ✓ ao lado de "Não iniciado".
+        */}
         <span className={styles.status}>
           <span aria-hidden="true">
             {jornada?.status === 'concluida' ? '✓' : status === 'review' ? '↻' : '○'}
           </span>{' '}
-          {t(CHAVE_DO_STATUS[status])}
+          {jornada?.status === 'concluida' && status === 'not-started'
+            ? t('endgames.status.completed')
+            : t(CHAVE_DO_STATUS[status])}
         </span>
         {etapas ? <span>{etapas}</span> : null}
         <span className={styles.cta}>

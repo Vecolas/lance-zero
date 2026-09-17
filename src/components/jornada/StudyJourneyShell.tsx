@@ -71,14 +71,14 @@ export interface StudyJourneyShellProps {
    */
   rodapeOculto?: boolean
   aoSair?: () => void
-  /**
-   * Abre o modo referência.
-   *
-   * Fica no CABEÇALHO e não no rodapé de propósito: consultar não é avançar, e
-   * pô-lo ao lado de "Continuar" convidaria o aluno a usá-lo como se fosse o
-   * próximo passo. Ver `ModoReferencia`.
-   */
-  aoRever?: () => void
+  /*
+    `aoRever` SAIU com o modo referência.
+
+    Ele abria uma página que empilhava todas as etapas com a interação desligada
+    — tabuleiros que apareciam e não respondiam a nada. E era redundante: o
+    conteúdo da jornada É o que está sendo ensinado, e o Mapa do estudo abre
+    qualquer etapa desde o primeiro acesso.
+  */
 }
 
 export function StudyJourneyShell({
@@ -91,7 +91,6 @@ export function StudyJourneyShell({
   aoContinuar,
   rodapeOculto,
   aoSair,
-  aoRever,
 }: StudyJourneyShellProps) {
   const t = useTraduzir()
   /*
@@ -177,11 +176,6 @@ export function StudyJourneyShell({
           <p className={styles.modo} data-testid="modo-de-aprendizado">
             {t(CHAVE_DO_AVISO[modo])}
           </p>
-        ) : null}
-        {aoRever ? (
-          <button type="button" className={styles.rever} onClick={aoRever}>
-            Rever conteúdo
-          </button>
         ) : null}
       </header>
 

@@ -185,7 +185,8 @@
       "learning": "Learning",
       "training": "Training",
       "consolidating": "Consolidating",
-      "activeRepertoire": "Active repertoire"
+      "activeRepertoire": "Active repertoire",
+      "completed": "Study completed"
     },
     "filterByLevel": "Filter by level"
   },
@@ -205,7 +206,8 @@
       "learning": "Learning",
       "practicing": "Practising",
       "review": "Review",
-      "consolidated": "Consolidated"
+      "consolidated": "Consolidated",
+      "completed": "Study completed"
     },
     "filterByStatus": "Filter by status"
   },

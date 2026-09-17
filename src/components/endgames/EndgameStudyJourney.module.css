@@ -183,3 +183,33 @@
 .errou {
   color: var(--attention-text, var(--attention, var(--warning)));
 }
+
+/*
+  PRATICAR DE NOVO, oferecido a quem já concluiu a jornada.
+
+  Peso de botão secundário: a jornada terminou, então isto é um convite e não o
+  próximo passo. Um botão cheio aqui pareceria dizer que faltava algo.
+*/
+.praticarDeNovo {
+  justify-self: start;
+  min-height: 2.75rem;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.praticarDeNovo:hover {
+  background: var(--surface-sunken);
+}
+
+.praticarDeNovo:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}

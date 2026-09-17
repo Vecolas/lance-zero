@@ -111,6 +111,29 @@
   border-color: var(--accent-strong);
 }
 
+/*
+  A VARIAÇÃO ESCOLHIDA, no seletor da etapa de variações.
+
+  Marcada por fundo E peso, nunca só por cor — a regra vale também para "qual
+  destes chips está ativo", que é informação de estado como qualquer outra.
+*/
+.variacaoAtiva {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--accent-strong);
+  border-radius: var(--radius-md);
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.variacaoAtiva:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
 .opcao:disabled,
 .secundario:disabled {
   opacity: 0.55;

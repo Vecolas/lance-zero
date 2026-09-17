@@ -29,6 +29,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { useLanceNoTabuleiro } from '@/components/chess/useLanceNoTabuleiro'
 import { CATALOGO_DE_LICOES } from '@/content/lessons'
 import {
   feedbackGenerico,
@@ -38,10 +39,11 @@ import {
   visaoDaHabilidade,
   type VisaoDaHabilidade,
 } from '@/domain/aprendizado'
-import { acertou, opcoesDe } from '@/domain/diagnostic'
-import type { ExercicioPosicional } from '@/domain/exercicios'
+import { acertou } from '@/domain/diagnostic'
+import { julgarLanceDaLicao, type ExercicioPosicional } from '@/domain/exercicios'
 import { getSkill } from '@/domain/skills/catalog'
-import { legalMoves } from '@/lib/chess'
+import { parseUci } from '@/lib/chess'
+import type { PromotionPiece, SquareName } from '@/lib/chess'
 import { registrarTentativa } from '@/lib/training/registrar-tentativa'
 import type { SkillId } from '@/domain/types'
 import styles from './PraticaDeHabilidade.module.css'
@@ -206,12 +208,18 @@ function ItemDePratica({
   const [erros, setErros] = useState(0)
   const [dicasAbertas, setDicasAbertas] = useState(0)
   const [revelou, setRevelou] = useState(false)
+  /** O último arraste que não era lance. Discreto, e some no lance seguinte. */
+  const [recusa, setRecusa] = useState<string | null>(null)
 
-  const notacoes = useMemo(() => {
-    const mapa = new Map<string, string>()
-    for (const lance of legalMoves(item.exercicio.fen)) mapa.set(lance.uci, lance.san)
-    return mapa
-  }, [item.exercicio.fen])
+  /*
+    A SOLUÇÃO DESENHADA NO TABULEIRO, e não escrita como "Rxc6". Um aluno que lê
+    a notação aprende a notação; um que vê as duas casas acesas aprende o lance.
+  */
+  const casasDaSolucao = useMemo(() => {
+    const chave = item.exercicio.lancesAceitos[0]
+    const lance = chave ? parseUci(chave) : null
+    return lance ? [lance.from, lance.to] : []
+  }, [item.exercicio.lancesAceitos])
 
   const certo = escolhido !== null && acertou(item.exercicio, escolhido)
   const apoio = nivelDeApoio(dicasAbertas, revelou)
@@ -219,6 +227,27 @@ function ItemDePratica({
   const mostrarSolucao =
     revelou || resposta?.acao === 'mostrar-solucao' || resposta?.acao === 'trocar-posicao'
   const feedback = feedbackGenerico()
+
+  /**
+   * O aluno soltou uma peça.
+   *
+   * Devolve `false` quando não houve lance: é o que faz o tabuleiro devolver a
+   * peça à origem em vez de aceitá-la. Ver `julgarLanceDaLicao` — legalidade e
+   * pedagogia são duas perguntas, e só a segunda conta como erro.
+   */
+  function soltar(origem: SquareName, destino: SquareName, promocao?: PromotionPiece): boolean {
+    if (certo || mostrarSolucao) return false
+
+    const veredito = julgarLanceDaLicao(item.exercicio, origem, destino, promocao)
+    if (veredito.tipo === 'ilegal') {
+      setRecusa(`${origem}${destino}`)
+      return false
+    }
+
+    setRecusa(null)
+    escolher(veredito.uci)
+    return true
+  }
 
   function escolher(uci: string) {
     setEscolhido(uci)
@@ -232,33 +261,47 @@ function ItemDePratica({
     if (reacao.acao === 'mostrar-solucao' || reacao.acao === 'trocar-posicao') setRevelou(true)
   }
 
+  /* Clique em duas casas, a outra porta da mesma resposta. */
+  const lance = useLanceNoTabuleiro({
+    fen: item.exercicio.fen,
+    ativo: !certo && !mostrarSolucao,
+    aoTentar: (origem, destino) => soltar(origem, destino),
+  })
+
   return (
     <div className={styles.comTabuleiro}>
       <div className={styles.tabuleiro}>
+        {/*
+          O TABULEIRO É A ÚNICA FORMA DE RESPONDER — a mesma regra da lição.
+
+          Aqui havia `[Rxc6] [Rxd5] [Qxd4]`, e com três strings na tela o aluno
+          não resolve a posição: ele lê e escolhe. Prática independente com
+          múltipla escolha mede reconhecimento de string, não de padrão.
+        */}
         <ChessBoardView
           fen={item.exercicio.fen}
           orientation={item.exercicio.ladoDoAluno}
-          interactive={false}
+          interactive={!certo && !mostrarSolucao}
+          selected={lance.selecionada}
+          targets={lance.destinos}
+          onMove={soltar}
+          onSquareClick={lance.aoClicarNaCasa}
+          onIllegalMove={(origem, destino) => setRecusa(`${origem}${destino}`)}
+          lastMove={mostrarSolucao ? casasDaSolucao : undefined}
         />
       </div>
       <div className={styles.aoLado}>
         <p className={styles.texto}>{item.enunciado}</p>
+        {escolhido === null && !mostrarSolucao ? (
+          <p className={styles.nota}>Jogue o lance no tabuleiro.</p>
+        ) : null}
 
-        <ul className={styles.opcoes} aria-label="Lances possíveis">
-          {opcoesDe(item.exercicio).map((uci) => (
-            <li key={uci}>
-              <button
-                type="button"
-                className={styles.opcao}
-                aria-pressed={escolhido === uci}
-                disabled={certo || mostrarSolucao}
-                onClick={() => escolher(uci)}
-              >
-                {notacoes.get(uci) ?? uci}
-              </button>
-            </li>
-          ))}
-        </ul>
+        {/* Lance ilegal não é erro conceitual: é um gesto que não virou lance. */}
+        {recusa !== null && escolhido === null ? (
+          <p className={styles.nota} role="status" data-testid="recusa-do-lance">
+            Esse lance não é legal nesta posição.
+          </p>
+        ) : null}
 
         {dicasAbertas > 0 ? (
           <ol className={styles.dicas} aria-label="Dicas abertas">

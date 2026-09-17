@@ -28,13 +28,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRepository } from '@/components/providers/RepositoryProvider'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { useLanceNoTabuleiro } from '@/components/chess/useLanceNoTabuleiro'
 import { StudyJourneyShell } from '@/components/jornada/StudyJourneyShell'
 import { MesaDeEstudo } from '@/components/jornada/MesaDeEstudo'
+import { SparringDaAbertura } from '@/components/openings/SparringDaAbertura'
 import { RoundResultPanel } from '@/components/jornada/RoundResultPanel'
 import { RepertoireDeviationFeedback } from '@/components/openings/RepertoireDeviationFeedback'
-import { ModoReferencia } from '@/components/jornada/ModoReferencia'
 import {
   concluirEtapa,
+  jornadaConcluida,
   criarJornada,
   registrarItem,
   registrarRodada,
@@ -63,8 +65,15 @@ import {
   type OpeningDefinition,
   type OpeningProgress,
 } from '@/domain/openings'
+import { posicoesDaLinha, ramificacoesDaAbertura } from '@/domain/openings/variacoes'
 import { ExplorerPanel } from '@/components/openings/ExplorerPanel'
-import { applyMove, identidadeDePosicao, legalMoves, type SquareName } from '@/lib/chess'
+import {
+  applyMove,
+  identidadeDePosicao,
+  legalMoves,
+  type PromotionPiece,
+  type SquareName,
+} from '@/lib/chess'
 import styles from './OpeningStudyJourney.module.css'
 
 /** O id da jornada carrega o domínio: ver o contrato em `@/domain/types`. */
@@ -106,7 +115,6 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
 
   const [jornada, setJornada] = useState<StudyJourney | null>(null)
   const [progress, setProgress] = useState<OpeningProgress>(() => emptyOpeningProgress(opening.id))
-  const [referencia, setReferencia] = useState(false)
 
   // Carrega a jornada gravada, ou cria uma. `null` do repositório significa
   // "nunca começou", e é o único gatilho de criação.
@@ -145,29 +153,34 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
     return <p className={styles.estado}>Abrindo o seu estudo desta abertura…</p>
   }
 
-  if (referencia) {
-    return (
-      <ModoReferencia
-        titulo={opening.name}
-        stages={stages}
-        aoSair={() => setReferencia(false)}
-        conteudoDaEtapa={(stage) => (
-          // A MESMA função de conteúdo da jornada. Uma segunda renderização do
-          // material para a consulta seria a segunda fonte da mesma verdade, e
-          // divergiria na primeira correção de texto.
-          <ConteudoDeEtapa
-            opening={opening}
-            stage={stage}
-            jornada={jornada}
-            aoResponder={() => undefined}
-          />
-        )}
-      />
-    )
-  }
+  /*
+    O MODO REFERÊNCIA SAIU, e a razão é dupla.
+
+    ELE ERA REDUNDANTE: o conteúdo da jornada É o que está sendo ensinado, e o
+    Mapa do estudo já abre qualquer etapa desde o primeiro acesso. "Rever
+    conteúdo" prometia uma segunda forma de ver a mesma coisa.
+
+    E ELE ERA QUEBRADO: empilhava TODAS as etapas numa página só, com
+    `aoResponder` vazio — os tabuleiros interativos apareciam e não respondiam a
+    nada. O aluno clicava numa peça de uma etapa de treino e o app ignorava, sem
+    dizer por quê.
+  */
 
   const stage = stages.find((item) => item.id === jornada.currentStageId) ?? stages[0]
   const ehTreino = stage?.id === ETAPA_DE_TREINO_DE_ABERTURA
+
+  /*
+    PRATICAR CONTRA O COMPUTADOR, oferecido a quem já concluiu.
+
+    QUANDO: ao terminar a jornada e a cada vez que o aluno reabre a abertura.
+    Repetição livre é como um repertório entra na cabeça, e a sequência — que
+    ensina uma vez e termina — não tinha onde oferecer isso.
+
+    NÃO APARECE ANTES: praticar contra o bot sem ter visto a linha vira tentativa
+    e erro contra um adversário que sabe a resposta, que é a forma mais rápida de
+    o aluno concluir que não entende a abertura.
+  */
+  const concluiu = jornadaConcluida(jornada, stages)
 
   return (
     <StudyJourneyShell
@@ -177,7 +190,6 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
       aoVoltarEtapa={(stageId) => gravar(voltarParaEtapa(jornada, stageId))}
       aoContinuar={ehTreino ? undefined : () => gravar(concluirEtapa(jornada, stages, new Date()))}
       rodapeOculto={ehTreino}
-      aoRever={() => setReferencia(true)}
     >
       {ehTreino ? (
         <TreinoDaAbertura
@@ -190,6 +202,7 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
       ) : (
         <ConteudoDeEtapa opening={opening} stage={stage} jornada={jornada} aoResponder={gravar} />
       )}
+      {concluiu ? <SparringDaAbertura opening={opening} /> : null}
     </StudyJourneyShell>
   )
 }
@@ -203,6 +216,45 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
  * conteúdo foi jogado fora na migração (plano §153). O que mudou é quem decide
  * a ordem em que ele aparece.
  */
+/**
+ * A POSIÇÃO QUE IDENTIFICA A ABERTURA.
+ *
+ * É a que se alcança ao fim da linha principal — a posição que o repertório
+ * está TENTANDO alcançar. Ela existe por razão pedagógica e não para preencher
+ * espaço: o plano é explícito em não usar tabuleiro decorativo nem a posição
+ * inicial genérica, que não diz nada sobre a abertura estudada.
+ *
+ * As etapas de leitura falam sobre esta posição — estruturas, planos, o que o
+ * adversário quer. Lê-las sem ela na tela é o que o contrato visual proíbe.
+ */
+function fenCaracteristica(opening: OpeningDefinition): string {
+  const posicoes = posicoesDaLinha(opening.rootFen, opening.mainline)
+  return posicoes[posicoes.length - 1] ?? opening.rootFen
+}
+
+/** Envolve uma etapa de leitura com o tabuleiro à esquerda. */
+function ComTabuleiro({
+  opening,
+  children,
+}: {
+  opening: OpeningDefinition
+  children: React.ReactNode
+}) {
+  return (
+    <MesaDeEstudo
+      tabuleiro={
+        <ChessBoardView
+          fen={fenCaracteristica(opening)}
+          orientation={opening.side === 'white' ? 'w' : 'b'}
+          interactive={false}
+        />
+      }
+    >
+      {children}
+    </MesaDeEstudo>
+  )
+}
+
 function ConteudoDeEtapa({
   opening,
   stage,
@@ -217,7 +269,7 @@ function ConteudoDeEtapa({
   switch (stage.tipo) {
     case 'abertura:visao':
       return (
-        <>
+        <ComTabuleiro opening={opening}>
           <p className={styles.texto}>{opening.description}</p>
           <p className={styles.texto}>{opening.philosophy}</p>
           <p className={styles.nota}>
@@ -231,12 +283,12 @@ function ConteudoDeEtapa({
             superestima o próprio nível cairia no treino sem o repertório.
           */}
           <JaConheco opening={opening} />
-        </>
+        </ComTabuleiro>
       )
 
     case 'abertura:ideias':
       return (
-        <>
+        <ComTabuleiro opening={opening}>
           <p className={styles.texto}>
             Antes de qualquer sequência de lances, estas são as ideias que se repetem nesta
             abertura. Reconhecê-las é o que permite jogar posições que você nunca viu.
@@ -264,7 +316,7 @@ function ConteudoDeEtapa({
               </p>
             ))}
           </div>
-        </>
+        </ComTabuleiro>
       )
 
     case 'abertura:linha-principal':
@@ -272,7 +324,7 @@ function ConteudoDeEtapa({
 
     case 'abertura:respostas':
       return (
-        <>
+        <ComTabuleiro opening={opening}>
           <p className={styles.texto}>
             Saber o que o adversário QUER é diferente de saber qual é o seu próximo lance. Estas são
             as respostas que aparecem de verdade.
@@ -293,29 +345,15 @@ function ConteudoDeEtapa({
             o repertório dele vira sugestão.
           */}
           <ExplorerPanel posicoes={posicoesConsultaveis(opening)} />
-        </>
+        </ComTabuleiro>
       )
 
     case 'abertura:variacoes':
-      return (
-        <>
-          <p className={styles.texto}>
-            As variações entram no seu estudo automaticamente — você não precisa procurá-las numa
-            aba separada.
-          </p>
-          {opening.variations.map((variacao) => (
-            <div key={variacao.id} className={styles.bloco}>
-              <h3 className={styles.blocoTitulo}>{variacao.name}</h3>
-              <p className={styles.texto}>{variacao.description}</p>
-              <p className={styles.linha}>{variacao.line.map((l) => l.san).join(' ')}</p>
-            </div>
-          ))}
-        </>
-      )
+      return <VariacoesEnsinadas opening={opening} />
 
     case 'abertura:planos':
       return (
-        <>
+        <ComTabuleiro opening={opening}>
           {opening.plans.map((plano) => (
             <div key={plano.id} className={styles.bloco}>
               <h3 className={styles.blocoTitulo}>{plano.name}</h3>
@@ -345,12 +383,12 @@ function ConteudoDeEtapa({
               ))}
             </ul>
           </div>
-        </>
+        </ComTabuleiro>
       )
 
     case 'abertura:dois-lados':
       return (
-        <>
+        <ComTabuleiro opening={opening}>
           <p className={styles.texto}>
             Esta abertura é do seu repertório de {opening.side === 'white' ? 'brancas' : 'pretas'}.
             Entender a posição pelo outro lado não é estudar outro curso: é saber o que o seu
@@ -367,7 +405,7 @@ function ConteudoDeEtapa({
             na primeira tela seria pedir um compromisso antes do conhecimento.
           */}
           <AtivarRepertorio opening={opening} />
-        </>
+        </ComTabuleiro>
       )
 
     case 'abertura:pratica-guiada':
@@ -421,6 +459,36 @@ function JaConheco({ opening }: { opening: OpeningDefinition }) {
   const questoes = useMemo(() => openingDiagnosticQuestions(opening), [opening])
   const questao = questoes[0]
 
+  /*
+    SÓ LANCE QUE EXISTE NO REPERTÓRIO conta como decisão. Qualquer outro é
+    devolvido: aqui a pergunta é entre as decisões que ESTA abertura toma, e
+    aceitar um lance qualquer transformaria a verificação em outra coisa.
+
+    O clique em duas casas entra pela mesma porta do arraste — ver
+    `useLanceNoTabuleiro`.
+  */
+  const tentar = useCallback(
+    (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
+      const uci = `${origem}${destino}${promocao ?? ''}`
+      const conhecido = questao?.moves.find((opcao) => opcao.uci === uci)
+      if (!conhecido) return false
+      setEscolhido(conhecido.uci)
+      return true
+    },
+    [questao],
+  )
+
+  /*
+    O HOOK VEM ANTES DOS RETORNOS CONDICIONAIS. Chamá-lo depois mudaria a ordem
+    dos hooks entre renderizações, e o React proíbe — a `fen` vazia é inofensiva
+    porque o hook só age quando `ativo`.
+  */
+  const lance = useLanceNoTabuleiro({
+    fen: questao?.fen ?? '',
+    ativo: aberto && escolhido === null,
+    aoTentar: (origem, destino) => tentar(origem, destino),
+  })
+
   if (!questao) return null
 
   if (!aberto) {
@@ -431,27 +499,32 @@ function JaConheco({ opening }: { opening: OpeningDefinition }) {
     )
   }
 
-  const correto = questao.moves.find((lance) => lance.role === 'main')?.san
+  const correto = questao.moves.find((opcao) => opcao.role === 'main')?.uci
 
   return (
     <div className={styles.bloco}>
       <p className={styles.kicker}>DIAGNÓSTICO</p>
       <p className={styles.texto}>Qual decisão você tomaria aqui?</p>
-      <ul className={styles.opcoes} aria-label="Lances possíveis">
-        {questao.moves.map((lance) => (
-          <li key={lance.uci}>
-            <button
-              type="button"
-              className={styles.opcao}
-              aria-pressed={escolhido === lance.san}
-              disabled={escolhido !== null}
-              onClick={() => setEscolhido(lance.san)}
-            >
-              {lance.san}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {/*
+        A DECISÃO É TOMADA NO TABULEIRO, e não escolhida numa lista.
+
+        Aqui havia `[Nf3] [Bc4] [d3]`. Ler três lances e apontar um é
+        reconhecimento de string: o aluno confirma que já viu aquela notação, não
+        que reconhece a posição. A pergunta é "qual decisão VOCÊ tomaria" — e
+        tomar uma decisão de abertura é jogar o lance.
+      */}
+      <div className={styles.tabuleiroEmbutido}>
+        <ChessBoardView
+          fen={questao.fen}
+          orientation={opening.side === 'white' ? 'w' : 'b'}
+          interactive={escolhido === null}
+          selected={lance.selecionada}
+          targets={lance.destinos}
+          onMove={tentar}
+          onSquareClick={lance.aoClicarNaCasa}
+        />
+      </div>
+      {escolhido === null ? <p className={styles.nota}>Jogue o lance no tabuleiro.</p> : null}
       {escolhido !== null ? (
         <p className={escolhido === correto ? styles.acertou : styles.errou} role="status">
           {escolhido === correto
@@ -506,15 +579,28 @@ function AtivarRepertorio({ opening }: { opening: OpeningDefinition }) {
   )
 }
 
-/** A linha principal, lance a lance, com a razão de cada um. */
+/**
+ * Uma linha, lance a lance, com a razão de cada um.
+ *
+ * `inicio` existe para a etapa de variações: uma variação só começa a ensinar
+ * no lance em que ela recusa a linha principal, e abrir a navegação no lance 1
+ * faria o aluno reler cinco lances que ele acabou de estudar para chegar ao
+ * único que é novo. Quem troca de variação REMONTA o componente (`key`), que é
+ * o que mantém o índice válido sem efeito que escreve estado.
+ */
 function LinhaComentada({
   lances,
   opening,
+  inicio = 0,
+  antes,
 }: {
   lances: OpeningDefinition['mainline']
   opening: OpeningDefinition
+  inicio?: number
+  antes?: React.ReactNode
 }) {
-  const [indice, setIndice] = useState(0)
+  const primeiro = Math.min(Math.max(inicio, 0), Math.max(lances.length - 1, 0))
+  const [indice, setIndice] = useState(primeiro)
   const fens = useMemo(() => posicoesDaLinha(opening.rootFen, lances), [opening.rootFen, lances])
   const lance = lances[Math.min(indice, lances.length - 1)]
 
@@ -528,6 +614,7 @@ function LinhaComentada({
         />
       }
     >
+      {antes}
       <p className={styles.lanceAtual}>
         {indice + 1}. {lance?.san}
       </p>
@@ -540,8 +627,8 @@ function LinhaComentada({
         <button
           type="button"
           className={styles.secundario}
-          onClick={() => setIndice((n) => Math.max(0, n - 1))}
-          disabled={indice === 0}
+          onClick={() => setIndice((n) => Math.max(primeiro, n - 1))}
+          disabled={indice <= primeiro}
         >
           ← Lance anterior
         </button>
@@ -555,6 +642,102 @@ function LinhaComentada({
         </button>
       </div>
     </MesaDeEstudo>
+  )
+}
+
+/**
+ * AS VARIAÇÕES, ENSINADAS NO TABULEIRO — e não listadas como texto.
+ *
+ * A etapa mostrava nome, descrição e a linha em SAN numa única string. Uma
+ * variação é uma DECISÃO tomada numa posição: sem a posição na tela, "Cf6 em
+ * vez de Bc5" é uma informação que o aluno não tem como conferir, e no treino
+ * ele encontra a posição sem nunca tê-la visto.
+ *
+ * ELA COMEÇA ONDE A VARIAÇÃO COMEÇA. O tabuleiro abre na posição da decisão, e
+ * o primeiro lance mostrado é o desvio — não o `e4` que a linha principal já
+ * ensinou.
+ *
+ * E ELA AVISA QUE ISTO VOLTA NO TREINO. É o mesmo conjunto de linhas que o bot
+ * joga na prática: ensinar aqui e enfrentar lá é o laço que faz a etapa valer.
+ */
+function VariacoesEnsinadas({ opening }: { opening: OpeningDefinition }) {
+  const ramos = useMemo(() => ramificacoesDaAbertura(opening), [opening])
+  const [escolhida, setEscolhida] = useState(0)
+  const ramo = ramos[Math.min(escolhida, Math.max(ramos.length - 1, 0))]
+
+  // Uma abertura sem variação autorada não deve mostrar um seletor vazio nem um
+  // tabuleiro sem assunto: ela mostra a posição que o repertório busca.
+  if (!ramo) {
+    return (
+      <ComTabuleiro opening={opening}>
+        <p className={styles.texto}>
+          Esta abertura ainda não tem variações autoradas. No treino, o computador joga a linha
+          principal.
+        </p>
+      </ComTabuleiro>
+    )
+  }
+
+  const emComum = ramo.lancesEmComum.map((lance) => lance.san).join(' ')
+  const desviaOAdversario = ramo.ladoQueDesvia !== opening.side
+
+  return (
+    <>
+      {ramos.length > 1 ? (
+        <div className={styles.opcoes} role="group" aria-label="Escolher a variação">
+          {ramos.map((opcao, i) => (
+            <button
+              key={opcao.variacao.id}
+              type="button"
+              className={i === escolhida ? styles.variacaoAtiva : styles.opcao}
+              aria-pressed={i === escolhida}
+              onClick={() => setEscolhida(i)}
+            >
+              {opcao.variacao.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <LinhaComentada
+        // A remontagem ao trocar de variação é deliberada: ela reposiciona a
+        // navegação no desvio da variação nova, sem efeito que escreve estado.
+        key={ramo.variacao.id}
+        opening={opening}
+        lances={ramo.variacao.line}
+        inicio={ramo.indiceDaDivergencia ?? 0}
+        antes={
+          <>
+            <h3 className={styles.blocoTitulo}>{ramo.variacao.name}</h3>
+            <p className={styles.texto}>{ramo.variacao.description}</p>
+            {ramo.indiceDaDivergencia === null ? (
+              /*
+                UMA VARIAÇÃO QUE NÃO DESVIA não é um desvio, e dizer o contrário
+                ensinaria uma bifurcação que não existe no tabuleiro. O Giuoco
+                Piano é o nome da própria linha principal até certo ponto.
+              */
+              <p className={styles.nota}>
+                Este é o nome da linha principal até aqui — não é um desvio. Você já a percorreu na
+                etapa anterior.
+              </p>
+            ) : (
+              <p className={styles.nota}>
+                {emComum ? <>Até {emComum}, tudo igual à linha principal. </> : null}
+                {desviaOAdversario ? 'O adversário joga' : 'Você joga'}{' '}
+                <strong>{ramo.variacao.line[ramo.indiceDaDivergencia]?.san}</strong>
+                {ramo.lanceRecusado ? <> no lugar de {ramo.lanceRecusado.san}</> : null}, e é daí em
+                diante que a partida muda.
+              </p>
+            )}
+          </>
+        }
+      />
+
+      <p className={styles.nota}>
+        Você vai enfrentar estas variações no treino: o computador joga a linha principal na
+        primeira partida e os desvios quando você recomeça.
+      </p>
+    </>
   )
 }
 
@@ -578,15 +761,45 @@ function PraticaGuiada({
   const total = stage.regra.tipo === 'itens' ? stage.regra.total : 0
   const feitos = jornada.itensRespondidos[stage.id]?.length ?? 0
   const indice = Math.min(feitos, Math.max(0, total - 1))
-  const lance = opening.mainline[indice]
+  const doRepertorio = opening.mainline[indice]
 
   const fens = useMemo(
     () => posicoesDaLinha(opening.rootFen, opening.mainline),
     [opening.rootFen, opening.mainline],
   )
   const [escolhido, setEscolhido] = useState<string | null>(null)
+  const fen = fens[indice] ?? opening.rootFen
 
-  if (!lance || feitos >= total) {
+  /*
+    QUALQUER LANCE LEGAL É UMA RESPOSTA, certa ou errada.
+
+    O tabuleiro só recusa o que não é lance. Devolver a peça porque o aluno jogou
+    fora do repertório transformaria "errei" em "o app travou" — e é justamente
+    errar aqui que abre a explicação do lance estudado.
+  */
+  const tentar = useCallback(
+    (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
+      const uci = `${origem}${destino}${promocao ?? ''}`
+      if (!applyMove(fen, uci)) return false
+      setEscolhido(uci)
+      return true
+    },
+    [fen],
+  )
+
+  /*
+    O HOOK VEM ANTES DO EARLY RETURN, e a ordem não é estilo: chamar um hook
+    depois de um `return` condicional muda a ordem entre renderizações e o React
+    proíbe. A primeira versão desta mudança colocou o `useLanceNoTabuleiro`
+    abaixo da saída de "prática concluída" — e o lint pegou.
+  */
+  const lance = useLanceNoTabuleiro({
+    fen,
+    ativo: escolhido === null,
+    aoTentar: (origem, destino) => tentar(origem, destino),
+  })
+
+  if (!doRepertorio || feitos >= total) {
     return (
       <p className={styles.texto} role="status">
         Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
@@ -594,43 +807,43 @@ function PraticaGuiada({
     )
   }
 
-  const fen = fens[indice] ?? opening.rootFen
-  const opcoes = opcoesDoLance(fen, lance.san)
-
   return (
     <>
       <div className={styles.tabuleiroEmbutido}>
         <ChessBoardView
           fen={fen}
           orientation={opening.side === 'white' ? 'w' : 'b'}
-          interactive={false}
+          interactive={escolhido === null}
+          selected={lance.selecionada}
+          targets={lance.destinos}
+          onMove={tentar}
+          onSquareClick={lance.aoClicarNaCasa}
         />
       </div>
       <p className={styles.texto}>
-        Lance {indice + 1}: qual é o lance do repertório aqui? As opções estão à mostra — este é o
-        degrau com apoio.
+        Lance {indice + 1}: qual é o lance do repertório aqui? Jogue no tabuleiro — este é o degrau
+        com apoio, então errar aqui abre a explicação em vez de encerrar a etapa.
       </p>
-      <ul className={styles.opcoes} aria-label="Lances possíveis">
-        {opcoes.map((san) => (
-          <li key={san}>
-            <button
-              type="button"
-              className={styles.opcao}
-              aria-pressed={escolhido === san}
-              disabled={escolhido !== null}
-              onClick={() => setEscolhido(san)}
-            >
-              {san}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {/*
+        O APOIO DESTE DEGRAU MUDOU DE FORMA, e não desapareceu.
+
+        Ele era a lista de lances à mostra: o aluno lia três notações e apontava
+        uma. Isso não é "praticar com apoio" — é reconhecer uma string entre
+        três, e dá para acertar sem olhar a posição.
+
+        O apoio agora é o que a etapa já oferecia por baixo: errar abre a
+        explicação do lance do repertório em vez de fechar a etapa. O aluno joga
+        de verdade e continua amparado.
+      */}
+      {escolhido === null ? <p className={styles.nota}>Jogue o lance no tabuleiro.</p> : null}
       {escolhido !== null ? (
         <div className={styles.veredito} role="status">
-          <p className={escolhido === lance.san ? styles.acertou : styles.errou}>
-            {escolhido === lance.san ? '✓ É o lance do repertório.' : '✕ Não é o lance estudado.'}
+          <p className={escolhido === doRepertorio.uci ? styles.acertou : styles.errou}>
+            {escolhido === doRepertorio.uci
+              ? '✓ É o lance do repertório.'
+              : '✕ Não é o lance estudado.'}
           </p>
-          <p className={styles.texto}>{lance.comment}</p>
+          <p className={styles.texto}>{doRepertorio.comment}</p>
           <button
             type="button"
             className={styles.primario}
@@ -892,27 +1105,18 @@ function posicoesConsultaveis(opening: OpeningDefinition) {
   )
 }
 
-/** As posições ao longo de uma linha. Índice 0 é a inicial. */
-function posicoesDaLinha(raiz: string, lances: OpeningDefinition['mainline']): string[] {
-  const fens = [raiz]
-  let atual = raiz
-  for (const lance of lances) {
-    const aplicado = applyMove(atual, lance.san)
-    if (!aplicado) break
-    atual = aplicado.fenAfter
-    fens.push(atual)
-  }
-  return fens
-}
+/*
+  `posicoesDaLinha` MUDOU-SE PARA `@/domain/openings/variacoes`.
 
-/**
- * As opções da prática guiada: o lance certo mais distratores LEGAIS.
- *
- * Derivadas da posição, e não escritas no conteúdo: uma lista autorada seria a
- * segunda fonte da mesma verdade, e envelheceria no dia em que a linha mudasse.
- */
-function opcoesDoLance(fen: string, correto: string): string[] {
-  const legais = legalMoves(fen).map((lance) => lance.san)
-  const distratores = legais.filter((san) => san !== correto).slice(0, 3)
-  return [correto, ...distratores].sort((a, b) => a.localeCompare(b))
-}
+  A cópia daqui era a terceira do mesmo laço, e agora a etapa de variações
+  precisa exatamente dela para achar a posição em que cada desvio acontece.
+  Percorrer uma linha é fato de xadrez, não de tela.
+*/
+
+/*
+  `opcoesDoLance` SAIU com a lista de múltipla escolha.
+
+  Ela montava o lance certo mais três distratores legais, e era uma boa função
+  para um desenho que acabou: a resposta da prática guiada passou a ser jogada no
+  tabuleiro. Manter o gerador convidaria alguém a reintroduzir a lista.
+*/

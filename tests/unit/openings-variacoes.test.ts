@@ -1,0 +1,128 @@
+/**
+ * ONDE UMA VARIAÇÃO COMEÇA A ENSINAR.
+ *
+ * O MODO DE FALHA QUE ESTE ARQUIVO COBRE é conteúdo que parece ensinado e não
+ * está: uma variação listada como `e4 e5 Cf3 Cc6 Bc4 Cf6 d3` é sete lances dos
+ * quais cinco são reprise da linha principal, e o único que importa — o desvio
+ * — não recebe destaque nenhum. O aluno lê a etapa inteira sem nunca ver a
+ * posição em que a decisão acontece.
+ *
+ * O SEGUNDO CASO é o oposto: uma "variação" que NÃO desvia. O Giuoco Piano, no
+ * conteúdo atual, é o nome de um trecho da própria linha principal. Apresentá-lo
+ * como bifurcação ensinaria uma escolha que não existe no tabuleiro.
+ */
+
+import { describe, expect, it } from 'vitest'
+import { OPENING_COURSES } from '@/content/openings/course'
+import {
+  posicoesDaLinha,
+  ramificacaoDaVariacao,
+  ramificacoesDaAbertura,
+  variacaoEmCurso,
+} from '@/domain/openings/variacoes'
+
+const ITALIANA = OPENING_COURSES.find((o) => o.slug === 'italiana') ?? OPENING_COURSES[0]
+
+describe('percorrer uma linha', () => {
+  it('produz uma posição a mais que os lances — a inicial conta', () => {
+    const posicoes = posicoesDaLinha(ITALIANA.rootFen, ITALIANA.mainline)
+    expect(posicoes).toHaveLength(ITALIANA.mainline.length + 1)
+    expect(posicoes[0]).toBe(ITALIANA.rootFen)
+  })
+
+  it('TESTE DE CONTEÚDO — toda linha autorada é legal do começo ao fim', () => {
+    /*
+      `posicoesDaLinha` PARA no primeiro lance ilegal, em silêncio. Sem este
+      portão, uma variação com um lance impossível apareceria truncada na tela
+      sem erro nenhum: falso verde clássico, e do tipo que só o aluno descobre.
+    */
+    for (const opening of OPENING_COURSES) {
+      for (const variacao of opening.variations) {
+        expect(
+          posicoesDaLinha(opening.rootFen, variacao.line),
+          `${opening.slug}/${variacao.id} tem lance ilegal`,
+        ).toHaveLength(variacao.line.length + 1)
+      }
+    }
+  })
+})
+
+describe('a ramificação de uma variação', () => {
+  it('acha o lance em que o adversário recusa a linha principal', () => {
+    const dois = ITALIANA.variations.find((v) => v.id === 'italiana-dois-cavalos')
+    expect(dois).toBeDefined()
+    if (!dois) return
+
+    const ramo = ramificacaoDaVariacao(ITALIANA, dois)
+
+    // Cf6 no lugar de Bc5: é isto, e só isto, que a variação ensina.
+    expect(ramo.indiceDaDivergencia).not.toBeNull()
+    expect(ramo.variacao.line[ramo.indiceDaDivergencia ?? 0].san).toBe('Nf6')
+    expect(ramo.lanceRecusado?.san).toBe('Bc5')
+
+    // Os lances anteriores são os da linha principal, e a etapa os resume.
+    expect(ramo.lancesEmComum.map((l) => l.san)).toEqual(['e4', 'e5', 'Nf3', 'Nc6', 'Bc4'])
+  })
+
+  it('a posição da decisão é a posição em que o desvio é jogado', () => {
+    const [ramo] = ramificacoesDaAbertura(ITALIANA)
+
+    // O tabuleiro da etapa abre AQUI. Se abrisse depois do desvio, o aluno veria
+    // o resultado da decisão sem nunca ver a decisão.
+    const posicoes = posicoesDaLinha(ITALIANA.rootFen, ramo.variacao.line)
+    expect(ramo.fenDaDecisao).toBe(posicoes[ramo.indiceDaDivergencia ?? 0])
+
+    // E quem decide é de quem é a vez nessa posição, não quem "costuma" desviar.
+    const vez = ramo.fenDaDecisao.split(' ')[1] === 'b' ? 'black' : 'white'
+    expect(ramo.ladoQueDesvia).toBe(vez)
+  })
+
+  it('uma variação que não desvia é reconhecida como o que é', () => {
+    const piano = ITALIANA.variations.find((v) => v.id === 'italiana-giuoco-piano')
+    expect(piano).toBeDefined()
+    if (!piano) return
+
+    const ramo = ramificacaoDaVariacao(ITALIANA, piano)
+    expect(ramo.indiceDaDivergencia).toBeNull()
+    expect(ramo.lanceRecusado).toBeNull()
+    expect(ramo.lancesEmComum).toHaveLength(piano.line.length)
+  })
+
+  it('o desvio pode ser do lado do aluno, e não só do adversário', () => {
+    /*
+      Nem toda variação é uma resposta do adversário: algumas são uma escolha do
+      próprio repertório. Um módulo que assumisse "variação = lance do outro"
+      escreveria "o adversário joga c6" numa linha em que quem joga é o aluno.
+    */
+    const ladosQueDesviam = OPENING_COURSES.flatMap((opening) =>
+      ramificacoesDaAbertura(opening)
+        .filter((ramo) => ramo.indiceDaDivergencia !== null)
+        .map((ramo) => (ramo.ladoQueDesvia === opening.side ? 'aluno' : 'adversario')),
+    )
+
+    expect(ladosQueDesviam).toContain('adversario')
+    expect(ladosQueDesviam).toContain('aluno')
+  })
+})
+
+describe('em qual variação a partida está', () => {
+  const dois = ITALIANA.variations.find((v) => v.id === 'italiana-dois-cavalos')
+  const ramo = dois ? ramificacaoDaVariacao(ITALIANA, dois) : null
+  const ate = (n: number) => (dois?.line ?? []).slice(0, n).map((l) => l.uci)
+
+  it('não nomeia nada enquanto a partida é a linha principal', () => {
+    expect(variacaoEmCurso(ITALIANA, [])).toBeNull()
+    expect(variacaoEmCurso(ITALIANA, ate(ramo?.indiceDaDivergencia ?? 0))).toBeNull()
+  })
+
+  it('nomeia a variação depois que o lance de desvio é jogado', () => {
+    const depois = ate((ramo?.indiceDaDivergencia ?? 0) + 1)
+    expect(variacaoEmCurso(ITALIANA, depois)?.id).toBe('italiana-dois-cavalos')
+  })
+
+  it('não nomeia nada quando a partida saiu do repertório', () => {
+    // Um lance legal que a abertura não cobre não pertence a variação nenhuma —
+    // e inventar um nome para ele seria a explicação que o projeto proíbe.
+    expect(variacaoEmCurso(ITALIANA, ['e2e4', 'e7e5', 'd1h5'])).toBeNull()
+  })
+})

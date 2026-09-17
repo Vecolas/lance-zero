@@ -202,7 +202,18 @@ test('abrir um final abre a jornada do final, com reconhecimento antes do lance'
   await expect(page.locator('main')).not.toContainText(/fora do repert[óo]rio/i)
 })
 
-test('modo referência deixa consultar sem alterar o progresso', async ({ page }) => {
+test('consultar outra etapa pelo Mapa NÃO altera o progresso', async ({ page }) => {
+  /*
+    O "MODO REFERÊNCIA" SAIU, e este caso passou a afirmar a mesma garantia pelo
+    caminho que sobrou.
+
+    Ele era uma página que empilhava TODAS as etapas com a interação desligada —
+    tabuleiros que apareciam e não respondiam a nada. E era redundante: o Mapa do
+    estudo abre qualquer etapa desde o primeiro acesso, e o conteúdo da jornada É
+    o que está sendo ensinado.
+
+    O QUE PRECISAVA SOBREVIVER é a garantia: consultar não desfaz progresso.
+  */
   await page.goto('/aberturas/italiana')
   await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
 
@@ -210,17 +221,17 @@ test('modo referência deixa consultar sem alterar o progresso', async ({ page }
   await page.getByRole('button', { name: /Continuar →/ }).click()
   await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Rever conteúdo' }).click()
-  await expect(page.getByText('MODO REFERÊNCIA')).toBeVisible()
-  await expect(page.getByText(/não altera o seu progresso/)).toBeVisible()
-
-  // O TREINO FICA DE FORA da consulta: abrir rodada por aqui seria um segundo
-  // caminho para o treino, sem cobertura e sem desfecho registrado.
-  await expect(page.getByRole('heading', { name: 'Treino final' })).toHaveCount(0)
-
-  await page.getByRole('button', { name: 'Voltar ao estudo' }).click()
-  // O progresso continua exatamente onde estava.
-  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+  // Vai para a PRIMEIRA etapa pelo Mapa e volta: o contador de concluídas não
+  // pode cair, porque reler não é desfazer.
+  await page.getByRole('button', { name: /Mapa do estudo/ }).click()
+  const mapa = page.getByRole('dialog', { name: 'Mapa do estudo' })
+  await mapa
+    .getByRole('button')
+    .filter({ hasNotText: /Fechar/ })
+    .first()
+    .click()
+  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
+  await expect(page.getByText(/1 de \d+ etapas/)).toBeVisible()
 })
 
 test('o roadmap mostra o progresso da jornada e leva para ela', async ({ page }) => {

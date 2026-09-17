@@ -1,4 +1,27 @@
 import { expect, test, type Page } from '@playwright/test'
+import { legalMoves } from '@/lib/chess'
+
+/**
+ * Joga o primeiro lance LEGAL da posição que está na tela, clicando nas casas.
+ *
+ * A POSIÇÃO VEM DO PRÓPRIO TABULEIRO (`data-fen`), e não de uma cópia no teste:
+ * uma FEN escrita aqui seria a segunda fonte da mesma verdade e envelheceria na
+ * primeira troca de conteúdo. O clique é o caminho acessível e o único que o
+ * e2e consegue dirigir — o arraste é implementado pela biblioteca de tabuleiro.
+ */
+async function jogarPrimeiroLanceLegal(page: Page): Promise<boolean> {
+  const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
+  if (!(await tabuleiro.isVisible().catch(() => false))) return false
+
+  const fen = await tabuleiro.getAttribute('data-fen')
+  if (!fen) return false
+  const lance = legalMoves(fen)[0]
+  if (!lance) return false
+
+  await page.locator('#lancezero-board-square-' + lance.from).click()
+  await page.locator('#lancezero-board-square-' + lance.to).click()
+  return true
+}
 
 /**
  * A PROMESSA DA FASE 10, medida no navegador de verdade: um jogador NOVO, SEM
@@ -21,9 +44,20 @@ async function responderTudo(page: Page): Promise<number> {
   const total = Number(/de (\d+)/.exec((await progresso.textContent()) ?? '')?.[1])
   expect(total).toBeGreaterThan(0)
 
-  const opcoes = page.getByRole('list', { name: 'Lances possíveis' })
+  /*
+    O DIAGNÓSTICO SE RESPONDE NO TABULEIRO.
+
+    Ele media o que o aluno reconhece entre três notações — e dá para acertar um
+    garfo lendo `Nxe5` sem localizar o cavalo. Como o resultado calibra a
+    primeira semana inteira, medir a coisa errada aqui contamina tudo depois.
+
+    Este laço não tenta acertar: ele atravessa o diagnóstico jogando o primeiro
+    lance legal de cada posição. O que o teste prova é a COSTURA — chegar ao
+    plano e gravar o perfil —, e não a qualidade das respostas.
+  */
   for (let i = 0; i < total; i += 1) {
-    await opcoes.getByRole('button').first().click()
+    const jogou = await jogarPrimeiroLanceLegal(page)
+    expect(jogou, `posição ${i + 1} não aceitou lance`).toBe(true)
   }
   return total
 }
