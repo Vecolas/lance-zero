@@ -404,10 +404,83 @@ test('os planos mostram a rota também em texto', async ({ page }) => {
 
   await irAteEtapa(page, /Planos e estruturas/)
 
+  /*
+    OS PLANOS VIRARAM CARDS, cada um com a posição em que ELE acontece. Antes
+    eram sete parágrafos empilhados sobre uma única posição — a característica
+    da abertura, que não é a posição de plano nenhum. A tela não mudava entre um
+    plano e outro, então nada nela dizia que o assunto tinha mudado.
+  */
+  const card = page.getByRole('button', { name: /Ruptura d4/ })
+  await expect(card).toBeVisible()
+  await card.click()
+
+  // AS QUATRO PERGUNTAS DO §24.2. As duas últimas são as que faltavam: sem
+  // preparação o aluno rompe cedo, sem o adversário ele executa como se o outro
+  // lado não existisse.
+  await expect(page.getByText(/Quando usar\./)).toBeVisible()
+  await expect(page.getByText(/Por que funciona\./)).toBeVisible()
+  await expect(page.getByText(/O que precisa estar preparado\./)).toBeVisible()
+  await expect(page.getByText(/O que o adversário tenta\./)).toBeVisible()
+
   // Rota em TEXTO, e não só como seta no tabuleiro: informação que só existe
   // como desenho some para quem usa leitor de tela.
   await expect(page.getByText('Rota visual: d3 → d4')).toBeVisible()
-  await expect(page.getByText('Ruptura d4')).toBeVisible()
+})
+
+/**
+ * A MICRODECISÃO DO PLANO — e o silêncio dos planos que não têm uma.
+ *
+ * O QUE ELE PROVA, e é o mais importante desta etapa: a pergunta só existe onde
+ * o conteúdo a autorou. Todo plano traz uma seta, e a implementação óbvia seria
+ * "pergunte pelo lance da seta" — no Sistema Londres isso pediria e2-e4, que é
+ * legal e perde um peão. Cinco dos sete planos do curso NÃO têm pergunta, e
+ * essa ausência é a parte que um teste precisa guardar.
+ */
+test('o plano cobra o lance que o começa, e só onde o conteúdo permite', async ({ page }) => {
+  await page.goto('/aberturas/caro-kann')
+  await irAteEtapa(page, /Planos e estruturas/)
+
+  await page.getByRole('button', { name: /Libertar o bispo/ }).click()
+
+  // A PERGUNTA VEM ANTES DA RESPOSTA, e a seta some enquanto ela está aberta —
+  // uma rota desenhada durante a pergunta é o gabarito no enunciado.
+  await expect(
+    page.getByText(/Qual lance começa este plano\?|O centro fechou com e5/),
+  ).toBeVisible()
+  await expect(page.getByText(/Rota visual/)).toHaveCount(0)
+
+  const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
+  const antes = await tabuleiro.getAttribute('data-fen')
+
+  // O LANCE ERRADO NÃO ANDA A POSIÇÃO. É a mesma regra da linha principal.
+  await page.locator('#lancezero-board-square-e7').click()
+  await page.locator('#lancezero-board-square-e6').click()
+  await expect(page.getByText(/A posição não mudou/)).toBeVisible()
+  await expect(tabuleiro).toHaveAttribute('data-fen', antes ?? '')
+
+  // O certo abre a explicação, e só então a rota aparece.
+  await page.locator('#lancezero-board-square-c8').click()
+  await page.locator('#lancezero-board-square-f5').click()
+  await expect(page.getByText('✓ Bf5 começa o plano.')).toBeVisible()
+  await expect(page.getByText(/Rota visual/)).toBeVisible()
+})
+
+test('o plano sem microdecisão não inventa uma pergunta', async ({ page }) => {
+  /*
+    O SISTEMA LONDRES É O CASO QUE JUSTIFICA A REGRA. A seta do plano é e2→e4,
+    legal na posição e perdedora de peão: d5 e o cavalo de f6 já vigiam a casa, e
+    é por isso que o Londres joga e3 antes. Se um dia alguém derivar a pergunta
+    da seta, este teste é o que avisa.
+  */
+  await page.goto('/aberturas/sistema-londres')
+  await irAteEtapa(page, /Planos e estruturas/)
+
+  await page.getByRole('button', { name: /Ruptura e4/ }).click()
+
+  await expect(page.getByText(/O que precisa estar preparado\./)).toBeVisible()
+  await expect(page.getByText(/Qual lance começa este plano/)).toHaveCount(0)
+  // E o tabuleiro fica passivo: não há nada a responder aqui.
+  await expect(page.locator('[data-testid="chessboard"][data-interactive="true"]')).toHaveCount(0)
 })
 
 /**

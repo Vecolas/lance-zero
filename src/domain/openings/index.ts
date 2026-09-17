@@ -100,6 +100,29 @@ export interface OpeningVariation {
   objetivoDoAluno?: string
 }
 
+/**
+ * A MICRODECISÃO DE UM PLANO: o lance que o começa, jogado no tabuleiro.
+ *
+ * ELA TEM PLY PRÓPRIO, e não reaproveita o `positionPly` do plano. A razão é de
+ * conteúdo: `positionPly` é a posição que ILUSTRA o plano, e ela quase nunca é
+ * a posição em que o primeiro lance já é correto. Forçar as duas a serem a
+ * mesma produziria microdecisões que contradizem a própria condição do plano —
+ * "jogue a ruptura" numa posição em que o plano diz "só depois do roque".
+ *
+ * É OPCIONAL, e o plano VNext §24.3 diz "quando possível". Um plano sem lance
+ * inicial jogável não ganha uma pergunta inventada.
+ */
+export interface OpeningPlanMicrodecision {
+  /** O ply da linha principal em que a pergunta é feita. */
+  ply: number
+  /** O lance que começa o plano, em SAN. Conferido por portão. */
+  san: string
+  /** A pergunta, quando a genérica não serve. */
+  pergunta?: string
+  /** Por que este lance, e não outro. Aparece DEPOIS da resposta. */
+  porque: string
+}
+
 export interface OpeningPlan {
   id: string
   name: string
@@ -110,6 +133,18 @@ export interface OpeningPlan {
   arrows?: BoardArrow[]
   /** Posição semântica na linha principal para conteúdo autorado. */
   positionPly?: number
+  /**
+   * AS TRÊS PERGUNTAS QUE FALTAVAM (plano VNext §24.2).
+   *
+   * O plano já respondia "quando usar" (`when`) e "o que busco" (`objective`).
+   * Sem as de baixo ele continuava sendo uma frase de intenção — e intenção sem
+   * mecanismo é o que faz o aluno reconhecer o nome do plano e não saber
+   * executá-lo.
+   */
+  porQueFunciona?: string
+  preparacao?: string
+  oQueOAdversarioTenta?: string
+  microdecisao?: OpeningPlanMicrodecision
 }
 
 export interface OpeningStructure {

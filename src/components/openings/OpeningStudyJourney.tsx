@@ -64,6 +64,7 @@ import {
   emptyOpeningProgress,
   openingDiagnosticQuestions,
   type OpeningDefinition,
+  type OpeningPlan,
   type OpeningProgress,
 } from '@/domain/openings'
 import { percursoDaLinhaPrincipal, percursoDoRamo } from '@/domain/openings/linha-principal'
@@ -360,39 +361,7 @@ function ConteudoDeEtapa({
       )
 
     case 'abertura:planos':
-      return (
-        <ComTabuleiro opening={opening}>
-          {opening.plans.map((plano) => (
-            <div key={plano.id} className={styles.bloco}>
-              <h3 className={styles.blocoTitulo}>{plano.name}</h3>
-              <p className={styles.texto}>{plano.objective}</p>
-              <p className={styles.nota}>Quando: {plano.when}</p>
-              <p className={styles.nota}>Risco: {plano.risk}</p>
-              {/*
-                A ROTA VISUAL veio da aba de Planos. Ela é TEXTO e não só setas
-                no tabuleiro, de propósito: a regra de acessibilidade do projeto
-                diz que toda informação importante também existe em texto, e uma
-                rota que só existe como seta some para quem usa leitor de tela.
-              */}
-              {plano.arrows && plano.arrows.length > 0 ? (
-                <p className={styles.nota}>
-                  Rota visual: {plano.arrows.map((seta) => `${seta.from} → ${seta.to}`).join(' · ')}
-                </p>
-              ) : null}
-            </div>
-          ))}
-          <div className={styles.bloco}>
-            <h3 className={styles.blocoTitulo}>Erros comuns</h3>
-            <ul className={styles.lista}>
-              {opening.mistakes.map((erro) => (
-                <li key={erro.id}>
-                  <strong>{erro.moveSan}.</strong> {erro.explanation} {erro.principle}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </ComTabuleiro>
-      )
+      return <PlanosDaAbertura opening={opening} />
 
     case 'abertura:dois-lados':
       return (
@@ -938,6 +907,239 @@ function CompletarALinha({
       )}
     </MesaDeEstudo>
   )
+}
+
+/**
+ * OS PLANOS: biblioteca de cards, estudo, e uma decisão quando o conteúdo tem.
+ *
+ * COMO ERA: os planos eram empilhados num scroll só, todos abertos ao mesmo
+ * tempo, cada um com três linhas de prosa sobre uma ÚNICA posição — a
+ * característica da abertura, que não é a posição de nenhum deles. O aluno lia
+ * "Ruptura d4" e via uma posição em que d4 não era o assunto.
+ *
+ * COMO É (plano VNext §24): cada plano é um card com o mini-tabuleiro da
+ * posição em que ELE acontece. Abrir o card dá a posição grande e as quatro
+ * perguntas — quando usar, por que funciona, o que precisa estar preparado, e o
+ * que o adversário tenta. E, quando o conteúdo permite, o aluno joga o lance
+ * que começa o plano.
+ *
+ * "QUANDO O CONTEÚDO PERMITE" NÃO É PREGUIÇA: dois dos sete planos do curso têm
+ * microdecisão. Os outros cinco declaram no próprio conteúdo por que não têm, e
+ * o caso do Sistema Londres é o que vale ler — a seta do plano é um lance legal
+ * que perde um peão.
+ */
+function PlanosDaAbertura({ opening }: { opening: OpeningDefinition }) {
+  const [aberto, setAberto] = useState<string | null>(null)
+  const plano = aberto === null ? undefined : opening.plans.find((item) => item.id === aberto)
+
+  if (plano) {
+    return <EstudoDoPlano opening={opening} plano={plano} aoVoltar={() => setAberto(null)} />
+  }
+
+  return (
+    <div className={styles.bloco}>
+      <p className={styles.texto}>
+        Um plano não é um lance: é o que você está tentando conseguir. Cada card mostra a posição em
+        que o plano aparece — reconhecer a posição é o que faz o plano servir numa partida de
+        verdade.
+      </p>
+
+      <ul className={styles.ramos}>
+        {opening.plans.map((item) => (
+          <li key={item.id}>
+            <button type="button" className={styles.ramoCard} onClick={() => setAberto(item.id)}>
+              {/* Prévia: ver o comentário do mini-tabuleiro da biblioteca de ramos. */}
+              <span className={styles.ramoTabuleiro} aria-hidden="true">
+                <ChessBoardView
+                  fen={fenDoPlano(opening, item)}
+                  orientation={opening.side === 'white' ? 'w' : 'b'}
+                  interactive={false}
+                  arrows={item.arrows ?? []}
+                />
+              </span>
+              <span className={styles.ramoNome}>{item.name}</span>
+              <span className={styles.ramoLance}>{item.when}</span>
+              <span className={styles.ramoMeta}>{item.objective}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className={styles.bloco}>
+        <h3 className={styles.blocoTitulo}>Erros comuns</h3>
+        <ul className={styles.lista}>
+          {opening.mistakes.map((erro) => (
+            <li key={erro.id}>
+              <strong>{erro.moveSan}.</strong> {erro.explanation} {erro.principle}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A posição em que o plano acontece.
+ *
+ * NÃO É A POSIÇÃO CARACTERÍSTICA DA ABERTURA. Sete planos apontam para sete
+ * momentos diferentes da linha, e mostrar a mesma posição em todos foi o que
+ * fazia a etapa parecer uma lista de frases: a tela não mudava entre um plano e
+ * outro, então nada nela dizia que o assunto tinha mudado.
+ */
+function fenDoPlano(opening: OpeningDefinition, plano: OpeningPlan): string {
+  const posicoes = posicoesDaLinha(opening.rootFen, opening.mainline)
+  const indice = Math.min(Math.max(plano.positionPly ?? 0, 0), posicoes.length - 1)
+  return posicoes[indice] ?? opening.rootFen
+}
+
+/**
+ * O estudo de um plano: as quatro perguntas e, quando há, a decisão.
+ *
+ * AS QUATRO PERGUNTAS SÃO DO PLANO VNext §24.2, e cada uma existe por um motivo
+ * diferente. "Quando usar" e "por que funciona" já eram o conteúdo antigo sob
+ * outros nomes. As duas novas são as que faltavam: sem "o que precisa estar
+ * preparado", o aluno joga a ruptura cedo; sem "o que o adversário tenta", ele
+ * executa o plano como se o outro lado não existisse.
+ */
+function EstudoDoPlano({
+  opening,
+  plano,
+  aoVoltar,
+}: {
+  opening: OpeningDefinition
+  plano: OpeningPlan
+  aoVoltar: () => void
+}) {
+  const micro = plano.microdecisao
+  const posicoes = useMemo(() => posicoesDaLinha(opening.rootFen, opening.mainline), [opening])
+  const fenDaPergunta = micro ? (posicoes[micro.ply] ?? opening.rootFen) : null
+  const [acertou, setAcertou] = useState(false)
+  const [errou, setErrou] = useState<string | null>(null)
+
+  /*
+    O TABULEIRO MOSTRA A POSIÇÃO DA PERGUNTA QUANDO HÁ PERGUNTA, e a do plano
+    quando não há. Duas posições diferentes na mesma tela confundiriam: o aluno
+    leria sobre uma e jogaria noutra.
+  */
+  const fen = acertou
+    ? (fenDoLanceFeito(fenDaPergunta, micro?.san) ?? fenDaPergunta)
+    : fenDaPergunta
+  const fenNoTabuleiro = fen ?? fenDoPlano(opening, plano)
+
+  const tentar = useCallback(
+    (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
+      if (!micro || !fenDaPergunta || acertou) return false
+      const aplicado = applyMove(fenDaPergunta, {
+        from: origem,
+        to: destino,
+        promotion: promocao,
+      })
+      // Nem chegou a ser lance: o tabuleiro devolve a peça e nada é registrado.
+      if (!aplicado) return false
+      if (aplicado.move.san !== micro.san) {
+        setErrou(aplicado.move.san)
+        /*
+          SNAPBACK. A posição NÃO anda — é a mesma regra da linha principal e do
+          ramo, e ela é o que mantém o aluno na decisão até resolvê-la.
+        */
+        return false
+      }
+      setErrou(null)
+      setAcertou(true)
+      return true
+    },
+    [acertou, fenDaPergunta, micro],
+  )
+
+  const lance = useLanceNoTabuleiro({
+    fen: fenNoTabuleiro,
+    ativo: Boolean(micro) && !acertou,
+    aoTentar: (origem, destino) => tentar(origem, destino),
+  })
+
+  return (
+    <MesaDeEstudo
+      tabuleiro={
+        <ChessBoardView
+          fen={fenNoTabuleiro}
+          orientation={opening.side === 'white' ? 'w' : 'b'}
+          /* As setas somem durante a pergunta: elas SÃO a resposta desenhada. */
+          arrows={micro && !acertou ? [] : (plano.arrows ?? [])}
+          interactive={Boolean(micro) && !acertou}
+          selected={lance.selecionada}
+          targets={lance.destinos}
+          onMove={tentar}
+          onSquareClick={lance.aoClicarNaCasa}
+        />
+      }
+    >
+      <button type="button" className={styles.secundario} onClick={aoVoltar}>
+        ← Todos os planos
+      </button>
+      <h3 className={styles.blocoTitulo}>{plano.name}</h3>
+      <p className={styles.texto}>{plano.objective}</p>
+
+      <p className={styles.nota}>
+        <strong>Quando usar.</strong> {plano.when}
+      </p>
+      {plano.porQueFunciona ? (
+        <p className={styles.nota}>
+          <strong>Por que funciona.</strong> {plano.porQueFunciona}
+        </p>
+      ) : null}
+      {plano.preparacao ? (
+        <p className={styles.nota}>
+          <strong>O que precisa estar preparado.</strong> {plano.preparacao}
+        </p>
+      ) : null}
+      {plano.oQueOAdversarioTenta ? (
+        <p className={styles.nota}>
+          <strong>O que o adversário tenta.</strong> {plano.oQueOAdversarioTenta}
+        </p>
+      ) : null}
+      <p className={styles.nota}>
+        <strong>Risco.</strong> {plano.risk}
+      </p>
+
+      {/*
+        A ROTA EM TEXTO continua, e continua sendo regra de acessibilidade: uma
+        rota que só existe como seta some para quem usa leitor de tela. Ela fica
+        abaixo da pergunta de propósito — acima, entregaria a resposta.
+      */}
+      {micro ? (
+        <div className={styles.veredito}>
+          {acertou ? (
+            <>
+              <p className={styles.acertou}>✓ {micro.san} começa o plano.</p>
+              <p className={styles.texto}>{micro.porque}</p>
+            </>
+          ) : (
+            <>
+              <p className={styles.texto}>{micro.pergunta ?? 'Qual lance começa este plano?'}</p>
+              <p className={styles.nota} role="status">
+                {errou === null
+                  ? 'Jogue no tabuleiro.'
+                  : `${errou} não é o lance deste plano. A posição não mudou — tente de novo.`}
+              </p>
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {plano.arrows && plano.arrows.length > 0 && (!micro || acertou) ? (
+        <p className={styles.nota}>
+          Rota visual: {plano.arrows.map((seta) => `${seta.from} → ${seta.to}`).join(' · ')}
+        </p>
+      ) : null}
+    </MesaDeEstudo>
+  )
+}
+
+/** A posição depois do lance certo, para o tabuleiro mostrar o que aconteceu. */
+function fenDoLanceFeito(fen: string | null, san: string | undefined): string | null {
+  if (!fen || !san) return null
+  return applyMove(fen, san)?.fenAfter ?? null
 }
 
 /**

@@ -170,6 +170,19 @@ const italian = course({
       when: 'Depois do roque e com desenvolvimento suficiente.',
       risk: 'Abrir o centro com o rei exposto.',
       arrows: [{ from: 'd3', to: 'd4' }],
+      porQueFunciona:
+        'O peão em d3 sustenta e4; quando d4 avança, as colunas centrais se abrem para peças que já estão prontas — e quem tem mais peças prontas ganha com a abertura do centro.',
+      preparacao:
+        'Rei em segurança pelo roque e uma torre olhando a coluna que vai abrir. Sem isso, a ruptura abre linhas para o adversário antes de abrir para você.',
+      oQueOAdversarioTenta:
+        'Manter a tensão em e5 e escolher ele a hora da troca, ou responder d5 e igualar o centro antes que a ruptura signifique alguma coisa.',
+      /*
+        SEM MICRODECISÃO, E A AUSÊNCIA É DELIBERADA. A condição deste plano é
+        "depois do roque", e a linha principal da Italiana ROCA no último lance —
+        não existe posição nela em que as brancas joguem d4 já rocadas. Autorar a
+        pergunta na posição anterior ensinaria a romper o centro com o rei no
+        meio, que é exatamente o `risk` escrito acima.
+      */
     },
     {
       id: 'italiana-f7',
@@ -181,6 +194,17 @@ const italian = course({
       when: 'Enquanto o bispo permanece ativo em c4.',
       risk: 'Atacar antes de terminar o desenvolvimento.',
       arrows: [{ from: 'c4', to: 'f7' }],
+      porQueFunciona:
+        'f7 é defendido só pelo rei enquanto ele não roca. O bispo de c4 mira essa casa enquanto se desenvolve — a pressão vem junto com o lance útil, e não no lugar dele.',
+      preparacao:
+        'Nada além do bispo em c4. É por não exigir preparação que isto é um alvo de desenvolvimento, e não um ataque a ser montado.',
+      oQueOAdversarioTenta:
+        'Rocar, o que tira o rei de e8 e põe a torre defendendo f7, ou jogar d5 fechando a diagonal com ganho de tempo.',
+      /*
+        SEM MICRODECISÃO: a seta c4→f7 não é um lance, é uma linha de pressão.
+        Uma implementação que transformasse toda seta em pergunta pediria aqui um
+        lance impossível — e o portão de legalidade reprovaria.
+      */
     },
   ],
   structures: [
@@ -318,6 +342,19 @@ const caroKann = course({
       when: 'Antes de jogar e6 em posições em que o bispo ficaria preso.',
       risk: 'Ficar passivo e sem desenvolvimento.',
       arrows: [{ from: 'c8', to: 'f5' }],
+      porQueFunciona:
+        'Na Caro-Kann o peão chega a d5 sem trancar o bispo de c8 — é isso que a separa da Francesa. Tirá-lo para f5 antes de e6 é usar a única janela que a estrutura oferece.',
+      preparacao:
+        'Apenas que o peão de e ainda esteja em e7. Depois de e6 a janela fecha e o bispo passa a partida atrás da própria cadeia.',
+      oQueOAdversarioTenta:
+        'Expulsar o bispo com Bd3 para trocá-lo, ou ganhar espaço com g4 e h4 empurrando-o para casas piores.',
+      microdecisao: {
+        ply: 5,
+        san: 'Bf5',
+        pergunta: 'O centro fechou com e5. Qual lance começa este plano?',
+        porque:
+          'Antes de e6, e só antes: este é o lance que a Caro-Kann existe para permitir. Depois de e6 o bispo fica preso e a defesa vira uma Francesa sem as compensações dela.',
+      },
     },
   ],
   structures: [
@@ -465,6 +502,17 @@ const qgd = course({
       when: 'Após desenvolvimento e rei seguro.',
       risk: 'Abrir linhas sem terminar o desenvolvimento.',
       arrows: [{ from: 'c7', to: 'c5' }],
+      porQueFunciona:
+        'A cadeia branca se apoia em d4. c5 ataca a base do avanço, e quando as trocas vêm, o bispo e a torre das pretas ganham as linhas que o próprio peão abriu.',
+      preparacao:
+        'Desenvolvimento terminado e rei rocado. c5 abre a coluna c e a diagonal do bispo branco ao mesmo tempo — quem não terminou de se desenvolver abre para o outro.',
+      oQueOAdversarioTenta:
+        'Sustentar d4 com e3 e Nf3 para que a ruptura não ganhe nada, ou trocar em c5 na hora em que a recaptura atrapalhe as peças pretas.',
+      /*
+        SEM MICRODECISÃO: a única posição da linha principal em que c5 é legal é
+        o terceiro lance, e ali ele não é este plano — é outra defesa. Perguntar
+        lá ensinaria a sair do repertório que a etapa anterior acabou de ensinar.
+      */
     },
   ],
   structures: [
@@ -606,6 +654,20 @@ const scotch = course({
       when: 'Quando a troca central abriu diagonais.',
       risk: 'Sacrificar desenvolvimento por um peão.',
       arrows: [{ from: 'd2', to: 'd4' }],
+      porQueFunciona:
+        'd4 troca o peão central e abre a coluna d e as diagonais no mesmo lance. Quem já tem o cavalo em f3 desenvolve com tempo; quem não desenvolveu, corre atrás da posição.',
+      preparacao:
+        'O cavalo em f3 atacando e5. É ele que obriga a troca — sem essa pressão as pretas simplesmente sustentam o centro e o avanço não ganha nada.',
+      oQueOAdversarioTenta:
+        'Devolver o tempo com Bc5 ou Nf6 atacando o cavalo de d4, e igualar o desenvolvimento antes que a atividade vire algo concreto.',
+      microdecisao: {
+        ply: 4,
+        san: 'd4',
+        pergunta:
+          'As peças estão desenvolvidas e o centro ainda está fechado. Qual lance começa este plano?',
+        porque:
+          'É o lance que dá nome à abertura: ele abre o centro enquanto o cavalo de f3 mantém e5 sob pressão. Adiar deixa as pretas completarem o desenvolvimento e a troca perde o sentido.',
+      },
     },
   ],
   structures: [
@@ -732,6 +794,19 @@ const london = course({
       when: 'Após o roque e desenvolvimento.',
       risk: 'Fechar o bispo sem necessidade.',
       arrows: [{ from: 'e2', to: 'e4' }],
+      porQueFunciona:
+        'O Londres monta a mesma estrutura contra quase tudo; e4 é o lance que transforma solidez em espaço, abrindo a diagonal do bispo de d3 e a coluna e.',
+      preparacao:
+        'Peão em e3, bispo já fora da cadeia em f4, cavalos em f3 e d2 e o rei rocado. O cavalo de d2 existe justamente para apoiar e4.',
+      oQueOAdversarioTenta:
+        'Ocupar e4 primeiro com um cavalo, ou fixar o centro com c5 e Nc6 para que o avanço nunca aconteça sem concessão.',
+      /*
+        SEM MICRODECISÃO, E ESTE É O CASO QUE PROVA A REGRA. Na posição que
+        ilustra o plano, e2-e4 é LEGAL e é um peão perdido: d5 e o cavalo de f6
+        já vigiam a casa, e o Londres joga e3 primeiro por isso. Uma
+        implementação que transformasse a seta em pergunta ensinaria aqui um erro
+        de material — sem que nada na tela avisasse.
+      */
     },
   ],
   structures: [
@@ -854,6 +929,17 @@ const slav = course({
       when: 'Quando a estrutura permite Af5 ou Ag4.',
       risk: 'Deixar a dama sair cedo para defender peões.',
       arrows: [{ from: 'c8', to: 'f5' }],
+      porQueFunciona:
+        'c6 sustenta d5 sem fechar a diagonal c8-h3. É a vantagem estrutural da Eslava sobre a Ortodoxa, e ela só se realiza se o bispo sair antes de e6.',
+      preparacao:
+        'O peão de e ainda em e7, e atenção a b7: com o bispo fora da casa inicial, a diagonal a4-e8 e o peão de b7 ficam mais expostos.',
+      oQueOAdversarioTenta:
+        'Jogar cxd5 seguido de Qb3 mirando b7 e d5, ou avançar e3 e Bd3 para trocar o bispo assim que ele aparecer em f5.',
+      /*
+        SEM MICRODECISÃO: na posição desta linha o lance do repertório é Nf6, e
+        não o bispo. Perguntar pelo bispo ali cobraria um lance que a própria
+        linha principal não joga.
+      */
     },
   ],
   structures: [
