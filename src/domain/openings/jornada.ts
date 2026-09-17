@@ -202,8 +202,15 @@ export function construirJornadaDeAbertura(opening: OpeningDefinition): StudySta
       id: 'variacoes',
       tipo: 'abertura:variacoes',
       titulo: 'Variações importantes',
+      /*
+        O OBJETIVO MUDOU JUNTO COM A PARTIÇÃO (ADR-0018). Ele dizia "saber o que
+        muda quando o ADVERSÁRIO desvia da linha principal" — que é, palavra por
+        palavra, a etapa anterior. Enquanto as duas etapas liam a mesma lista, a
+        duplicação passava despercebida; separá-las tornou a frase falsa, e uma
+        promessa falsa no cabeçalho é pior que uma etapa magra.
+      */
       rotuloCurto: 'Variações',
-      objetivo: 'Saber o que muda quando o adversário desvia da linha principal.',
+      objetivo: 'Saber onde VOCÊ escolhe a linha, e o que cada escolha compromete.',
       regra: { tipo: 'leitura' },
     },
     {

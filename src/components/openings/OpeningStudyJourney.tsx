@@ -65,15 +65,13 @@ import {
   type OpeningDefinition,
   type OpeningProgress,
 } from '@/domain/openings'
-import { posicoesDaLinha, ramificacoesDaAbertura } from '@/domain/openings/variacoes'
-import { ExplorerPanel } from '@/components/openings/ExplorerPanel'
 import {
-  applyMove,
-  identidadeDePosicao,
-  legalMoves,
-  type PromotionPiece,
-  type SquareName,
-} from '@/lib/chess'
+  posicoesDaLinha,
+  respostasDoAdversario,
+  variacoesDoAluno,
+  type RamificacaoDaVariacao,
+} from '@/domain/openings/variacoes'
+import { applyMove, legalMoves, type PromotionPiece, type SquareName } from '@/lib/chess'
 import styles from './OpeningStudyJourney.module.css'
 
 /** O id da jornada carrega o domínio: ver o contrato em `@/domain/types`. */
@@ -324,32 +322,27 @@ function ConteudoDeEtapa({
 
     case 'abertura:respostas':
       return (
-        <ComTabuleiro opening={opening}>
-          <p className={styles.texto}>
-            Saber o que o adversário QUER é diferente de saber qual é o seu próximo lance. Estas são
-            as respostas que aparecem de verdade.
-          </p>
-          <ul className={styles.lista}>
-            {opening.variations.map((variacao) => (
-              <li key={variacao.id}>
-                <strong>{variacao.name}.</strong> {variacao.description}
-              </li>
-            ))}
-          </ul>
-          {/*
-            O EXPLORER CONTINUA EXISTINDO, e continua sendo ENRIQUECIMENTO SOB
-            DEMANDA: não consulta nada até o aluno pedir. Ele veio da aba antiga
-            (plano §153: migrar, não apagar) e esta é a etapa certa — a pergunta
-            "o que o mundo joga?" só faz sentido DEPOIS de o aluno saber o que a
-            linha estudada prevê. Antes disso, a frequência vira a autoridade e
-            o repertório dele vira sugestão.
-          */}
-          <ExplorerPanel posicoes={posicoesConsultaveis(opening)} />
-        </ComTabuleiro>
+        <LinhasEnsinadas
+          opening={opening}
+          ramos={respostasDoAdversario(opening)}
+          rotuloDoSeletor="Escolher a resposta"
+          intro="Saber o que o adversário QUER é diferente de saber qual é o seu próximo lance. Cada resposta abaixo começa na posição em que ele decide, e segue com o que você joga em seguida."
+          vazio="Esta abertura ainda não tem respostas autoradas. No treino, o computador joga a linha principal."
+          fecho="Você vai encontrar estas respostas no treino: o computador joga a linha principal na primeira partida e os desvios quando você recomeça."
+        />
       )
 
     case 'abertura:variacoes':
-      return <VariacoesEnsinadas opening={opening} />
+      return (
+        <LinhasEnsinadas
+          opening={opening}
+          ramos={variacoesDoAluno(opening)}
+          rotuloDoSeletor="Escolher a variação"
+          intro="Estas são as linhas em que quem escolhe outro caminho é VOCÊ — ou o nome que uma parte da linha principal já tem."
+          vazio="Esta abertura não tem nenhuma variação sua para estudar, e isso não é conteúdo faltando: contra cada resposta do adversário, a continuação do repertório é uma só. Quem decide aqui é o adversário, e você viu essas decisões na etapa anterior."
+          fecho="Estas linhas também entram no treino final: o repertório aceita o que você estudou, e não só a linha principal."
+        />
+      )
 
     case 'abertura:planos':
       return (
@@ -646,45 +639,63 @@ function LinhaComentada({
 }
 
 /**
- * AS VARIAÇÕES, ENSINADAS NO TABULEIRO — e não listadas como texto.
+ * UM CONJUNTO DE LINHAS, ENSINADO NO TABULEIRO — e não listado como texto.
  *
- * A etapa mostrava nome, descrição e a linha em SAN numa única string. Uma
- * variação é uma DECISÃO tomada numa posição: sem a posição na tela, "Cf6 em
- * vez de Bc5" é uma informação que o aluno não tem como conferir, e no treino
- * ele encontra a posição sem nunca tê-la visto.
+ * Atende as DUAS etapas que falam de desvio, porque elas fazem a mesma coisa com
+ * conteúdos diferentes: "Melhores respostas do adversário" mostra os ramos em
+ * que quem escolhe é o OUTRO, e "Variações importantes" mostra o complemento.
+ * Quem separa é `respostasDoAdversario`/`variacoesDoAluno`, no domínio; aqui só
+ * chega a lista já separada.
  *
- * ELA COMEÇA ONDE A VARIAÇÃO COMEÇA. O tabuleiro abre na posição da decisão, e
- * o primeiro lance mostrado é o desvio — não o `e4` que a linha principal já
+ * POR QUE NÃO SÃO DOIS COMPONENTES: eram duas telas dizendo a mesma coisa de
+ * jeitos diferentes — uma com tabuleiro, a outra com uma lista de nomes e um
+ * menu para consultar o explorador. Duas cópias da mesma tela divergem na
+ * primeira correção que só uma delas recebe.
+ *
+ * ELA COMEÇA ONDE A LINHA COMEÇA. O tabuleiro abre na posição da decisão, e o
+ * primeiro lance mostrado é o desvio — não o `e4` que a linha principal já
  * ensinou.
  *
  * E ELA AVISA QUE ISTO VOLTA NO TREINO. É o mesmo conjunto de linhas que o bot
  * joga na prática: ensinar aqui e enfrentar lá é o laço que faz a etapa valer.
  */
-function VariacoesEnsinadas({ opening }: { opening: OpeningDefinition }) {
-  const ramos = useMemo(() => ramificacoesDaAbertura(opening), [opening])
+function LinhasEnsinadas({
+  opening,
+  ramos,
+  intro,
+  vazio,
+  fecho,
+  rotuloDoSeletor,
+}: {
+  opening: OpeningDefinition
+  ramos: readonly RamificacaoDaVariacao[]
+  intro: string
+  vazio: string
+  fecho: string
+  rotuloDoSeletor: string
+}) {
   const [escolhida, setEscolhida] = useState(0)
   const ramo = ramos[Math.min(escolhida, Math.max(ramos.length - 1, 0))]
 
-  // Uma abertura sem variação autorada não deve mostrar um seletor vazio nem um
-  // tabuleiro sem assunto: ela mostra a posição que o repertório busca.
+  // Sem linha autorada não se mostra um seletor vazio nem um tabuleiro sem
+  // assunto: a etapa mostra a posição que o repertório busca e diz o que falta.
   if (!ramo) {
     return (
       <ComTabuleiro opening={opening}>
-        <p className={styles.texto}>
-          Esta abertura ainda não tem variações autoradas. No treino, o computador joga a linha
-          principal.
-        </p>
+        <p className={styles.texto}>{vazio}</p>
       </ComTabuleiro>
     )
   }
 
   const emComum = ramo.lancesEmComum.map((lance) => lance.san).join(' ')
   const desviaOAdversario = ramo.ladoQueDesvia !== opening.side
+  const lanceDoDesvio =
+    ramo.indiceDaDivergencia === null ? null : ramo.variacao.line[ramo.indiceDaDivergencia]
 
   return (
     <>
       {ramos.length > 1 ? (
-        <div className={styles.opcoes} role="group" aria-label="Escolher a variação">
+        <div className={styles.opcoes} role="group" aria-label={rotuloDoSeletor}>
           {ramos.map((opcao, i) => (
             <button
               key={opcao.variacao.id}
@@ -700,14 +711,15 @@ function VariacoesEnsinadas({ opening }: { opening: OpeningDefinition }) {
       ) : null}
 
       <LinhaComentada
-        // A remontagem ao trocar de variação é deliberada: ela reposiciona a
-        // navegação no desvio da variação nova, sem efeito que escreve estado.
+        // A remontagem ao trocar de linha é deliberada: ela reposiciona a
+        // navegação no desvio da linha nova, sem efeito que escreve estado.
         key={ramo.variacao.id}
         opening={opening}
         lances={ramo.variacao.line}
         inicio={ramo.indiceDaDivergencia ?? 0}
         antes={
           <>
+            <p className={styles.texto}>{intro}</p>
             <h3 className={styles.blocoTitulo}>{ramo.variacao.name}</h3>
             <p className={styles.texto}>{ramo.variacao.description}</p>
             {ramo.indiceDaDivergencia === null ? (
@@ -720,25 +732,39 @@ function VariacoesEnsinadas({ opening }: { opening: OpeningDefinition }) {
                 Este é o nome da linha principal até aqui — não é um desvio. Você já a percorreu na
                 etapa anterior.
               </p>
+            ) : ramo.lanceRecusado === null ? (
+              /*
+                A LINHA PRINCIPAL PODE SIMPLESMENTE TER ACABADO — é o caso da
+                Escocesa, cuja principal termina em Cxd4 e cujas respostas vêm
+                logo depois. Não há lance recusado, e escrever "no lugar de"
+                aqui inventaria uma alternativa que o conteúdo não tem.
+              */
+              <p className={styles.nota}>
+                A linha principal termina em {emComum ? <>{ultimoLance(emComum)}</> : 'sua raiz'}.
+                Daqui em diante quem escolhe é {desviaOAdversario ? 'o adversário' : 'você'}, e a
+                primeira escolha é <strong>{lanceDoDesvio?.san}</strong>.
+              </p>
             ) : (
               <p className={styles.nota}>
                 {emComum ? <>Até {emComum}, tudo igual à linha principal. </> : null}
                 {desviaOAdversario ? 'O adversário joga' : 'Você joga'}{' '}
-                <strong>{ramo.variacao.line[ramo.indiceDaDivergencia]?.san}</strong>
-                {ramo.lanceRecusado ? <> no lugar de {ramo.lanceRecusado.san}</> : null}, e é daí em
-                diante que a partida muda.
+                <strong>{lanceDoDesvio?.san}</strong> no lugar de {ramo.lanceRecusado.san}, e é daí
+                em diante que a partida muda.
               </p>
             )}
           </>
         }
       />
 
-      <p className={styles.nota}>
-        Você vai enfrentar estas variações no treino: o computador joga a linha principal na
-        primeira partida e os desvios quando você recomeça.
-      </p>
+      <p className={styles.nota}>{fecho}</p>
     </>
   )
+}
+
+/** O último lance de uma sequência em SAN, para a frase não repetir a linha inteira. */
+function ultimoLance(sequencia: string): string {
+  const lances = sequencia.split(' ')
+  return lances[lances.length - 1] ?? sequencia
 }
 
 /**
@@ -1080,30 +1106,15 @@ function lanceEsperado(
   return node?.outgoingMoves.find((edge) => edge.role === 'main')?.san
 }
 
-/**
- * As posições que o explorador pode consultar.
- *
- * Derivadas da linha principal, deduplicadas por identidade — transposições
- * chegam à mesma posição, e oferecê-la duas vezes no seletor confundiria sem
- * acrescentar nada. Migrado da aba antiga sem mudança de regra.
- */
-function posicoesConsultaveis(opening: OpeningDefinition) {
-  const fens = posicoesDaLinha(opening.rootFen, opening.mainline)
-  return [
-    {
-      identidade: identidadeDePosicao(opening.rootFen),
-      fen: opening.rootFen,
-      rotulo: 'Posição inicial',
-    },
-    ...opening.mainline.slice(0, 8).map((lance, indice) => {
-      const fen = fens[indice + 1] ?? opening.rootFen
-      return { identidade: identidadeDePosicao(fen), fen, rotulo: `${indice + 1}. ${lance.san}` }
-    }),
-  ].filter(
-    (posicao, indice, todas) =>
-      todas.findIndex((item) => item.identidade === posicao.identidade) === indice,
-  )
-}
+/*
+  O EXPLORADOR SAIU DAQUI, e `posicoesConsultaveis` saiu com ele. Ver ADR-0018.
+
+  A etapa "Melhores respostas do adversário" era uma lista de nomes mais um menu
+  de posições para consultar a Lichess. O §60 do plano de aberturas é explícito
+  — "não usar como UI principal" — e o §61 também: "frequência é insumo, não
+  aula". O painel continua existindo em `/openings`, que é onde ele é
+  enriquecimento e não currículo.
+*/
 
 /*
   `posicoesDaLinha` MUDOU-SE PARA `@/domain/openings/variacoes`.

@@ -107,11 +107,25 @@ test('a tela NASCE sem estatística: nada é consultado antes de o aluno pedir',
 })
 
 test('explorer inalcançável não quebra a tela, e diz o motivo', async ({ page }) => {
-  await explorerForaDoAr(page)
+  /*
+    O CONTADOR EXISTE PARA O PORTÃO MORDER DOS DOIS LADOS. O teste vizinho prova
+    que NADA vai à rede antes do pedido; sem a contagem aqui, um botão que
+    parasse de disparar a consulta passaria nos dois — "sob demanda" viraria
+    "nunca", e a tela continuaria mostrando a mesma mensagem de falha.
+
+    Esta metade era a que faltava quando o teste equivalente da jornada foi
+    apagado (ADR-0018). Ela foi fechada antes da remoção, e não depois.
+  */
+  let consultas = 0
+  await page.route(ROTA_EXPLORER, (rota) => {
+    consultas += 1
+    return rota.abort()
+  })
   await page.goto('/openings')
 
   const brancas = page.getByRole('region', { name: BRANCAS })
   await brancas.getByRole('button', { name: 'Consultar o explorador' }).click()
+  await expect.poll(() => consultas, { message: 'o botão não disparou consulta nenhuma' }).toBe(1)
 
   await expect(brancas.getByText('Não consegui falar com o explorador')).toBeVisible()
   await expect(brancas.getByText(/A consulta não chegou ao serviço/)).toBeVisible()
