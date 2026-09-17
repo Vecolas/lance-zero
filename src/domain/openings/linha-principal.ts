@@ -1,0 +1,181 @@
+/**
+ * A LINHA PRINCIPAL EM DOIS TEMPOS: entender, depois completar.
+ *
+ * O QUE MUDA, e por quê. A etapa era uma leitura: tabuleiro fixo, ← / →,
+ * comentário. É boa como referência e fraca como aquisição — o aluno atravessa
+ * nove lances sem nunca ter de produzir nenhum, e sair da etapa com a sensação
+ * de ter aprendido é o resultado mais provável e o menos verdadeiro.
+ *
+ * A PESQUISA QUE O PLANO CITA (§3.2, §3.3, §3.4) diz as três coisas na ordem:
+ * worked example primeiro, porque pedir produção antes de haver o que reproduzir
+ * só mede quem já sabia; completion depois, porque recuperar da memória é o que
+ * fixa; e ajuda decrescente ao longo do caminho, porque ajuda constante vira
+ * muleta e ajuda ausente vira adivinhação.
+ *
+ * ESTE MÓDULO É SÓ A POLÍTICA. Ele não joga nada: quem move as peças é
+ * `sequencia.ts`, que já resolve legalidade, snapback e a resposta do
+ * computador na mesma transição. Aqui se decide onde a demonstração para, o que
+ * é cobrado e quanta ajuda cada cobrança recebe.
+ *
+ * PURO: sem React, sem relógio, sem armazenamento, sem `Math.random`. A mesma
+ * abertura dá sempre o mesmo percurso, e é isso que torna a política testável.
+ */
+
+import { applyMove } from '@/lib/chess'
+import type { SquareName } from '@/lib/chess/types'
+import type { LinhaTreinavel } from '@/domain/exercicios/sequencia'
+import type { OpeningDefinition, OpeningMoveLesson } from './index'
+
+/**
+ * Quantas decisões do aluno o computador demonstra antes de cobrar a primeira.
+ *
+ * DOIS, e o número vem do exemplo do próprio plano (§15.2): a Italiana mostra
+ * `e4 e5 Nf3 Nc6` e então pergunta por `Bc4`. Duas demonstrações bastam para o
+ * aluno ter visto o padrão — abertura de centro, cavalo, bispo — sem que a
+ * linha acabe antes de ele produzir alguma coisa.
+ *
+ * É HEURÍSTICA DE PRODUTO, não constante científica. Está aqui, num lugar só,
+ * para mudar quando houver telemetria.
+ */
+export const DEMONSTRACOES_MAXIMAS = 2
+
+/** Quanta ajuda a tela oferece antes de o aluno jogar. */
+export type NivelDeAjuda =
+  /** Primeira cobrança: o objetivo e uma casa para onde olhar. */
+  | 'objetivo-e-dica'
+  /** Depois: só o objetivo. */
+  | 'objetivo'
+  /** No fim: a posição, e nada mais. */
+  | 'posicao'
+
+/**
+ * Uma dica de um degrau só.
+ *
+ * ELA É DADO, NÃO FRASE. A redação em português mora na tela, junto do resto do
+ * texto que o aluno lê — devolver prosa daqui obrigaria a traduzir o domínio.
+ */
+export type DicaDaDecisao =
+  /** A casa que a jogada mira. Vem de `highlights`. */
+  | { tipo: 'casa-alvo'; casa: SquareName }
+  /** De onde a peça sai. Vem de `arrows`, e é o degrau mais próximo da resposta. */
+  | { tipo: 'peca'; casa: SquareName }
+
+export interface DecisaoDaLinhaPrincipal {
+  /** Índice do lance dentro de `opening.mainline`. */
+  indice: number
+  san: string
+  uci: string
+  nivel: NivelDeAjuda
+  /**
+   * O que o aluno busca aqui, nas palavras de quem autorou.
+   *
+   * `null` quando o conteúdo não declara nenhuma — e aí a tela pergunta sem
+   * enunciado, em vez de inventar um. Ver o portão que proíbe o objetivo conter
+   * o SAN do lance: um enunciado que entrega a resposta é pior que nenhum.
+   */
+  objetivo: string | null
+  dica: DicaDaDecisao | null
+}
+
+export interface PercursoDaLinhaPrincipal {
+  /** Quantos plies o computador demonstra antes de pedir o primeiro lance. */
+  demonstrados: number
+  /** Os lances demonstrados, para a fase de entender percorrer. */
+  exemplo: readonly OpeningMoveLesson[]
+  /** O resto da linha, pronto para `iniciarSequencia`. */
+  linha: LinhaTreinavel
+  /** O que será cobrado, em ordem, com a ajuda de cada um. */
+  decisoes: readonly DecisaoDaLinhaPrincipal[]
+}
+
+/**
+ * Monta o percurso da linha principal de uma abertura.
+ *
+ * A REGRA DE ONDE A DEMONSTRAÇÃO PARA é `min(2, metade das decisões)`, e a
+ * metade não é enfeite: sem ela, uma principal de seis plies pelas pretas — que
+ * dá ao aluno três decisões — gastaria duas em demonstração e cobraria uma só.
+ * Um exercício único no fim de uma leitura é a leitura com um passo a mais, não
+ * prática. Com a metade, toda abertura do curso atual cobra pelo menos duas.
+ */
+export function percursoDaLinhaPrincipal(opening: OpeningDefinition): PercursoDaLinhaPrincipal {
+  /*
+    O LADO SE LÊ DA PARIDADE DO PLY, não de um contador à parte. `ply` é
+    1-based e normalizado na construção da abertura: ímpar é das brancas.
+  */
+  const decisoesPossiveis = opening.mainline
+    .map((lance, indice) => ({ lance, indice }))
+    .filter(({ lance }) => (lance.ply % 2 === 1) === (opening.side === 'white'))
+
+  const demonstradas = Math.min(DEMONSTRACOES_MAXIMAS, Math.floor(decisoesPossiveis.length / 2))
+  const cobradas = decisoesPossiveis.slice(demonstradas)
+
+  /*
+    A DEMONSTRAÇÃO VAI ATÉ O LANCE ANTERIOR AO PRIMEIRO COBRADO — incluindo a
+    resposta do adversário que antecede a pergunta. Parar antes dela deixaria a
+    tela pedindo um lance numa posição em que não é a vez do aluno.
+
+    Sem nada cobrado (conteúdo curto demais), a demonstração é a linha toda
+    menos o último lance: um percurso sem pergunta nenhuma não existe, e quem
+    reprova o conteúdo curto é o portão, não esta função.
+  */
+  const primeiroCobrado = cobradas[0]?.indice ?? Math.max(opening.mainline.length - 1, 0)
+  const demonstrados = Math.max(primeiroCobrado, 0)
+
+  let fen = opening.rootFen
+  for (const lance of opening.mainline.slice(0, demonstrados)) {
+    const aplicado = applyMove(fen, lance.san)
+    /*
+      PARA NO PRIMEIRO ILEGAL, em silêncio. Quem reprova linha ilegal é o portão
+      de conteúdo, na build; travar a tela do aluno cobraria dele o defeito de
+      quem autorou.
+    */
+    if (!aplicado) break
+    fen = aplicado.fenAfter
+  }
+
+  return {
+    demonstrados,
+    exemplo: opening.mainline.slice(0, demonstrados),
+    linha: {
+      fenInicial: fen,
+      ladoDoAluno: opening.side === 'white' ? 'w' : 'b',
+      lances: opening.mainline.slice(demonstrados).map((lance) => lance.uci),
+    },
+    decisoes: cobradas.map(({ lance, indice }, ordem) => ({
+      indice,
+      san: lance.san,
+      uci: lance.uci,
+      nivel: nivelDaOrdem(ordem),
+      objetivo: lance.strategicIdea ?? lance.tacticalIdea ?? null,
+      dica: dicaDoLance(lance),
+    })),
+  }
+}
+
+/**
+ * A ajuda cai com a ordem da cobrança, e só com ela.
+ *
+ * DERIVAR DA POSIÇÃO É O PONTO: qualquer regra que olhasse o conteúdo do lance
+ * — "este é difícil, dá mais ajuda" — poderia aumentar a ajuda no meio do
+ * caminho, que é exatamente o contrário de fading.
+ */
+function nivelDaOrdem(ordem: number): NivelDeAjuda {
+  if (ordem === 0) return 'objetivo-e-dica'
+  if (ordem === 1) return 'objetivo'
+  return 'posicao'
+}
+
+/**
+ * A dica sai do que o conteúdo já marca no tabuleiro.
+ *
+ * A CASA ALVO VEM PRIMEIRO porque ela diz o que procurar sem dizer o que jogar
+ * — "olhe f7" admite mais de um lance. A casa de origem é o degrau seguinte e
+ * quase entrega a resposta; ela só entra quando não há alvo marcado.
+ */
+function dicaDoLance(lance: OpeningMoveLesson): DicaDaDecisao | null {
+  const alvo = lance.highlights?.[0]
+  if (alvo) return { tipo: 'casa-alvo', casa: alvo }
+  const seta = lance.arrows?.[0]
+  if (seta) return { tipo: 'peca', casa: seta.from }
+  return null
+}

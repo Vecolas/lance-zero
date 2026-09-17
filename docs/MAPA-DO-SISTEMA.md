@@ -163,25 +163,37 @@ como chave — é o que reconhece transposições. Cuidado documentado: o campo
 `frequency` das arestas é **quantas linhas autoradas passam ali**, e não
 popularidade do mundo. Nunca deve ser apresentado como estatística.
 
-### A jornada, nove etapas
+### A jornada, oito etapas
 
-`visão → ideias → linha principal → melhores respostas do adversário →
-variações → planos → jogar pelos dois lados → prática guiada → treino final`
+`visão → ideias → linha principal → variações → planos → jogar pelos dois lados
+→ prática guiada → treino final`
 
-- **Linha principal (3/9)** — `LinhaComentada`: tabuleiro fixo, um lance por
-  vez, comentário ao lado, navegação ← / →.
-- **Respostas (4/9) e Variações (5/9)** — a mesma tela, com listas
-  **complementares**, separadas por **quem toma a decisão** (ADR-0018):
-  `respostasDoAdversario` são os ramos em que quem recusa a principal é o outro;
-  `variacoesDoAluno` é o complemento exato. Um portão afirma que a soma das duas
-  é o total e que nenhum id aparece nas duas.
-- **Prática guiada (8/9)** — o aluno joga a linha principal no tabuleiro e o
+Eram nove. "Melhores respostas do adversário" e "Variações importantes" eram
+duas etapas separadas por **quem tomava a decisão**, e foram fundidas numa só
+(ADR-0022). Quem estudou antes da fusão é traduzido por
+`migrarJornadaDeAbertura`, que é idempotente e roda no caminho de leitura.
+
+- **Linha principal (3/8)** — dois tempos dentro da mesma etapa (ADR-0023). Em
+  **entender**, o computador demonstra os primeiros lances comentados, com
+  navegação ← / →. Em **completar**, o aluno joga o resto no tabuleiro e o
+  computador responde pelo outro lado na mesma transição. A ajuda decresce:
+  objetivo + casa, depois só objetivo, depois só a posição. Quem decide onde a
+  demonstração para é `percursoDaLinhaPrincipal`, no domínio.
+- **Variações (4/8)** — `BibliotecaDeRamos`: UMA lista, ordenada por
+  importância. `autor` (aluno/adversário/nenhum) virou metadata — decide se a
+  frase diz "o adversário joga" ou "você joga", e deixou de decidir em que etapa
+  o ramo aparece. Só ramo `core` bloqueia a conclusão; `secondary` e `optional`
+  continuam visíveis. Cada ramo `core` traz `intencaoDoAdversario` e
+  `objetivoDoAluno`, exigidos por portão.
+- **Prática guiada (7/8)** — o aluno joga a linha principal no tabuleiro e o
   computador responde pelo outro lado, na mesma transição. Sem botão entre
   lances. Errar faz _snapback_ e abre a explicação do lance estudado.
-- **Treino final (9/9)** — regra de `cobertura`: linha principal, cada variação
+- **Treino final (8/8)** — regra de `cobertura`: linha principal, cada variação
   e a **perspectiva reversa** (jogar a mesma abertura pelo outro lado). Os alvos
   são derivados do conteúdo, então quem acrescenta uma variação passa a ter de
-  demonstrá-la sem editar código.
+  demonstrá-la sem editar código. **Ponto cego declarado:** a cobertura ainda
+  deriva de `opening.variations` inteiro, e não de `ramosCore` — um ramo
+  `secondary` continua sendo cobrado.
 
 **Sparring** (`SparringDaAbertura`) fica disponível depois de concluir: partidas
 livres contra o bot do repertório, que nomeia a variação quando ela é jogada.

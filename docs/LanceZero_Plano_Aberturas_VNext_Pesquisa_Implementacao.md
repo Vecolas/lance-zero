@@ -1,4 +1,5 @@
 # LanceZero — Plano Definitivo VNext para a Área de Aberturas
+
 ## Pesquisa, diagnóstico do sistema atual e plano de implementação
 
 **Base analisada:** `MAPA-DO-SISTEMA.md`, varredura da `main` integrada em 2026-09-17.
@@ -881,10 +882,7 @@ interface OpeningDecision {
   opponentIntent?: LocalizedText
   studentGoal: LocalizedText
 
-  importance:
-    | 'core'
-    | 'secondary'
-    | 'optional'
+  importance: 'core' | 'secondary' | 'optional'
 }
 ```
 
@@ -901,14 +899,9 @@ interface OpeningBranch {
 
   branchPointPositionId: string
 
-  actor:
-    | 'student'
-    | 'opponent'
+  actor: 'student' | 'opponent'
 
-  importance:
-    | 'core'
-    | 'secondary'
-    | 'optional'
+  importance: 'core' | 'secondary' | 'optional'
 
   moveSequence: string[]
 
@@ -1691,12 +1684,12 @@ branch × role
 
 Exemplo:
 
-| Branch | lado do repertório | lado adversário |
-|---|---:|---:|
-| Mainline | obrigatório | obrigatório |
-| Two Knights | obrigatório | obrigatório/recomendado |
-| Giuoco | obrigatório | recomendado |
-| Optional X | opcional | opcional |
+| Branch      | lado do repertório |         lado adversário |
+| ----------- | -----------------: | ----------------------: |
+| Mainline    |        obrigatório |             obrigatório |
+| Two Knights |        obrigatório | obrigatório/recomendado |
+| Giuoco      |        obrigatório |             recomendado |
+| Optional X  |           opcional |                opcional |
 
 ---
 
@@ -1879,14 +1872,9 @@ interface OpeningTrainingRound {
 
   targetBoundary: OpeningBoundary
 
-  status:
-    | 'active'
-    | 'success'
-    | 'failed'
+  status: 'active' | 'success' | 'failed'
 
-  failureReason?:
-    | 'out-of-repertoire'
-    | 'objective-error'
+  failureReason?: 'out-of-repertoire' | 'objective-error'
 
   playedMoves: string[]
 }
@@ -2536,11 +2524,13 @@ localized.
 Usar nome estabelecido:
 
 PT:
+
 ```text
 Abertura Italiana
 ```
 
 EN:
+
 ```text
 Italian Game
 ```

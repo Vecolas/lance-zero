@@ -385,3 +385,93 @@ test('os planos mostram a rota também em texto', async ({ page }) => {
   await expect(page.getByText('Rota visual: d3 → d4')).toBeVisible()
   await expect(page.getByText('Ruptura d4')).toBeVisible()
 })
+
+/**
+ * A LINHA PRINCIPAL DEIXOU DE SER SÓ LEITURA.
+ *
+ * O QUE ESTE TESTE PROVA, e é a razão de a Fase 5 existir: depois da
+ * demonstração, o aluno PRODUZ os lances. Um teste que só verificasse "a tela
+ * abre" passaria igual se a etapa tivesse voltado a ser um ← / → mudo.
+ *
+ * As três asserções são o contrato inteiro: a porta existe, o lance errado NÃO
+ * anda a posição, e o lance certo anda DOIS plies — o do aluno e a resposta do
+ * computador — sem nenhum clique entre eles.
+ */
+test('a linha principal demonstra, depois cobra, e o computador responde sozinho', async ({
+  page,
+}) => {
+  const italiana = OPENING_COURSE_BY_SLUG.get('italiana')
+  if (!italiana) throw new Error('conteúdo da Italiana ausente')
+  const posicoes = posicoesDaLinha(italiana.rootFen, italiana.mainline)
+
+  await page.goto('/aberturas/italiana')
+  await irAteEtapa(page, /Linha principal/)
+
+  /*
+    A FASE DE ENTENDER É A DE ANTES, e continua sendo: tabuleiro passivo,
+    comentário ao lado, ← / →. O que mudou é que ela ACABA.
+  */
+  const proximo = page.getByRole('button', { name: 'Próximo lance →' })
+  for (let i = 0; i < 12; i += 1) {
+    if ((await proximo.count()) === 0) break
+    if (await proximo.isDisabled()) break
+    await proximo.click()
+  }
+
+  // A PORTA. Sem ela a etapa teria voltado a ser uma leitura com fim mudo.
+  const aSuaVez = page.getByRole('button', { name: /Agora é a sua vez/ })
+  await expect(aSuaVez).toBeVisible()
+  await aSuaVez.click()
+
+  const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
+  await expect(tabuleiro).toBeVisible()
+
+  const antes = await tabuleiro.getAttribute('data-fen')
+  expect(antes).toBeTruthy()
+  const indice = posicoes.indexOf(antes ?? '')
+  // A demonstração parou numa posição da própria linha, e não em qualquer uma.
+  expect(indice).toBeGreaterThan(0)
+
+  const certo = italiana.mainline[indice]
+  const resposta = italiana.mainline[indice + 1]
+  if (!certo || !resposta) throw new Error('linha principal curta demais para este teste')
+
+  /*
+    O LANCE ERRADO. Escolhido entre os legais, e diferente do da linha — cravar
+    um lance aqui obrigaria a reescrever o teste a cada mudança de conteúdo.
+  */
+  const errado = legalMoves(antes ?? '').find(
+    (lance) => `${lance.from}${lance.to}` !== certo.uci.slice(0, 4),
+  )
+  if (!errado) throw new Error('nenhum lance legal alternativo')
+
+  await page.locator('#lancezero-board-square-' + errado.from).click()
+  await page.locator('#lancezero-board-square-' + errado.to).click()
+  await expect(page.getByText(/A posição não mudou/)).toBeVisible()
+  // O SNAPBACK: a posição é EXATAMENTE a mesma. É isto que mantém o aluno na
+  // decisão até resolvê-la, em vez de arrastá-lo para a seguinte.
+  await expect(tabuleiro).toHaveAttribute('data-fen', antes ?? '')
+
+  /*
+    O LANCE CERTO. A posição tem de andar DOIS plies: o dele e o do computador.
+    Um teste que aceitasse "andou" passaria com a resposta do adversário
+    faltando — que é justamente o defeito que esta etapa veio consertar.
+  */
+  await page.locator('#lancezero-board-square-' + certo.uci.slice(0, 2)).click()
+  await page.locator('#lancezero-board-square-' + certo.uci.slice(2, 4)).click()
+
+  await expect(tabuleiro).toHaveAttribute('data-fen', posicoes[indice + 2] ?? '')
+  await expect(page.getByText(`O computador respondeu ${resposta.san}.`)).toBeVisible()
+
+  /*
+    A CONFIRMAÇÃO EXPLICA O LANCE DO ALUNO, e esta asserção existe porque a
+    primeira versão da tela explicava o do ADVERSÁRIO.
+
+    O motor joga a resposta na mesma transição, então quando a tela volta a pedir
+    algo o índice já andou DOIS. Usar `-1` para achar "o que acabou de ser
+    jogado" pega a resposta do computador, e o painel passa a comentar a jogada
+    errada em toda decisão. Nada erra, nada avisa — só o texto está trocado.
+  */
+  await expect(page.getByText(`${certo.san} é o lance da linha.`)).toBeVisible()
+  await expect(page.getByText(certo.comment)).toBeVisible()
+})

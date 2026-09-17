@@ -66,6 +66,7 @@ import {
   type OpeningDefinition,
   type OpeningProgress,
 } from '@/domain/openings'
+import { percursoDaLinhaPrincipal } from '@/domain/openings/linha-principal'
 import { migrarJornadaDeAbertura } from '@/domain/openings/migracao'
 import { ramosDaAbertura } from '@/domain/openings/ramos'
 import { posicoesDaLinha } from '@/domain/openings/variacoes'
@@ -338,7 +339,7 @@ function ConteudoDeEtapa({
       )
 
     case 'abertura:linha-principal':
-      return <LinhaComentada lances={opening.mainline} opening={opening} />
+      return <LinhaPrincipalEmDoisTempos opening={opening} />
 
     case 'abertura:variacoes':
       return <BibliotecaDeRamos opening={opening} />
@@ -585,11 +586,23 @@ function LinhaComentada({
   opening,
   inicio = 0,
   antes,
+  aoTerminar,
+  rotuloDoFim,
 }: {
-  lances: OpeningDefinition['mainline']
+  lances: readonly OpeningDefinition['mainline'][number][]
   opening: OpeningDefinition
   inicio?: number
   antes?: React.ReactNode
+  /**
+   * O que fazer quando o aluno chega ao último lance.
+   *
+   * Ausente, o "Próximo lance" simplesmente desabilita — é o comportamento de
+   * referência, que a biblioteca de ramos usa. Presente, o fim da linha VIRA
+   * uma porta: é assim que a linha principal passa de entender para completar
+   * sem trocar de etapa nem de tela.
+   */
+  aoTerminar?: () => void
+  rotuloDoFim?: string
 }) {
   const primeiro = Math.min(Math.max(inicio, 0), Math.max(lances.length - 1, 0))
   const [indice, setIndice] = useState(primeiro)
@@ -624,15 +637,247 @@ function LinhaComentada({
         >
           ← Lance anterior
         </button>
-        <button
-          type="button"
-          className={styles.secundario}
-          onClick={() => setIndice((n) => Math.min(lances.length - 1, n + 1))}
-          disabled={indice >= lances.length - 1}
-        >
-          Próximo lance →
-        </button>
+        {indice >= lances.length - 1 && aoTerminar ? (
+          <button type="button" className={styles.primario} onClick={aoTerminar}>
+            {rotuloDoFim ?? 'Continuar →'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.secundario}
+            onClick={() => setIndice((n) => Math.min(lances.length - 1, n + 1))}
+            disabled={indice >= lances.length - 1}
+          >
+            Próximo lance →
+          </button>
+        )}
       </div>
+    </MesaDeEstudo>
+  )
+}
+
+/**
+ * A LINHA PRINCIPAL EM DOIS TEMPOS: entender, e então completar.
+ *
+ * O QUE ELA ERA: `LinhaComentada` sobre a principal inteira — tabuleiro fixo,
+ * ← / →, comentário. Referência boa, aquisição fraca. O aluno atravessava nove
+ * lances sem produzir nenhum, e saía com a sensação de ter aprendido, que é o
+ * desfecho mais provável e o menos verdadeiro.
+ *
+ * O QUE ELA É AGORA, dentro da MESMA etapa e sem nenhuma aba nova:
+ *
+ *   ENTENDER   o computador demonstra os primeiros lances, comentados;
+ *   COMPLETAR  a partir dali o lance passa a ser do aluno, no tabuleiro, com o
+ *              computador respondendo pelo outro lado na mesma transição.
+ *
+ * A AJUDA DECRESCE. A primeira decisão cobrada vem com objetivo e uma casa para
+ * olhar; a segunda, só com o objetivo; da terceira em diante, só a posição.
+ * Quem decide isso é `percursoDaLinhaPrincipal`, no domínio — a tela lê a
+ * política e não a inventa, senão haveria duas respostas para a mesma pergunta.
+ *
+ * A ETAPA CONTINUA SENDO DE LEITURA, de propósito. Completar é o que ensina,
+ * mas transformar isso em tranca contradiz o ADR-0016: orientar não é
+ * aprisionar, e quem cobra de verdade é o treino final, que exige cobertura.
+ */
+function LinhaPrincipalEmDoisTempos({ opening }: { opening: OpeningDefinition }) {
+  const percurso = useMemo(() => percursoDaLinhaPrincipal(opening), [opening])
+  const [completando, setCompletando] = useState(false)
+
+  if (!completando) {
+    return (
+      <LinhaComentada
+        lances={percurso.exemplo}
+        opening={opening}
+        aoTerminar={() => setCompletando(true)}
+        rotuloDoFim="Agora é a sua vez →"
+      />
+    )
+  }
+
+  return <CompletarALinha opening={opening} percurso={percurso} />
+}
+
+/**
+ * O segundo tempo: o aluno joga o resto da linha.
+ *
+ * NÃO HÁ BOTÃO ENTRE LANCES. Quem avança é o tabuleiro, e a resposta do
+ * adversário entra na mesma transição do lance do aluno — o desenho que
+ * `sequencia.ts` já garante e que a prática guiada já usa.
+ *
+ * ERRAR NÃO PUNE: a peça volta, a posição não anda, e o texto ao lado diz o que
+ * aconteceu. O aluno fica NA decisão até resolvê-la, em vez de ser arrastado
+ * para a seguinte sem ter entendido esta.
+ */
+function CompletarALinha({
+  opening,
+  percurso,
+}: {
+  opening: OpeningDefinition
+  percurso: ReturnType<typeof percursoDaLinhaPrincipal>
+}) {
+  const [estado, setEstado] = useState(() => iniciarSequencia(percurso.linha))
+  const [errou, setErrou] = useState(false)
+  /** Já revelou a resposta desta decisão? Some quando a linha anda. */
+  const [revelado, setRevelado] = useState(false)
+
+  const esperado = lanceEsperadoNaLinha(percurso.linha, estado)
+  /*
+    O ÍNDICE NA PRINCIPAL é o da demonstração mais o da sequência — a linha
+    treinável começa depois do exemplo, então os dois índices não coincidem.
+    Foi exatamente esse deslocamento que, na prática guiada, fez a tela pedir os
+    lances do adversário.
+  */
+  const indiceNaPrincipal = percurso.demonstrados + estado.indice
+  const ordem = percurso.decisoes.findIndex((item) => item.indice === indiceNaPrincipal)
+  const decisao = percurso.decisoes[ordem]
+  const licaoAtual = opening.mainline[indiceNaPrincipal]
+
+  /*
+    OS DOIS ÚLTIMOS LANCES, e a distância entre eles não é detalhe.
+
+    O motor joga a resposta do adversário na MESMA transição, então quando a tela
+    volta a pedir algo o índice já andou DOIS: o lance do aluno ficou em
+    `indiceNaPrincipal - 2` e a resposta do computador em `- 1`.
+
+    A primeira versão desta tela usava `- 1` para as duas coisas — e confirmava o
+    acerto do aluno exibindo o comentário do lance do ADVERSÁRIO. Nada errava,
+    nada avisava: só o texto explicava a jogada errada, toda vez.
+  */
+  const jogadoPeloAluno =
+    indiceNaPrincipal >= 2 ? opening.mainline[indiceNaPrincipal - 2] : undefined
+  const respostaDoAdversario =
+    indiceNaPrincipal >= 1 ? opening.mainline[indiceNaPrincipal - 1] : undefined
+  const jaJogou = estado.jogados.length > 0
+
+  const tentar = useCallback(
+    (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
+      const resultado = jogarNaSequencia(
+        percurso.linha,
+        estado,
+        `${origem}${destino}${promocao ?? ''}`,
+      )
+
+      // Nem chegou a ser lance: o tabuleiro devolve a peça e nada muda.
+      if (resultado.tipo === 'ilegal') return false
+
+      if (resultado.tipo === 'fora-da-linha') {
+        setErrou(true)
+        return false
+      }
+
+      setErrou(false)
+      setRevelado(false)
+      setEstado(resultado.estado)
+      return true
+    },
+    [estado, percurso.linha],
+  )
+
+  const lance = useLanceNoTabuleiro({
+    fen: estado.fen,
+    ativo: esperado !== null,
+    aoTentar: (origem, destino) => tentar(origem, destino),
+  })
+
+  if (esperado === null) {
+    return (
+      <ComTabuleiro opening={opening}>
+        <p className={styles.texto} role="status">
+          ✓ Linha principal completa. Você jogou {percurso.decisoes.length} decisões desta abertura
+          sem consultar a notação.
+        </p>
+        <p className={styles.nota}>
+          A etapa seguinte mostra o que fazer quando a partida sai desta linha.
+        </p>
+      </ComTabuleiro>
+    )
+  }
+
+  return (
+    <MesaDeEstudo
+      tabuleiro={
+        <ChessBoardView
+          fen={estado.fen}
+          orientation={opening.side === 'white' ? 'w' : 'b'}
+          interactive
+          selected={lance.selecionada}
+          targets={lance.destinos}
+          onMove={tentar}
+          onSquareClick={lance.aoClicarNaCasa}
+        />
+      }
+    >
+      {/*
+        A POSIÇÃO NA SEQUÊNCIA. Só aparece quando de fato existe: um "Decisão 0
+        de 3" seria a tela contando errado em voz alta, e um `|| 1` esconderia o
+        mesmo problema fingindo que é o primeiro.
+      */}
+      {ordem >= 0 ? (
+        <p className={styles.kicker}>
+          Decisão {ordem + 1} de {percurso.decisoes.length}
+        </p>
+      ) : null}
+
+      {/*
+        O ENUNCIADO É O QUE A POLÍTICA MANDA MOSTRAR, e nada além.
+
+        Mostrar sempre o objetivo seria confortável e erraria o alvo: ajuda
+        constante vira muleta, e a etapa passaria a medir leitura em vez de
+        recuperação.
+      */}
+      <p className={styles.texto}>
+        {decisao?.nivel !== 'posicao' && decisao?.objetivo
+          ? decisao.objetivo
+          : 'Sua vez. Qual lance continua a linha?'}
+      </p>
+
+      {decisao?.nivel === 'objetivo-e-dica' && decisao.dica ? (
+        <p className={styles.nota}>
+          {decisao.dica.tipo === 'casa-alvo'
+            ? `A casa que decide é ${decisao.dica.casa}.`
+            : `A peça que joga está em ${decisao.dica.casa}.`}
+        </p>
+      ) : null}
+
+      {/*
+        O FEEDBACK É UM `role="status"` QUE TROCA DE TEXTO, e não um bloco que
+        aparece e some: assim o leitor de tela anuncia sem a página saltar.
+      */}
+      <p className={styles.nota} role="status">
+        {errou
+          ? 'Esse não é o lance desta linha. A posição não mudou — tente de novo.'
+          : jaJogou && respostaDoAdversario
+            ? `O computador respondeu ${respostaDoAdversario.san}.`
+            : 'Jogue no tabuleiro.'}
+      </p>
+
+      {/*
+        A CONFIRMAÇÃO EXPLICA O LANCE DO ALUNO, e não o do adversário. É o lance
+        dele que ele acabou de escolher, e é a razão dele que precisa ficar.
+      */}
+      {jaJogou && !errou && jogadoPeloAluno ? (
+        <div className={styles.veredito}>
+          <p className={styles.acertou}>✓ {jogadoPeloAluno.san} é o lance da linha.</p>
+          <p className={styles.texto}>{jogadoPeloAluno.comment}</p>
+        </div>
+      ) : null}
+
+      {/*
+        A SAÍDA DE QUEM TRAVOU. Sem ela, um aluno que não lembra o lance fica
+        preso na decisão — e a etapa que deveria ensinar vira um portão.
+        Revelar não é falhar: é o degrau final da escada de dicas.
+      */}
+      {revelado && licaoAtual ? (
+        <div className={styles.veredito}>
+          <p className={styles.texto}>
+            O lance é <strong>{licaoAtual.san}</strong>. {licaoAtual.comment}
+          </p>
+        </div>
+      ) : (
+        <button type="button" className={styles.secundario} onClick={() => setRevelado(true)}>
+          Não lembro — mostrar o lance
+        </button>
+      )}
     </MesaDeEstudo>
   )
 }
