@@ -103,6 +103,12 @@ function definicao(id: string): EndgameDefinition {
     category: 'rook',
     description: 'fixture',
     previewFen: TORRE_BASE.fen,
+    training: {
+      fen: TORRE_BASE.fen,
+      sideToTrain: 'white',
+      objective: 'win',
+      expectedResult: 'win',
+    },
     difficulty: 2,
     prerequisiteIds: [],
     lessonIds: [],

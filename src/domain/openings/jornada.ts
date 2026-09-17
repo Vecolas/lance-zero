@@ -29,7 +29,13 @@
  */
 
 import { applyMove, identidadeDePosicao, parseUci, START_FEN } from '@/lib/chess'
-import type { DesfechoDaRodada, StudyJourney, StudyStage } from '@/domain/jornada'
+import {
+  regraDeItens,
+  type DesfechoDaRodada,
+  type StudyJourney,
+  type StudyStage,
+} from '@/domain/jornada'
+import { itensDaPraticaGuiadaDeAbertura } from './itens-da-etapa'
 import {
   chooseOpeningTrainingOpponent,
   classifyOpeningAttempt,
@@ -63,8 +69,6 @@ export interface ConfigDeTreinoDeAbertura {
   plyMinimoAlemDaRaiz: number
   /** Quantos alvos recentes o anti-repetição lembra entre rodadas. */
   recentesLembrados: number
-  /** Piso de itens da prática guiada, para uma abertura curta não virar uma tela só. */
-  itensGuiadosMinimo: number
 }
 
 /**
@@ -79,12 +83,18 @@ export interface ConfigDeTreinoDeAbertura {
  * repertório e a rodada falharia por culpa do conteúdo. Um número fixo de 6
  * cortaria a Italiana antes do roque, que é a decisão que ela ensina. O limite
  * é derivado da linha treinada; o config só põe um teto e um piso relativo.
+ *
+ * `itensGuiadosMinimo: 3` MORAVA AQUI E FOI APAGADO, não recalibrado. Ele era um
+ * PISO de itens, e piso é a assinatura do beco sem saída: ele prometia três
+ * exercícios numa abertura que talvez tivesse dois, e a etapa nunca fecharia.
+ * Número ajustável só faz sentido quando existe uma régua para ajustá-lo; aqui o
+ * número certo é sempre "quantos o conteúdo tem", e isso se conta, não se
+ * configura. Ver `itensDaPraticaGuiadaDeAbertura`.
  */
 export const ABERTURA_TREINO_CONFIG: ConfigDeTreinoDeAbertura = {
   plyMaximoDaRodada: 24,
   plyMinimoAlemDaRaiz: 2,
   recentesLembrados: 2,
-  itensGuiadosMinimo: 3,
 }
 
 /* -------------------------------------------------------------------------- */
@@ -129,26 +139,18 @@ export function ladoDoAlvo(opening: OpeningDefinition, alvo: string): OpeningSid
 /**
  * Quantos itens tem a prática guiada.
  *
- * Derivado das DECISÕES do aluno na linha principal — os plies em que é a vez
- * dele — porque é isso que a prática guiada exercita. Um total fixo pediria
- * itens que o conteúdo não tem, e a etapa nunca fecharia.
+ * É A CONTAGEM DOS ITENS QUE A TELA VAI DESENHAR, e nada mais — ver
+ * `itensDaPraticaGuiadaDeAbertura`. O `Math.max(itensGuiadosMinimo, decisoes)`
+ * que morava aqui SAIU: um piso promete itens que o conteúdo pode não ter, e
+ * uma etapa que cobra o inexistente é uma porta trancada por dentro. Foi
+ * exatamente esse formato que travou as jornadas de Finais na etapa 2 de 10.
  *
- * A paridade vem do ÍNDICE e não do campo `ply` autorado: a linha é normalizada
- * a partir da posição inicial, então o índice é o fato, e o campo autorado é
- * apenas uma anotação que ninguém valida.
+ * Continua existindo como função para os chamadores antigos, mas ela agora
+ * delega em vez de calcular: duas contagens da mesma coisa divergem no dia em
+ * que só uma for corrigida.
  */
-export function itensDePraticaGuiada(
-  opening: OpeningDefinition,
-  config: ConfigDeTreinoDeAbertura = ABERTURA_TREINO_CONFIG,
-): number {
-  const decisoes = opening.mainline.filter(
-    (_lance, indice) => ladoDoIndice(indice) === opening.side,
-  ).length
-  return Math.max(config.itensGuiadosMinimo, decisoes)
-}
-
-function ladoDoIndice(indice: number): OpeningSide {
-  return indice % 2 === 0 ? 'white' : 'black'
+export function itensDePraticaGuiada(opening: OpeningDefinition): number {
+  return itensDaPraticaGuiadaDeAbertura(opening).length
 }
 
 /**
@@ -228,7 +230,7 @@ export function construirJornadaDeAbertura(opening: OpeningDefinition): StudySta
       titulo: 'Prática guiada',
       rotuloCurto: 'Guiada',
       objetivo: 'Escolher os lances com ajuda disponível, antes de treinar sem rede.',
-      regra: { tipo: 'itens', total: itensDePraticaGuiada(opening) },
+      regra: regraDeItens(itensDaPraticaGuiadaDeAbertura(opening)),
     },
     {
       id: 'treino-final',

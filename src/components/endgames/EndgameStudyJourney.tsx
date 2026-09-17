@@ -32,10 +32,11 @@ import { StudyJourneyShell } from '@/components/jornada/StudyJourneyShell'
 import { MesaDeEstudo } from '@/components/jornada/MesaDeEstudo'
 import { RoundResultPanel } from '@/components/jornada/RoundResultPanel'
 import { ModoReferencia } from '@/components/jornada/ModoReferencia'
+import { ItensDaEtapaDeFinal } from './ItensDaEtapaDeFinal'
+import { criarJuizDeFinal, type JulgarLanceDeFinal } from './juiz-de-final'
 import {
   concluirEtapa,
   criarJornada,
-  registrarItem,
   voltarParaEtapa,
   type StudyJourney,
   type StudyStage,
@@ -46,6 +47,7 @@ import {
   coberturaDoFinal,
   construirJornadaDeFinal,
   iniciarRodadaDeFinal,
+  itensDaEtapaDeFinal,
   jogarNaRodadaDeFinal,
   papelDaPosicao,
   posicoesDeAtaque,
@@ -53,6 +55,7 @@ import {
   registrarRodadaDeFinal,
   type ConteudoDoFinal,
   type EndgameTrainingRound,
+  type EtapaDeFinal,
   type VereditoDeLanceDeFinal,
 } from '@/domain/endgames/jornada'
 import type { EndgameDefinition, EndgamePosition } from '@/domain/endgames'
@@ -68,18 +71,22 @@ export interface EndgameStudyJourneyProps {
   endgame: EndgameDefinition
   conteudo: ConteudoDoFinal
   /**
-   * Quem julga o lance. Injetado porque tablebase e engine são IO.
+   * Quem julga o lance. Injetado porque tablebase e rede são IO.
    *
-   * Ausente cai no modo sem juiz: a rodada aceita o lance e diz que não
-   * conseguiu comparar, em vez de inventar um veredito. "Não sei" é melhor que
-   * uma reprovação falsa — o aluno confia no app pela consistência, e uma
-   * reprovação errada num final custa mais que dez avisos de incerteza.
+   * AUSENTE USA O JUIZ DE PRODUÇÃO, e essa é a correção: o padrão era o modo
+   * SEM juiz, em que `objetivo` é sempre `null`. Nenhuma rodada alcançava
+   * `sucesso`, a cobertura da etapa 10 nunca fechava e o aluno ficava num treino
+   * sem fim e sem rodapé para sair. "Opcional" aqui significa "o padrão é
+   * produção", como em `EndgameTrainer` — nunca "alguém pode esquecer".
    */
-  julgar?: (fenAntes: string, uci: string) => Promise<VereditoDeLanceDeFinal>
+  julgar?: JulgarLanceDeFinal
 }
 
 export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJourneyProps) {
   const { repo } = useRepository()
+  // O juiz nasce uma vez por tela: ele carrega o cache da tablebase, e recriá-lo
+  // a cada render jogaria fora as consultas já feitas.
+  const juiz = useMemo(() => julgar ?? criarJuizDeFinal(), [julgar])
   const stages = useMemo(() => construirJornadaDeFinal(endgame, conteudo), [endgame, conteudo])
   const [jornada, setJornada] = useState<StudyJourney | null>(null)
   const [referencia, setReferencia] = useState(false)
@@ -119,15 +126,10 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
         stages={stages}
         aoSair={() => setReferencia(false)}
         conteudoDaEtapa={(stage) => (
-          // A MESMA função de conteúdo da jornada — ver a razão no componente
-          // equivalente da abertura.
-          <ConteudoDeEtapa
-            endgame={endgame}
-            conteudo={conteudo}
-            stage={stage}
-            jornada={jornada}
-            aoResponder={() => undefined}
-          />
+          // Só a PROSA: o modo referência consulta e não registra nada, então
+          // desenhar exercício aqui criaria um segundo caminho até
+          // `registrarItem` — e consultar passaria a concluir.
+          <ConteudoDeEtapa endgame={endgame} conteudo={conteudo} stage={stage} />
         )}
       />
     )
@@ -152,11 +154,11 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
           conteudo={conteudo}
           jornada={jornada}
           stage={stage}
-          julgar={julgar}
+          julgar={juiz}
           aoRegistrar={gravar}
         />
       ) : (
-        <ConteudoDeEtapa
+        <EtapaDeEstudo
           endgame={endgame}
           conteudo={conteudo}
           stage={stage}
@@ -168,9 +170,21 @@ export function EndgameStudyJourney({ endgame, conteudo, julgar }: EndgameStudyJ
   )
 }
 
-/* ---------------------------------------------------------------- conteúdo */
-
-function ConteudoDeEtapa({
+/**
+ * UMA etapa que não é o treino: a prosa, e o exercício quando a regra pede um.
+ *
+ * O PONTO ÚNICO DE RENDERIZAÇÃO DE ITENS, e ele é a correção estrutural desta
+ * entrega. Antes, cada `case` do `switch` decidia sozinho se desenhava
+ * exercício — e três dos quatro `case` com regra de `itens` desenhavam só prosa,
+ * sem ninguém notar. Agora a condição é uma só, escrita aqui: se a regra da
+ * etapa é `itens`, o exercício aparece. Etapa nova não tem como escapar dela.
+ *
+ * A prosa entra COMO FILHO do exercício porque as duas dividem a mesma
+ * `MesaDeEstudo`: um tabuleiro por etapa, instrução ao lado. Dois componentes
+ * desenhando tabuleiros próprios devolveriam a tela empilhada que o ADR-0016
+ * declarou incorreta.
+ */
+function EtapaDeEstudo({
   endgame,
   conteudo,
   stage,
@@ -182,6 +196,37 @@ function ConteudoDeEtapa({
   stage: StudyStage
   jornada: StudyJourney
   aoResponder: (proxima: StudyJourney) => void
+}) {
+  const prosa = <ConteudoDeEtapa endgame={endgame} conteudo={conteudo} stage={stage} />
+
+  if (stage.regra.tipo !== 'itens') return prosa
+
+  return (
+    <ItensDaEtapaDeFinal
+      stage={stage}
+      // A MESMA chamada que `descritores()` usou para contar o total da etapa.
+      // Uma segunda derivação aqui seria a segunda fonte da mesma verdade, e o
+      // dia em que as duas discordassem o aluno travaria de novo.
+      itens={itensDaEtapaDeFinal(stage.tipo as EtapaDeFinal, conteudo)}
+      posicaoDeApoio={conteudo.posicoes[0]}
+      jornada={jornada}
+      aoResponder={aoResponder}
+    >
+      {prosa}
+    </ItensDaEtapaDeFinal>
+  )
+}
+
+/* ---------------------------------------------------------------- conteúdo */
+
+function ConteudoDeEtapa({
+  endgame,
+  conteudo,
+  stage,
+}: {
+  endgame: EndgameDefinition
+  conteudo: ConteudoDoFinal
+  stage: StudyStage
 }) {
   const ataque = posicoesDeAtaque(conteudo)
   const defesa = posicoesDeDefesa(conteudo)
@@ -205,9 +250,15 @@ function ConteudoDeEtapa({
       tela vazia à direita. A `MesaDeEstudo` é a mesma usada pela lição e pela
       jornada de abertura — uma regra, um componente.
     */
+    /*
+      AS QUATRO ETAPAS INTERATIVAS DEVOLVEM SÓ PROSA, e isso é deliberado: o
+      tabuleiro delas vem de `ItensDaEtapaDeFinal`, que precisa dele INTERATIVO e
+      apontando para a posição do item. Desenhar um segundo tabuleiro aqui daria
+      duas posições na mesma tela — e o aluno jogaria na errada.
+    */
     case 'reconhecer':
-      return primeira ? (
-        <MesaDeEstudo tabuleiro={<Tabuleiro posicao={primeira} />}>
+      return (
+        <>
           <p className={styles.texto}>
             Antes de procurar um lance, a pergunta é outra:{' '}
             <strong>o que importa nesta posição?</strong> Quem está melhor, o que decide o
@@ -217,13 +268,7 @@ function ConteudoDeEtapa({
             Reconhecer o tipo de posição é o que permite jogar finais que você nunca viu — decorar
             uma sequência só serve para a posição exata em que ela foi decorada.
           </p>
-        </MesaDeEstudo>
-      ) : (
-        <p className={styles.texto}>
-          Antes de procurar um lance, a pergunta é outra:{' '}
-          <strong>o que importa nesta posição?</strong> Quem está melhor, o que decide o resultado,
-          e qual é o plano de cada lado.
-        </p>
+        </>
       )
 
     case 'principio':
@@ -246,8 +291,41 @@ function ConteudoDeEtapa({
       )
 
     case 'progredir': {
-      const doAtaque = ataque[0] ?? primeira
-      return doAtaque ? (
+      /*
+        NEM TODO FINAL TEM LADO FORTE PARA O ALUNO.
+
+        Philidor e bispos de cores opostas são técnicas DEFENSIVAS: o que o aluno
+        treina ali é segurar. O texto antigo dizia "com o lado forte, progrida sem
+        devolver o que está ganho" para todo mundo — numa lição de defesa, isso
+        ensina o contrário do que a posição pede, e ainda sugere uma vitória que a
+        tablebase desmente. Em final, "progredir" do lado fraco é outra coisa: é
+        não piorar.
+      */
+      const doAtaque = ataque[0]
+      if (!doAtaque) {
+        return primeira ? (
+          <MesaDeEstudo tabuleiro={<Tabuleiro posicao={primeira} />}>
+            <p className={styles.texto}>
+              Aqui não há o que converter: este final é uma técnica de DEFESA. Progredir, do lado
+              fraco, é não piorar — manter a peça certa no lugar certo e não dar ao adversário o que
+              ele precisa.
+            </p>
+            <ul className={styles.lista}>
+              {defesa.map((posicao) => (
+                <li key={posicao.id}>
+                  {rotuloDoObjetivo(posicao)} —{' '}
+                  {posicao.conceptIds.join(', ') || 'técnica principal'}
+                </li>
+              ))}
+            </ul>
+          </MesaDeEstudo>
+        ) : (
+          <p className={styles.texto}>
+            Aqui não há o que converter: este final é uma técnica de DEFESA.
+          </p>
+        )
+      }
+      return (
         <MesaDeEstudo tabuleiro={<Tabuleiro posicao={doAtaque} />}>
           <p className={styles.texto}>
             Como CONVERTER: com o lado forte, o objetivo não é dar mate agora — é progredir sem
@@ -261,11 +339,6 @@ function ConteudoDeEtapa({
             ))}
           </ul>
         </MesaDeEstudo>
-      ) : (
-        <p className={styles.texto}>
-          Como CONVERTER: com o lado forte, o objetivo não é dar mate agora — é progredir sem
-          devolver o que já está ganho.
-        </p>
       )
     }
 
@@ -299,39 +372,35 @@ function ConteudoDeEtapa({
 
     case 'variacoes':
       return (
-        <>
-          <p className={styles.texto}>
-            A mesma ideia, em posições diferentes. É assim que se prova que você aprendeu o
-            princípio e não decorou um FEN.
-          </p>
-          <div className={styles.posicoes}>
-            {conteudo.posicoes.map((posicao) => (
-              <div key={posicao.id} className={styles.posicao}>
-                <Tabuleiro posicao={posicao} />
-                <p className={styles.nota}>{rotuloDoObjetivo(posicao)}</p>
-              </div>
-            ))}
-          </div>
-        </>
+        <p className={styles.texto}>
+          A mesma ideia, em posições diferentes. É assim que se prova que você aprendeu o princípio
+          e não decorou um FEN — por isso aqui você JOGA cada variação, em vez de só olhar.
+        </p>
       )
 
     case 'dois-lados':
+      /*
+        TRÊS CASOS, e o do meio é o que faltava. Um final pode ter os dois lados
+        (oposição), só o forte (mate de torre) ou SÓ O FRACO (Philidor). Dizer
+        "converter com o lado forte" num final defensivo descreveria uma etapa
+        que a tela não desenha — a lista de itens só tem o lado que a posição tem.
+      */
       return (
         <p className={styles.texto}>
-          {defesa.length > 0
-            ? 'No treino final você vai jogar dos DOIS lados: converter com o lado forte e segurar com o lado fraco. Saber defender ensina a atacar — você passa a reconhecer o que o adversário está tentando.'
-            : 'Neste final você treina só o lado forte, porque só ele tem escolhas a fazer. A cobertura do treino reflete isso, em vez de exigir uma defesa que não existe.'}
+          {ataque.length === 0
+            ? 'Este final se joga pelo lado fraco: é a defesa que tem escolhas a fazer, e é ela que você treina aqui.'
+            : defesa.length > 0
+              ? 'Jogue dos DOIS lados: converter com o lado forte e segurar com o lado fraco. Saber defender ensina a atacar — você passa a reconhecer o que o adversário está tentando.'
+              : 'Neste final só há um lado com escolhas a fazer, então você joga só o lado forte. A etapa reflete isso, em vez de pedir uma defesa que não existe.'}
         </p>
       )
 
     case 'pratica-guiada':
       return (
-        <PraticaGuiada
-          conteudo={conteudo}
-          stage={stage}
-          jornada={jornada}
-          aoResponder={aoResponder}
-        />
+        <p className={styles.texto}>
+          Último degrau com apoio. A dica continua disponível aqui e some no treino — é a ajuda
+          diminuindo de propósito, e não um recurso que alguém esqueceu de ligar.
+        </p>
       )
 
     default:
@@ -376,79 +445,6 @@ function PassosDaLicao({
   )
 }
 
-/** Reconhecimento: perguntas da lição, respondidas com apoio. */
-function PraticaGuiada({
-  conteudo,
-  stage,
-  jornada,
-  aoResponder,
-}: {
-  conteudo: ConteudoDoFinal
-  stage: StudyStage
-  jornada: StudyJourney
-  aoResponder: (proxima: StudyJourney) => void
-}) {
-  const perguntas = (conteudo.passosDaLicao ?? []).filter(
-    (passo) => passo.type === 'recognition' || passo.type === 'decision',
-  )
-  const total = stage.regra.tipo === 'itens' ? stage.regra.total : perguntas.length
-  const feitos = jornada.itensRespondidos[stage.id]?.length ?? 0
-  const pergunta = perguntas[Math.min(feitos, perguntas.length - 1)]
-  const [escolhida, setEscolhida] = useState<number | null>(null)
-
-  if (!pergunta || feitos >= total) {
-    return (
-      <p className={styles.texto} role="status">
-        Prática guiada concluída. O treino final vem a seguir, e lá você joga a posição até o fim.
-      </p>
-    )
-  }
-
-  const opcoes = 'options' in pergunta ? pergunta.options : []
-  const correta = 'answer' in pergunta ? pergunta.answer : -1
-
-  return (
-    <>
-      <p className={styles.texto}>{'question' in pergunta ? pergunta.question : stage.objetivo}</p>
-      <ul className={styles.opcoes} aria-label="Respostas possíveis">
-        {opcoes.map((opcao, indice) => (
-          <li key={opcao}>
-            <button
-              type="button"
-              className={styles.opcao}
-              aria-pressed={escolhida === indice}
-              disabled={escolhida !== null}
-              onClick={() => setEscolhida(indice)}
-            >
-              {opcao}
-            </button>
-          </li>
-        ))}
-      </ul>
-      {escolhida !== null ? (
-        <div className={styles.veredito} role="status">
-          <p className={escolhida === correta ? styles.acertou : styles.errou}>
-            {escolhida === correta ? '✓ É isso.' : '✕ Não é por aí.'}
-          </p>
-          {'explanation' in pergunta ? (
-            <p className={styles.texto}>{pergunta.explanation}</p>
-          ) : null}
-          <button
-            type="button"
-            className={styles.primario}
-            onClick={() => {
-              setEscolhida(null)
-              aoResponder(registrarItem(jornada, stage.id, `guiada-${feitos}`))
-            }}
-          >
-            Continuar
-          </button>
-        </div>
-      ) : null}
-    </>
-  )
-}
-
 /* ------------------------------------------------------------------ treino */
 
 /**
@@ -470,7 +466,7 @@ function TreinoDoFinal({
   conteudo: ConteudoDoFinal
   jornada: StudyJourney
   stage: StudyStage
-  julgar?: EndgameStudyJourneyProps['julgar']
+  julgar: JulgarLanceDeFinal
   aoRegistrar: (proxima: StudyJourney) => void
 }) {
   const alvos = useMemo(() => alvosDoTreinoFinal(conteudo), [conteudo])
@@ -513,18 +509,15 @@ function TreinoDoFinal({
     const aplicado = applyMove(round.currentFen, { from, to, promotion: 'q' })
     if (!aplicado) return false
 
-    const veredito: VereditoDeLanceDeFinal = julgar
-      ? await julgar(round.currentFen, aplicado.move.uci)
-      : {
-          // SEM JUIZ: aceita e diz que não comparou. Inventar veredito num final
-          // é pior que admitir incerteza — uma reprovação falsa aqui ensina ao
-          // aluno que o app não entende finais.
-          legal: true,
-          fenDepois: aplicado.fenAfter,
-          julgamento: null,
-          objetivo: null,
-          alvoTecnico: null,
-        }
+    const posicao = posicaoDaRodada(conteudo, round)
+    if (!posicao) return false
+
+    const veredito: VereditoDeLanceDeFinal = await julgar({
+      posicao,
+      fenAntes: round.currentFen,
+      uciDoAluno: aplicado.move.uci,
+      lancesJogados: round.playedMoves,
+    })
 
     const { round: proximo, resultado } = jogarNaRodadaDeFinal(round, aplicado.move.uci, veredito)
     setRound(proximo)
@@ -603,6 +596,22 @@ function TreinoDoFinal({
           <p className={styles.nota}>
             Rodada {cobertura.cobertos.length + 1} de {alvos.length}.
           </p>
+          {/*
+            RECOMEÇAR EXISTE PORQUE A RODADA AGORA TERMINA DE VERDADE.
+
+            Com o juiz ligado, um lance que joga a vitória fora mata a rodada na
+            hora — mas uma posição só piorada segue jogável por dezenas de
+            lances. Sem esta saída, quem percebeu o próprio erro no terceiro
+            lance teria de conduzir até o fim uma técnica que já sabe perdida.
+            Recomeçar NÃO apaga cobertura conquistada: `alvosCobertos` só cresce.
+
+            Para sair do treino inteiro, o "Mapa do estudo" continua no
+            cabeçalho, disponível em toda etapa — inclusive nesta, que é a única
+            sem rodapé.
+          */}
+          <button type="button" className={styles.secundario} onClick={novaRodada}>
+            Recomeçar esta posição
+          </button>
         </>
       )}
     </MesaDeEstudo>
@@ -622,6 +631,23 @@ function TreinoDoFinal({
  * Fora do componente porque o estado inicial a chama antes de qualquer hook, e
  * porque assim ela é pura e testável sem montar React.
  */
+/**
+ * A posição que esta rodada treina.
+ *
+ * DERIVADA do alvo de cobertura, e não guardada dentro da rodada: a rodada já
+ * carrega `alvoDeCobertura`, e um segundo campo com a posição seria a mesma
+ * verdade em dois lugares — o dia em que discordassem, o juiz avaliaria o
+ * objetivo de OUTRA posição e daria por cumprido o que não foi.
+ */
+function posicaoDaRodada(
+  conteudo: ConteudoDoFinal,
+  round: EndgameTrainingRound,
+): EndgamePosition | undefined {
+  return conteudo.posicoes.find(
+    (posicao) => alvoDeCobertura(posicao.id, papelDaPosicao(posicao)) === round.alvoDeCobertura,
+  )
+}
+
 function abrirRodada(
   endgame: EndgameDefinition,
   conteudo: ConteudoDoFinal,

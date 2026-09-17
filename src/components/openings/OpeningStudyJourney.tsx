@@ -56,6 +56,7 @@ import {
   respostaDoComputador,
   type OpeningTrainingRound,
 } from '@/domain/openings/jornada'
+import { itensDaPraticaGuiadaDeAbertura } from '@/domain/openings/itens-da-etapa'
 import {
   activateOpeningRepertoire,
   emptyOpeningProgress,
@@ -575,10 +576,23 @@ function PraticaGuiada({
   jornada: StudyJourney
   aoResponder: (proxima: StudyJourney) => void
 }) {
-  const total = stage.regra.tipo === 'itens' ? stage.regra.total : 0
-  const feitos = jornada.itensRespondidos[stage.id]?.length ?? 0
-  const indice = Math.min(feitos, Math.max(0, total - 1))
-  const lance = opening.mainline[indice]
+  /*
+    A LISTA VEM DO DOMÍNIO, e é a MESMA que contou o total desta etapa
+    (`regraDeItens(itensDaPraticaGuiadaDeAbertura(opening))`). Duas mudanças que
+    parecem cosméticas e não são:
+
+    1. antes, o índice saía de um CONTADOR (`Math.min(feitos, total - 1)`) e
+       endereçava `opening.mainline[indice]` — a linha INTEIRA. Como o total
+       contava só as decisões do lado do aluno, um repertório de pretas mostrava
+       o lance das brancas e cobrava o aluno por ele;
+    2. o item pendente agora é o primeiro cujo id ainda não foi gravado, e não o
+       n-ésimo. Contador paralelo à lista é a segunda fonte da mesma verdade, e
+       basta o conteúdo mudar de tamanho entre duas sessões para ele apontar para
+       o item errado — ou para nenhum, que é a etapa que nunca fecha.
+  */
+  const itens = useMemo(() => itensDaPraticaGuiadaDeAbertura(opening), [opening])
+  const respondidos = new Set(jornada.itensRespondidos[stage.id] ?? [])
+  const item = itens.find((candidato) => !respondidos.has(candidato.id))
 
   const fens = useMemo(
     () => posicoesDaLinha(opening.rootFen, opening.mainline),
@@ -586,7 +600,7 @@ function PraticaGuiada({
   )
   const [escolhido, setEscolhido] = useState<string | null>(null)
 
-  if (!lance || feitos >= total) {
+  if (!item) {
     return (
       <p className={styles.texto} role="status">
         Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
@@ -594,6 +608,8 @@ function PraticaGuiada({
     )
   }
 
+  const indice = item.indiceNaLinha
+  const lance = { san: item.san, comment: item.comentario }
   const fen = fens[indice] ?? opening.rootFen
   const opcoes = opcoesDoLance(fen, lance.san)
 
@@ -636,7 +652,9 @@ function PraticaGuiada({
             className={styles.primario}
             onClick={() => {
               setEscolhido(null)
-              aoResponder(registrarItem(jornada, stage.id, `guiada-${indice}`))
+              // O id do ITEM, não um contador: `registrarItem` deduplica por id,
+              // e um contador repetiria o mesmo id numa retomada.
+              aoResponder(registrarItem(jornada, stage.id, item.id))
             }}
           >
             Continuar

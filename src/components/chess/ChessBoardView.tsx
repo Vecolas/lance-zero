@@ -108,7 +108,18 @@ export function ChessBoardView({
         e é o que permite MEDIR o tabuleiro, que é como a regra "tabuleiro grande"
         deixa de ser uma frase que ninguém confere.
       */}
-      <div className={styles.board} data-testid="chessboard">
+      {/*
+        `data-fen` ao lado do `data-testid`, e pelo MESMO motivo dele: um portão
+        que precisa jogar um lance tem de saber que posição está na tela. Sem
+        isso, o e2e só conseguia descobrir o lance por força bruta — clicar casa
+        a casa até alguma virar lance legal — e um portão que leva trinta
+        segundos para achar um clique é um portão que alguém vai desligar.
+
+        A alternativa seria cravar o UCI no teste, e ela é pior: amarraria o
+        portão a uma FEN do catálogo, e ele passaria a reprovar quando o CONTEÚDO
+        mudasse — reprovando o código certo, que é o pior tipo de portão.
+      */}
+      <div className={styles.board} data-testid="chessboard" data-fen={fen}>
         <Chessboard
           options={{
             id: 'lancezero-board',

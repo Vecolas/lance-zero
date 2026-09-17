@@ -1,11 +1,7 @@
 import { notFound } from 'next/navigation'
 import { EndgameStudyJourney } from '@/components/endgames/EndgameStudyJourney'
-import {
-  ENDGAME_BY_SLUG,
-  ENDGAME_DEFINITIONS,
-  ENDGAME_LESSON_BY_ID,
-  ENDGAME_POSITION_SETS,
-} from '@/content/endgames/biblioteca'
+import { ENDGAME_BY_SLUG, ENDGAME_DEFINITIONS } from '@/content/endgames/biblioteca'
+import { conteudoDoFinal } from '@/lib/training/etapas-do-conteudo'
 
 /**
  * A página de UM final.
@@ -33,20 +29,17 @@ export default async function FinalPage({ params }: { params: Promise<{ slug: st
   const definition = ENDGAME_BY_SLUG.get(slug)
   if (!definition) notFound()
 
-  const positionSet = ENDGAME_POSITION_SETS.find((set) => set.id === definition.drillIds[0])
-  const lesson = ENDGAME_LESSON_BY_ID.get(definition.lessonIds[0] ?? '')
+  // A MONTAGEM DO CONTEÚDO NÃO MORA MAIS AQUI. Ela é a mesma que o Roadmap e o
+  // portão de exigência usam — ver `conteudoDoFinal`. Uma cópia local voltaria a
+  // deixar o portão medindo um conteúdo diferente do que a página mostra.
+  const conteudo = conteudoDoFinal(slug)
+  if (!conteudo) notFound()
 
   return (
     <>
       {/* O `h1` no servidor, pelo mesmo motivo da rota de abertura. */}
       <h1>{definition.name}</h1>
-      <EndgameStudyJourney
-        endgame={definition}
-        conteudo={{
-          posicoes: positionSet?.positions ?? [],
-          passosDaLicao: lesson?.steps,
-        }}
-      />
+      <EndgameStudyJourney endgame={definition} conteudo={conteudo} />
     </>
   )
 }

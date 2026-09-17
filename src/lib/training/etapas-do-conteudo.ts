@@ -19,9 +19,33 @@ import {
 } from '@/content/endgames/biblioteca'
 import { OPENING_COURSE_BY_SLUG } from '@/content/openings/course'
 import { construirJornadaDeAbertura } from '@/domain/openings/jornada'
-import { construirJornadaDeFinal } from '@/domain/endgames/jornada'
+import { construirJornadaDeFinal, type ConteudoDoFinal } from '@/domain/endgames/jornada'
 import type { StudyStage } from '@/domain/jornada'
 import type { ConteudoDoNo } from './jornadas-do-roadmap'
+
+/**
+ * O conteúdo de estudo de UM final, montado a partir do catálogo.
+ *
+ * UMA MONTAGEM SÓ, e é por isso que ela é exportada. A rota `/finais/[slug]`, o
+ * Roadmap e o portão que confere se cada etapa é cumprível precisam do MESMO
+ * `ConteudoDoFinal` — e três montagens à mão divergem no dia em que alguém
+ * trocar de onde vem a lição. O portão passaria a medir um conteúdo que a página
+ * não usa, e ficaria verde sobre a tela errada.
+ *
+ * `null` quando o slug não existe. Quem monta a jornada decide o que fazer com
+ * isso; aqui não se inventa um final vazio.
+ */
+export function conteudoDoFinal(slug: string): ConteudoDoFinal | null {
+  const final = ENDGAME_BY_SLUG.get(slug)
+  if (!final) return null
+
+  const conjunto = ENDGAME_POSITION_SETS.find((set) => set.id === final.drillIds[0])
+  const licao = ENDGAME_LESSON_BY_ID.get(final.lessonIds[0] ?? '')
+  return {
+    posicoes: conjunto?.positions ?? [],
+    passosDaLicao: licao?.steps,
+  }
+}
 
 /**
  * As etapas, ou lista vazia quando o conteúdo não pôde ser montado.
@@ -38,14 +62,10 @@ export function etapasDoConteudo(conteudo: ConteudoDoNo): StudyStage[] {
     }
 
     const final = ENDGAME_BY_SLUG.get(conteudo.slug)
-    if (!final) return []
+    const material = conteudoDoFinal(conteudo.slug)
+    if (!final || !material) return []
 
-    const conjunto = ENDGAME_POSITION_SETS.find((set) => set.id === final.drillIds[0])
-    const licao = ENDGAME_LESSON_BY_ID.get(final.lessonIds[0] ?? '')
-    return construirJornadaDeFinal(final, {
-      posicoes: conjunto?.positions ?? [],
-      passosDaLicao: licao?.steps,
-    })
+    return construirJornadaDeFinal(final, material)
   } catch {
     // `construirJornadaDeFinal` LANÇA quando o conteúdo não dá jornada (menos de
     // duas posições na família, por exemplo). É a decisão certa lá — conteúdo

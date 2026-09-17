@@ -19,7 +19,14 @@ const OPOSICAO_A: EndgamePosition = {
 }
 const OPOSICAO_B: EndgamePosition = {
   id: 'oposicao-biblioteca-b',
-  fen: '8/4k3/8/4K3/4P3/8/8/8 w - - 0 1',
+  /*
+    ERA `8/4k3/8/4K3/4P3/8/8/8 w`, e a tablebase chama aquilo de EMPATE — com o
+    rei preto na frente do peão, as brancas não passam. A posição declarava
+    `promote` e prometia ao aluno uma promoção que não existe. A correção põe o
+    rei branco À FRENTE do peão, que é exatamente o que a lição de oposição
+    ensina, e a tablebase confirma: vitória.
+  */
+  fen: '8/8/4K3/4P3/4k3/8/8/8 w - - 0 1',
   sideToTrain: 'white',
   objective: 'promote',
   conceptIds: ['opposition', 'key-squares'],
@@ -37,6 +44,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     description:
       'No final, o rei é uma peça de combate: melhore sua atividade antes de correr com peões.',
     previewFen: '8/8/8/3k4/3p4/8/3K4/8 w - - 0 1',
+    training: {
+      // rei à frente do peão: a atividade do rei É a vitória
+      fen: '8/8/3K4/3P4/3k4/8/8/8 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 1,
     prerequisiteIds: [],
     lessonIds: ['lesson-king-activity'],
@@ -53,6 +67,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     description:
       'Conte o quadrado para saber se o rei alcança o peão antes de calcular uma corrida.',
     previewFen: '7k/8/8/P7/8/8/8/7K w - - 0 1',
+    training: {
+      // o rei preto está fora do quadrado do peão
+      fen: '7k/8/8/P7/8/8/8/7K w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 1,
     prerequisiteIds: ['king-activity'],
     lessonIds: ['lesson-rule-square'],
@@ -70,6 +91,15 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     description:
       'Reconheça quando a posição relativa dos reis e um tempo decidem quem cede espaço.',
     previewFen: OPOSICAO_A.fen,
+    training: {
+      // A oposição é o único final com PAR autorado à mão: o treino usa
+      // `OPOSICAO_A` (segurar) e `OPOSICAO_B` (promover), um de cada lado. Este
+      // campo repete a posição ofensiva para o tipo ficar completo.
+      fen: OPOSICAO_B.fen,
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 2,
     prerequisiteIds: ['king-activity'],
     lessonIds: ['lesson-opposition'],
@@ -87,6 +117,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     description:
       'Encontre as casas que garantem a promoção e compare com as exceções do peão de torre.',
     previewFen: '8/8/4k3/8/4K3/4P3/8/8 w - - 0 1',
+    training: {
+      // o rei branco ocupa uma casa-chave
+      fen: '8/8/2K5/2P5/2k5/8/8/8 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 2,
     prerequisiteIds: ['opposition'],
     lessonIds: ['lesson-key-squares'],
@@ -102,6 +139,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'pawn',
     description: 'Ative o rei, calcule tempos e converta — ou defenda — sem decorar uma linha.',
     previewFen: '8/8/4k3/8/4K3/4P3/8/8 w - - 0 1',
+    training: {
+      // rei e peão contra rei, com o rei na frente
+      fen: '8/8/8/3K4/3P4/3k4/8/8 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 2,
     prerequisiteIds: ['opposition', 'key-squares'],
     lessonIds: ['lesson-king-pawn'],
@@ -118,6 +162,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'queen',
     description: 'Restrinja, aproxime o rei, evite o afogamento e coordene o mate.',
     previewFen: '7k/8/6K1/8/8/8/8/1Q6 w - - 0 1',
+    training: {
+      // mate de rei e dama
+      fen: '7k/8/6K1/8/8/8/8/1Q6 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'mate',
+      expectedResult: 'win',
+    },
     difficulty: 2,
     prerequisiteIds: ['king-activity'],
     lessonIds: ['lesson-queen-mate'],
@@ -134,6 +185,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'rook',
     description: 'Corte o rei, reduza a caixa, aproxime seu rei, empurre para a borda e dê mate.',
     previewFen: '7k/8/5K2/8/8/8/8/R7 w - - 0 1',
+    training: {
+      // mate de rei e torre
+      fen: '7k/8/5K2/8/8/8/8/R7 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'mate',
+      expectedResult: 'win',
+    },
     difficulty: 2,
     prerequisiteIds: ['king-activity'],
     lessonIds: ['lesson-rook-mate'],
@@ -150,6 +208,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'pawn',
     description: 'Crie uma ameaça que obrigue o adversário a escolher e converta o peão passado.',
     previewFen: '7k/ppp5/8/PPP5/8/8/8/7K w - - 0 1',
+    training: {
+      // o rompimento de três contra três
+      fen: '7k/ppp5/8/PPP5/8/8/8/7K w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 2,
     prerequisiteIds: ['rule-of-square'],
     lessonIds: ['lesson-passed-pawn'],
@@ -166,6 +231,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'rook',
     description: 'Aprenda a ponte: torre na quarta, rei sai da frente e a promoção fica segura.',
     previewFen: '2K5/2P1k3/8/8/8/8/r7/3R4 w - - 0 1',
+    training: {
+      // a ponte de Lucena
+      fen: '2K5/2P1k3/8/8/8/8/r7/3R4 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 3,
     prerequisiteIds: ['rook-mate'],
     lessonIds: ['lesson-lucena'],
@@ -182,6 +254,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'defense',
     description: 'Segure o empate com a torre ativa e o recurso do xeque na terceira fileira.',
     previewFen: '8/8/8/3k4/3P4/8/3K4/r7 w - - 0 1',
+    training: {
+      // a torre na sexta fileira: a defesa de Philidor
+      fen: '4k3/8/1r6/4K3/4P3/8/8/R7 b - - 0 1',
+      sideToTrain: 'black',
+      objective: 'defend',
+      expectedResult: 'draw',
+    },
     difficulty: 3,
     prerequisiteIds: ['rook-mate'],
     lessonIds: ['lesson-philidor'],
@@ -197,6 +276,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'bishop',
     description: 'Coordene os bispos, restrinja o rei e construa a rede de mate.',
     previewFen: '7k/8/6K1/8/8/8/2B5/5B2 w - - 0 1',
+    training: {
+      // bispos em cores OPOSTAS, como o mate exige
+      fen: '7k/8/6K1/8/8/8/2B5/6B1 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'mate',
+      expectedResult: 'win',
+    },
     difficulty: 3,
     prerequisiteIds: ['rook-mate'],
     lessonIds: ['lesson-two-bishops'],
@@ -212,6 +298,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'knight',
     description: 'Técnica avançada e opcional: conduza o rei ao canto correto sem memorizar casas.',
     previewFen: '7k/8/6K1/8/8/8/2B5/5N2 w - - 0 1',
+    training: {
+      // mate de bispo e cavalo
+      fen: '7k/8/6K1/8/8/8/2B5/5N2 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'mate',
+      expectedResult: 'win',
+    },
     difficulty: 5,
     prerequisiteIds: ['two-bishops'],
     lessonIds: ['lesson-bishop-knight'],
@@ -227,6 +320,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'principle',
     description: 'Gaste um tempo para devolver a vez ao adversário e conquistar a oposição.',
     previewFen: '8/8/4k3/8/3K4/4P3/8/8 w - - 0 1',
+    training: {
+      // perder um tempo para ganhar a oposição
+      fen: '8/8/4k3/8/3K4/4P3/8/8 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 3,
     prerequisiteIds: ['opposition'],
     lessonIds: ['lesson-triangulation'],
@@ -242,6 +342,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'pawn',
     description: 'Coordene peões que se defendem e force o rei adversário a escolher uma fraqueza.',
     previewFen: '8/8/8/3k4/2PP4/8/3K4/8 w - - 0 1',
+    training: {
+      // peões conectados se defendem sozinhos
+      fen: '8/8/3k4/8/2PP4/8/3K4/8 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 3,
     prerequisiteIds: ['passed-pawn'],
     lessonIds: ['lesson-connected-pawns'],
@@ -257,6 +364,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'pawn',
     description: 'Crie uma ameaça em um flanco para desviar o rei e ganhar no outro.',
     previewFen: '8/8/8/p2k4/8/4P3/8/3K4 w - - 0 1',
+    training: {
+      // o passado distante desvia o rei
+      fen: '8/8/8/8/P6k/8/7K/8 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 3,
     prerequisiteIds: ['passed-pawn'],
     lessonIds: ['lesson-distant-passer'],
@@ -272,6 +386,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'rook',
     description: 'Torre ativa dá xeques, corta o rei e ataca peões por trás — material não basta.',
     previewFen: '8/8/3k4/3p4/8/8/3K4/R7 w - - 0 1',
+    training: {
+      // torre ativa contra peão
+      fen: '8/8/3k4/3p4/8/8/3K4/R7 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'win',
+      expectedResult: 'win',
+    },
     difficulty: 3,
     prerequisiteIds: ['rook-mate'],
     lessonIds: ['lesson-rook-activity'],
@@ -287,6 +408,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'bishop',
     description: 'Compare a estrutura de peões com a cor do bispo e melhore a peça que tem alvos.',
     previewFen: '8/8/2k5/2p5/2P5/2K5/8/2B5 w - - 0 1',
+    training: {
+      // bispo bom contra peão na cor do bispo adversário
+      fen: '8/8/2k5/2p5/2P5/2K5/8/2B5 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'promote',
+      expectedResult: 'win',
+    },
     difficulty: 3,
     prerequisiteIds: ['king-activity'],
     lessonIds: ['lesson-good-bad-bishop'],
@@ -303,6 +431,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     description:
       'Ataque com o rei e crie duas fraquezas: a defesa de uma só casa pode bastar para empatar.',
     previewFen: '8/8/2k5/3p4/2P5/2K5/8/2B1b3 w - - 0 1',
+    training: {
+      // um peão a mais não ganha com bispos de cores opostas
+      fen: '8/2b5/8/3k4/8/2KP4/2B5/8 b - - 0 1',
+      sideToTrain: 'black',
+      objective: 'defend',
+      expectedResult: 'draw',
+    },
     difficulty: 4,
     prerequisiteIds: ['good-bad-bishop'],
     lessonIds: ['lesson-opposite-bishops'],
@@ -318,6 +453,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     category: 'queen',
     description: 'Centralize, proteja o rei e calcule xeques perpétuos antes de trocar damas.',
     previewFen: '4k3/8/8/8/8/8/4K3/3Q4 w - - 0 1',
+    training: {
+      // conduzir a dama até o mate
+      fen: '4k3/8/8/8/8/8/4K3/3Q4 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'mate',
+      expectedResult: 'win',
+    },
     difficulty: 4,
     prerequisiteIds: ['queen-mate'],
     lessonIds: ['lesson-queen-endgames'],
@@ -334,6 +476,13 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
     description:
       'Reduza o contra-jogo, troque peças quando ajuda e crie uma segunda fraqueza sem afrouxar.',
     previewFen: '8/8/3k4/3p4/8/3K4/8/R7 w - - 0 1',
+    training: {
+      // converter a torre a mais
+      fen: '8/8/3k4/3p4/8/3K4/8/R7 w - - 0 1',
+      sideToTrain: 'white',
+      objective: 'win',
+      expectedResult: 'win',
+    },
     difficulty: 3,
     prerequisiteIds: ['king-activity'],
     lessonIds: ['lesson-material-conversion'],
@@ -346,25 +495,42 @@ export const ENDGAME_DEFINITIONS: readonly EndgameDefinition[] = [
 
 export const ENDGAME_POSITION_SETS: readonly EndgamePositionSet[] = [
   { id: 'opposition-set', endgameId: 'opposition', positions: [OPOSICAO_A, OPOSICAO_B] },
+  /*
+    AS POSIÇÕES DE TREINO SAEM DE `training`, E NÃO DE `previewFen`.
+
+    Era `previewFen` — o diagrama de ilustração do card — com
+    `sideToTrain: 'white'` e `objective: 'win'` cravados para todo mundo. O
+    portão de contrato perguntou à tablebase e reprovou dezessete das quarenta e
+    uma posições: quinze empates declarados como vitória, uma posição PERDIDA
+    declarada como vitória (Philidor), os dois bispos do mate de dois bispos na
+    mesma cor de casa, e duas FENs ILEGAIS. Nada disso errava em lugar nenhum.
+
+    O ESPELHO CONTINUA GERADO, e continua legítimo: refletir as colunas preserva
+    o resultado teórico exatamente (não há roque nem en passant nestes finais), e
+    é o que dá a SEGUNDA posição distinta que o treino exige. O que mudou é que
+    ele agora espelha uma posição VERDADEIRA.
+  */
   ...ENDGAME_DEFINITIONS.filter((d) => d.id !== 'opposition').map((d) => ({
     id: d.drillIds[0],
     endgameId: d.id,
     positions: [
       {
         id: `${d.id}-representative`,
-        fen: d.previewFen,
-        sideToTrain: 'white' as const,
-        objective: 'win' as const,
+        fen: d.training.fen,
+        sideToTrain: d.training.sideToTrain,
+        objective: d.training.objective,
         conceptIds: [d.id],
+        expectedResult: d.training.expectedResult,
         validationSource: 'curated' as const,
         difficulty: d.difficulty,
       },
       {
         id: `${d.id}-mirror`,
-        fen: espelharHorizontalmenteFen(d.previewFen),
-        sideToTrain: 'white' as const,
-        objective: 'win' as const,
+        fen: espelharHorizontalmenteFen(d.training.fen),
+        sideToTrain: d.training.sideToTrain,
+        objective: d.training.objective,
         conceptIds: [d.id],
+        expectedResult: d.training.expectedResult,
         validationSource: 'curated' as const,
         difficulty: d.difficulty,
       },

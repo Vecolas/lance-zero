@@ -43,194 +43,95 @@
 import { normalizeUci } from '@/lib/chess'
 import {
   etapaCumprida,
+  problemasDeExigencia,
   registrarRodada,
+  regraDeItens,
   rodadaTerminou,
   type DesfechoDaRodada,
   type StudyJourney,
   type StudyStage,
 } from '@/domain/jornada'
-import type { EndgameDefinition, EndgameLessonStep, EndgamePosition } from './catalogo'
+import type { EndgameDefinition, EndgamePosition } from './catalogo'
+import type { EtapaDeFinal } from './etapas'
+import { itensDaEtapaDeFinal } from './itens-da-etapa'
+import {
+  admiteDefesa,
+  alvoDeCobertura,
+  OBJETIVO_DA_RODADA_POR_POSICAO,
+  papelDaPosicao,
+  posicoesPrincipais,
+  type ConteudoDoFinal,
+  type ObjetivoDaRodada,
+  type PapelDoAluno,
+} from './papeis'
 import type { JulgamentoDoLance } from './julgamento'
 import type { ResultadoObjetivo } from './objetivo'
 
-// ------------------------------------------------------------------ os papéis
-
-/**
- * Quem o ALUNO é na rodada.
- *
- * Dois valores e nunca um terceiro: "quem tenta ganhar" e "quem tenta segurar".
- * O papel decide o que é progresso e o que é resistência, e por isso é dado da
- * rodada em vez de ser deduzido do FEN a cada lance — deduzir de novo dentro de
- * cada função seria a segunda fonte da mesma verdade.
- */
-export type PapelDoAluno = 'atacante' | 'defensor'
-
-/**
- * O objetivo da rodada, na linguagem do treino.
- *
- * `hold` existe porque o catálogo chama o papel de `defend` (o que a POSIÇÃO
- * pede) e a rodada precisa dizer o que o ALUNO faz (segurar). A tradução é uma
- * tabela exaustiva e não um `if`: objetivo novo no catálogo sem decisão aqui não
- * compila, em vez de virar `undefined` numa tela.
- */
-export type ObjetivoDaRodada = 'win' | 'draw' | 'mate' | 'promote' | 'hold' | 'reach-target'
-
-export const OBJETIVO_DA_RODADA_POR_POSICAO: Record<
-  EndgamePosition['objective'],
-  ObjetivoDaRodada
-> = {
-  win: 'win',
-  draw: 'draw',
-  mate: 'mate',
-  promote: 'promote',
-  'reach-target': 'reach-target',
-  defend: 'hold',
-}
-
-/**
- * De que lado da técnica a posição treina.
- *
- * Tabela exaustiva pelo mesmo motivo da de cima. É ela que responde a pergunta
- * que decide a cobertura do treino final: este final ADMITE defesa?
- */
-export const PAPEL_POR_OBJETIVO_DE_POSICAO: Record<EndgamePosition['objective'], PapelDoAluno> = {
-  win: 'atacante',
-  mate: 'atacante',
-  promote: 'atacante',
-  'reach-target': 'atacante',
-  draw: 'defensor',
-  defend: 'defensor',
-}
-
-export function papelDaPosicao(posicao: EndgamePosition): PapelDoAluno {
-  return PAPEL_POR_OBJETIVO_DE_POSICAO[posicao.objective]
-}
-
-// --------------------------------------------------------- alvos de cobertura
-
-/**
- * O nome de um alvo de cobertura.
- *
- * FUNÇÃO, e não template solto no chamador: o alvo que a rodada grava e o alvo
- * que a etapa exige têm de ser a MESMA string, e duas montagens à mão divergem
- * no dia em que alguém trocar o separador. A etapa ficaria eternamente
- * incompleta, sem erro nenhum — falso vermelho silencioso.
- *
- * O alvo é `papel:posição` porque cobrir os dois papéis da MESMA posição não
- * prova transferência, e cobrir a mesma posição duas vezes com o mesmo papel não
- * prova nada. As duas dimensões precisam aparecer no nome.
- */
-export function alvoDeCobertura(posicaoId: string, papel: PapelDoAluno): string {
-  return `${papel}:${posicaoId}`
-}
+/*
+  PAPÉIS, ALVOS E CONTEÚDO MUDARAM DE ARQUIVO, e o motivo é um ciclo: a montagem
+  das etapas passou a depender da contagem dos ITENS de cada etapa, e o módulo de
+  itens precisa dos mesmos papéis. Com tudo aqui, os dois se importariam em
+  círculo. A reexportação mantém o endereço antigo válido — nenhum chamador
+  precisou mudar.
+*/
+export * from './etapas'
+export * from './papeis'
+export * from './itens-da-etapa'
 
 // ------------------------------------------------------------- as dez etapas
 
 /**
  * Números da montagem da jornada de finais.
  *
- * HEURÍSTICA DE PRODUTO, NUNCA CALIBRADA: os três primeiros valores foram
- * escolhidos para a jornada existir antes de haver telemetria. Recalibrar com
- * tentativas reais, não com opinião.
+ * SOBROU UM. Os outros três — `itensDeReconhecimentoPadrao`, `variacoesMinimas`
+ * e `ladosMinimos` — eram PISOS: cada um prometia um item que o conteúdo podia
+ * não ter, e foi exatamente isso que trancou o aluno na etapa 2 de 10 dos vinte
+ * finais do catálogo. Um piso escrito à mão é a assinatura deste defeito, e por
+ * isso eles não foram recalibrados: foram apagados. A regra de itens nasce da
+ * CONTAGEM de `itensDaEtapaDeFinal`, e quem chama não tem onde enfiar um mínimo.
  *
- * `posicoesMinimasParaTransferencia` NÃO é heurística: é a regra pedagógica de
- * que treino final em uma posição só mede memória de FEN. Mexer nele é mudar o
- * produto, e por isso ele está aqui, visível, e não enterrado num `if`.
+ * `posicoesMinimasParaTransferencia` NÃO é heurística e por isso fica: é a regra
+ * pedagógica de que treino final em uma posição só mede memória de FEN. Mexer
+ * nele é mudar o produto, e por isso ele está aqui, visível, e não enterrado num
+ * `if`. Ele também não é piso — é o teto de quantas posições de ataque o treino
+ * cobra, e o conteúdo que não o alcança é RECUSADO por
+ * `problemasDoConteudoDeFinal` em vez de virar uma etapa impossível.
  */
 export const JORNADA_DE_FINAL_CONFIG = {
-  /** Itens da etapa de reconhecimento quando a lição não traz nenhum. */
-  itensDeReconhecimentoPadrao: 1,
-  /** Itens da etapa de variações quando a família tem uma posição só além da base. */
-  variacoesMinimas: 1,
-  /** Itens da etapa "jogar pelos dois lados" quando o final não admite defesa. */
-  ladosMinimos: 1,
   /** Posições DISTINTAS que o treino final precisa exigir. */
   posicoesMinimasParaTransferencia: 2,
 } as const
 
-/** Os ids das dez etapas, na ordem. É a FONTE — ninguém redeclara a sequência. */
-export const ETAPAS_DA_JORNADA_DE_FINAL = [
-  'visao',
-  'reconhecer',
-  'principio',
-  'demonstracao',
-  'progredir',
-  'defender',
-  'variacoes',
-  'dois-lados',
-  'pratica-guiada',
-  'treino-final',
-] as const
-
-export type EtapaDeFinal = (typeof ETAPAS_DA_JORNADA_DE_FINAL)[number]
-
-/**
- * O conteúdo de que a montagem precisa.
- *
- * Entra por parâmetro, e não é lido de `@/content`: a função fica pura, o teste
- * monta o final que quiser provar, e o domínio não passa a depender da ordem em
- * que os módulos de conteúdo carregam.
- */
-export interface ConteudoDoFinal {
-  /**
-   * Posições treináveis da MESMA família, na ordem em que o aluno as encontra.
-   * É daqui que saem os papéis, a transferência e os alvos do treino final.
-   */
-  posicoes: readonly EndgamePosition[]
-  /** Passos da lição, quando o tema tem uma. De onde saem os itens de reconhecimento. */
-  passosDaLicao?: readonly EndgameLessonStep[]
-}
-
-/** As posições em que o aluno ATACA (converte, promove, dá mate). */
-export function posicoesDeAtaque(conteudo: ConteudoDoFinal): readonly EndgamePosition[] {
-  return conteudo.posicoes.filter((posicao) => papelDaPosicao(posicao) === 'atacante')
-}
-
-/** As posições em que o aluno DEFENDE (segura o empate). */
-export function posicoesDeDefesa(conteudo: ConteudoDoFinal): readonly EndgamePosition[] {
-  return conteudo.posicoes.filter((posicao) => papelDaPosicao(posicao) === 'defensor')
-}
-
-/**
- * Este final admite defesa?
- *
- * DERIVADO DO CONTEÚDO, e essa é a decisão central da etapa `defender`. Nem todo
- * final tem os dois lados: em rei e torre contra rei sozinho não existe defesa —
- * o lado fraco não tem o que segurar, o final é vitória forçada. Exigir um alvo
- * defensivo ali criaria uma etapa de treino IMPOSSÍVEL de completar, e o aluno
- * ficaria preso numa jornada que nenhuma jogada resolve. É o falso vermelho
- * simétrico ao bug do "atividade concluída": a tela não mentiria dizendo que
- * acabou, mentiria dizendo que ainda falta algo inexistente.
- *
- * Derivar da existência de posição defensiva, em vez de uma bandeira escrita à
- * mão na definição do final, é deliberado: bandeira e conteúdo divergem no dia
- * em que alguém acrescentar a posição de defesa e esquecer de virar a bandeira.
- */
-export function admiteDefesa(conteudo: ConteudoDoFinal): boolean {
-  return posicoesDeDefesa(conteudo).length > 0
-}
-
 /**
  * Os alvos que o TREINO FINAL exige.
  *
- * Três ingredientes, e cada um mata um jeito diferente de passar sem saber:
+ * Dois ingredientes, e cada um mata um jeito diferente de passar sem saber:
  *
- * 1. a posição de ataque base — provar que converte;
- * 2. uma SEGUNDA posição distinta — provar que transferiu a técnica, e não
- *    decorou uma FEN. Quando a família tem duas posições de ataque, é a segunda
- *    delas; quando só tem uma, é a posição de defesa, que também é outra FEN;
- * 3. o alvo DEFENSIVO, e só quando o final admite defesa (ver `admiteDefesa`).
+ * 1. as primeiras posições do papel DOMINANTE, até o mínimo de transferência —
+ *    provar que a técnica sai numa segunda posição, e não só na FEN decorada;
+ * 2. o alvo do OUTRO papel, quando a família tem os dois — porque saber
+ *    converter não prova saber segurar, e vice-versa.
+ *
+ * A REGRA MUDOU NA ENTREGA DO JUIZ, e vale dizer o que ela era: antes o item 1
+ * lia só `posicoesDeAtaque`, e um final sem posição de ataque não virava jornada
+ * nenhuma. Isso amarrava o produto a finais ofensivos e deixava as técnicas
+ * defensivas — Philidor, bispos de cores opostas — sem treino possível, ou
+ * forçava o catálogo a declarar vitória onde não há. Foi uma das causas de o
+ * catálogo declarar `win` em quinze posições de empate.
  */
 export function alvosDoTreinoFinal(conteudo: ConteudoDoFinal): string[] {
-  const ataque = posicoesDeAtaque(conteudo)
-  const defesa = posicoesDeDefesa(conteudo)
-  const alvos: string[] = []
-  for (const posicao of ataque.slice(0, JORNADA_DE_FINAL_CONFIG.posicoesMinimasParaTransferencia)) {
-    alvos.push(alvoDeCobertura(posicao.id, 'atacante'))
-  }
-  const primeiraDefesa = defesa[0]
-  if (primeiraDefesa !== undefined) {
-    alvos.push(alvoDeCobertura(primeiraDefesa.id, 'defensor'))
+  const principais = posicoesPrincipais(conteudo)
+  const dominante = principais[0]
+  if (dominante === undefined) return []
+
+  const papelDominante = papelDaPosicao(dominante)
+  const alvos = principais
+    .slice(0, JORNADA_DE_FINAL_CONFIG.posicoesMinimasParaTransferencia)
+    .map((posicao) => alvoDeCobertura(posicao.id, papelDominante))
+
+  const outroPapel = conteudo.posicoes.find((posicao) => papelDaPosicao(posicao) !== papelDominante)
+  if (outroPapel !== undefined) {
+    alvos.push(alvoDeCobertura(outroPapel.id, papelDaPosicao(outroPapel)))
   }
   return alvos
 }
@@ -246,11 +147,18 @@ function posicoesDistintas(alvos: readonly string[]): number {
  * Erro como VALOR, e não exceção, porque quem chama isto é um portão que quer
  * listar TODOS os finais quebrados de uma vez — a primeira exceção esconderia os
  * outros dezenove.
+ *
+ * O TERCEIRO BLOCO é novo e é a defesa contra o beco sem saída: ele confere, por
+ * etapa, que o que a jornada COBRA é o que `itensDaEtapaDeFinal` OFERECE. Hoje a
+ * regra nasce dessa mesma contagem, então a conferência é redundante por
+ * construção — e é por isso que ela fica. Redundância que o compilador não
+ * garante é exatamente onde o defeito volta: basta alguém escrever um `total`
+ * à mão de novo, e sem esta linha ninguém saberia até um aluno travar.
  */
 export function problemasDoConteudoDeFinal(conteudo: ConteudoDoFinal): string[] {
   const problemas: string[] = []
-  if (posicoesDeAtaque(conteudo).length === 0) {
-    problemas.push('nenhuma posição em que o aluno converta: não há o que treinar')
+  if (conteudo.posicoes.length === 0) {
+    problemas.push('nenhuma posição treinável: não há o que treinar')
   }
   const distintas = posicoesDistintas(alvosDoTreinoFinal(conteudo))
   if (distintas < JORNADA_DE_FINAL_CONFIG.posicoesMinimasParaTransferencia) {
@@ -259,6 +167,11 @@ export function problemasDoConteudoDeFinal(conteudo: ConteudoDoFinal): string[] 
         'mede memória de FEN e não técnica',
     )
   }
+  problemas.push(
+    ...problemasDeExigencia(descritores(conteudo), (stageId) =>
+      itensDaEtapaDeFinal(stageId as EtapaDeFinal, conteudo),
+    ),
+  )
   return problemas
 }
 
@@ -272,23 +185,22 @@ interface DescritorDeEtapa {
 }
 
 /**
- * Quantos itens a etapa de reconhecimento pede.
+ * A regra de uma etapa interativa, DERIVADA dos itens que a tela vai desenhar.
  *
- * Conta os passos da lição que o aluno RESPONDE. Uma etapa de `itens` conclui ao
- * responder, certo ou errado — reconhecer é diagnóstico, e reprovar aqui
- * transformaria a primeira pergunta da jornada num muro.
+ * É a amarra inteira, em uma linha: a mesma chamada que a tela faz para saber o
+ * que renderizar é a que a jornada faz para saber o que cobrar. Não existe aqui
+ * um número para alguém subir "só um pouquinho".
+ *
+ * Lista vazia vira `leitura` dentro de `regraDeItens` — nunca
+ * `{ tipo: 'itens', total: 0 }`, que passaria por acidente e descreveria a etapa
+ * errado para o Mapa do estudo e para `textoDoPendente`.
  */
-function itensDeReconhecimento(conteudo: ConteudoDoFinal): number {
-  const respondiveis = (conteudo.passosDaLicao ?? []).filter(
-    (passo) => passo.type === 'recognition' || passo.type === 'decision',
-  ).length
-  return Math.max(respondiveis, JORNADA_DE_FINAL_CONFIG.itensDeReconhecimentoPadrao)
+function regraDaEtapa(etapa: EtapaDeFinal, conteudo: ConteudoDoFinal): StudyStage['regra'] {
+  return regraDeItens(itensDaEtapaDeFinal(etapa, conteudo))
 }
 
 function descritores(conteudo: ConteudoDoFinal): DescritorDeEtapa[] {
   const defende = admiteDefesa(conteudo)
-  const variacoes = Math.max(conteudo.posicoes.length - 1, JORNADA_DE_FINAL_CONFIG.variacoesMinimas)
-  const lados = defende ? 2 : JORNADA_DE_FINAL_CONFIG.ladosMinimos
 
   return [
     {
@@ -303,7 +215,7 @@ function descritores(conteudo: ConteudoDoFinal): DescritorDeEtapa[] {
       titulo: 'Reconhecer o tipo',
       rotuloCurto: 'Reconhecer',
       objetivo: 'Dizer que final é este e o que ele decide, sem calcular.',
-      regra: { tipo: 'itens', total: itensDeReconhecimento(conteudo) },
+      regra: regraDaEtapa('reconhecer', conteudo),
     },
     {
       id: 'principio',
@@ -344,7 +256,7 @@ function descritores(conteudo: ConteudoDoFinal): DescritorDeEtapa[] {
       titulo: 'Variações de posição',
       rotuloCurto: 'Variações',
       objetivo: 'Reconhecer a mesma técnica em outra disposição de peças.',
-      regra: { tipo: 'itens', total: variacoes },
+      regra: regraDaEtapa('variacoes', conteudo),
     },
     {
       id: 'dois-lados',
@@ -353,7 +265,7 @@ function descritores(conteudo: ConteudoDoFinal): DescritorDeEtapa[] {
       objetivo: defende
         ? 'Jogar a posição atacando e defendendo, para ver a técnica dos dois ângulos.'
         : 'Jogar a posição pelo lado forte até o fim, sem atalho.',
-      regra: { tipo: 'itens', total: lados },
+      regra: regraDaEtapa('dois-lados', conteudo),
     },
     {
       id: 'pratica-guiada',
@@ -363,7 +275,7 @@ function descritores(conteudo: ConteudoDoFinal): DescritorDeEtapa[] {
       // `itens` e não `cobertura`: aqui a orientação ainda existe, e errar com
       // dica na tela faz parte. A regra que REPROVA mora só no treino final —
       // concentrá-la num lugar é o que mantém "errar não conclui" auditável.
-      regra: { tipo: 'itens', total: 1 },
+      regra: regraDaEtapa('pratica-guiada', conteudo),
     },
     {
       id: 'treino-final',
