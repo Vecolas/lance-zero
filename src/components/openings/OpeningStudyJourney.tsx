@@ -49,6 +49,7 @@ import {
   alvosDeTreinoFinal,
   aplicarRespostaDoComputador,
   coberturaDaAbertura,
+  matrizDeCobertura,
   construirJornadaDeAbertura,
   iniciarRodadaDeAbertura,
   jogarNaRodada,
@@ -364,26 +365,7 @@ function ConteudoDeEtapa({
       return <PlanosDaAbertura opening={opening} />
 
     case 'abertura:dois-lados':
-      return (
-        <ComTabuleiro opening={opening}>
-          <p className={styles.texto}>
-            Esta abertura é do seu repertório de {opening.side === 'white' ? 'brancas' : 'pretas'}.
-            Entender a posição pelo outro lado não é estudar outro curso: é saber o que o seu
-            adversário está tentando fazer, e por que os lances dele fazem sentido.
-          </p>
-          <p className={styles.texto}>
-            No treino final você vai jogar uma rodada pelo lado oposto. Ela existe para você
-            reconhecer o plano do adversário no tabuleiro, não para memorizar a teoria dele.
-          </p>
-          {/*
-            ATIVAR NO REPERTÓRIO veio da aba de Progresso. Fica nesta etapa, e
-            não no fim: é aqui que o aluno já viu a linha inteira e os planos, e
-            portanto tem base para decidir se esta abertura é dele. Oferecer isso
-            na primeira tela seria pedir um compromisso antes do conhecimento.
-          */}
-          <AtivarRepertorio opening={opening} />
-        </ComTabuleiro>
-      )
+      return <DoisLados opening={opening} jornada={jornada} />
 
     case 'abertura:pratica-guiada':
       return (
@@ -906,6 +888,106 @@ function CompletarALinha({
         </button>
       )}
     </MesaDeEstudo>
+  )
+}
+
+/**
+ * OS DOIS LADOS, em matriz: cada ramo, em cada papel.
+ *
+ * COMO ERA: dois parágrafos prometendo que "no treino final você vai jogar uma
+ * rodada pelo lado oposto". A promessa era verdadeira e vaga — UMA rodada, sobre
+ * uma linha que a etapa não nomeava. O aluno não tinha como saber o que ia ser
+ * cobrado nem o que já tinha demonstrado.
+ *
+ * COMO É (plano VNext §27.2): a matriz diz, ramo a ramo e papel a papel, o que o
+ * treino exige, o que ele recomenda e o que já está coberto. É a mesma
+ * informação que o treino final usa para escolher a próxima rodada — lida da
+ * MESMA função, e não de uma segunda contagem que divergiria na primeira
+ * mudança de conteúdo.
+ *
+ * O QUE ELA NÃO FAZ é dobrar o curso (§27.3). O lado de lá só é obrigatório na
+ * linha principal; nos ramos ele é recomendado, e aparece dito assim.
+ */
+function DoisLados({ opening, jornada }: { opening: OpeningDefinition; jornada: StudyJourney }) {
+  const matriz = useMemo(() => matrizDeCobertura(opening), [opening])
+  const cobertos = jornada.alvosCobertos[ETAPA_DE_TREINO_DE_ABERTURA] ?? []
+  const seuLado = opening.side === 'white' ? 'brancas' : 'pretas'
+  const outroLado = opening.side === 'white' ? 'pretas' : 'brancas'
+
+  return (
+    <ComTabuleiro opening={opening}>
+      <p className={styles.texto}>
+        Esta abertura é do seu repertório de {seuLado}. Entender a posição pelo outro lado não é
+        estudar outro curso: é saber o que o seu adversário está tentando fazer, e por que os lances
+        dele fazem sentido.
+      </p>
+
+      {/*
+        A TABELA É TABELA DE VERDADE, com cabeçalhos de linha e de coluna. Uma
+        grade de divs com aparência de tabela lê como uma sequência de palavras
+        soltas em leitor de tela — e esta tela é exatamente a que responde "o que
+        falta para eu terminar".
+      */}
+      <table className={styles.matriz}>
+        <caption className={styles.matrizLegenda}>
+          O que o treino final cobra, linha a linha
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Linha</th>
+            <th scope="col">Pelas {seuLado}</th>
+            <th scope="col">Pelas {outroLado}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {matriz.map((linha) => (
+            <tr key={linha.ramoId}>
+              <th scope="row">{linha.nome}</th>
+              <td>
+                <EstadoNaMatriz
+                  exigido={linha.exigidoNoSeuLado}
+                  coberto={cobertos.includes(linha.alvoNoSeuLado)}
+                />
+              </td>
+              <td>
+                <EstadoNaMatriz
+                  exigido={linha.exigidoNoOutroLado}
+                  coberto={cobertos.includes(linha.alvoNoOutroLado)}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className={styles.nota}>
+        Obrigatório é o que o treino exige para concluir. Recomendado continua disponível e não
+        tranca nada — o curso não dobra de tamanho por causa do outro lado.
+      </p>
+
+      {/*
+        ATIVAR NO REPERTÓRIO veio da aba de Progresso. Fica nesta etapa, e não no
+        fim: é aqui que o aluno já viu a linha inteira e os planos, e portanto tem
+        base para decidir se esta abertura é dele. Oferecer isso na primeira tela
+        seria pedir um compromisso antes do conhecimento.
+      */}
+      <AtivarRepertorio opening={opening} />
+    </ComTabuleiro>
+  )
+}
+
+/**
+ * Uma célula da matriz.
+ *
+ * SÍMBOLO E PALAVRA, sempre — status nunca depende só de cor, e numa tabela de
+ * progresso isso é o conteúdo inteiro da célula.
+ */
+function EstadoNaMatriz({ exigido, coberto }: { exigido: boolean; coberto: boolean }) {
+  if (coberto) return <span className={styles.matrizFeito}>✓ demonstrado</span>
+  return exigido ? (
+    <span className={styles.matrizExigido}>○ obrigatório</span>
+  ) : (
+    <span className={styles.matrizOpcional}>· recomendado</span>
   )
 }
 

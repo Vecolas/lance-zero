@@ -36,6 +36,7 @@ import {
   type StudyStage,
 } from '@/domain/jornada'
 import { itensDaPraticaGuiadaDeAbertura } from './itens-da-etapa'
+import { ramosDaAbertura } from './ramos'
 import {
   chooseOpeningTrainingOpponent,
   classifyOpeningAttempt,
@@ -43,6 +44,7 @@ import {
   type OpeningDefinition,
   type OpeningMoveLesson,
   type OpeningProgress,
+  type ImportanciaDoRamo,
   type OpeningSide,
   type WeightedMove,
 } from './index'
@@ -120,15 +122,137 @@ export const ALVO_PERSPECTIVA_REVERSA = 'perspectiva-reversa'
  * ter de demonstrá-la, sem editar este arquivo. Uma lista fixa aqui seria a
  * segunda fonte da mesma verdade, e a que envelheceria primeiro.
  */
+/**
+ * O prefixo de um alvo jogado pelo OUTRO lado.
+ *
+ * `perspectiva-reversa` continua sendo o id do lado de lá da LINHA PRINCIPAL, e
+ * não virou `reverso:mainline`. A inconsistência é deliberada: `alvosCobertos` é
+ * PERSISTIDO, e renomear aquele id descartaria em silêncio a cobertura de quem
+ * já demonstrou os dois lados. Compatibilidade ganhou de simetria.
+ */
+export const PREFIXO_REVERSO = 'reverso:'
+
+/** O alvo que cobra este ramo pelo lado de lá. */
+export function alvoReverso(ramoId: string): string {
+  return ramoId === ALVO_MAINLINE ? ALVO_PERSPECTIVA_REVERSA : `${PREFIXO_REVERSO}${ramoId}`
+}
+
+/** Este alvo é jogado pelo lado de lá? */
+export function ehAlvoReverso(alvo: string): boolean {
+  return alvo === ALVO_PERSPECTIVA_REVERSA || alvo.startsWith(PREFIXO_REVERSO)
+}
+
+/**
+ * O ramo que um alvo cobra, sem o papel.
+ *
+ * É ELE QUE MANTÉM A RODADA CERTA. `raizDoAlvo` e `profundidadeDoAlvo` procuram
+ * a variação por id; um alvo `reverso:italiana-dois-cavalos` não casaria com
+ * nenhuma, e as duas cairiam silenciosamente na linha principal — o aluno
+ * pediria para treinar um ramo pelo outro lado e receberia a principal, sem
+ * nada na tela dizendo que o pedido foi ignorado.
+ */
+export function ramoDoAlvo(alvo: string): string {
+  if (alvo === ALVO_PERSPECTIVA_REVERSA) return ALVO_MAINLINE
+  return alvo.startsWith(PREFIXO_REVERSO) ? alvo.slice(PREFIXO_REVERSO.length) : alvo
+}
+
+/** Uma linha da matriz ramo × papel (plano VNext §27.2). */
+export interface LinhaDaMatrizDeCobertura {
+  ramoId: string
+  nome: string
+  importancia: ImportanciaDoRamo
+  /** O alvo que cobra este ramo pelo lado do repertório. */
+  alvoNoSeuLado: string
+  /** O alvo que o cobra pelo lado de lá. */
+  alvoNoOutroLado: string
+  exigidoNoSeuLado: boolean
+  exigidoNoOutroLado: boolean
+}
+
+/**
+ * A matriz de cobertura: cada ramo, nos dois papéis.
+ *
+ * O QUE ELA SUBSTITUI é um alvo único chamado `perspectiva-reversa`, que o plano
+ * §27.1 diagnostica como "amplo demais". Ele significava "jogou a abertura pelo
+ * outro lado uma vez" — o que não diz nada sobre QUAL linha foi enfrentada.
+ *
+ * A REGRA DO QUE BLOQUEIA:
+ *
+ *   - linha principal, nos DOIS papéis — obrigatória;
+ *   - ramo `core`, no lado do repertório — obrigatório;
+ *   - ramo `core` pelo outro lado — recomendado, não bloqueia;
+ *   - `secondary` e `optional` — recomendados nos dois papéis.
+ *
+ * O SEGUNDO ITEM É A CORREÇÃO DO PONTO CEGO DECLARADO NO ADR-0022: a cobertura
+ * derivava de `opening.variations` INTEIRO, então um ramo `secondary` — que o
+ * curso diz não ser necessário para concluir — era cobrado no treino assim
+ * mesmo. As duas metades do produto discordavam sobre o que é essencial.
+ *
+ * E O TERCEIRO É O §27.3, "não dobrar o curso". Exigir todo ramo core nos dois
+ * papéis transformaria uma jornada de seis rodadas em uma de dez, sem que o
+ * conteúdo tivesse crescido — e a etapa que ensina viraria a etapa que cansa.
+ */
+export function matrizDeCobertura(opening: OpeningDefinition): LinhaDaMatrizDeCobertura[] {
+  const principal: LinhaDaMatrizDeCobertura = {
+    ramoId: ALVO_MAINLINE,
+    nome: 'Linha principal',
+    importancia: 'core',
+    alvoNoSeuLado: ALVO_MAINLINE,
+    alvoNoOutroLado: ALVO_PERSPECTIVA_REVERSA,
+    exigidoNoSeuLado: true,
+    exigidoNoOutroLado: true,
+  }
+
+  return [
+    principal,
+    ...ramosDaAbertura(opening).map((ramo) => ({
+      ramoId: ramo.id,
+      nome: ramo.nome,
+      importancia: ramo.importancia,
+      alvoNoSeuLado: ramo.id,
+      alvoNoOutroLado: alvoReverso(ramo.id),
+      exigidoNoSeuLado: ramo.importancia === 'core',
+      exigidoNoOutroLado: false,
+    })),
+  ]
+}
+
+/**
+ * Os alvos que o treino final EXIGE.
+ *
+ * DERIVADOS, nunca cravados: quem acrescenta um ramo `core` ao conteúdo passa a
+ * ter de demonstrá-lo, sem editar este arquivo. Uma lista fixa aqui seria a
+ * segunda fonte da mesma verdade, e a que envelheceria primeiro.
+ */
 export function alvosDeTreinoFinal(opening: OpeningDefinition): string[] {
-  const alvos = [ALVO_MAINLINE, ...opening.variations.map((variacao) => variacao.id)]
+  const alvos = matrizDeCobertura(opening).flatMap((linha) => [
+    ...(linha.exigidoNoSeuLado ? [linha.alvoNoSeuLado] : []),
+    ...(linha.exigidoNoOutroLado ? [linha.alvoNoOutroLado] : []),
+  ])
   const unicos = alvos.filter((alvo, indice) => alvos.indexOf(alvo) === indice)
+  /*
+    A PERSPECTIVA REVERSA FICA POR ÚLTIMO. Enfrentar a abertura antes de saber
+    jogá-la é a ordem errada — e a seleção do próximo alvo segue esta lista.
+  */
   return [...unicos.filter((alvo) => alvo !== ALVO_PERSPECTIVA_REVERSA), ALVO_PERSPECTIVA_REVERSA]
 }
 
-/** O lado que o aluno joga num alvo. A perspectiva reversa inverte; o resto não. */
+/**
+ * Os alvos que a matriz RECOMENDA e não cobra.
+ *
+ * Eles existem para a tela poder oferecê-los. Esconder o que não é obrigatório
+ * seria o defeito que o ADR-0016 desfez; cobrá-lo seria dobrar o curso.
+ */
+export function alvosRecomendados(opening: OpeningDefinition): string[] {
+  const exigidos = new Set(alvosDeTreinoFinal(opening))
+  return matrizDeCobertura(opening)
+    .flatMap((linha) => [linha.alvoNoSeuLado, linha.alvoNoOutroLado])
+    .filter((alvo) => !exigidos.has(alvo))
+}
+
+/** O lado que o aluno joga num alvo. Os alvos reversos invertem; o resto não. */
 export function ladoDoAlvo(opening: OpeningDefinition, alvo: string): OpeningSide {
-  if (alvo !== ALVO_PERSPECTIVA_REVERSA) return opening.side
+  if (!ehAlvoReverso(alvo)) return opening.side
   return opening.side === 'white' ? 'black' : 'white'
 }
 
@@ -303,7 +427,7 @@ function raizDoAlvo(opening: OpeningDefinition, alvo: string): RaizDoAlvo {
     fen: opening.rootFen,
     ply: 0,
   }
-  const variacao = opening.variations.find((candidata) => candidata.id === alvo)
+  const variacao = opening.variations.find((candidata) => candidata.id === ramoDoAlvo(alvo))
   if (!variacao) return raiz
 
   let fen = START_FEN
@@ -322,7 +446,7 @@ function raizDoAlvo(opening: OpeningDefinition, alvo: string): RaizDoAlvo {
 
 /** Quantos plies a linha do alvo ensina. É daqui que sai o limite da rodada. */
 function profundidadeDoAlvo(opening: OpeningDefinition, alvo: string): number {
-  const variacao = opening.variations.find((candidata) => candidata.id === alvo)
+  const variacao = opening.variations.find((candidata) => candidata.id === ramoDoAlvo(alvo))
   const linha: readonly OpeningMoveLesson[] = variacao?.line ?? opening.mainline
   return linha.length
 }

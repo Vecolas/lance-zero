@@ -648,3 +648,46 @@ test('o ramo se joga, e o card passa a dizer praticado', async ({ page }) => {
     page.getByRole('button', { name: new RegExp(`${ramo.nome}[\\s\\S]*praticado`) }),
   ).toBeVisible()
 })
+
+/**
+ * OS DOIS LADOS VIRARAM MATRIZ — e a matriz diz o que o treino cobra.
+ *
+ * COMO ERA: dois parágrafos prometendo que "no treino final você vai jogar uma
+ * rodada pelo lado oposto". Verdadeiro e vago: UMA rodada, sobre uma linha que a
+ * etapa não nomeava. O aluno não tinha como saber o que seria cobrado.
+ *
+ * E ESTE TESTE GUARDA O PONTO CEGO FECHADO: a Húngara é `secondary` no conteúdo,
+ * a biblioteca já dizia "complementar", e o treino a cobrava assim mesmo. As
+ * duas metades do produto discordavam sobre o que é essencial.
+ */
+test('os dois lados mostram a matriz, e o complementar deixa de ser obrigatório', async ({
+  page,
+}) => {
+  await page.goto('/aberturas/italiana')
+  await irAteEtapa(page, /Jogar pelos dois lados/)
+
+  const matriz = page.getByRole('table')
+  await expect(matriz).toBeVisible()
+
+  // A LINHA PRINCIPAL É A ÚNICA OBRIGATÓRIA NOS DOIS PAPÉIS.
+  const principal = matriz.getByRole('row').filter({ hasText: 'Linha principal' })
+  await expect(principal.getByText('○ obrigatório')).toHaveCount(2)
+
+  // UM RAMO CORE: obrigatório do seu lado, recomendado do outro — §27.3, o curso
+  // não dobra de tamanho por causa da perspectiva reversa.
+  const doisCavalos = matriz.getByRole('row').filter({ hasText: 'Defesa dos Dois Cavalos' })
+  await expect(doisCavalos.getByText('○ obrigatório')).toHaveCount(1)
+  await expect(doisCavalos.getByText('· recomendado')).toHaveCount(1)
+
+  /*
+    A HÚNGARA É `secondary`: recomendada nos DOIS papéis. Antes da matriz ela
+    entrava na lista de alvos exigidos como qualquer outra — a biblioteca dizia
+    "complementar" e o treino cobrava assim mesmo.
+  */
+  const hungara = matriz.getByRole('row').filter({ hasText: 'Defesa Húngara' })
+  await expect(hungara.getByText('· recomendado')).toHaveCount(2)
+  await expect(hungara.getByText('○ obrigatório')).toHaveCount(0)
+
+  // Estado nunca depende só de cor: cada célula traz símbolo E palavra.
+  await expect(page.getByText('obrigatório').first()).toBeVisible()
+})
