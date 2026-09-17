@@ -203,6 +203,9 @@ for (const { nome, url } of [
     await page.goto(url)
     await expect(page.getByRole('link', { name: 'LanceZero' })).toBeVisible()
 
+    // Mesma razão do TESTE CONTA: geometria medida antes da fonte é geometria
+    // de uma tela que ninguém vê.
+    await page.evaluate(() => document.fonts.ready)
     const cruzados = sobreposicoes(await caixasDoCabecalho(page))
     expect(
       cruzados,
@@ -223,11 +226,30 @@ test('TESTE CONTA — o atalho é o ícone mais à direita, e diz o próprio nom
   await expect(conta).toBeVisible()
   await expect(page.getByRole('link', { name: 'Conta', exact: true })).toHaveCount(0)
 
+  /*
+    MEDIR DEPOIS DA FONTE, e isto era uma instabilidade real.
+
+    A fonte da marca muda a largura do texto do cabeçalho ao carregar, e com ela
+    muda quem é o elemento mais à direita. Medindo logo depois do `goto`, o teste
+    às vezes fotografava o cabeçalho com a fonte de sistema — passava sozinho e
+    reprovava na suíte cheia, quando a máquina está lenta.
+
+    O `expect.poll` mantém a asserção ESTRITA: ele não afrouxa a igualdade de
+    pixel, só espera o layout parar de se mexer antes de cobrá-la.
+  */
+  await page.evaluate(() => document.fonts.ready)
+
   // MAIS À DIREITA: nenhum outro controle do cabeçalho começa depois dele.
-  const caixas = await caixasDoCabecalho(page)
-  const direitaDaConta = await conta.evaluate((el) => el.getBoundingClientRect().right)
-  const maiorDireita = Math.max(...caixas.map((c) => c.right))
-  expect(Math.round(direitaDaConta)).toBe(Math.round(maiorDireita))
+  await expect
+    .poll(
+      async () => {
+        const caixas = await caixasDoCabecalho(page)
+        const direitaDaConta = await conta.evaluate((el) => el.getBoundingClientRect().right)
+        return Math.round(Math.max(...caixas.map((c) => c.right)) - direitaDaConta)
+      },
+      { message: 'a Conta não é o controle mais à direita do cabeçalho' },
+    )
+    .toBe(0)
 })
 
 /*
@@ -239,15 +261,45 @@ test('TESTE CONTA — o atalho é o ícone mais à direita, e diz o próprio nom
   tem ou se a frase em inglês tiver ficado idêntica à portuguesa.
 */
 test('TESTE CONTA — a tela inteira fala o idioma escolhido', async ({ page }) => {
+  /*
+    ESTE TESTE NÃO PODE DEPENDER DE O SUPABASE ESTAR CONFIGURADO, e dependia.
+
+    `AccountPanel` tem dois estados: sem Supabase mostra "Conta online
+    indisponível"; com Supabase mostra o formulário de entrada. A versão
+    anterior afirmava o primeiro, e o comentário acima dela dizia "o e2e roda sem
+    Supabase" — o que deixou de ser verdade no dia em que alguém pôs as chaves
+    num `.env.local`. O teste passava ou reprovava conforme a MÁQUINA, e não
+    conforme o código.
+
+    A propriedade que ele guarda não depende do estado: a tela INTEIRA fala o
+    idioma escolhido. Então ele afirma o que vale nos dois — o cabeçalho, a
+    descrição, e a ausência de vazamento do outro idioma — e aceita qualquer um
+    dos dois painéis.
+  */
   await page.goto('/en/account')
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Account')
   // O painel era a maior exceção do app: estava inteiro em português fixo.
-  await expect(page.getByRole('heading', { name: 'Online account unavailable' })).toBeVisible()
+  await expect(painelDaConta(page, 'en')).toBeVisible()
   await expect(page.getByText(/Conta online indisponível/)).toHaveCount(0)
   await expect(page.getByText(/Ajustes/)).toHaveCount(0)
+  await expect(page.getByText(/Entrar na conta|Esqueci a senha/)).toHaveCount(0)
 
   await page.goto('/account')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Conta')
-  await expect(page.getByRole('heading', { name: 'Conta online indisponível' })).toBeVisible()
+  await expect(painelDaConta(page, 'pt')).toBeVisible()
+  await expect(page.getByText(/Online account unavailable|Forgot password/)).toHaveCount(0)
 })
+
+/**
+ * O cabeçalho do painel de conta, seja qual for o estado dele.
+ *
+ * Sem Supabase é "indisponível"; com Supabase é o formulário de entrada. Os dois
+ * são `h2` e os dois vêm do mesmo bloco `account` do dicionário — que é o que
+ * este arquivo mede.
+ */
+function painelDaConta(page: Page, idioma: 'pt' | 'en') {
+  const nome =
+    idioma === 'en' ? /Online account unavailable|Sign in/ : /Conta online indisponível|Entrar/
+  return page.getByRole('heading', { name: nome }).first()
+}

@@ -53,8 +53,23 @@
   font-size: 0.9375rem;
 }
 
+/*
+  ELE PODE ENCOLHER, e antes não podia.
+
+  `flex: none` travava a largura deste bloco no conteúdo máximo — barra de 7rem,
+  mais "6 de 10 etapas" sem quebra, mais o botão do Mapa. O `flex-wrap` dos
+  próprios filhos nunca chegava a disparar, porque o bloco jamais ficava
+  estreito. Em 360 px isso dava 389 px de conteúdo numa tela de 360: a página
+  inteira rolava na horizontal.
+
+  `flex: 0 1 auto` mantém o desktop igual — com espaço sobrando o bloco continua
+  no tamanho do conteúdo — e devolve ao celular o direito de quebrar. O
+  `min-width: 0` é o que permite encolher abaixo do conteúdo mínimo dos filhos,
+  sem o qual a regra de flexbox segura a largura mesmo assim.
+*/
 .direita {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--space-3);

@@ -29,6 +29,7 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { legalMoves } from '@/lib/chess'
 
 const COLUNAS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const
 
@@ -45,6 +46,18 @@ function botaoContinuar(page: Page): Locator {
 /** O "Continuar" DE DENTRO do exercício — o que registra o item respondido. */
 function continuarDoExercicio(page: Page): Locator {
   return page.getByRole('button', { name: /^Continuar$/ })
+}
+
+/**
+ * O texto de quantos itens faltam, ou string vazia quando não há.
+ *
+ * É o sinal mais barato de "o item contou" numa tela em que o lance certo já
+ * avança sozinho: ele muda a cada item registrado, sem depender de botão nenhum.
+ */
+async function textoDoPendente(page: Page): Promise<string> {
+  const pendente = page.getByText(/Faltam \d+ de \d+ exercícios para seguir\./)
+  if ((await pendente.count()) === 0) return ''
+  return (await pendente.first().textContent()) ?? ''
 }
 
 /** Os vizinhos de uma casa, mais os saltos de cavalo e o avanço duplo do peão. */
@@ -132,18 +145,70 @@ async function responderUmItem(page: Page): Promise<void> {
 
   // 2. Lance no tabuleiro: origem entre as peças de quem joga, destino entre os
   //    alcançáveis por um lance qualquer de uma peça qualquer.
+  //
+  //    O SINAL DE QUE O LANCE CONTOU TEM TRÊS FORMAS, e aceitar as três é o que
+  //    mantém este portão medindo a PROPRIEDADE em vez do mecanismo:
+  //
+  //      a. a tela pede confirmação do item — o `Continuar` de dentro;
+  //      b. o lance conta sozinho e o rodapé destrava, quando era o último item;
+  //      c. o lance conta sozinho e o texto do pendente anda ("Faltam 4 de 5").
+  //
+  //    A versão anterior só conhecia (a), e reprovou a prática guiada da
+  //    abertura no dia em que ela deixou de pedir um clique por lance. O botão
+  //    por lance era o defeito, não o contrato: quem responde é o tabuleiro.
+  /*
+    OS CANDIDATOS SÃO OS LANCES LEGAIS DA POSIÇÃO, e não uma geometria chutada.
+
+    A versão anterior tentava vizinhos, saltos de cavalo e avanço duplo para cada
+    peça — dezenas de cliques por etapa, quase todos em lances que não existem. Na
+    prática guiada da abertura, que tem cinco decisões, isso estourava o tempo do
+    teste antes de achar a quinta.
+
+    Ler as regras do xadrez NÃO é copiar a implementação: o portão continua sem
+    saber QUAL lance a etapa quer — ele tenta os que a posição permite, na ordem
+    em que vierem, e para no primeiro que contar.
+
+    DUAS PASSADAS POR LANCE, e não é desperdício: as duas telas limpam a seleção
+    de jeitos opostos. Na abertura, recusar um destino MANTÉM a peça selecionada;
+    no treino de final, a tela limpa. Um clique na origem antes da tentativa,
+    então, seleciona numa e desseleciona na outra. Com duas passadas a fase
+    inverte, e todo lance recebe ao menos uma tentativa de verdade.
+  */
+  const fen = await page
+    .locator('[data-testid="chessboard"][data-interactive="true"]')
+    .first()
+    .getAttribute('data-fen')
+  if (!fen) throw new Error('etapa com tabuleiro interativo sem `data-fen`')
+
+  const pendenteAntes = await textoDoPendente(page)
   let tentativas = 0
-  for (const origem of await casasDeQuemJoga(page)) {
-    await page.locator(`#lancezero-board-square-${origem}`).click()
-    for (const destino of destinosPlausiveis(origem)) {
-      tentativas += 1
-      if (tentativas > TENTATIVAS_MAXIMAS_DE_LANCE) break
-      await page.locator(`#lancezero-board-square-${destino}`).click()
+  for (const lance of legalMoves(fen)) {
+    tentativas += 1
+    if (tentativas > TENTATIVAS_MAXIMAS_DE_LANCE) break
+
+    for (let passe = 0; passe < 2; passe += 1) {
+      await page.locator(`#lancezero-board-square-${lance.from}`).click()
+      await page.locator(`#lancezero-board-square-${lance.to}`).click()
+
+      /*
+        OS TRÊS SINAIS, E A ORDEM IMPORTA.
+
+        O botão de confirmação vem PRIMEIRO porque, na tela que o usa, o item só
+        conta depois do clique — o pendente ainda diz "Faltam 1 de 1" enquanto
+        ele está na tela. Uma versão anterior deste ajudante só olhava o botão
+        quando o pendente já tinha sumido, e por isso nunca o via: a etapa de
+        variações dos finais virou beco sem saída no teste, e não no produto.
+
+        Os outros dois cobrem a tela em que o lance certo conta sozinho: o texto
+        do pendente anda, ou o rodapé destrava quando era o último item.
+      */
       if ((await continuarDoExercicio(page).count()) > 0) {
         await continuarDoExercicio(page).click()
         return
       }
-      await page.locator(`#lancezero-board-square-${origem}`).click()
+      const pendenteAgora = await textoDoPendente(page)
+      if (pendenteAgora !== pendenteAntes) return
+      if (pendenteAgora === '' && (await botaoContinuar(page).isEnabled())) return
     }
   }
 
@@ -208,6 +273,7 @@ async function percorrerAteOTreino(page: Page, totalDeEtapas: number): Promise<n
 }
 
 test('a jornada de um final atravessa todas as etapas até o treino', async ({ page }) => {
+  test.setTimeout(120_000)
   await page.goto('/finais/atividade-do-rei')
   await expect(page.getByText(/Etapa 1 de 10/)).toBeVisible()
 
@@ -220,6 +286,9 @@ test('a jornada de um final atravessa todas as etapas até o treino', async ({ p
 })
 
 test('a jornada de uma abertura atravessa todas as etapas até o treino', async ({ page }) => {
+  // A travessia é uma varredura por força bruta de nove etapas: ela é lenta por
+  // desenho, e o relógio padrão de 30s mede a máquina, não o beco sem saída.
+  test.setTimeout(120_000)
   await page.goto('/aberturas/italiana')
   await expect(page.getByText(/Etapa 1 de 9/)).toBeVisible()
 
