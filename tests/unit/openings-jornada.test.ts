@@ -236,12 +236,17 @@ function cobrirAlvo(jornada: StudyJourney, alvo: string, rng: () => number): Stu
 }
 
 describe('currículo da jornada de abertura', () => {
-  it('tem as nove etapas na ordem em que se aprende, com o treino marcado', () => {
+  it('tem as oito etapas na ordem em que se aprende, com o treino marcado', () => {
+    /*
+      ERAM NOVE. "Melhores respostas do adversário" e "Variações importantes"
+      eram duas etapas separadas por quem tomava a decisão, e viraram uma: o ramo
+      é a unidade que o aluno vê, e `autor` voltou a ser metadata. Ver o ADR
+      desta entrega e `@/domain/openings/ramos`.
+    */
     expect(ETAPAS.map((stage) => stage.id)).toEqual([
       'visao',
       'ideias',
       'linha-principal',
-      'respostas',
       'variacoes',
       'planos',
       'dois-lados',

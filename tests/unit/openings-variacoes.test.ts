@@ -18,10 +18,10 @@ import {
   posicoesDaLinha,
   ramificacaoDaVariacao,
   ramificacoesDaAbertura,
-  respostasDoAdversario,
   variacaoEmCurso,
-  variacoesDoAluno,
 } from '@/domain/openings/variacoes'
+import { ramosCore, ramosDaAbertura } from '@/domain/openings/ramos'
+import { identidadeDePosicao } from '@/lib/chess'
 
 const ITALIANA = OPENING_COURSES.find((o) => o.slug === 'italiana') ?? OPENING_COURSES[0]
 
@@ -107,51 +107,95 @@ describe('a ramificação de uma variação', () => {
   })
 })
 
-describe('de quem é a decisão — a partição que separa as duas etapas', () => {
-  it('toda ramificação cai em exatamente uma das duas etapas', () => {
-    /*
-      "Melhores respostas do adversário" e "Variações importantes" leem listas
-      COMPLEMENTARES. Se um terceiro caso aparecer — uma ramificação que não é
-      resposta nem escolha do aluno — ele não some da tela com erro: some em
-      silêncio, e o conteúdo fica inalcançável. Este portão morde dos dois
-      lados: acusa tanto o ramo perdido quanto o ramo contado duas vezes.
-    */
+describe('o ramo é a unidade — os invariantes que substituem a partição', () => {
+  /*
+    O QUE SAIU DAQUI, e por quê. Havia um portão afirmando que
+    `respostasDoAdversario` e `variacoesDoAluno` eram COMPLEMENTARES: a soma das
+    duas dava o total, e nenhum id aparecia nas duas. Ele guardava o ADR-0018,
+    que dividia a jornada em duas etapas por QUEM TOMOU A DECISÃO.
+
+    O VNext desfaz essa divisão: o ramo passa a ser a unidade que o aluno vê, e
+    `autor` volta a ser metadata. Um portão sobre a soma de duas listas que não
+    existem mais guardaria uma promessa vazia — o pior tipo, porque continua
+    verde para sempre.
+
+    No lugar dele entram três invariantes sobre a lista ÚNICA, e cada um cobre
+    um jeito diferente de perder conteúdo em silêncio.
+  */
+
+  it('todo ramo autorado aparece exatamente uma vez, e com id único', () => {
     for (const opening of OPENING_COURSES) {
-      const todos = ramificacoesDaAbertura(opening)
-      const respostas = respostasDoAdversario(opening)
-      const doAluno = variacoesDoAluno(opening)
+      const ramos = ramosDaAbertura(opening)
 
-      expect(
-        respostas.length + doAluno.length,
-        `${opening.slug}: a partição perdeu ou duplicou um ramo`,
-      ).toBe(todos.length)
+      // Nenhum some e nenhum se duplica na travessia da biblioteca.
+      expect(ramos.length, `${opening.slug}: a lista de ramos perdeu conteúdo`).toBe(
+        opening.variations.length,
+      )
 
-      const ids = [...respostas, ...doAluno].map((ramo) => ramo.variacao.id)
-      expect(new Set(ids).size, `${opening.slug}: um ramo aparece nas duas etapas`).toBe(ids.length)
+      const ids = ramos.map((ramo) => ramo.id)
+      expect(new Set(ids).size, `${opening.slug}: id de ramo repetido`).toBe(ids.length)
     }
   })
 
-  it('quem desvia numa resposta é sempre o adversário, e nunca o aluno', () => {
+  it('todo ramo é alcançável no grafo a partir da posição inicial', () => {
+    /*
+      ALCANÇABILIDADE É O INVARIANTE QUE FALTAVA. Um ramo pode ser legal do
+      começo ao fim e ainda assim nunca acontecer numa partida que siga o
+      repertório — bastam os lances anteriores não existirem no grafo. Ele
+      apareceria na biblioteca, seria estudável, e o bot jamais o jogaria.
+    */
     for (const opening of OPENING_COURSES) {
-      for (const ramo of respostasDoAdversario(opening)) {
-        expect(ramo.indiceDaDivergencia, `${opening.slug}/${ramo.variacao.id}`).not.toBeNull()
-        expect(ramo.ladoQueDesvia, `${opening.slug}/${ramo.variacao.id}`).not.toBe(opening.side)
+      for (const ramo of ramosDaAbertura(opening)) {
+        const posicoes = posicoesDaLinha(opening.rootFen, ramo.ramificacao.variacao.line)
+        const fenDaDecisao = posicoes[ramo.ramificacao.indiceDaDivergencia ?? 0]
+        expect(
+          fenDaDecisao !== undefined && opening.graph.has(identidadeDePosicao(fenDaDecisao)),
+          `${opening.slug}/${ramo.id}: a posição de bifurcação não está no grafo`,
+        ).toBe(true)
       }
     }
   })
 
-  it('TESTE DE CONTEÚDO — toda abertura tem ao menos uma resposta do adversário', () => {
+  it('TESTE DE CONTEÚDO — todo ramo core traz intenção do adversário e objetivo do aluno', () => {
     /*
-      A etapa 4/9 pergunta "o que ele joga aqui?". Uma abertura sem resposta
-      autorada responde com o estado vazio — que é honesto, e é exatamente o que
-      não pode virar o normal. Metade do catálogo já esteve assim.
+      SEM ESTES DOIS CAMPOS O RAMO VOLTA A SER UMA SEQUÊNCIA DE LANCES. A
+      pergunta que o aluno leva para a partida não é "qual era o lance?", é "o
+      que ele está tentando fazer?" — e é essa que sobrevive quando a ordem dos
+      lances muda.
+
+      Só `core` é cobrado: é o que bloqueia a conclusão. Exigir de `optional`
+      transformaria conteúdo de referência em dívida.
     */
     for (const opening of OPENING_COURSES) {
-      expect(
-        respostasDoAdversario(opening).length,
-        `${opening.slug} não tem nenhuma resposta do adversário autorada`,
-      ).toBeGreaterThan(0)
+      const core = ramosCore(opening)
+      expect(core.length, `${opening.slug} não tem nenhum ramo core`).toBeGreaterThan(0)
+
+      for (const ramo of core) {
+        expect(
+          (ramo.intencaoDoAdversario ?? '').trim().length,
+          `${opening.slug}/${ramo.id}: ramo core sem intenção do adversário`,
+        ).toBeGreaterThan(20)
+        expect(
+          (ramo.objetivoDoAluno ?? '').trim().length,
+          `${opening.slug}/${ramo.id}: ramo core sem objetivo do aluno`,
+        ).toBeGreaterThan(20)
+      }
     }
+  })
+
+  it('o autor do ramo continua sendo verdade, agora como metadata', () => {
+    /*
+      `autor` deixou de criar etapa, mas não deixou de existir: é ele que decide
+      se a tela escreve "o adversário joga" ou "você joga", e é ele que separa
+      os papéis na cobertura. Um módulo que assumisse "ramo = lance do outro"
+      mentiria na Eslava dentro do repertório de pretas do Gambito da Dama.
+    */
+    const autores = OPENING_COURSES.flatMap((opening) =>
+      ramosDaAbertura(opening).map((ramo) => ramo.autor),
+    )
+    expect(autores).toContain('adversario')
+    expect(autores).toContain('aluno')
+    expect(autores).toContain('nenhum')
   })
 })
 

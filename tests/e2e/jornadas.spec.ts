@@ -85,12 +85,12 @@ test('a jornada avança sozinha de etapa em etapa, sem voltar a um menu', async 
     .first()
     .click()
 
-  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 1 de 8')).toBeVisible()
   await page.getByRole('button', { name: /Continuar/ }).click()
 
   // Etapa 2 abre direto. Sem menu no meio — é a diferença entre uma jornada e
   // um índice.
-  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 2 de 8')).toBeVisible()
 })
 
 test('voltar para uma etapa concluída NÃO perde progresso', async ({ page }) => {
@@ -101,7 +101,7 @@ test('voltar para uma etapa concluída NÃO perde progresso', async ({ page }) =
     .click()
 
   await page.getByRole('button', { name: /Continuar/ }).click()
-  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 2 de 8')).toBeVisible()
 
   // O MAPA deixa voltar ao que já foi visto — e agora também ir adiante.
   await page.getByRole('button', { name: /Mapa do estudo/ }).click()
@@ -111,11 +111,11 @@ test('voltar para uma etapa concluída NÃO perde progresso', async ({ page }) =
     .filter({ hasNotText: /Fechar/ })
     .first()
     .click()
-  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 1 de 8')).toBeVisible()
 
   // E o avanço não foi desfeito: continuar leva de volta à etapa 2.
   await page.getByRole('button', { name: /Continuar/ }).click()
-  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 2 de 8')).toBeVisible()
 })
 
 test('a jornada retoma exatamente onde parou depois de recarregar', async ({ page }) => {
@@ -127,12 +127,12 @@ test('a jornada retoma exatamente onde parou depois de recarregar', async ({ pag
 
   await page.getByRole('button', { name: /Continuar/ }).click()
   await page.getByRole('button', { name: /Continuar/ }).click()
-  await expect(page.getByText('Etapa 3 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 3 de 8')).toBeVisible()
 
   await page.reload()
   // Retomada EXATA: sem isto, sair no meio custaria o estudo inteiro, e o aluno
   // aprenderia a não sair — que é a forma errada de manter alguém na tela.
-  await expect(page.getByText('Etapa 3 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 3 de 8')).toBeVisible()
 })
 
 test('o card da abertura mostra o estado da jornada e o CTA certo', async ({ page }) => {
@@ -227,11 +227,11 @@ test('consultar outra etapa pelo Mapa NÃO altera o progresso', async ({ page })
     O QUE PRECISAVA SOBREVIVER é a garantia: consultar não desfaz progresso.
   */
   await page.goto('/aberturas/italiana')
-  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 1 de 8')).toBeVisible()
 
   // Avança uma etapa para haver progresso que possa ser perdido.
   await page.getByRole('button', { name: /Continuar →/ }).click()
-  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 2 de 8')).toBeVisible()
 
   // Vai para a PRIMEIRA etapa pelo Mapa e volta: o contador de concluídas não
   // pode cair, porque reler não é desfazer.
@@ -242,18 +242,18 @@ test('consultar outra etapa pelo Mapa NÃO altera o progresso', async ({ page })
     .filter({ hasNotText: /Fechar/ })
     .first()
     .click()
-  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 1 de 8')).toBeVisible()
   await expect(page.getByText(/1 de \d+ etapas/)).toBeVisible()
 })
 
 test('o roadmap mostra o progresso da jornada e leva para ela', async ({ page }) => {
   await page.goto('/aberturas/italiana')
   await page.getByRole('button', { name: /Continuar →/ }).click()
-  await expect(page.getByText('Etapa 2 de 9')).toBeVisible()
+  await expect(page.getByText('Etapa 2 de 8')).toBeVisible()
 
   await page.goto('/roadmap')
   const card = page.locator('article').filter({ hasText: 'Abertura Italiana' }).first()
-  await expect(card).toContainText(/\d+ de 9 etapas/)
+  await expect(card).toContainText(/\d+ de 8 etapas/)
   // O card leva à JORNADA, e não à biblioteca de lições — que não tem nada
   // sobre a Italiana.
   await expect(card.getByRole('link')).toHaveAttribute('href', '/aberturas/italiana')

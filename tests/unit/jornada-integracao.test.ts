@@ -234,10 +234,10 @@ describe('a ponte entre o Roadmap e os conteúdos', () => {
 })
 
 describe('as etapas de um conteúdo real', () => {
-  it('a Italiana tem as nove etapas da jornada de abertura', () => {
+  it('a Italiana tem as oito etapas da jornada de abertura', () => {
     const conteudo = conteudoDoNo({ id: 'opening.italian' })
     const stages = etapasDoConteudo(conteudo!)
-    expect(stages).toHaveLength(9)
+    expect(stages).toHaveLength(8)
     expect(stages[stages.length - 1]?.ehTreinoFinal).toBe(true)
   })
 

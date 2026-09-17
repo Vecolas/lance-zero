@@ -92,6 +92,11 @@ const italian = course({
   variations: [
     {
       id: 'italiana-dois-cavalos',
+      importancia: 'core',
+      intencaoDoAdversario:
+        'Atacar e4 antes de desenvolver o bispo, para que você tenha de defender em vez de continuar o plano.',
+      objetivoDoAluno:
+        'Sustentar e4 com um peão e seguir desenvolvendo: o ataque some e nenhum tempo foi gasto.',
       name: 'Defesa dos Dois Cavalos',
       description: 'Em vez de espelhar o seu bispo, as pretas atacam e4 na hora.',
       rootNodeId: '',
@@ -114,6 +119,11 @@ const italian = course({
     },
     {
       id: 'italiana-hungara',
+      importancia: 'secondary',
+      intencaoDoAdversario:
+        'Evitar qualquer choque tático e jogar uma posição sem alvos, aceitando ceder espaço.',
+      objetivoDoAluno:
+        'Ocupar o espaço cedido e completar o desenvolvimento antes de procurar ruptura.',
       name: 'Defesa Húngara',
       description: 'As pretas recusam o confronto e põem o bispo numa casa modesta.',
       rootNodeId: '',
@@ -140,6 +150,10 @@ const italian = course({
     },
     {
       id: 'italiana-giuoco-piano',
+      importancia: 'core',
+      intencaoDoAdversario: 'Espelhar o seu desenvolvimento e manter a posição simétrica.',
+      objetivoDoAluno:
+        'Reconhecer que esta é a própria linha principal, e continuar com d3 e roque.',
       name: 'Giuoco Piano',
       description: 'As duas peças menores chegam a casas ativas e a posição fica flexível.',
       rootNodeId: '',
@@ -225,6 +239,11 @@ const caroKann = course({
   variations: [
     {
       id: 'caro-troca',
+      importancia: 'core',
+      intencaoDoAdversario:
+        'Simplificar em d5 para tirar a tensão e jogar uma posição sem alvo fixo.',
+      objetivoDoAluno:
+        'Recapturar com o peão de c6, abrir a coluna c e manter o bispo de c8 livre.',
       name: 'Variante da Troca',
       description: 'As brancas trocam em d5 e a estrutura fica simétrica.',
       rootNodeId: '',
@@ -250,6 +269,10 @@ const caroKann = course({
     },
     {
       id: 'caro-classica',
+      importancia: 'core',
+      intencaoDoAdversario:
+        'Desenvolver sem definir o centro, deixando a decisão sobre d5 com você.',
+      objetivoDoAluno: 'Trocar em e4 enquanto a troca é sua, e só então tirar o bispo por f5.',
       name: 'Variante Clássica',
       description: 'As brancas desenvolvem em vez de definir o centro, e deixam a troca com você.',
       rootNodeId: '',
@@ -350,6 +373,11 @@ const qgd = course({
   variations: [
     {
       id: 'qgd-tres-cavalos',
+      importancia: 'core',
+      intencaoDoAdversario:
+        'Desenvolver o cavalo do rei antes de comprometer o centro, mudando só a ordem dos lances.',
+      objetivoDoAluno:
+        'Responder com o mesmo lance da linha principal: ordem diferente não é linha diferente.',
       name: 'Desenvolvimento com Cf3',
       description: 'As brancas desenvolvem o cavalo do rei antes de decidir o centro.',
       rootNodeId: '',
@@ -375,6 +403,10 @@ const qgd = course({
     },
     {
       id: 'qgd-troca',
+      importancia: 'core',
+      intencaoDoAdversario: 'Fixar a estrutura cedo e jogar contra a sua minoria de peões.',
+      objetivoDoAluno:
+        'Recapturar com o peão de e6 para manter d5 sustentado e o bispo de c8 com saída.',
       name: 'Variante da Troca',
       description: 'As brancas trocam em d5 e a estrutura fica fixa desde cedo.',
       rootNodeId: '',
@@ -401,6 +433,10 @@ const qgd = course({
     },
     {
       id: 'qgd-eslava-ponte',
+      importancia: 'secondary',
+      intencaoDoAdversario: 'Nenhuma: aqui quem escolhe é você.',
+      objetivoDoAluno:
+        'Sustentar d5 com c6 em vez de e6, mantendo a diagonal do bispo de c8 aberta.',
       name: 'Estrutura com c6',
       description: 'A estrutura fica mais sólida, mas o bispo de c8 pede atenção.',
       rootNodeId: '',
@@ -484,6 +520,11 @@ const scotch = course({
   variations: [
     {
       id: 'escocesa-classica',
+      importancia: 'core',
+      intencaoDoAdversario:
+        'Atacar o cavalo de d4 e a casa f2 com um só lance, forçando você a decidir cedo.',
+      objetivoDoAluno:
+        'Defender o cavalo desenvolvendo: recuar devolveria de graça o tempo que d4 ganhou.',
       name: 'Variante Clássica',
       description: 'As pretas põem o bispo em c5, de frente para o seu cavalo de d4.',
       rootNodeId: '',
@@ -510,6 +551,11 @@ const scotch = course({
     },
     {
       id: 'escocesa-schmidt',
+      importancia: 'core',
+      intencaoDoAdversario:
+        'Atacar e4 e ignorar o seu cavalo, apostando que você vai defender passivamente.',
+      objetivoDoAluno:
+        'Trocar antes de defender, e depois avançar e5 com tempo sobre o cavalo que atacava.',
       name: 'Variante Schmidt',
       description: 'As pretas atacam e4 com o cavalo antes de desenvolver o bispo.',
       rootNodeId: '',
@@ -614,6 +660,11 @@ const london = course({
   variations: [
     {
       id: 'londres-c5',
+      importancia: 'core',
+      intencaoDoAdversario:
+        'Atacar a base do seu centro em vez de sustentar o dele — o teste mais direto do sistema.',
+      objetivoDoAluno:
+        'Sustentar d4 com e3 e c3: o sistema foi feito para não precisar de lance novo aqui.',
       name: 'Contra-ataque com c5',
       description: 'As pretas atacam a base do seu centro em vez de sustentar o delas.',
       rootNodeId: '',
@@ -641,6 +692,11 @@ const london = course({
     },
     {
       id: 'londres-bf5',
+      importancia: 'secondary',
+      intencaoDoAdversario:
+        'Jogar o seu próprio sistema contra você, tirando o bispo da cadeia antes de e6.',
+      objetivoDoAluno:
+        'Consolidar o centro e usar o tempo a mais na escolha da ruptura, não em ataque.',
       name: 'Bispo por f5',
       description: 'As pretas jogam o Londres contra você e desenvolvem o bispo antes de e6.',
       rootNodeId: '',
@@ -729,6 +785,9 @@ const slav = course({
   variations: [
     {
       id: 'eslava-cc3',
+      importancia: 'core',
+      intencaoDoAdversario: 'Desenvolver pelo lado da dama mantendo o centro sem definição.',
+      objetivoDoAluno: 'Responder com o lance da linha principal: a posição não pede teoria nova.',
       name: 'Desenvolvimento com Cc3',
       description: 'As brancas desenvolvem pelo outro lado antes de tocar no centro.',
       rootNodeId: '',
@@ -755,6 +814,11 @@ const slav = course({
     },
     {
       id: 'eslava-troca',
+      importancia: 'core',
+      intencaoDoAdversario:
+        'Resolver a tensão cedo e buscar uma posição simétrica e pobre em alvos.',
+      objetivoDoAluno:
+        'Recapturar com o peão de c6, abrir a coluna c e manter o bispo com saída por f5.',
       name: 'Variante da Troca',
       description: 'As brancas trocam em d5 e a estrutura fica simétrica desde o quinto lance.',
       rootNodeId: '',

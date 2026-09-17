@@ -193,26 +193,25 @@ export function construirJornadaDeAbertura(opening: OpeningDefinition): StudySta
       regra: { tipo: 'leitura' },
     },
     {
-      id: 'respostas',
-      tipo: 'abertura:respostas',
-      titulo: 'Melhores respostas do adversário',
-      rotuloCurto: 'Respostas',
-      objetivo: `Antecipar o que as ${ladoOposto} realmente jogam nesta posição.`,
-      regra: { tipo: 'leitura' },
-    },
-    {
+      /*
+        AS DUAS ETAPAS VIRARAM UMA. Ver o plano VNext §0 e o ADR desta entrega.
+
+        Havia "Melhores respostas do adversário" e "Variações importantes",
+        separadas por QUEM TOMAVA A DECISÃO. A separação é limpa no domínio e
+        artificial na cabeça de quem estuda: o jogador pensa "estou na Defesa
+        dos Dois Cavalos", não "estou na lista de ramos cujo autor da decisão
+        foi o oponente".
+
+        O id continua `variacoes` de propósito — é ele que está gravado em
+        `studyJourneys` de quem já estudou, e trocá-lo obrigaria a migrar por
+        nome em vez de por identidade. Quem estava em `respostas` é migrado para
+        cá; ver `migrarJornadaDeAbertura`.
+      */
       id: 'variacoes',
       tipo: 'abertura:variacoes',
       titulo: 'Variações importantes',
-      /*
-        O OBJETIVO MUDOU JUNTO COM A PARTIÇÃO (ADR-0018). Ele dizia "saber o que
-        muda quando o ADVERSÁRIO desvia da linha principal" — que é, palavra por
-        palavra, a etapa anterior. Enquanto as duas etapas liam a mesma lista, a
-        duplicação passava despercebida; separá-las tornou a frase falsa, e uma
-        promessa falsa no cabeçalho é pior que uma etapa magra.
-      */
       rotuloCurto: 'Variações',
-      objetivo: 'Saber onde VOCÊ escolhe a linha, e o que cada escolha compromete.',
+      objetivo: `Saber o que fazer quando a partida sai da linha principal — de quem quer que seja a escolha.`,
       regra: { tipo: 'leitura' },
     },
     {

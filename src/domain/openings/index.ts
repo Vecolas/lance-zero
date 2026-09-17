@@ -65,12 +65,39 @@ export interface OpeningNode {
   lessonComment?: string
 }
 
+/**
+ * Quanto um ramo pesa no currículo desta abertura.
+ *
+ * EXISTE PARA O CURSO NÃO SER INFINITO. Um repertório de verdade tem dezenas de
+ * desvios possíveis, e exigir todos antes de deixar o aluno concluir é a forma
+ * mais rápida de ele nunca concluir. Só `core` bloqueia a conclusão inicial; o
+ * resto continua estudável, e continua visível — esconder conteúdo é o defeito
+ * que o ADR-0016 desfez.
+ */
+export type ImportanciaDoRamo = 'core' | 'secondary' | 'optional'
+
 export interface OpeningVariation {
   id: string
   name: string
   description: string
   rootNodeId: string
   line: OpeningMoveLesson[]
+  /**
+   * Ausente significa `core`, e o padrão é deliberado: um ramo autorado sem
+   * classificação é um ramo que alguém achou importante o bastante para
+   * escrever. Rebaixá-lo por omissão esconderia conteúdo em silêncio.
+   */
+  importancia?: ImportanciaDoRamo
+  /**
+   * O QUE O ADVERSÁRIO QUER com este desvio, na voz de quem ensina.
+   *
+   * Sem isto o ramo vira uma sequência de lances outra vez. A pergunta que o
+   * aluno leva para a partida não é "qual era o lance?", é "o que ele está
+   * tentando fazer?" — e essa é a que sobrevive quando a ordem de lances muda.
+   */
+  intencaoDoAdversario?: string
+  /** O que VOCÊ busca nesta posição. O par da pergunta acima. */
+  objetivoDoAluno?: string
 }
 
 export interface OpeningPlan {

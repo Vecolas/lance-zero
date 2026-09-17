@@ -116,8 +116,9 @@ test('a jornada abre pela visão e chega ao treino sem revelar a resposta', asyn
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Aberturas')
   await page.getByRole('link', { name: /Abertura Italiana/ }).click()
 
-  // A jornada começa na VISÃO, e não num menu de abas.
-  await expect(page.getByText('Etapa 1 de 9')).toBeVisible()
+  // A jornada começa na VISÃO, e não num menu de abas. São OITO etapas desde
+  // que "Respostas do adversário" foi fundida em "Variações".
+  await expect(page.getByText('Etapa 1 de 8')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Visão e objetivo' })).toBeVisible()
 
   await irAteEtapa(page, /Treino final/)
@@ -142,16 +143,19 @@ test('a jornada abre pela visão e chega ao treino sem revelar a resposta', asyn
   await expect(page.getByText('FORA DO REPERTÓRIO')).toHaveCount(0)
 })
 
-test('as respostas do adversário são ensinadas no tabuleiro, sem explorador', async ({ page }) => {
+test('a biblioteca de variações ensina cada ramo no tabuleiro, sem explorador', async ({
+  page,
+}) => {
   /*
-    O QUE ESTE TESTE SUBSTITUIU: "o Explorer continua sendo enriquecimento sob
-    demanda", que media o painel da Lichess NESTA etapa. O painel saiu da jornada
-    (ADR-0018), e a propriedade que aquele teste guardava — o explorador não
-    consulta a rede sozinho — continua guardada em `aberturas.spec.ts`, na tela
-    `/openings`, onde o painel mora agora.
+    DUAS ETAPAS VIRARAM UMA. Havia "Melhores respostas do adversário" e
+    "Variações importantes", separadas por quem tomava a decisão. O jogador pensa
+    "estou na Defesa dos Dois Cavalos", e não "estou na lista de ramos cujo autor
+    da decisão foi o oponente" — então a lista passou a ser uma só, e `autor`
+    voltou a ser metadata que muda a FRASE, não a etapa.
 
-    Se qualquer consulta partir daqui, a rota abaixo conta e o teste reprova: a
-    saída do explorador é afirmada, não prometida.
+    Este teste também guarda a saída do explorador: a rota abaixo conta, e exige
+    zero. A propriedade "não consulta sozinho" continua medida em
+    `aberturas.spec.ts`, na tela `/openings`, onde o painel mora.
   */
   let consultas = 0
   await page.route('https://explorer.lichess.ovh/**', (route) => {
@@ -160,31 +164,35 @@ test('as respostas do adversário são ensinadas no tabuleiro, sem explorador', 
   })
   await page.goto('/aberturas/italiana')
 
-  await irAteEtapa(page, /Melhores respostas do adversário/)
+  await irAteEtapa(page, /Variações importantes/)
 
   // A ETAPA ENSINA NO TABULEIRO, e começa NO DESVIO — não no `e4` que a etapa
   // anterior já percorreu.
   await expect(page.locator('[data-testid="chessboard"]').first()).toBeVisible()
-  await expect(page.getByRole('group', { name: 'Escolher a resposta' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Escolher a variação' })).toBeVisible()
   await expect(page.getByText(/tudo igual à linha principal/)).toBeVisible()
   await expect(page.getByText('6. Nf6')).toBeVisible()
 
-  /*
-    O DESVIO, NOMEADO COM O LANCE QUE ELE RECUSA. Estas duas asserções vieram,
-    palavra por palavra, do teste da etapa de VARIAÇÕES — e o fato de elas
-    passarem aqui sem mudar uma vírgula é a medida da correção: a decisão do
-    adversário sempre foi conteúdo desta etapa, e estava na etapa seguinte.
-  */
+  // O desvio, nomeado com o lance que ele recusa.
   await expect(page.getByText(/O adversário joga/).first()).toBeVisible()
   await expect(page.getByText(/no lugar de Bc5/).first()).toBeVisible()
 
-  // Trocar de resposta reposiciona a navegação no desvio da resposta nova.
-  await page.getByRole('button', { name: 'Defesa Húngara' }).click()
-  await expect(page.getByText('6. Be7')).toBeVisible()
+  /*
+    AS DUAS PERGUNTAS QUE O RAMO PRECISA RESPONDER antes de pedir um lance. Sem
+    elas o ramo volta a ser uma sequência de lances — e a pergunta que sobrevive
+    à mudança de ordem dos lances é "o que ele está tentando fazer?".
+  */
+  await expect(page.getByText(/O que ele quer\./)).toBeVisible()
+  await expect(page.getByText(/Seu objetivo\./)).toBeVisible()
 
-  // E liga o que se estuda ao que se vai enfrentar: é o mesmo conjunto de linhas
-  // que o bot joga no treino.
-  await expect(page.getByText(/encontrar estas respostas no treino/)).toBeVisible()
+  // UMA LISTA SÓ: o ramo do ALUNO e o do ADVERSÁRIO convivem no mesmo seletor.
+  await page.getByRole('button', { name: /Defesa Húngara/ }).click()
+  await expect(page.getByText('6. Be7')).toBeVisible()
+  await page.getByRole('button', { name: /Giuoco Piano/ }).click()
+  await expect(page.getByText(/não é um desvio/)).toBeVisible()
+
+  // A importância aparece em TEXTO no chip, nunca só por cor.
+  await expect(page.getByRole('button', { name: /Defesa Húngara.*complementar/ })).toBeVisible()
 
   // E nada de explorador: nem o painel, nem uma única consulta.
   await expect(page.getByText('O que o mundo joga (opcional)')).toHaveCount(0)
@@ -325,47 +333,46 @@ test('o aluno pode adotar a abertura no próprio repertório', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Repertório ativo' })).toBeVisible()
 })
 
-test('a etapa das variações mostra as escolhas do ALUNO, e diz quando não há nenhuma', async ({
-  page,
-}) => {
+test('a lista é UMA só: um ramo do adversário e um do aluno convivem nela', async ({ page }) => {
   /*
-    DEPOIS DA PARTIÇÃO (ADR-0018), esta etapa deixou de repetir a lista da etapa
-    anterior: ela mostra só os ramos em que quem escolhe é o aluno. Na Italiana
-    sobra o Giuoco Piano, que NÃO é um desvio — é o nome de um trecho da própria
-    linha principal —, e a etapa afirma isso em vez de inventar uma bifurcação.
+    O QUE ESTES DOIS TESTES SUBSTITUÍRAM: um afirmava "a etapa das variações
+    mostra as escolhas do ALUNO" e o outro media o estado vazio que sobrava
+    quando a abertura não tinha nenhuma. Os dois descreviam a divisão por autor
+    da decisão, e ela deixou de existir.
 
-    As asserções do desvio ("O adversário joga X no lugar de Y") mudaram-se para
-    o teste da etapa 4, onde elas passaram a viver sem mudar uma palavra.
+    O Gambito da Dama Recusado é o caso que prova a fusão: ele tem ramos das
+    BRANCAS (3.Cf3, 3.cxd5) e um ramo das PRETAS, que é o repertório do aluno
+    (2...c6, a ponte para a Eslava). Antes eles viviam em etapas diferentes.
   */
-  await page.goto('/aberturas/italiana')
+  await page.goto('/aberturas/gambito-da-dama-recusado')
 
   await irAteEtapa(page, /Variações importantes/)
 
-  await expect(page.locator('[data-testid="chessboard"]').first()).toBeVisible()
-  await expect(page.getByText(/não é um desvio/)).toBeVisible()
+  const seletor = page.getByRole('group', { name: 'Escolher a variação' })
+  await expect(seletor).toBeVisible()
 
-  // E a etapa NÃO repete a decisão do adversário, que já foi ensinada antes.
-  await expect(page.getByText(/no lugar de Bc5/)).toHaveCount(0)
+  // O ramo do adversário: a frase diz quem joga.
+  await seletor.getByRole('button', { name: /Variante da Troca/ }).click()
+  await expect(page.getByText(/O adversário joga/)).toBeVisible()
+
+  // E o ramo do ALUNO, no MESMO seletor, com a frase invertida.
+  await seletor.getByRole('button', { name: /Estrutura com c6/ }).click()
+  await expect(page.getByText(/Você joga/)).toBeVisible()
+
+  // Nenhuma tela fala mais em "respostas do adversário" como etapa.
+  await expect(page.getByRole('heading', { name: /Melhores respostas/ })).toHaveCount(0)
 })
 
-test('sem escolha do aluno, a etapa das variações diz isso — e continua com tabuleiro', async ({
-  page,
-}) => {
-  /*
-    QUATRO DAS SEIS ABERTURAS não têm nenhum ramo escolhido pelo aluno: contra
-    cada resposta do adversário, a continuação é uma só. O estado vazio precisa
-    dizer ISSO, e não "esta abertura ainda não tem variações autoradas" — que
-    seria falso duas telas depois de a etapa 4 ter mostrado duas linhas.
+test('a jornada de abertura tem OITO etapas, e nenhuma se chama Respostas', async ({ page }) => {
+  await page.goto('/aberturas/italiana')
 
-    E precisa manter a posição na tela: `TESTE TABULEIRO SEMPRE` mede as nove
-    etapas da Italiana, e nenhuma delas passa por este caminho.
-  */
-  await page.goto('/aberturas/escocesa')
+  await expect(page.getByText('Etapa 1 de 8')).toBeVisible()
 
-  await irAteEtapa(page, /Variações importantes/)
-
-  await expect(page.locator('[data-testid="chessboard"]').first()).toBeVisible()
-  await expect(page.getByText(/Quem decide aqui é o adversário/)).toBeVisible()
+  // O Mapa do estudo lista todas — é por ele que se prova que a etapa sumiu da
+  // jornada inteira, e não só da tela atual.
+  await page.getByRole('button', { name: /Mapa do estudo/ }).click()
+  await expect(page.getByText(/Melhores respostas do adversário/)).toHaveCount(0)
+  await expect(page.getByText('Variações importantes')).toBeVisible()
 })
 
 test('os planos mostram a rota também em texto', async ({ page }) => {

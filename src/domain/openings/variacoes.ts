@@ -105,36 +105,17 @@ export function ramificacoesDaAbertura(opening: OpeningDefinition): RamificacaoD
   return opening.variations.map((variacao) => ramificacaoDaVariacao(opening, variacao))
 }
 
-/**
- * DE QUEM É A DECISÃO QUE CRIA A LINHA — e é isso que separa as duas etapas.
- *
- * "Melhores respostas do adversário" e "Variações importantes" mostravam a mesma
- * lista, e nenhuma das duas mostrava a posição. A pergunta que a primeira faz —
- * *o que ele joga aqui?* — só tem resposta nas linhas em que quem desvia é o
- * OUTRO. As linhas em que quem escolhe é o aluno respondem outra pergunta, e
- * misturá-las é o que fazia as duas etapas dizerem a mesma coisa.
- *
- * É UMA PARTIÇÃO, NÃO UMA SUPOSIÇÃO. O ADR-0017 já registra que "variação =
- * lance do outro" mentiria em um terço do conteúdo: a Eslava, dentro do
- * repertório de pretas do Gambito da Dama Recusado, é escolha do ALUNO. Por isso
- * as duas funções abaixo são complementares por construção — toda ramificação
- * cai em exatamente uma delas, e há portão afirmando isso.
- *
- * O ramo que NÃO desvia (o Giuoco Piano, que é o nome da própria linha
- * principal) fica com as variações: ele não é resposta a nada.
- */
-export function respostasDoAdversario(opening: OpeningDefinition): RamificacaoDaVariacao[] {
-  return ramificacoesDaAbertura(opening).filter((ramo) => ehRespostaDoAdversario(opening, ramo))
-}
+/*
+  `respostasDoAdversario` E `variacoesDoAluno` SAÍRAM DAQUI.
 
-/** O complemento exato de `respostasDoAdversario`: o que o ALUNO escolhe. */
-export function variacoesDoAluno(opening: OpeningDefinition): RamificacaoDaVariacao[] {
-  return ramificacoesDaAbertura(opening).filter((ramo) => !ehRespostaDoAdversario(opening, ramo))
-}
+  Elas partiam os ramos por QUEM TOMOU A DECISÃO, para alimentar duas etapas
+  separadas da jornada. O VNext funde as duas: o ramo é a unidade que o aluno vê,
+  e "quem desviou" volta a ser metadata — hoje `autor`, em
+  `@/domain/openings/ramos`.
 
-function ehRespostaDoAdversario(opening: OpeningDefinition, ramo: RamificacaoDaVariacao): boolean {
-  return ramo.indiceDaDivergencia !== null && ramo.ladoQueDesvia !== opening.side
-}
+  Não recriar. Uma função que devolva "só as respostas do adversário" convida a
+  reconstruir a etapa que o ADR desta entrega removeu.
+*/
 
 /** A sequência jogada até aqui bate com esta linha? */
 function compativel(historico: readonly string[], linha: readonly OpeningMoveLesson[]): boolean {

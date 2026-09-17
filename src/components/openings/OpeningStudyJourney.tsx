@@ -66,12 +66,9 @@ import {
   type OpeningDefinition,
   type OpeningProgress,
 } from '@/domain/openings'
-import {
-  posicoesDaLinha,
-  respostasDoAdversario,
-  variacoesDoAluno,
-  type RamificacaoDaVariacao,
-} from '@/domain/openings/variacoes'
+import { migrarJornadaDeAbertura } from '@/domain/openings/migracao'
+import { ramosDaAbertura } from '@/domain/openings/ramos'
+import { posicoesDaLinha } from '@/domain/openings/variacoes'
 import {
   iniciarSequencia,
   jogarNaSequencia,
@@ -138,8 +135,21 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
         repo.getOpeningProgress(opening.id),
       ])
       if (cancelado) return
+      /*
+        A JORNADA GRAVADA PASSA PELA MIGRAÇÃO ANTES DE CHEGAR À TELA.
+
+        Quem estudou antes do VNext tem nove etapas no armazenamento, e um
+        cursor que pode apontar para `respostas` — id que não existe mais. Sem
+        traduzir, `stages.find` devolveria `undefined`, a tela cairia no
+        `?? stages[0]` e o aluno voltaria para a Visão sem nenhuma mensagem.
+
+        A migração é IDEMPOTENTE e só grava quando de fato mudou algo: chamar no
+        caminho de leitura não reescreve o registro de quem já migrou.
+      */
       const base = gravada ?? criarJornada(id, opening.id, 'abertura', stages)
-      setJornada(aplicarEtapaDaUrl(base, stages))
+      const { jornada: migrada, migrou } = migrarJornadaDeAbertura(base, stages)
+      if (migrou && repo) void repo.saveStudyJourney(migrada)
+      setJornada(aplicarEtapaDaUrl(migrada, stages))
       if (prog) setProgress({ ...emptyOpeningProgress(opening.id), ...prog })
     }
 
@@ -330,29 +340,8 @@ function ConteudoDeEtapa({
     case 'abertura:linha-principal':
       return <LinhaComentada lances={opening.mainline} opening={opening} />
 
-    case 'abertura:respostas':
-      return (
-        <LinhasEnsinadas
-          opening={opening}
-          ramos={respostasDoAdversario(opening)}
-          rotuloDoSeletor="Escolher a resposta"
-          intro="Saber o que o adversário QUER é diferente de saber qual é o seu próximo lance. Cada resposta abaixo começa na posição em que ele decide, e segue com o que você joga em seguida."
-          vazio="Esta abertura ainda não tem respostas autoradas. No treino, o computador joga a linha principal."
-          fecho="Você vai encontrar estas respostas no treino: o computador joga a linha principal na primeira partida e os desvios quando você recomeça."
-        />
-      )
-
     case 'abertura:variacoes':
-      return (
-        <LinhasEnsinadas
-          opening={opening}
-          ramos={variacoesDoAluno(opening)}
-          rotuloDoSeletor="Escolher a variação"
-          intro="Estas são as linhas em que quem escolhe outro caminho é VOCÊ — ou o nome que uma parte da linha principal já tem."
-          vazio="Esta abertura não tem nenhuma variação sua para estudar, e isso não é conteúdo faltando: contra cada resposta do adversário, a continuação do repertório é uma só. Quem decide aqui é o adversário, e você viu essas decisões na etapa anterior."
-          fecho="Estas linhas também entram no treino final: o repertório aceita o que você estudou, e não só a linha principal."
-        />
-      )
+      return <BibliotecaDeRamos opening={opening} />
 
     case 'abertura:planos':
       return (
@@ -649,132 +638,133 @@ function LinhaComentada({
 }
 
 /**
- * UM CONJUNTO DE LINHAS, ENSINADO NO TABULEIRO — e não listado como texto.
+ * A BIBLIOTECA DE RAMOS — uma lista só, ensinada no tabuleiro.
  *
- * Atende as DUAS etapas que falam de desvio, porque elas fazem a mesma coisa com
- * conteúdos diferentes: "Melhores respostas do adversário" mostra os ramos em
- * que quem escolhe é o OUTRO, e "Variações importantes" mostra o complemento.
- * Quem separa é `respostasDoAdversario`/`variacoesDoAluno`, no domínio; aqui só
- * chega a lista já separada.
+ * O QUE ELA SUBSTITUI: duas etapas, "Melhores respostas do adversário" e
+ * "Variações importantes", que liam listas separadas por QUEM TOMAVA A DECISÃO.
+ * A separação é limpa no domínio e artificial na cabeça de quem estuda — o
+ * jogador pensa "estou na Defesa dos Dois Cavalos", não "estou na lista de ramos
+ * cujo autor da decisão foi o oponente". Ver o ADR desta entrega.
  *
- * POR QUE NÃO SÃO DOIS COMPONENTES: eram duas telas dizendo a mesma coisa de
- * jeitos diferentes — uma com tabuleiro, a outra com uma lista de nomes e um
- * menu para consultar o explorador. Duas cópias da mesma tela divergem na
- * primeira correção que só uma delas recebe.
+ * `autor` não sumiu: ele decide se a frase diz "o adversário joga" ou "você
+ * joga". Deixou de decidir em QUE ETAPA o aluno encontra o ramo.
  *
- * ELA COMEÇA ONDE A LINHA COMEÇA. O tabuleiro abre na posição da decisão, e o
- * primeiro lance mostrado é o desvio — não o `e4` que a linha principal já
- * ensinou.
+ * A IMPORTÂNCIA ORDENA E ROTULA. `core` é o que o curso exige para concluir;
+ * `secondary` e `optional` continuam visíveis e estudáveis — esconder conteúdo
+ * é o defeito que o ADR-0016 desfez. O que muda é o que bloqueia a conclusão.
  *
- * E ELA AVISA QUE ISTO VOLTA NO TREINO. É o mesmo conjunto de linhas que o bot
- * joga na prática: ensinar aqui e enfrentar lá é o laço que faz a etapa valer.
+ * CADA RAMO RESPONDE TRÊS PERGUNTAS antes de pedir um lance: o que mudou, o que
+ * o adversário quer, e qual é o seu objetivo. Sem elas o ramo volta a ser uma
+ * sequência de lances — e a pergunta que sobrevive à mudança de ordem dos
+ * lances é justamente "o que ele está tentando fazer?".
  */
-function LinhasEnsinadas({
-  opening,
-  ramos,
-  intro,
-  vazio,
-  fecho,
-  rotuloDoSeletor,
-}: {
-  opening: OpeningDefinition
-  ramos: readonly RamificacaoDaVariacao[]
-  intro: string
-  vazio: string
-  fecho: string
-  rotuloDoSeletor: string
-}) {
-  const [escolhida, setEscolhida] = useState(0)
-  const ramo = ramos[Math.min(escolhida, Math.max(ramos.length - 1, 0))]
+function BibliotecaDeRamos({ opening }: { opening: OpeningDefinition }) {
+  const ramos = useMemo(() => ramosDaAbertura(opening), [opening])
+  const [escolhido, setEscolhido] = useState(0)
+  const ramo = ramos[Math.min(escolhido, Math.max(ramos.length - 1, 0))]
 
-  // Sem linha autorada não se mostra um seletor vazio nem um tabuleiro sem
-  // assunto: a etapa mostra a posição que o repertório busca e diz o que falta.
   if (!ramo) {
     return (
       <ComTabuleiro opening={opening}>
-        <p className={styles.texto}>{vazio}</p>
+        <p className={styles.texto}>
+          Esta abertura ainda não tem variações autoradas. No treino, o computador joga a linha
+          principal.
+        </p>
       </ComTabuleiro>
     )
   }
 
-  const emComum = ramo.lancesEmComum.map((lance) => lance.san).join(' ')
-  const desviaOAdversario = ramo.ladoQueDesvia !== opening.side
-  const lanceDoDesvio =
-    ramo.indiceDaDivergencia === null ? null : ramo.variacao.line[ramo.indiceDaDivergencia]
+  const emComum = ramo.ramificacao.lancesEmComum.map((lance) => lance.san).join(' ')
 
   return (
     <>
       {ramos.length > 1 ? (
-        <div className={styles.opcoes} role="group" aria-label={rotuloDoSeletor}>
+        <div className={styles.opcoes} role="group" aria-label="Escolher a variação">
           {ramos.map((opcao, i) => (
             <button
-              key={opcao.variacao.id}
+              key={opcao.id}
               type="button"
-              className={i === escolhida ? styles.variacaoAtiva : styles.opcao}
-              aria-pressed={i === escolhida}
-              onClick={() => setEscolhida(i)}
+              className={i === escolhido ? styles.variacaoAtiva : styles.opcao}
+              aria-pressed={i === escolhido}
+              onClick={() => setEscolhido(i)}
             >
-              {opcao.variacao.name}
+              {opcao.nome}
+              {opcao.importancia === 'core' ? null : (
+                /* O rótulo é TEXTO, e não só uma cor: status nunca depende de cor. */
+                <span className={styles.selo}> · {ROTULO_DA_IMPORTANCIA[opcao.importancia]}</span>
+              )}
             </button>
           ))}
         </div>
       ) : null}
 
       <LinhaComentada
-        // A remontagem ao trocar de linha é deliberada: ela reposiciona a
-        // navegação no desvio da linha nova, sem efeito que escreve estado.
-        key={ramo.variacao.id}
+        // A remontagem ao trocar de ramo reposiciona a navegação no desvio do
+        // ramo novo, sem efeito que escreve estado.
+        key={ramo.id}
         opening={opening}
-        lances={ramo.variacao.line}
-        inicio={ramo.indiceDaDivergencia ?? 0}
+        lances={ramo.ramificacao.variacao.line}
+        inicio={ramo.ramificacao.indiceDaDivergencia ?? 0}
         antes={
           <>
-            <p className={styles.texto}>{intro}</p>
-            <h3 className={styles.blocoTitulo}>{ramo.variacao.name}</h3>
-            <p className={styles.texto}>{ramo.variacao.description}</p>
-            {ramo.indiceDaDivergencia === null ? (
-              /*
-                UMA VARIAÇÃO QUE NÃO DESVIA não é um desvio, e dizer o contrário
-                ensinaria uma bifurcação que não existe no tabuleiro. O Giuoco
-                Piano é o nome da própria linha principal até certo ponto.
-              */
+            <h3 className={styles.blocoTitulo}>{ramo.nome}</h3>
+            <p className={styles.texto}>{ramo.descricao}</p>
+
+            {/* O QUE MUDOU — a decisão, dita com o lance que ela recusa. */}
+            {ramo.lanceQueRamifica === null ? (
               <p className={styles.nota}>
                 Este é o nome da linha principal até aqui — não é um desvio. Você já a percorreu na
                 etapa anterior.
               </p>
-            ) : ramo.lanceRecusado === null ? (
-              /*
-                A LINHA PRINCIPAL PODE SIMPLESMENTE TER ACABADO — é o caso da
-                Escocesa, cuja principal termina em Cxd4 e cujas respostas vêm
-                logo depois. Não há lance recusado, e escrever "no lugar de"
-                aqui inventaria uma alternativa que o conteúdo não tem.
-              */
-              <p className={styles.nota}>
-                A linha principal termina em {emComum ? <>{ultimoLance(emComum)}</> : 'sua raiz'}.
-                Daqui em diante quem escolhe é {desviaOAdversario ? 'o adversário' : 'você'}, e a
-                primeira escolha é <strong>{lanceDoDesvio?.san}</strong>.
-              </p>
             ) : (
               <p className={styles.nota}>
                 {emComum ? <>Até {emComum}, tudo igual à linha principal. </> : null}
-                {desviaOAdversario ? 'O adversário joga' : 'Você joga'}{' '}
-                <strong>{lanceDoDesvio?.san}</strong> no lugar de {ramo.lanceRecusado.san}, e é daí
-                em diante que a partida muda.
+                {ramo.autor === 'adversario' ? 'O adversário joga' : 'Você joga'}{' '}
+                <strong>{ramo.lanceQueRamifica}</strong>
+                {/*
+                  A LINHA PRINCIPAL PODE SIMPLESMENTE TER ACABADO — é o caso da
+                  Escocesa, cuja principal termina em Cxd4 e cujos ramos vêm logo
+                  depois. Não há lance recusado, e escrever "no lugar de" ali
+                  inventaria uma alternativa que o conteúdo não tem.
+                */}
+                {ramo.lanceRecusado ? (
+                  <> no lugar de {ramo.lanceRecusado}, e é daí em diante que a partida muda.</>
+                ) : (
+                  <>: a linha principal termina aqui, e daqui em diante quem escolhe é ele.</>
+                )}
               </p>
             )}
+
+            {/*
+              AS DUAS PERGUNTAS QUE O ALUNO LEVA PARA A PARTIDA. Elas vêm do
+              conteúdo, e um portão exige as duas em todo ramo `core`.
+            */}
+            {ramo.intencaoDoAdversario ? (
+              <p className={styles.nota}>
+                <strong>O que ele quer.</strong> {ramo.intencaoDoAdversario}
+              </p>
+            ) : null}
+            {ramo.objetivoDoAluno ? (
+              <p className={styles.nota}>
+                <strong>Seu objetivo.</strong> {ramo.objetivoDoAluno}
+              </p>
+            ) : null}
           </>
         }
       />
 
-      <p className={styles.nota}>{fecho}</p>
+      <p className={styles.nota}>
+        Você vai encontrar estas linhas no treino: o computador joga a principal na primeira partida
+        e os desvios quando você recomeça.
+      </p>
     </>
   )
 }
 
-/** O último lance de uma sequência em SAN, para a frase não repetir a linha inteira. */
-function ultimoLance(sequencia: string): string {
-  const lances = sequencia.split(' ')
-  return lances[lances.length - 1] ?? sequencia
+/** Como cada importância aparece na tela. Só as que não são o padrão. */
+const ROTULO_DA_IMPORTANCIA: Record<string, string> = {
+  secondary: 'complementar',
+  optional: 'opcional',
 }
 
 /**
