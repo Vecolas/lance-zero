@@ -263,6 +263,33 @@ test('o aluno pode adotar a abertura no próprio repertório', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Repertório ativo' })).toBeVisible()
 })
 
+test('as variações são ensinadas no tabuleiro, na posição em que o desvio acontece', async ({
+  page,
+}) => {
+  /*
+    A ETAPA ERA UMA LISTA DE NOTAÇÃO: nome, descrição e `e4 e5 Cf3 Cc6 Bc4 Cf6
+    d3` numa linha só. Cinco daqueles sete lances são reprise da linha principal
+    e o único que importa — o desvio — não recebia destaque nenhum.
+
+    O que este teste afirma é que o aluno VÊ a decisão: a posição na tela, o
+    lance que o adversário joga e o lance da linha principal que ele recusou.
+  */
+  await page.goto('/aberturas/italiana')
+
+  await irAteEtapa(page, /Variações importantes/)
+
+  await expect(page.locator('[data-testid="chessboard"]').first()).toBeVisible()
+
+  // O desvio, nomeado com o lance que ele recusa. Sem a segunda metade, "o
+  // adversário joga Nf6" não diz por que a partida muda.
+  await expect(page.getByText(/O adversário joga/).first()).toBeVisible()
+  await expect(page.getByText(/no lugar de Bc5/).first()).toBeVisible()
+
+  // E a etapa liga o que se estuda ao que se vai enfrentar: é o mesmo conjunto
+  // de linhas que o bot joga no treino.
+  await expect(page.getByText(/enfrentar estas variações no treino/)).toBeVisible()
+})
+
 test('os planos mostram a rota também em texto', async ({ page }) => {
   await page.goto('/aberturas/italiana')
 

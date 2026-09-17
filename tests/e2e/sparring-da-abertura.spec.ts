@@ -12,44 +12,16 @@
  * proíbe.
  */
 
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-/**
- * Leva a jornada até o fim, para o sparring aparecer.
- *
- * O SPARRING SÓ É OFERECIDO A QUEM CONCLUIU. Praticar contra o bot sem ter visto
- * a linha vira tentativa e erro contra um adversário que sabe a resposta — a
- * forma mais rápida de o aluno concluir que não entende a abertura.
- */
-async function concluirAJornada(page: Page) {
-  await page.goto('/aberturas/italiana')
+/*
+  O AJUDANTE QUE ATRAVESSAVA A JORNADA SAIU JUNTO COM OS CASOS QUE O USAVAM.
 
-  for (let i = 0; i < 40; i += 1) {
-    const sparring = page.getByRole('heading', { name: 'Praticar contra o computador' })
-    if (await sparring.isVisible().catch(() => false)) return
-
-    const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
-    if (await tabuleiro.isVisible().catch(() => false)) {
-      // Etapa que cobra lance: joga o primeiro legal. O objetivo aqui é
-      // atravessar, e não acertar — quem mede acerto são os outros arquivos.
-      const fen = await tabuleiro.getAttribute('data-fen')
-      if (fen) {
-        const casas = await page
-          .locator('[id^="lancezero-board-square-"]')
-          .evaluateAll((nos) => nos.map((no) => no.id.replace('lancezero-board-square-', '')))
-        if (casas.length > 0) {
-          await page.locator('#lancezero-board-square-' + casas[0]).click()
-        }
-      }
-    }
-
-    const continuar = page.getByRole('button', { name: /Continuar/ }).first()
-    if (!(await continuar.isVisible().catch(() => false))) break
-    if (await continuar.isDisabled().catch(() => true)) break
-    await continuar.click()
-    await page.waitForTimeout(120)
-  }
-}
+  Ele existia para os dois testes do estado concluído, que hoje moram em
+  `tests/unit/sparring-tela.test.tsx` (o motivo está no rodapé deste arquivo).
+  Mantê-lo aqui deixaria trinta linhas de travessia que nada executa —
+  e a próxima pessoa gastaria tempo entendendo um caminho morto.
+*/
 
 test('TESTE SPARRING — a prática só aparece depois de concluir', async ({ page }) => {
   await page.goto('/aberturas/italiana')

@@ -66,6 +66,19 @@
   font-size: 0.9375rem;
 }
 
+/*
+  O NOME DA VARIAÇÃO EM CURSO.
+
+  Não é status de acerto nem de erro — é a etiqueta do que está sendo jogado.
+  Por isso usa a cor de texto forte e um símbolo, e não uma das cores semânticas.
+*/
+.linhaEmCurso {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
 .comentario {
   margin: 0;
   max-width: 62ch;

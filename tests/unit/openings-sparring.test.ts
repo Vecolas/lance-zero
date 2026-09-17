@@ -24,6 +24,7 @@ import {
   lanceDoBot,
   vezDe,
 } from '@/domain/openings/sparring'
+import { ramificacoesDaAbertura } from '@/domain/openings/variacoes'
 
 const ITALIANA = OPENING_COURSES.find((o) => o.slug === 'italiana') ?? OPENING_COURSES[0]
 
@@ -40,8 +41,9 @@ describe('o bot conhece a abertura', () => {
     expect(primeira.comment).toBe(ITALIANA.mainline[0].comment)
   })
 
-  it('prefere a linha principal quando há variação disputando a mesma posição', () => {
-    const escolha = lanceDoBot(ITALIANA, iniciarSparring(ITALIANA))
+  it('a primeira partida é a linha principal', () => {
+    // A rodada 0 confirma o que foi ensinado. Os desvios vêm ao recomeçar.
+    const escolha = lanceDoBot(ITALIANA, iniciarSparring(ITALIANA), 0)
     expect(escolha?.principal).toBe(true)
   })
 
@@ -78,6 +80,125 @@ describe('o bot NUNCA sai da árvore', () => {
     // Chegou ao fim da teoria, e o estado continua coerente.
     expect(lanceDoBot(ITALIANA, estado)).toBeNull()
     expect(estado.historico.length).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * O BOT JOGA AS VARIAÇÕES ENSINADAS.
+ *
+ * Este bloco existe por causa de um defeito que a suíte antiga não via: o bot
+ * filtrava as continuações para a linha principal e só olhava as variações
+ * quando a principal acabava. Como uma variação ramifica JUSTAMENTE onde a
+ * principal continua, ela era inalcançável — o aluno estudava a Defesa dos
+ * Dois Cavalos numa etapa e nunca a encontrava no treino.
+ *
+ * O teste é escrito sobre o CONTEÚDO, e não sobre a Italiana: qualquer abertura
+ * nova que traga uma variação do lado do adversário entra aqui sozinha.
+ */
+describe('o bot joga as variações, e não só a linha principal', () => {
+  /** Uma partida inteira contra o bot, com o aluno sempre seguindo a teoria. */
+  function partidaContraOBot(opening: (typeof OPENING_COURSES)[number], rodada: number): string[] {
+    const lado = opening.side === 'white' ? 'w' : 'b'
+    let estado = deixarBotJogar(opening, iniciarSparring(opening), lado, rodada).estado
+
+    for (let ply = 0; ply < 60; ply += 1) {
+      const opcoes = continuacoesConhecidas(opening, estado.historico)
+      if (opcoes.length === 0) break
+
+      const jogada = jogarNoSparring(opening, estado, opcoes[0].uci)
+      if (jogada.tipo !== 'na-teoria') break
+      estado = deixarBotJogar(opening, jogada.estado, lado, rodada).estado
+    }
+
+    return [...estado.historico]
+  }
+
+  for (const opening of OPENING_COURSES) {
+    const ramos = ramificacoesDaAbertura(opening).filter(
+      (ramo) => ramo.indiceDaDivergencia !== null && ramo.ladoQueDesvia !== opening.side,
+    )
+    if (ramos.length === 0) continue
+
+    for (const ramo of ramos) {
+      it(`${opening.slug}: alguma rodada traz a ${ramo.variacao.name}`, () => {
+        /*
+          A CONFERÊNCIA É POR PREFIXO, e a primeira versão deste teste não era —
+          ela perguntava se o lance do desvio aparecia em algum lugar do
+          histórico. Na Italiana isso passava com o bot ANTIGO: o desvio é Cf6,
+          e a linha principal também joga Cf6, oito lances depois. O teste ficava
+          verde provando o contrário do que afirmava.
+
+          Seguir a variação significa que os lances até o desvio, INCLUSIVE, são
+          exatamente os dela.
+        */
+        const divergencia = ramo.indiceDaDivergencia ?? 0
+        const ateODesvio = ramo.variacao.line
+          .slice(0, divergencia + 1)
+          .map((lance) => lance.uci.toLowerCase())
+
+        // Recomeçar é o que muda a rodada. Damos ao aluno tantas partidas
+        // quantas variações existem, mais folga — se nem assim o desvio
+        // aparecer, ele é conteúdo que ninguém alcança.
+        const rodadas = opening.variations.length + 2
+        const alcancado = Array.from({ length: rodadas }, (_, rodada) =>
+          partidaContraOBot(opening, rodada),
+        ).some((historico) => ateODesvio.every((uci, i) => historico[i]?.toLowerCase() === uci))
+
+        expect(alcancado, `${ramo.variacao.name} nunca é jogada pelo bot`).toBe(true)
+      })
+    }
+  }
+
+  it('nenhuma rodada faz o bot sair da árvore', () => {
+    /*
+      A contrapartida do teste acima: agora que o bot ramifica, "ele nunca
+      improvisa" precisa valer para TODA rodada, e não só para a rodada 0.
+    */
+    for (const opening of OPENING_COURSES) {
+      const declarados = new Set(
+        [
+          ...opening.mainline.map((l) => l.uci),
+          ...opening.variations.flatMap((v) => v.line.map((l) => l.uci)),
+        ].map((uci) => uci.toLowerCase()),
+      )
+
+      for (let rodada = 0; rodada < 6; rodada += 1) {
+        for (const uci of partidaContraOBot(opening, rodada)) {
+          expect(declarados.has(uci), `${opening.slug}: ${uci} não está na abertura`).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('o aluno também pode escolher a variação, quando o desvio é do lado dele', () => {
+    /*
+      Nem toda variação é do adversário. No repertório de pretas do Gambito da
+      Dama Recusado, a Eslava é uma escolha do ALUNO — e o bot tem de aceitá-la
+      como teoria, não tratá-la como saída do repertório.
+    */
+    const comEscolhaDoAluno = OPENING_COURSES.flatMap((opening) =>
+      ramificacoesDaAbertura(opening)
+        .filter((ramo) => ramo.indiceDaDivergencia !== null && ramo.ladoQueDesvia === opening.side)
+        .map((ramo) => ({ opening, ramo })),
+    )
+
+    expect(comEscolhaDoAluno.length).toBeGreaterThan(0)
+
+    for (const { opening, ramo } of comEscolhaDoAluno) {
+      const divergencia = ramo.indiceDaDivergencia ?? 0
+      let estado = iniciarSparring(opening)
+
+      // Até o desvio, as duas linhas são a mesma.
+      for (let i = 0; i < divergencia; i += 1) {
+        const jogada = jogarNoSparring(opening, estado, ramo.variacao.line[i].uci)
+        expect(jogada.tipo).toBe('na-teoria')
+        if (jogada.tipo !== 'na-teoria') return
+        estado = jogada.estado
+      }
+
+      const desvio = jogarNoSparring(opening, estado, ramo.variacao.line[divergencia].uci)
+      expect(desvio.tipo, `${ramo.variacao.name} deveria ser teoria`).toBe('na-teoria')
+    }
   })
 })
 

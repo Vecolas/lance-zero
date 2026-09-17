@@ -55,9 +55,9 @@ export interface EstadoDoSparring {
 /**
  * Todas as linhas que a abertura conhece, cada uma como sequência de lances.
  *
- * A LINHA PRINCIPAL PRIMEIRO, e isso importa: quando duas linhas oferecem
- * continuações diferentes na mesma posição, a principal é a que o repertório
- * recomenda, e é ela que o bot prefere.
+ * A LINHA PRINCIPAL PRIMEIRO, e isso importa: ela é a que o repertório
+ * recomenda, e é a que o bot joga na primeira partida (rodada 0). As variações
+ * vêm em seguida, na ordem em que o conteúdo as declara.
  */
 function linhas(opening: OpeningDefinition): { lances: OpeningMoveLesson[]; principal: boolean }[] {
   return [
@@ -132,10 +132,24 @@ export function iniciarSparring(opening: OpeningDefinition): EstadoDoSparring {
 /**
  * O lance do BOT nesta posição, ou `null` quando a abertura acabou.
  *
- * PREFERE A LINHA PRINCIPAL. Entre duas variações igualmente teóricas, o `seed`
- * decide — de forma determinística, para a mesma sessão ser reproduzível. Um
- * `Math.random()` aqui tornaria impossível escrever o teste que prova "o bot
- * nunca sai da árvore".
+ * O BOT JOGA AS VARIAÇÕES, e não só a linha principal. Ele escolhe entre TODAS
+ * as continuações que a abertura declara, e o `seed` — a rodada da sessão —
+ * decide qual.
+ *
+ * ISTO JÁ FOI DIFERENTE, e estava errado: a versão anterior filtrava as opções
+ * para a linha principal e só caía nas variações quando a principal acabava.
+ * Como uma variação existe justamente para ramificar ONDE a principal continua,
+ * o filtro a tornava inalcançável — o aluno estudava a Defesa dos Dois Cavalos
+ * numa etapa e jamais a encontrava no treino. Variação que o adversário nunca
+ * joga é decoração.
+ *
+ * A RODADA 0 É A LINHA PRINCIPAL, porque `continuacoesConhecidas` ordena com
+ * ela primeiro. A primeira partida confirma o que foi ensinado; recomeçar traz
+ * os desvios. As rodadas seguintes ciclam, então praticar várias vezes percorre
+ * o repertório inteiro em vez de repetir a mesma partida.
+ *
+ * O SORTEIO É DETERMINÍSTICO. Um `Math.random()` aqui tornaria impossível
+ * escrever o teste que prova "o bot nunca sai da árvore".
  */
 export function lanceDoBot(
   opening: OpeningDefinition,
@@ -144,10 +158,7 @@ export function lanceDoBot(
 ): ContinuacaoConhecida | null {
   const opcoes = continuacoesConhecidas(opening, estado.historico)
   if (opcoes.length === 0) return null
-
-  const principais = opcoes.filter((opcao) => opcao.principal)
-  const candidatas = principais.length > 0 ? principais : opcoes
-  return candidatas[Math.abs(seed) % candidatas.length] ?? null
+  return opcoes[Math.abs(seed) % opcoes.length] ?? null
 }
 
 export type ResultadoDoLance =

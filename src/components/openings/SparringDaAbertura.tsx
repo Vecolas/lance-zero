@@ -31,6 +31,7 @@ import {
   type EstadoDoSparring,
   type LadoDoAluno,
 } from '@/domain/openings/sparring'
+import { variacaoEmCurso } from '@/domain/openings/variacoes'
 import type { OpeningDefinition } from '@/domain/openings'
 import type { SquareName } from '@/lib/chess'
 import styles from './SparringDaAbertura.module.css'
@@ -111,6 +112,19 @@ export function SparringDaAbertura({ opening }: { opening: OpeningDefinition }) 
     aoTentar: tentar,
   })
 
+  /*
+    O NOME DA LINHA QUE ESTÁ SENDO JOGADA.
+
+    Ele fecha o laço com a etapa de variações: o aluno estudou a Defesa dos Dois
+    Cavalos e agora a está enfrentando — dizer o nome é o que liga as duas
+    coisas. Sem isso ele reconhece a posição, não reconhece o que ela é, e cada
+    partida vira um episódio solto.
+
+    Só aparece DEPOIS que o lance de desvio foi jogado (ver `variacaoEmCurso`):
+    anunciar antes seria pôr nome numa bifurcação que ainda não aconteceu.
+  */
+  const variacao = variacaoEmCurso(opening, estado.historico)
+
   return (
     <section className={styles.sparring} aria-labelledby="sparring-titulo">
       <h3 id="sparring-titulo" className={styles.titulo}>
@@ -159,6 +173,12 @@ export function SparringDaAbertura({ opening }: { opening: OpeningDefinition }) 
               : 'O computador está respondendo…'}
         </p>
 
+        {variacao && estado.naArvore ? (
+          <p className={styles.linhaEmCurso}>
+            <span aria-hidden="true">↳</span> {variacao.name} — a variação que você estudou.
+          </p>
+        ) : null}
+
         {aviso.tipo === 'teoria' ? <p className={styles.comentario}>{aviso.texto}</p> : null}
 
         {aviso.tipo === 'fora' ? (
@@ -183,6 +203,15 @@ export function SparringDaAbertura({ opening }: { opening: OpeningDefinition }) 
         <button type="button" className={styles.recomecar} onClick={() => recomecar(lado)}>
           Recomeçar a partida
         </button>
+
+        {/*
+          A FRASE EXISTE PORQUE O BOTÃO NÃO REPETE A MESMA PARTIDA.
+
+          Cada recomeço muda a rodada, e a rodada é o que faz o bot escolher
+          outra continuação teórica. Sem avisar, o aluno que esperava rever a
+          linha principal acha que o computador errou.
+        */}
+        <p className={styles.vez}>Cada recomeço pode trazer outra variação das que você estudou.</p>
       </MesaDeEstudo>
     </section>
   )

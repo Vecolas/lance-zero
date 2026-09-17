@@ -65,6 +65,7 @@ import {
   type OpeningDefinition,
   type OpeningProgress,
 } from '@/domain/openings'
+import { posicoesDaLinha, ramificacoesDaAbertura } from '@/domain/openings/variacoes'
 import { ExplorerPanel } from '@/components/openings/ExplorerPanel'
 import {
   applyMove,
@@ -348,21 +349,7 @@ function ConteudoDeEtapa({
       )
 
     case 'abertura:variacoes':
-      return (
-        <ComTabuleiro opening={opening}>
-          <p className={styles.texto}>
-            As variações entram no seu estudo automaticamente — você não precisa procurá-las numa
-            aba separada.
-          </p>
-          {opening.variations.map((variacao) => (
-            <div key={variacao.id} className={styles.bloco}>
-              <h3 className={styles.blocoTitulo}>{variacao.name}</h3>
-              <p className={styles.texto}>{variacao.description}</p>
-              <p className={styles.linha}>{variacao.line.map((l) => l.san).join(' ')}</p>
-            </div>
-          ))}
-        </ComTabuleiro>
-      )
+      return <VariacoesEnsinadas opening={opening} />
 
     case 'abertura:planos':
       return (
@@ -592,15 +579,28 @@ function AtivarRepertorio({ opening }: { opening: OpeningDefinition }) {
   )
 }
 
-/** A linha principal, lance a lance, com a razão de cada um. */
+/**
+ * Uma linha, lance a lance, com a razão de cada um.
+ *
+ * `inicio` existe para a etapa de variações: uma variação só começa a ensinar
+ * no lance em que ela recusa a linha principal, e abrir a navegação no lance 1
+ * faria o aluno reler cinco lances que ele acabou de estudar para chegar ao
+ * único que é novo. Quem troca de variação REMONTA o componente (`key`), que é
+ * o que mantém o índice válido sem efeito que escreve estado.
+ */
 function LinhaComentada({
   lances,
   opening,
+  inicio = 0,
+  antes,
 }: {
   lances: OpeningDefinition['mainline']
   opening: OpeningDefinition
+  inicio?: number
+  antes?: React.ReactNode
 }) {
-  const [indice, setIndice] = useState(0)
+  const primeiro = Math.min(Math.max(inicio, 0), Math.max(lances.length - 1, 0))
+  const [indice, setIndice] = useState(primeiro)
   const fens = useMemo(() => posicoesDaLinha(opening.rootFen, lances), [opening.rootFen, lances])
   const lance = lances[Math.min(indice, lances.length - 1)]
 
@@ -614,6 +614,7 @@ function LinhaComentada({
         />
       }
     >
+      {antes}
       <p className={styles.lanceAtual}>
         {indice + 1}. {lance?.san}
       </p>
@@ -626,8 +627,8 @@ function LinhaComentada({
         <button
           type="button"
           className={styles.secundario}
-          onClick={() => setIndice((n) => Math.max(0, n - 1))}
-          disabled={indice === 0}
+          onClick={() => setIndice((n) => Math.max(primeiro, n - 1))}
+          disabled={indice <= primeiro}
         >
           ← Lance anterior
         </button>
@@ -641,6 +642,102 @@ function LinhaComentada({
         </button>
       </div>
     </MesaDeEstudo>
+  )
+}
+
+/**
+ * AS VARIAÇÕES, ENSINADAS NO TABULEIRO — e não listadas como texto.
+ *
+ * A etapa mostrava nome, descrição e a linha em SAN numa única string. Uma
+ * variação é uma DECISÃO tomada numa posição: sem a posição na tela, "Cf6 em
+ * vez de Bc5" é uma informação que o aluno não tem como conferir, e no treino
+ * ele encontra a posição sem nunca tê-la visto.
+ *
+ * ELA COMEÇA ONDE A VARIAÇÃO COMEÇA. O tabuleiro abre na posição da decisão, e
+ * o primeiro lance mostrado é o desvio — não o `e4` que a linha principal já
+ * ensinou.
+ *
+ * E ELA AVISA QUE ISTO VOLTA NO TREINO. É o mesmo conjunto de linhas que o bot
+ * joga na prática: ensinar aqui e enfrentar lá é o laço que faz a etapa valer.
+ */
+function VariacoesEnsinadas({ opening }: { opening: OpeningDefinition }) {
+  const ramos = useMemo(() => ramificacoesDaAbertura(opening), [opening])
+  const [escolhida, setEscolhida] = useState(0)
+  const ramo = ramos[Math.min(escolhida, Math.max(ramos.length - 1, 0))]
+
+  // Uma abertura sem variação autorada não deve mostrar um seletor vazio nem um
+  // tabuleiro sem assunto: ela mostra a posição que o repertório busca.
+  if (!ramo) {
+    return (
+      <ComTabuleiro opening={opening}>
+        <p className={styles.texto}>
+          Esta abertura ainda não tem variações autoradas. No treino, o computador joga a linha
+          principal.
+        </p>
+      </ComTabuleiro>
+    )
+  }
+
+  const emComum = ramo.lancesEmComum.map((lance) => lance.san).join(' ')
+  const desviaOAdversario = ramo.ladoQueDesvia !== opening.side
+
+  return (
+    <>
+      {ramos.length > 1 ? (
+        <div className={styles.opcoes} role="group" aria-label="Escolher a variação">
+          {ramos.map((opcao, i) => (
+            <button
+              key={opcao.variacao.id}
+              type="button"
+              className={i === escolhida ? styles.variacaoAtiva : styles.opcao}
+              aria-pressed={i === escolhida}
+              onClick={() => setEscolhida(i)}
+            >
+              {opcao.variacao.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <LinhaComentada
+        // A remontagem ao trocar de variação é deliberada: ela reposiciona a
+        // navegação no desvio da variação nova, sem efeito que escreve estado.
+        key={ramo.variacao.id}
+        opening={opening}
+        lances={ramo.variacao.line}
+        inicio={ramo.indiceDaDivergencia ?? 0}
+        antes={
+          <>
+            <h3 className={styles.blocoTitulo}>{ramo.variacao.name}</h3>
+            <p className={styles.texto}>{ramo.variacao.description}</p>
+            {ramo.indiceDaDivergencia === null ? (
+              /*
+                UMA VARIAÇÃO QUE NÃO DESVIA não é um desvio, e dizer o contrário
+                ensinaria uma bifurcação que não existe no tabuleiro. O Giuoco
+                Piano é o nome da própria linha principal até certo ponto.
+              */
+              <p className={styles.nota}>
+                Este é o nome da linha principal até aqui — não é um desvio. Você já a percorreu na
+                etapa anterior.
+              </p>
+            ) : (
+              <p className={styles.nota}>
+                {emComum ? <>Até {emComum}, tudo igual à linha principal. </> : null}
+                {desviaOAdversario ? 'O adversário joga' : 'Você joga'}{' '}
+                <strong>{ramo.variacao.line[ramo.indiceDaDivergencia]?.san}</strong>
+                {ramo.lanceRecusado ? <> no lugar de {ramo.lanceRecusado.san}</> : null}, e é daí em
+                diante que a partida muda.
+              </p>
+            )}
+          </>
+        }
+      />
+
+      <p className={styles.nota}>
+        Você vai enfrentar estas variações no treino: o computador joga a linha principal na
+        primeira partida e os desvios quando você recomeça.
+      </p>
+    </>
   )
 }
 
@@ -1008,18 +1105,13 @@ function posicoesConsultaveis(opening: OpeningDefinition) {
   )
 }
 
-/** As posições ao longo de uma linha. Índice 0 é a inicial. */
-function posicoesDaLinha(raiz: string, lances: OpeningDefinition['mainline']): string[] {
-  const fens = [raiz]
-  let atual = raiz
-  for (const lance of lances) {
-    const aplicado = applyMove(atual, lance.san)
-    if (!aplicado) break
-    atual = aplicado.fenAfter
-    fens.push(atual)
-  }
-  return fens
-}
+/*
+  `posicoesDaLinha` MUDOU-SE PARA `@/domain/openings/variacoes`.
+
+  A cópia daqui era a terceira do mesmo laço, e agora a etapa de variações
+  precisa exatamente dela para achar a posição em que cada desvio acontece.
+  Percorrer uma linha é fato de xadrez, não de tela.
+*/
 
 /*
   `opcoesDoLance` SAIU com a lista de múltipla escolha.
