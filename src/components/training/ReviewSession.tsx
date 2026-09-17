@@ -70,6 +70,7 @@ import { useIdioma } from '@/components/providers/LocaleProvider'
 import { traduzirRota } from '@/lib/i18n/rotas'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
+import { MesaDeEstudo } from '@/components/jornada/MesaDeEstudo'
 import type { Sonda } from '@/components/endgames/resposta-do-adversario'
 import {
   APRESENTACAO_POR_GRAU,
@@ -822,45 +823,47 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
     )
 
   return (
-    <div className={styles.layout}>
-      <div className={styles.boardSide}>
-        <ChessBoardView
-          fen={sessao.fen}
-          orientation={posicao.turn}
-          theme={profile?.preferences.boardTheme ?? 'claro'}
-          interactive={emAndamento}
-          selected={selecionada}
-          onMove={jogarDoTabuleiro}
-          onSquareClick={clicarNaCasa}
-          onIllegalMove={(from, to) =>
-            setErroDeLance(`${from}${to} não é um lance legal nesta posição.`)
-          }
-        />
+    <MesaDeEstudo
+      tabuleiro={
+        <>
+          <ChessBoardView
+            fen={sessao.fen}
+            orientation={posicao.turn}
+            theme={profile?.preferences.boardTheme ?? 'claro'}
+            interactive={emAndamento}
+            selected={selecionada}
+            onMove={jogarDoTabuleiro}
+            onSquareClick={clicarNaCasa}
+            onIllegalMove={(from, to) =>
+              setErroDeLance(`${from}${to} não é um lance legal nesta posição.`)
+            }
+          />
 
-        {/* A alternativa ao arraste. Ela some junto com a interatividade do
+          {/* A alternativa ao arraste. Ela some junto com a interatividade do
             tabuleiro: campo habilitado depois do veredito prometeria um segundo
             lance que a sessão não aceita. */}
-        <div className={styles.entrada}>
-          <p className={styles.hint}>Jogue o lance diretamente no tabuleiro.</p>
-          <div className={styles.entradaLinha}>
-            <span className={styles.hint}>
-              Arraste a peça e solte na casa de destino, ou clique na casa de origem e depois na de
-              destino.
-            </span>
-          </div>
-          {/* `role="status"` e não `alert`: a recusa é informação, não
+          <div className={styles.entrada}>
+            <p className={styles.hint}>Jogue o lance diretamente no tabuleiro.</p>
+            <div className={styles.entradaLinha}>
+              <span className={styles.hint}>
+                Arraste a peça e solte na casa de destino, ou clique na casa de origem e depois na
+                de destino.
+              </span>
+            </div>
+            {/* `role="status"` e não `alert`: a recusa é informação, não
               interrupção — mesma decisão de tom da faixa de erro (#61). Sem
               região viva, quem não vê o tabuleiro não saberia que o lance não
               entrou. */}
-          {erroDeLance !== null ? (
-            <p className={styles.recusa} role="status" data-testid="recusa-do-lance">
-              <span aria-hidden="true">✕</span> {erroDeLance}
-            </p>
-          ) : null}
-        </div>
-      </div>
-
-      <div className={styles.panel}>
+            {erroDeLance !== null ? (
+              <p className={styles.recusa} role="status" data-testid="recusa-do-lance">
+                <span aria-hidden="true">✕</span> {erroDeLance}
+              </p>
+            ) : null}
+          </div>
+        </>
+      }
+    >
+      <>
         {/* ONDE O ALUNO ESTÁ, e não quantas ele já fez.
 
             Esta linha mostrou `feitas` por um tempo, e o efeito era a fila de um
@@ -1023,7 +1026,7 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
             {sessao.card.skillIds.map((id) => getSkill(id).label).join(' · ')}
           </p>
         ) : null}
-      </div>
-    </div>
+      </>
+    </MesaDeEstudo>
   )
 }

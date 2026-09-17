@@ -5,20 +5,8 @@
   align-items: start;
 }
 
-@media (min-width: 60rem) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) 22rem;
-  }
-}
-
 /* Tabuleiro e campo de lance na mesma coluna: a alternativa por teclado fica
    junto do que ela substitui, e não escondida no fim do painel. */
-.boardSide {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-width: 0;
-}
 
 /* Entrada de lance em UCI (issue #67). Forma apenas — o estado de recusa usa
    `.recusa`, que é a única cor daqui e não é uma das classes de estado que a
@@ -82,17 +70,6 @@
   margin: 0;
   font-size: 0.875rem;
   color: var(--danger);
-}
-
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-card);
 }
 
 .counter {
@@ -244,3 +221,14 @@
   font-size: 0.8125rem;
   color: var(--text-faint);
 }
+
+/*
+  A GRADE DE DUAS COLUNAS SAIU DAQUI. Ver ADR-0019.
+
+  `MesaDeEstudo` faz tabuleiro à esquerda e instrução à direita a partir de
+  60 rem, e é a mesma mesa da lição, do exercício e das duas jornadas. Ter uma
+  cópia por tela era ter quatro respostas para a mesma pergunta — e uma delas já
+  tinha divergido, pondo o TABULEIRO na coluna estreita.
+*/
+
+/* A grade saiu para `MesaDeEstudo`. Ver ADR-0019. */

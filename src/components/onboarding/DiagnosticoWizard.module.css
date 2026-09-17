@@ -5,16 +5,6 @@
   align-items: start;
 }
 
-@media (min-width: 60rem) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) 23rem;
-  }
-}
-
-.tabuleiro {
-  min-width: 0;
-}
-
 .painel,
 .resultado {
   display: flex;
@@ -245,3 +235,14 @@
   font-size: 0.875rem;
   color: var(--text-muted);
 }
+
+/*
+  A GRADE DE DUAS COLUNAS SAIU DAQUI. Ver ADR-0019.
+
+  `MesaDeEstudo` faz tabuleiro à esquerda e instrução à direita a partir de
+  60 rem, e é a mesma mesa da lição, do exercício e das duas jornadas. Ter uma
+  cópia por tela era ter quatro respostas para a mesma pergunta — e uma delas já
+  tinha divergido, pondo o TABULEIRO na coluna estreita.
+*/
+
+/* A grade saiu para `MesaDeEstudo`. Ver ADR-0019. */

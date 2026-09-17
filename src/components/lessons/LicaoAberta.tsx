@@ -56,7 +56,7 @@ type Retomada = { fase: 'lendo' } | { fase: 'pronto'; etapaInicial: number }
 const DO_COMECO: Retomada = { fase: 'pronto', etapaInicial: 0 }
 
 export function LicaoAberta({ licao }: { licao: Licao }) {
-  const { repo, profile, refresh } = useRepository()
+  const { repo, status, profile, refresh } = useRepository()
   const { locale, t } = useIdioma()
   const router = useRouter()
   const [lido, setLido] = useState<Retomada | null>(null)
@@ -69,8 +69,22 @@ export function LicaoAberta({ licao }: { licao: Licao }) {
     de um efeito provoca uma segunda renderização para produzir um valor que já
     dava para calcular na primeira. Sem repositório não há o que ler — a resposta
     não depende de nada assíncrono.
+
+    "AINDA NÃO SEI" NÃO É "NÃO TEM", e confundir os dois era um defeito de
+    verdade — o que fazia o segundo `Continuar` da lição não avançar.
+
+    `repo` é `null` nos dois casos: enquanto o provedor abre o IndexedDB
+    (`status === 'carregando'`) e quando ele não vai abrir nunca. Lendo só
+    `!repo`, a tela concluía "não tem checkpoint", montava o player na etapa 1 e
+    deixava o aluno avançar. Quando o repositório enfim chegava, `lido` ainda era
+    `null`, a tela voltava para o painel de carregamento, o player DESMONTAVA — e
+    com ele o índice da etapa, que é estado local — e remontava na etapa que o
+    checkpoint tinha gravado. Dois cliques, e a tela rebobinava para o primeiro.
+
+    Nenhum erro aparecia: a lição só voltava sozinha para a etapa anterior.
   */
-  const retomada: Retomada = repo ? (lido ?? { fase: 'lendo' }) : DO_COMECO
+  const retomada: Retomada =
+    status === 'carregando' ? { fase: 'lendo' } : repo ? (lido ?? { fase: 'lendo' }) : DO_COMECO
 
   useEffect(() => {
     if (!repo) return
@@ -87,10 +101,20 @@ export function LicaoAberta({ licao }: { licao: Licao }) {
           acerto. Recomeçar é honesto: o conteúdo é outro.
         */
         const valido = gravado && gravado.contentVersion === licao.versao
-        setLido({ fase: 'pronto', etapaInicial: valido ? gravado.stepIndex : 0 })
+        /*
+          LATCH: a primeira resposta é a única que vale.
+
+          O índice inicial do player é inicializador de `useState` — uma segunda
+          resposta não o corrigiria, remontaria o player e faria o aluno perder
+          a etapa em que está. Uma leitura que começou antes de o aluno clicar
+          pode chegar depois; aqui ela não tem como rebobinar nada.
+        */
+        setLido(
+          (atual) => atual ?? { fase: 'pronto', etapaInicial: valido ? gravado.stepIndex : 0 },
+        )
       })
       .catch(() => {
-        if (!cancelado) setLido(DO_COMECO)
+        if (!cancelado) setLido((atual) => atual ?? DO_COMECO)
       })
     return () => {
       cancelado = true

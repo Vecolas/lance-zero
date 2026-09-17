@@ -188,6 +188,30 @@ function daMate(fen: string, uci: string): boolean {
  * Acerto: aplica o lance e, se a linha continuar, aplica também a resposta do
  * adversário. Erro: registra e, passado o limite de erros, a tentativa falha.
  * Nunca lança — lance ilegal é entrada de usuário, não bug.
+ *
+ * POR QUE ISTO NÃO DELEGA A `@/domain/exercicios/sequencia`, apesar de o
+ * esqueleto ser o mesmo — e a decisão foi tomada lendo os dois, não de longe.
+ *
+ * O núcleo compartilhado é pequeno: aplicar o lance e aplicar a resposta. Tudo
+ * o que sobra aqui é POLÍTICA DE PUZZLE, e nenhuma delas vale para uma linha
+ * autorada de lição:
+ *
+ *   - `aceitarMateAlternativo` — um mate fora da linha é aceito, porque o dump
+ *     guarda UMA linha e recusar um mate correto seria mentir para o jogador.
+ *     Numa lição, o lance fora da linha é justamente o que se quer corrigir;
+ *   - `maxErrosAntesDeFalhar` — a tentativa REPROVA depois de dois erros,
+ *     porque puzzle mede. A lição ensina: lá o erro devolve a peça e o aluno
+ *     tenta de novo, sem limite;
+ *   - mate encerra a tentativa antes do fim da linha;
+ *   - linha do dataset quebrada no meio encerra como resolvida, porque o dado
+ *     é de terceiro. Linha de lição quebrada é defeito nosso, e quem reprova é
+ *     o portão de conteúdo.
+ *
+ * Empurrar esses quatro comportamentos para o motor compartilhado, atrás de
+ * bandeiras, produziria exatamente o desenho que `@/domain/openings/jornada`
+ * recusa por escrito: "um trainer genérico com condicionais para os dois
+ * domínios". O que de fato era duplicado — a regra de promoção — mudou-se para
+ * `@/domain/exercicios/lances` e hoje tem um dono só.
  */
 export function submitMove(state: AttemptState, uci: string): SubmitMoveResult {
   if (state.status !== 'em-andamento') {
