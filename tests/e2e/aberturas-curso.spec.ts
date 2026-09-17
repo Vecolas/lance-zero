@@ -11,7 +11,9 @@ import { legalMoves } from '@/lib/chess'
  * sobre a jornada:
  *
  *   - o treino não revela a resposta antes da tentativa;
- *   - o Explorer é enriquecimento SOB DEMANDA e não consulta a rede sozinho;
+ *   - as respostas do adversário são ENSINADAS no tabuleiro, e a jornada não
+ *     fala com o explorador (ADR-0018 — ele mora em `/openings`, e é lá que
+ *     `aberturas.spec.ts` guarda o "sob demanda");
  *   - o catálogo filtra;
  *   - quem já conhece a abertura tem uma verificação curta;
  *   - dá para adotar a abertura no repertório;
@@ -109,7 +111,17 @@ test('a jornada abre pela visão e chega ao treino sem revelar a resposta', asyn
   await expect(page.getByText('FORA DO REPERTÓRIO')).toHaveCount(0)
 })
 
-test('o Explorer continua sendo enriquecimento sob demanda', async ({ page }) => {
+test('as respostas do adversário são ensinadas no tabuleiro, sem explorador', async ({ page }) => {
+  /*
+    O QUE ESTE TESTE SUBSTITUIU: "o Explorer continua sendo enriquecimento sob
+    demanda", que media o painel da Lichess NESTA etapa. O painel saiu da jornada
+    (ADR-0018), e a propriedade que aquele teste guardava — o explorador não
+    consulta a rede sozinho — continua guardada em `aberturas.spec.ts`, na tela
+    `/openings`, onde o painel mora agora.
+
+    Se qualquer consulta partir daqui, a rota abaixo conta e o teste reprova: a
+    saída do explorador é afirmada, não prometida.
+  */
   let consultas = 0
   await page.route('https://explorer.lichess.ovh/**', (route) => {
     consultas += 1
@@ -119,15 +131,34 @@ test('o Explorer continua sendo enriquecimento sob demanda', async ({ page }) =>
 
   await irAteEtapa(page, /Melhores respostas do adversário/)
 
-  await expect(page.getByText('O que o mundo joga (opcional)')).toBeVisible()
-  // NADA foi à rede antes de o aluno pedir. É a regra do projeto sobre serviço
-  // externo, e o teste existe porque "sob demanda" é fácil de quebrar sem que
-  // nada apareça na tela.
-  expect(consultas).toBe(0)
+  // A ETAPA ENSINA NO TABULEIRO, e começa NO DESVIO — não no `e4` que a etapa
+  // anterior já percorreu.
+  await expect(page.locator('[data-testid="chessboard"]').first()).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Escolher a resposta' })).toBeVisible()
+  await expect(page.getByText(/tudo igual à linha principal/)).toBeVisible()
+  await expect(page.getByText('6. Nf6')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Consultar o explorador' }).click()
-  await expect(page.getByText(/Não consegui falar com o explorador/)).toBeVisible()
-  expect(consultas).toBe(1)
+  /*
+    O DESVIO, NOMEADO COM O LANCE QUE ELE RECUSA. Estas duas asserções vieram,
+    palavra por palavra, do teste da etapa de VARIAÇÕES — e o fato de elas
+    passarem aqui sem mudar uma vírgula é a medida da correção: a decisão do
+    adversário sempre foi conteúdo desta etapa, e estava na etapa seguinte.
+  */
+  await expect(page.getByText(/O adversário joga/).first()).toBeVisible()
+  await expect(page.getByText(/no lugar de Bc5/).first()).toBeVisible()
+
+  // Trocar de resposta reposiciona a navegação no desvio da resposta nova.
+  await page.getByRole('button', { name: 'Defesa Húngara' }).click()
+  await expect(page.getByText('6. Be7')).toBeVisible()
+
+  // E liga o que se estuda ao que se vai enfrentar: é o mesmo conjunto de linhas
+  // que o bot joga no treino.
+  await expect(page.getByText(/encontrar estas respostas no treino/)).toBeVisible()
+
+  // E nada de explorador: nem o painel, nem uma única consulta.
+  await expect(page.getByText('O que o mundo joga (opcional)')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Consultar o explorador' })).toHaveCount(0)
+  expect(consultas).toBe(0)
 })
 
 /**
@@ -263,31 +294,47 @@ test('o aluno pode adotar a abertura no próprio repertório', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Repertório ativo' })).toBeVisible()
 })
 
-test('as variações são ensinadas no tabuleiro, na posição em que o desvio acontece', async ({
+test('a etapa das variações mostra as escolhas do ALUNO, e diz quando não há nenhuma', async ({
   page,
 }) => {
   /*
-    A ETAPA ERA UMA LISTA DE NOTAÇÃO: nome, descrição e `e4 e5 Cf3 Cc6 Bc4 Cf6
-    d3` numa linha só. Cinco daqueles sete lances são reprise da linha principal
-    e o único que importa — o desvio — não recebia destaque nenhum.
+    DEPOIS DA PARTIÇÃO (ADR-0018), esta etapa deixou de repetir a lista da etapa
+    anterior: ela mostra só os ramos em que quem escolhe é o aluno. Na Italiana
+    sobra o Giuoco Piano, que NÃO é um desvio — é o nome de um trecho da própria
+    linha principal —, e a etapa afirma isso em vez de inventar uma bifurcação.
 
-    O que este teste afirma é que o aluno VÊ a decisão: a posição na tela, o
-    lance que o adversário joga e o lance da linha principal que ele recusou.
+    As asserções do desvio ("O adversário joga X no lugar de Y") mudaram-se para
+    o teste da etapa 4, onde elas passaram a viver sem mudar uma palavra.
   */
   await page.goto('/aberturas/italiana')
 
   await irAteEtapa(page, /Variações importantes/)
 
   await expect(page.locator('[data-testid="chessboard"]').first()).toBeVisible()
+  await expect(page.getByText(/não é um desvio/)).toBeVisible()
 
-  // O desvio, nomeado com o lance que ele recusa. Sem a segunda metade, "o
-  // adversário joga Nf6" não diz por que a partida muda.
-  await expect(page.getByText(/O adversário joga/).first()).toBeVisible()
-  await expect(page.getByText(/no lugar de Bc5/).first()).toBeVisible()
+  // E a etapa NÃO repete a decisão do adversário, que já foi ensinada antes.
+  await expect(page.getByText(/no lugar de Bc5/)).toHaveCount(0)
+})
 
-  // E a etapa liga o que se estuda ao que se vai enfrentar: é o mesmo conjunto
-  // de linhas que o bot joga no treino.
-  await expect(page.getByText(/enfrentar estas variações no treino/)).toBeVisible()
+test('sem escolha do aluno, a etapa das variações diz isso — e continua com tabuleiro', async ({
+  page,
+}) => {
+  /*
+    QUATRO DAS SEIS ABERTURAS não têm nenhum ramo escolhido pelo aluno: contra
+    cada resposta do adversário, a continuação é uma só. O estado vazio precisa
+    dizer ISSO, e não "esta abertura ainda não tem variações autoradas" — que
+    seria falso duas telas depois de a etapa 4 ter mostrado duas linhas.
+
+    E precisa manter a posição na tela: `TESTE TABULEIRO SEMPRE` mede as nove
+    etapas da Italiana, e nenhuma delas passa por este caminho.
+  */
+  await page.goto('/aberturas/escocesa')
+
+  await irAteEtapa(page, /Variações importantes/)
+
+  await expect(page.locator('[data-testid="chessboard"]').first()).toBeVisible()
+  await expect(page.getByText(/Quem decide aqui é o adversário/)).toBeVisible()
 })
 
 test('os planos mostram a rota também em texto', async ({ page }) => {

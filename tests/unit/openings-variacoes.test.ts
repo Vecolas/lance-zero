@@ -18,7 +18,9 @@ import {
   posicoesDaLinha,
   ramificacaoDaVariacao,
   ramificacoesDaAbertura,
+  respostasDoAdversario,
   variacaoEmCurso,
+  variacoesDoAluno,
 } from '@/domain/openings/variacoes'
 
 const ITALIANA = OPENING_COURSES.find((o) => o.slug === 'italiana') ?? OPENING_COURSES[0]
@@ -102,6 +104,131 @@ describe('a ramificação de uma variação', () => {
 
     expect(ladosQueDesviam).toContain('adversario')
     expect(ladosQueDesviam).toContain('aluno')
+  })
+})
+
+describe('de quem é a decisão — a partição que separa as duas etapas', () => {
+  it('toda ramificação cai em exatamente uma das duas etapas', () => {
+    /*
+      "Melhores respostas do adversário" e "Variações importantes" leem listas
+      COMPLEMENTARES. Se um terceiro caso aparecer — uma ramificação que não é
+      resposta nem escolha do aluno — ele não some da tela com erro: some em
+      silêncio, e o conteúdo fica inalcançável. Este portão morde dos dois
+      lados: acusa tanto o ramo perdido quanto o ramo contado duas vezes.
+    */
+    for (const opening of OPENING_COURSES) {
+      const todos = ramificacoesDaAbertura(opening)
+      const respostas = respostasDoAdversario(opening)
+      const doAluno = variacoesDoAluno(opening)
+
+      expect(
+        respostas.length + doAluno.length,
+        `${opening.slug}: a partição perdeu ou duplicou um ramo`,
+      ).toBe(todos.length)
+
+      const ids = [...respostas, ...doAluno].map((ramo) => ramo.variacao.id)
+      expect(new Set(ids).size, `${opening.slug}: um ramo aparece nas duas etapas`).toBe(ids.length)
+    }
+  })
+
+  it('quem desvia numa resposta é sempre o adversário, e nunca o aluno', () => {
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of respostasDoAdversario(opening)) {
+        expect(ramo.indiceDaDivergencia, `${opening.slug}/${ramo.variacao.id}`).not.toBeNull()
+        expect(ramo.ladoQueDesvia, `${opening.slug}/${ramo.variacao.id}`).not.toBe(opening.side)
+      }
+    }
+  })
+
+  it('TESTE DE CONTEÚDO — toda abertura tem ao menos uma resposta do adversário', () => {
+    /*
+      A etapa 4/9 pergunta "o que ele joga aqui?". Uma abertura sem resposta
+      autorada responde com o estado vazio — que é honesto, e é exatamente o que
+      não pode virar o normal. Metade do catálogo já esteve assim.
+    */
+    for (const opening of OPENING_COURSES) {
+      expect(
+        respostasDoAdversario(opening).length,
+        `${opening.slug} não tem nenhuma resposta do adversário autorada`,
+      ).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('o conteúdo do desvio em diante', () => {
+  /*
+    A ETAPA MOSTRA ESTES LANCES UM A UM, NUM TABULEIRO GRANDE. O comentário é a
+    aula; sem ele a tela é um tabuleiro bonito com um rótulo embaixo.
+
+    O portão existe porque `validateOpeningDefinition` só cobra comentário na
+    LINHA PRINCIPAL: um `comment: ''` numa variação passa em runtime, e um
+    `'Centro.'` passa em qualquer lugar. Era assim que quatro das linhas
+    autoradas estavam — reprise da principal com rótulos de uma palavra.
+
+    Só vale do DESVIO EM DIANTE: o prefixo é a linha principal repetida, a
+    navegação da etapa nem o mostra, e cobrá-lo obrigaria a reescrever o que já
+    foi ensinado.
+  */
+  /*
+    O PISO NÃO É CALIBRADO, e é por isso que ele está nomeado aqui em vez de
+    solto numa comparação. Ele é o comprimento abaixo do qual TODO comentário de
+    variação do catálogo anterior era rótulo e não explicação: 'Centro.' tem 8,
+    'Defesa natural.' tem 15, 'Recupere e abra linhas.' tem 23 e o mais longo de
+    todos, 'Sustente e4 e continue o plano.', tem 31.
+  */
+  const MINIMO_DE_COMENTARIO = 40
+
+  it('todo lance a partir do desvio tem comentário de verdade', () => {
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramificacoesDaAbertura(opening)) {
+        if (ramo.indiceDaDivergencia === null) continue
+        for (let i = ramo.indiceDaDivergencia; i < ramo.variacao.line.length; i += 1) {
+          const lance = ramo.variacao.line[i]
+          expect(
+            lance.comment.trim().length,
+            `${opening.slug}/${ramo.variacao.id}: ${lance.san} tem comentário curto demais ("${lance.comment}")`,
+          ).toBeGreaterThanOrEqual(MINIMO_DE_COMENTARIO)
+        }
+      }
+    }
+  })
+
+  it('o comentário do desvio não é o da linha principal copiado', () => {
+    /*
+      A MANEIRA ÓBVIA DE BURLAR O PISO É COLAR O COMENTÁRIO DA PRINCIPAL, que já
+      é longo o bastante. Ele descreveria o lance recusado, não o jogado — e o
+      aluno leria, na posição da decisão, a explicação da decisão oposta.
+    */
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramificacoesDaAbertura(opening)) {
+        if (ramo.indiceDaDivergencia === null) continue
+        for (let i = ramo.indiceDaDivergencia; i < ramo.variacao.line.length; i += 1) {
+          const daVariacao = ramo.variacao.line[i].comment.trim()
+          const daPrincipal = opening.mainline[i]?.comment.trim()
+          if (daPrincipal === undefined) continue
+          expect(
+            daVariacao,
+            `${opening.slug}/${ramo.variacao.id}: o lance ${ramo.variacao.line[i].san} repete o comentário da linha principal`,
+          ).not.toBe(daPrincipal)
+        }
+      }
+    }
+  })
+
+  it('o lance do desvio diz também o que ele prepara', () => {
+    // O "por quê" do lance é o comentário; o "o que isso muda" é a ideia ou o
+    // plano. O lance da decisão precisa dos dois — é o único da linha que o
+    // aluno terá de reconhecer sozinho no treino.
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramificacoesDaAbertura(opening)) {
+        if (ramo.indiceDaDivergencia === null) continue
+        const desvio = ramo.variacao.line[ramo.indiceDaDivergencia]
+        expect(
+          Boolean(desvio.strategicIdea ?? desvio.resultingPlan),
+          `${opening.slug}/${ramo.variacao.id}: ${desvio.san} não diz o que prepara`,
+        ).toBe(true)
+      }
+    }
   })
 })
 

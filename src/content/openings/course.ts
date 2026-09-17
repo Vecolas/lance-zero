@@ -93,16 +93,49 @@ const italian = course({
     {
       id: 'italiana-dois-cavalos',
       name: 'Defesa dos Dois Cavalos',
-      description: 'As pretas atacam e4 imediatamente.',
+      description: 'Em vez de espelhar o seu bispo, as pretas atacam e4 na hora.',
       rootNodeId: '',
       line: [
-        lesson(1, 'e4', 'Centro.'),
-        lesson(2, 'e5', 'Centro.'),
-        lesson(3, 'Nf3', 'Ataque e5.'),
-        lesson(4, 'Nc6', 'Defesa natural.'),
-        lesson(5, 'Bc4', 'Pressão em f7.'),
-        lesson(6, 'Nf6', 'Ataque e4.'),
-        lesson(7, 'd3', 'Sustente e4 e continue o plano.'),
+        ...italianaMain.slice(0, 5),
+        lesson(6, 'Nf6', 'As pretas recusam a simetria e atacam e4 antes de desenvolver o bispo.', {
+          highlights: ['e4'],
+          strategicIdea:
+            'Elas ganham tempo atacando, e é por isso que este é o lance mais comum aqui.',
+        }),
+        lesson(
+          7,
+          'd3',
+          'Sustente e4 com o peão. O ataque some, você não perdeu nenhum tempo e o plano continua o mesmo.',
+          {
+            resultingPlan: 'O-O, Te1 e a ruptura d4 quando as peças estiverem prontas.',
+          },
+        ),
+      ],
+    },
+    {
+      id: 'italiana-hungara',
+      name: 'Defesa Húngara',
+      description: 'As pretas recusam o confronto e põem o bispo numa casa modesta.',
+      rootNodeId: '',
+      line: [
+        ...italianaMain.slice(0, 5),
+        lesson(
+          6,
+          'Be7',
+          'O bispo vai para uma casa passiva e evita qualquer choque tático imediato.',
+          {
+            strategicIdea:
+              'Quem recusa o centro costuma ceder espaço: não force nada, ocupe o que foi cedido.',
+          },
+        ),
+        lesson(
+          7,
+          'd3',
+          'Contra uma defesa passiva, desenvolvimento vale mais que ataque. Siga o plano de sempre.',
+          {
+            resultingPlan: 'O-O, Cbd2 e d4 no momento em que o centro estiver sustentado.',
+          },
+        ),
       ],
     },
     {
@@ -158,6 +191,23 @@ const italian = course({
   version: 1,
 })
 
+const caroMain = [
+  lesson(1, 'e4', 'As brancas ocupam o centro.'),
+  lesson(2, 'c6', 'Prepare d5 sem bloquear o bispo de c8.', {
+    strategicIdea: 'A estrutura é mais importante que atacar imediatamente.',
+  }),
+  lesson(3, 'd4', 'As brancas montam dois peões no centro.'),
+  lesson(4, 'd5', 'Ataque o centro no momento certo.', {
+    highlights: ['d4'],
+    arrows: [{ from: 'd7', to: 'd5' }],
+    resultingPlan: 'Trocar ou pressionar e4 e desenvolver o bispo da dama.',
+  }),
+  lesson(5, 'e5', 'A variante do avanço ganha espaço.'),
+  lesson(6, 'Bf5', 'Desenvolva o bispo antes de fechar a cadeia.', {
+    warning: 'Não deixe o bispo de c8 preso atrás da própria cadeia.',
+  }),
+]
+
 const caroKann = course({
   id: 'caro-kann',
   slug: 'caro-kann',
@@ -171,35 +221,67 @@ const caroKann = course({
   tags: ['solid', 'positional'],
   transitionToMiddlegame:
     'Depois de d5 e do desenvolvimento do bispo, pare de decorar e observe a estrutura: as rupturas e5 ou c5 definem o meio-jogo.',
-  mainline: [
-    lesson(1, 'e4', 'As brancas ocupam o centro.'),
-    lesson(2, 'c6', 'Prepare d5 sem bloquear o bispo de c8.', {
-      strategicIdea: 'A estrutura é mais importante que atacar imediatamente.',
-    }),
-    lesson(3, 'd4', 'As brancas montam dois peões no centro.'),
-    lesson(4, 'd5', 'Ataque o centro no momento certo.', {
-      highlights: ['d4'],
-      arrows: [{ from: 'd7', to: 'd5' }],
-      resultingPlan: 'Trocar ou pressionar e4 e desenvolver o bispo da dama.',
-    }),
-    lesson(5, 'e5', 'A variante do avanço ganha espaço.'),
-    lesson(6, 'Bf5', 'Desenvolva o bispo antes de fechar a cadeia.', {
-      warning: 'Não deixe o bispo de c8 preso atrás da própria cadeia.',
-    }),
-  ],
+  mainline: caroMain,
   variations: [
     {
       id: 'caro-troca',
       name: 'Variante da Troca',
-      description: 'Estrutura simétrica e planos claros.',
+      description: 'As brancas trocam em d5 e a estrutura fica simétrica.',
       rootNodeId: '',
       line: [
-        lesson(1, 'e4', 'Centro.'),
-        lesson(2, 'c6', 'Prepare d5.'),
-        lesson(3, 'd4', 'Centro.'),
-        lesson(4, 'd5', 'Ataque o centro.'),
-        lesson(5, 'exd5', 'As brancas simplificam.'),
-        lesson(6, 'cxd5', 'Recupere e abra linhas.'),
+        ...caroMain.slice(0, 4),
+        lesson(
+          5,
+          'exd5',
+          'As brancas simplificam em vez de avançar. O espaço some, e com ele a pressão.',
+          {
+            strategicIdea: 'Sem cadeia de peões no centro, ninguém tem alvo fixo para atacar.',
+          },
+        ),
+        lesson(
+          6,
+          'cxd5',
+          'Recapture com o peão de c6: a coluna c abre para a sua torre e d5 fica sustentado.',
+          {
+            resultingPlan: 'Cc6, Af5 e e6, com jogo pela coluna c.',
+          },
+        ),
+      ],
+    },
+    {
+      id: 'caro-classica',
+      name: 'Variante Clássica',
+      description: 'As brancas desenvolvem em vez de definir o centro, e deixam a troca com você.',
+      rootNodeId: '',
+      line: [
+        ...caroMain.slice(0, 4),
+        lesson(
+          5,
+          'Nc3',
+          'As brancas desenvolvem e deixam a tensão de pé: quem decide o que acontece com d5 é você.',
+          {
+            strategicIdea:
+              'Tensão mantida é convite para você escolher a estrutura. Aceite o convite.',
+          },
+        ),
+        lesson(
+          6,
+          'dxe4',
+          'Troque enquanto a troca é sua. Deixar o peão em d5 apenas devolveria a escolha às brancas.',
+          {
+            resultingPlan: 'Depois de Cxe4, o bispo sai por f5 antes de e6 fechar a diagonal.',
+          },
+        ),
+        lesson(7, 'Nxe4', 'O cavalo recupera no centro e mira as casas d6 e g5.'),
+        lesson(
+          8,
+          'Bf5',
+          'Este é o lance que a Caro-Kann existe para permitir: o bispo sai ANTES de e6.',
+          {
+            highlights: ['f5'],
+            warning: 'Jogar e6 primeiro prenderia o bispo atrás dos próprios peões.',
+          },
+        ),
       ],
     },
   ],
@@ -237,6 +319,20 @@ const caroKann = course({
   version: 1,
 })
 
+const qgdMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro.'),
+  lesson(2, 'd5', 'Ocupe o centro e impeça e4 fácil.', {
+    strategicIdea: 'Centro contra centro.',
+  }),
+  lesson(3, 'c4', 'O Gambito da Dama desafia d5.'),
+  lesson(4, 'e6', 'Sustente d5 e abra o bispo de f8.', {
+    highlights: ['d5'],
+    resultingPlan: 'Cf6, Be7, O-O e c5 no momento certo.',
+  }),
+  lesson(5, 'Nc3', 'As brancas aumentam a pressão central.'),
+  lesson(6, 'Nf6', 'Desenvolva e controle e4.', { arrows: [{ from: 'g8', to: 'f6' }] }),
+]
+
 const qgd = course({
   id: 'gambito-da-dama-recusado',
   slug: 'gambito-da-dama-recusado',
@@ -250,30 +346,76 @@ const qgd = course({
   tags: ['solid', 'positional'],
   transitionToMiddlegame:
     'Quando as peças menores estão desenvolvidas, a posição deixa de ser uma sequência: observe a tensão em c4/d5 e escolha a ruptura.',
-  mainline: [
-    lesson(1, 'd4', 'As brancas ocupam o centro.'),
-    lesson(2, 'd5', 'Ocupe o centro e impeça e4 fácil.', {
-      strategicIdea: 'Centro contra centro.',
-    }),
-    lesson(3, 'c4', 'O Gambito da Dama desafia d5.'),
-    lesson(4, 'e6', 'Sustente d5 e abra o bispo de f8.', {
-      highlights: ['d5'],
-      resultingPlan: 'Cf6, Be7, O-O e c5 no momento certo.',
-    }),
-    lesson(5, 'Nc3', 'As brancas aumentam a pressão central.'),
-    lesson(6, 'Nf6', 'Desenvolva e controle e4.', { arrows: [{ from: 'g8', to: 'f6' }] }),
-  ],
+  mainline: qgdMain,
   variations: [
+    {
+      id: 'qgd-tres-cavalos',
+      name: 'Desenvolvimento com Cf3',
+      description: 'As brancas desenvolvem o cavalo do rei antes de decidir o centro.',
+      rootNodeId: '',
+      line: [
+        ...qgdMain.slice(0, 4),
+        lesson(
+          5,
+          'Nf3',
+          'As brancas desenvolvem sem definir nada. É a ordem de lances mais comum nesta posição.',
+          {
+            strategicIdea: 'Ordem diferente, mesma posição: não mude o seu plano por causa dela.',
+          },
+        ),
+        lesson(
+          6,
+          'Nf6',
+          'Responda com o mesmo lance da linha principal. Você não precisa de teoria nova aqui.',
+          {
+            resultingPlan: 'Be7, O-O e a ruptura c5 quando o desenvolvimento estiver pronto.',
+          },
+        ),
+      ],
+    },
+    {
+      id: 'qgd-troca',
+      name: 'Variante da Troca',
+      description: 'As brancas trocam em d5 e a estrutura fica fixa desde cedo.',
+      rootNodeId: '',
+      line: [
+        ...qgdMain.slice(0, 4),
+        lesson(
+          5,
+          'cxd5',
+          'As brancas resolvem a tensão e fixam a estrutura. A posição fica clara para os dois lados.',
+          {
+            strategicIdea:
+              'Estrutura fixa significa plano fixo: aqui o jogo é de peças, não de teoria.',
+          },
+        ),
+        lesson(
+          6,
+          'exd5',
+          'Recapture com o peão de e6: d5 continua sustentado e o bispo de c8 fica livre.',
+          {
+            resultingPlan: 'Cf6, Be7, O-O e Bf5 ou Be6, com a coluna e disponível.',
+          },
+        ),
+      ],
+    },
     {
       id: 'qgd-eslava-ponte',
       name: 'Estrutura com c6',
       description: 'A estrutura fica mais sólida, mas o bispo de c8 pede atenção.',
       rootNodeId: '',
       line: [
-        lesson(1, 'd4', 'Centro.'),
-        lesson(2, 'd5', 'Centro.'),
-        lesson(3, 'c4', 'Pressão.'),
-        lesson(4, 'c6', 'Sustente d5 com c6.'),
+        ...qgdMain.slice(0, 3),
+        lesson(
+          4,
+          'c6',
+          'Você sustenta d5 com o peão de c6 em vez do de e6, e o bispo de c8 continua com saída.',
+          {
+            strategicIdea: 'É a Eslava: mesma ideia, outro peão — e a diagonal c8-h3 segue aberta.',
+          },
+        ),
+        lesson(5, 'Nf3', 'As brancas desenvolvem e mantêm a pressão sobre d5.'),
+        lesson(6, 'Nf6', 'Desenvolva e controle e4, exatamente como na linha principal.'),
       ],
     },
   ],
@@ -311,6 +453,19 @@ const qgd = course({
   version: 1,
 })
 
+const escocesaMain = [
+  lesson(1, 'e4', 'Ocupe o centro.'),
+  lesson(2, 'e5', 'As pretas respondem no centro.'),
+  lesson(3, 'Nf3', 'Ataque e5 e desenvolva.'),
+  lesson(4, 'Nc6', 'Defenda e5 desenvolvendo.'),
+  lesson(5, 'd4', 'Abra o centro enquanto as peças ganham atividade.', {
+    arrows: [{ from: 'd2', to: 'd4' }],
+    resultingPlan: 'Desenvolver e rocar, sem caçar peões.',
+  }),
+  lesson(6, 'exd4', 'As pretas aceitam a troca.'),
+  lesson(7, 'Nxd4', 'Recupere com desenvolvimento e pressão no centro.'),
+]
+
 const scotch = course({
   id: 'escocesa',
   slug: 'escocesa',
@@ -325,19 +480,76 @@ const scotch = course({
   tags: ['open', 'tactical'],
   transitionToMiddlegame:
     'Depois da troca em d4, avalie desenvolvimento e rei: a teoria acaba quando as peças começam a disputar casas.',
-  mainline: [
-    lesson(1, 'e4', 'Ocupe o centro.'),
-    lesson(2, 'e5', 'As pretas respondem no centro.'),
-    lesson(3, 'Nf3', 'Ataque e5 e desenvolva.'),
-    lesson(4, 'Nc6', 'Defenda e5 desenvolvendo.'),
-    lesson(5, 'd4', 'Abra o centro enquanto as peças ganham atividade.', {
-      arrows: [{ from: 'd2', to: 'd4' }],
-      resultingPlan: 'Desenvolver e rocar, sem caçar peões.',
-    }),
-    lesson(6, 'exd4', 'As pretas aceitam a troca.'),
-    lesson(7, 'Nxd4', 'Recupere com desenvolvimento e pressão no centro.'),
+  mainline: escocesaMain,
+  variations: [
+    {
+      id: 'escocesa-classica',
+      name: 'Variante Clássica',
+      description: 'As pretas põem o bispo em c5, de frente para o seu cavalo de d4.',
+      rootNodeId: '',
+      line: [
+        ...escocesaMain,
+        lesson(
+          8,
+          'Bc5',
+          'O bispo mira o cavalo de d4 e ataca f2. É a resposta mais direta que você vai encontrar.',
+          {
+            highlights: ['d4', 'f2'],
+            strategicIdea: 'A pergunta é sobre o cavalo de d4. Responda defendendo-o, não fugindo.',
+          },
+        ),
+        lesson(
+          9,
+          'Be3',
+          'Defenda o cavalo desenvolvendo. Recuar o cavalo devolveria de graça o tempo que d4 ganhou.',
+          {
+            resultingPlan: 'c3, Bc4 e O-O, com o centro sustentado.',
+          },
+        ),
+      ],
+    },
+    {
+      id: 'escocesa-schmidt',
+      name: 'Variante Schmidt',
+      description: 'As pretas atacam e4 com o cavalo antes de desenvolver o bispo.',
+      rootNodeId: '',
+      line: [
+        ...escocesaMain,
+        lesson(
+          8,
+          'Nf6',
+          'O cavalo ataca e4 e ignora o seu cavalo de d4. Defender e4 com peça seria passivo.',
+          {
+            highlights: ['e4'],
+            strategicIdea:
+              'Quando o adversário ataca, procure primeiro a troca que muda a pergunta.',
+          },
+        ),
+        lesson(
+          9,
+          'Nxc6',
+          'Troque antes de defender: a resposta à ameaça começa com esta troca, não com um lance defensivo.',
+          {
+            resultingPlan: 'Depois da recaptura, e5 expulsa o cavalo com tempo.',
+          },
+        ),
+        lesson(
+          10,
+          'bxc6',
+          'As pretas recapturam e a estrutura delas fica com peões dobrados em c.',
+        ),
+        lesson(
+          11,
+          'e5',
+          'Agora o peão avança com tempo: o cavalo que atacava e4 é quem precisa se mexer.',
+          {
+            arrows: [{ from: 'e4', to: 'e5' }],
+            resultingPlan: 'Qe2, Nc3 e O-O, com espaço e um alvo fixo em c6.',
+          },
+        ),
+      ],
+    },
   ],
-  variations: [],
   plans: [
     {
       id: 'escocesa-atividade',
@@ -372,6 +584,19 @@ const scotch = course({
   version: 1,
 })
 
+const londresMain = [
+  lesson(1, 'd4', 'O peão ocupa o centro.'),
+  lesson(2, 'd5', 'As pretas disputam o centro.'),
+  lesson(3, 'Nf3', 'Desenvolva e controle e5.'),
+  lesson(4, 'Nf6', 'As pretas fazem o mesmo.'),
+  lesson(5, 'Bf4', 'O bispo sai antes de e3 e evita ficar preso.', {
+    arrows: [{ from: 'c1', to: 'f4' }],
+    strategicIdea: 'A estrutura é um mapa de planos, não uma obrigação de repetir lances.',
+  }),
+  lesson(6, 'e6', 'As pretas sustentam d5 e abrem o bispo.'),
+  lesson(7, 'e3', 'Consolide o centro e prepare Bd3 e O-O.'),
+]
+
 const london = course({
   id: 'sistema-londres',
   slug: 'sistema-londres',
@@ -385,19 +610,62 @@ const london = course({
   tags: ['solid', 'simple'],
   transitionToMiddlegame:
     'A estrutura dá um ponto de partida, não uma lista de lances: observe a resposta das pretas e escolha c4 ou e4.',
-  mainline: [
-    lesson(1, 'd4', 'O peão ocupa o centro.'),
-    lesson(2, 'd5', 'As pretas disputam o centro.'),
-    lesson(3, 'Nf3', 'Desenvolva e controle e5.'),
-    lesson(4, 'Nf6', 'As pretas fazem o mesmo.'),
-    lesson(5, 'Bf4', 'O bispo sai antes de e3 e evita ficar preso.', {
-      arrows: [{ from: 'c1', to: 'f4' }],
-      strategicIdea: 'A estrutura é um mapa de planos, não uma obrigação de repetir lances.',
-    }),
-    lesson(6, 'e6', 'As pretas sustentam d5 e abrem o bispo.'),
-    lesson(7, 'e3', 'Consolide o centro e prepare Bd3 e O-O.'),
+  mainline: londresMain,
+  variations: [
+    {
+      id: 'londres-c5',
+      name: 'Contra-ataque com c5',
+      description: 'As pretas atacam a base do seu centro em vez de sustentar o delas.',
+      rootNodeId: '',
+      line: [
+        ...londresMain.slice(0, 5),
+        lesson(
+          6,
+          'c5',
+          'As pretas atacam d4 em vez de sustentar d5. É a resposta mais ativa contra o sistema.',
+          {
+            highlights: ['d4'],
+            strategicIdea:
+              'O sistema foi feito para isto: você não precisa de um lance novo, só do mesmo.',
+          },
+        ),
+        lesson(
+          7,
+          'e3',
+          'Sustente d4 com o peão e siga o plano. Trocar em c5 devolveria o centro sem necessidade.',
+          {
+            resultingPlan: 'c3, Cbd2, Bd3 e O-O, com d4 amparado duas vezes.',
+          },
+        ),
+      ],
+    },
+    {
+      id: 'londres-bf5',
+      name: 'Bispo por f5',
+      description: 'As pretas jogam o Londres contra você e desenvolvem o bispo antes de e6.',
+      rootNodeId: '',
+      line: [
+        ...londresMain.slice(0, 5),
+        lesson(
+          6,
+          'Bf5',
+          'As pretas tiram o bispo da cadeia antes de jogar e6 — a mesma ideia que o seu Bf4 teve.',
+          {
+            strategicIdea:
+              'Posição quase simétrica, com um tempo a mais para você. Não procure vantagem: desenvolva.',
+          },
+        ),
+        lesson(
+          7,
+          'e3',
+          'Consolide o centro. O tempo a mais aparece depois, na escolha da ruptura, e não agora.',
+          {
+            resultingPlan: 'Bd3 para trocar o bispo ativo delas, depois O-O e c4.',
+          },
+        ),
+      ],
+    },
   ],
-  variations: [],
   plans: [
     {
       id: 'london-e4',
@@ -432,6 +700,18 @@ const london = course({
   version: 1,
 })
 
+const eslavaMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro.'),
+  lesson(2, 'd5', 'As pretas respondem no centro.'),
+  lesson(3, 'c4', 'As brancas pressionam d5.'),
+  lesson(4, 'c6', 'Sustente d5 e mantenha o bispo livre.', {
+    arrows: [{ from: 'c7', to: 'c6' }],
+    resultingPlan: 'Cf6, Af5 e e6 ou dxc4 conforme a posição.',
+  }),
+  lesson(5, 'Nf3', 'Desenvolvimento natural.'),
+  lesson(6, 'Nf6', 'Controle e4 e prepare o roque.'),
+]
+
 const slav = course({
   id: 'defesa-eslava',
   slug: 'defesa-eslava',
@@ -445,18 +725,61 @@ const slav = course({
   tags: ['solid', 'positional'],
   transitionToMiddlegame:
     'A estrutura c6/d5 define a posição. Depois do desenvolvimento, jogue pelas rupturas e não pela memorização.',
-  mainline: [
-    lesson(1, 'd4', 'As brancas ocupam o centro.'),
-    lesson(2, 'd5', 'As pretas respondem no centro.'),
-    lesson(3, 'c4', 'As brancas pressionam d5.'),
-    lesson(4, 'c6', 'Sustente d5 e mantenha o bispo livre.', {
-      arrows: [{ from: 'c7', to: 'c6' }],
-      resultingPlan: 'Cf6, Af5 e e6 ou dxc4 conforme a posição.',
-    }),
-    lesson(5, 'Nf3', 'Desenvolvimento natural.'),
-    lesson(6, 'Nf6', 'Controle e4 e prepare o roque.'),
+  mainline: eslavaMain,
+  variations: [
+    {
+      id: 'eslava-cc3',
+      name: 'Desenvolvimento com Cc3',
+      description: 'As brancas desenvolvem pelo outro lado antes de tocar no centro.',
+      rootNodeId: '',
+      line: [
+        ...eslavaMain.slice(0, 4),
+        lesson(
+          5,
+          'Nc3',
+          'Outra ordem de lances, e ela é tão comum quanto Cf3. O centro continua sem definição.',
+          {
+            strategicIdea:
+              'Ordem diferente não é linha diferente: responda pelo plano, não pela memória.',
+          },
+        ),
+        lesson(
+          6,
+          'Nf6',
+          'Desenvolva e controle e4, o mesmo lance da linha principal. Nada aqui pede teoria nova.',
+          {
+            resultingPlan: 'dxc4 ou Af5 conforme as brancas se comprometam com e3.',
+          },
+        ),
+      ],
+    },
+    {
+      id: 'eslava-troca',
+      name: 'Variante da Troca',
+      description: 'As brancas trocam em d5 e a estrutura fica simétrica desde o quinto lance.',
+      rootNodeId: '',
+      line: [
+        ...eslavaMain.slice(0, 4),
+        lesson(
+          5,
+          'cxd5',
+          'As brancas resolvem a tensão cedo. A posição fica simétrica e pobre em alvos.',
+          {
+            strategicIdea:
+              'Simetria não é empate: quem desenvolver com mais propósito joga melhor.',
+          },
+        ),
+        lesson(
+          6,
+          'cxd5',
+          'Recapture com o peão de c6: a coluna c abre e o bispo de c8 continua com saída por f5.',
+          {
+            resultingPlan: 'Cc6, Cf6, Af5 e e6, com as torres pela coluna c.',
+          },
+        ),
+      ],
+    },
   ],
-  variations: [],
   plans: [
     {
       id: 'slava-bispo',
