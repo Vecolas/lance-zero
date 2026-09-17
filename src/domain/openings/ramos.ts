@@ -119,3 +119,67 @@ export function ladoDoPapel(
   if (papel === 'principal') return opening.side
   return opening.side === 'white' ? 'black' : 'white'
 }
+
+/* -------------------------------------------------------------------------- */
+/* O estado de um ramo, para a biblioteca                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * O que o aluno já fez com este ramo.
+ *
+ * TRÊS ESTADOS, E CADA UM TEM EVIDÊNCIA. `visto` significa que ele abriu o
+ * estudo do ramo; `praticado`, que ele jogou a decisão que o ramo ensina, no
+ * tabuleiro e certa.
+ *
+ * O PLANO PEDE "✓ estudada" (§17), E ESTE MÓDULO NÃO USA ESSA PALAVRA. Abrir
+ * uma tela não é estudar, e um rótulo que promete mais do que a evidência
+ * sustenta é a mesma falsa precisão que o produto recusa no WDL do Stockfish.
+ * Quem abriu, viu; quem jogou, praticou.
+ */
+export type EstadoDoRamo = 'nao-visto' | 'visto' | 'praticado'
+
+/**
+ * Os ids gravados em `itensRespondidos` da etapa de variações.
+ *
+ * O PREFIXO EXISTE PARA CONVIVER: a etapa pode passar a gravar outros tipos de
+ * item, e ids crus colidiriam em silêncio. `registrarItem` deduplica por id,
+ * então reabrir o mesmo ramo não infla contagem nenhuma.
+ */
+export function idDeRamoVisto(ramoId: string): string {
+  return `ramo:${ramoId}:visto`
+}
+
+export function idDeRamoPraticado(ramoId: string): string {
+  return `ramo:${ramoId}:praticado`
+}
+
+/**
+ * Lê o estado de um ramo a partir dos itens respondidos da etapa.
+ *
+ * PRATICADO IMPLICA VISTO, e a ordem da leitura garante isso mesmo que só o
+ * segundo id tenha sido gravado — o que acontece se a gravação do primeiro
+ * falhar. Um ramo que o aluno jogou não pode aparecer como "não visto".
+ */
+export function estadoDoRamo(respondidos: readonly string[], ramoId: string): EstadoDoRamo {
+  if (respondidos.includes(idDeRamoPraticado(ramoId))) return 'praticado'
+  if (respondidos.includes(idDeRamoVisto(ramoId))) return 'visto'
+  return 'nao-visto'
+}
+
+/**
+ * O ramo que a biblioteca recomenda abrir agora.
+ *
+ * O PRIMEIRO `core` AINDA NÃO PRATICADO, na ordem de importância que
+ * `ramosDaAbertura` já estabelece. Quando todos os `core` estão praticados, a
+ * recomendação passa para o resto — e some quando não sobra nada.
+ *
+ * ELE RECOMENDA, NÃO TRANCA. Todos os cards abrem, sempre: é o ADR-0016, e a
+ * razão é que esconder conteúdo foi o defeito que aquele ADR desfez.
+ */
+export function ramoRecomendado(
+  ramos: readonly RamoDeAbertura[],
+  respondidos: readonly string[],
+): RamoDeAbertura | undefined {
+  const pendente = (ramo: RamoDeAbertura) => estadoDoRamo(respondidos, ramo.id) !== 'praticado'
+  return ramos.find((ramo) => ramo.importancia === 'core' && pendente(ramo)) ?? ramos.find(pendente)
+}

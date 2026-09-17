@@ -25,6 +25,7 @@ import { applyMove } from '@/lib/chess'
 import type { SquareName } from '@/lib/chess/types'
 import type { LinhaTreinavel } from '@/domain/exercicios/sequencia'
 import type { OpeningDefinition, OpeningMoveLesson } from './index'
+import type { RamoDeAbertura } from './ramos'
 
 /**
  * Quantas decisões do aluno o computador demonstra antes de cobrar a primeira.
@@ -98,31 +99,104 @@ export interface PercursoDaLinhaPrincipal {
  * prática. Com a metade, toda abertura do curso atual cobra pelo menos duas.
  */
 export function percursoDaLinhaPrincipal(opening: OpeningDefinition): PercursoDaLinhaPrincipal {
+  return montarPercurso(
+    opening.rootFen,
+    opening.mainline,
+    opening.side,
+    demonstradosPelaMetade(opening.mainline, opening.side),
+  )
+}
+
+/**
+ * O percurso de UM RAMO. Mesma escada, ponto de partida diferente.
+ *
+ * A POLÍTICA AQUI NÃO É A DA METADE, e a diferença é do conteúdo: um ramo já
+ * nasce depois de uma linha que o aluno percorreu. O que ele precisa ver
+ * demonstrado é o lance que RAMIFICA — e o que ele precisa produzir é a
+ * resposta a esse lance. Demonstrar metade do ramo desperdiçaria a única
+ * decisão que o ramo existe para ensinar.
+ *
+ * O RAMO QUE NÃO RAMIFICA cai na política da linha principal. É o Giuoco
+ * Piano: um nome para um trecho da própria principal, sem bifurcação. Tratá-lo
+ * como desvio ensinaria uma decisão que não existe no tabuleiro.
+ */
+export function percursoDoRamo(
+  opening: OpeningDefinition,
+  ramo: RamoDeAbertura,
+): PercursoDaLinhaPrincipal {
+  const lances = ramo.ramificacao.variacao.line
+  const divergencia = ramo.ramificacao.indiceDaDivergencia
+
+  if (divergencia === null) {
+    return montarPercurso(
+      opening.rootFen,
+      lances,
+      opening.side,
+      demonstradosPelaMetade(lances, opening.side),
+    )
+  }
+
   /*
-    O LADO SE LÊ DA PARIDADE DO PLY, não de um contador à parte. `ply` é
-    1-based e normalizado na construção da abertura: ímpar é das brancas.
+    A DEMONSTRAÇÃO VAI ATÉ O PRIMEIRO LANCE DO ALUNO NO RAMO OU DEPOIS DELE.
+
+    Quando quem ramifica é o adversário, isso inclui o lance dele: o aluno vê o
+    desvio acontecer e responde. Quando quem ramifica é o próprio aluno, a
+    demonstração para ANTES — a decisão de desviar é dele, e demonstrá-la seria
+    responder a pergunta antes de fazê-la.
   */
-  const decisoesPossiveis = opening.mainline
+  const primeiroDoAluno = lances.findIndex(
+    (lance, indice) => indice >= divergencia && ehDoAluno(lance, opening.side),
+  )
+  return montarPercurso(
+    opening.rootFen,
+    lances,
+    opening.side,
+    primeiroDoAluno >= 0 ? primeiroDoAluno : Math.max(lances.length - 1, 0),
+  )
+}
+
+/** O lance é do lado que o aluno joga? `ply` é 1-based: ímpar é das brancas. */
+function ehDoAluno(lance: OpeningMoveLesson, lado: OpeningDefinition['side']): boolean {
+  return (lance.ply % 2 === 1) === (lado === 'white')
+}
+
+/**
+ * A política da linha principal: `min(2, metade das decisões)`.
+ *
+ * Devolve o ÍNDICE onde a demonstração para, e não a contagem de decisões — é o
+ * índice que o resto do percurso usa, e converter em dois lugares é onde os dois
+ * divergem.
+ */
+function demonstradosPelaMetade(
+  lances: readonly OpeningMoveLesson[],
+  lado: OpeningDefinition['side'],
+): number {
+  const decisoes = lances
     .map((lance, indice) => ({ lance, indice }))
-    .filter(({ lance }) => (lance.ply % 2 === 1) === (opening.side === 'white'))
+    .filter(({ lance }) => ehDoAluno(lance, lado))
+  const demonstradas = Math.min(DEMONSTRACOES_MAXIMAS, Math.floor(decisoes.length / 2))
+  const primeiroCobrado = decisoes[demonstradas]?.indice
+  return primeiroCobrado ?? Math.max(lances.length - 1, 0)
+}
 
-  const demonstradas = Math.min(DEMONSTRACOES_MAXIMAS, Math.floor(decisoesPossiveis.length / 2))
-  const cobradas = decisoesPossiveis.slice(demonstradas)
+/**
+ * O núcleo: dado onde a demonstração para, monta exemplo, linha treinável e a
+ * escada de ajuda.
+ *
+ * ELE NÃO DECIDE ONDE PARAR. As duas políticas — principal e ramo — decidem, e
+ * é de propósito: uma função que recebesse um enum e escolhesse por dentro
+ * viraria o lugar onde a terceira política entra como mais um `if`.
+ */
+function montarPercurso(
+  rootFen: string,
+  lances: readonly OpeningMoveLesson[],
+  lado: OpeningDefinition['side'],
+  demonstrados: number,
+): PercursoDaLinhaPrincipal {
+  const parada = Math.min(Math.max(demonstrados, 0), lances.length)
 
-  /*
-    A DEMONSTRAÇÃO VAI ATÉ O LANCE ANTERIOR AO PRIMEIRO COBRADO — incluindo a
-    resposta do adversário que antecede a pergunta. Parar antes dela deixaria a
-    tela pedindo um lance numa posição em que não é a vez do aluno.
-
-    Sem nada cobrado (conteúdo curto demais), a demonstração é a linha toda
-    menos o último lance: um percurso sem pergunta nenhuma não existe, e quem
-    reprova o conteúdo curto é o portão, não esta função.
-  */
-  const primeiroCobrado = cobradas[0]?.indice ?? Math.max(opening.mainline.length - 1, 0)
-  const demonstrados = Math.max(primeiroCobrado, 0)
-
-  let fen = opening.rootFen
-  for (const lance of opening.mainline.slice(0, demonstrados)) {
+  let fen = rootFen
+  for (const lance of lances.slice(0, parada)) {
     const aplicado = applyMove(fen, lance.san)
     /*
       PARA NO PRIMEIRO ILEGAL, em silêncio. Quem reprova linha ilegal é o portão
@@ -133,13 +207,17 @@ export function percursoDaLinhaPrincipal(opening: OpeningDefinition): PercursoDa
     fen = aplicado.fenAfter
   }
 
+  const cobradas = lances
+    .map((lance, indice) => ({ lance, indice }))
+    .filter(({ lance, indice }) => indice >= parada && ehDoAluno(lance, lado))
+
   return {
-    demonstrados,
-    exemplo: opening.mainline.slice(0, demonstrados),
+    demonstrados: parada,
+    exemplo: lances.slice(0, parada),
     linha: {
       fenInicial: fen,
-      ladoDoAluno: opening.side === 'white' ? 'w' : 'b',
-      lances: opening.mainline.slice(demonstrados).map((lance) => lance.uci),
+      ladoDoAluno: lado === 'white' ? 'w' : 'b',
+      lances: lances.slice(parada).map((lance) => lance.uci),
     },
     decisoes: cobradas.map(({ lance, indice }, ordem) => ({
       indice,

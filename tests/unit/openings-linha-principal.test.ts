@@ -14,7 +14,12 @@
 
 import { describe, expect, it } from 'vitest'
 import { OPENING_COURSES } from '@/content/openings/course'
-import { percursoDaLinhaPrincipal, type NivelDeAjuda } from '@/domain/openings/linha-principal'
+import {
+  percursoDaLinhaPrincipal,
+  percursoDoRamo,
+  type NivelDeAjuda,
+} from '@/domain/openings/linha-principal'
+import { ramosDaAbertura } from '@/domain/openings/ramos'
 import { applyMove } from '@/lib/chess'
 
 const ITALIANA = OPENING_COURSES.find((o) => o.slug === 'italiana')!
@@ -136,5 +141,97 @@ describe('o percurso da linha principal', () => {
     const a = percursoDaLinhaPrincipal(ITALIANA)
     const b = percursoDaLinhaPrincipal(ITALIANA)
     expect(b).toEqual(a)
+  })
+})
+
+describe('o percurso de um ramo', () => {
+  it('todo ramo cobra pelo menos uma decisão do aluno', () => {
+    /*
+      UMA, e não duas como na principal: um ramo existe para ensinar UMA
+      decisão — o que fazer quando a partida sai da linha. Exigir duas obrigaria
+      a esticar conteúdo que não tem por que ser esticado.
+
+      Zero seria o defeito: um ramo que só se lê é a etapa antiga de volta.
+    */
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramosDaAbertura(opening)) {
+        const percurso = percursoDoRamo(opening, ramo)
+        expect(percurso.decisoes.length, `${opening.slug} / ${ramo.nome}`).toBeGreaterThanOrEqual(1)
+      }
+    }
+  })
+
+  it('a demonstração de um ramo inclui o lance que ramifica quando ele é do adversário', () => {
+    /*
+      É A DIFERENÇA ENTRE AS DUAS POLÍTICAS. O aluno precisa VER o desvio
+      acontecer para responder a ele; parar antes deixaria a tela pedindo uma
+      resposta a um lance que não foi jogado.
+    */
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramosDaAbertura(opening)) {
+        if (ramo.autor !== 'adversario') continue
+        const divergencia = ramo.ramificacao.indiceDaDivergencia
+        if (divergencia === null) continue
+        expect(
+          percursoDoRamo(opening, ramo).demonstrados,
+          `${opening.slug} / ${ramo.nome}`,
+        ).toBeGreaterThan(divergencia)
+      }
+    }
+  })
+
+  it('quando quem ramifica é o ALUNO, a demonstração para antes do desvio', () => {
+    // Demonstrar a decisão do próprio aluno seria responder a pergunta antes de
+    // fazê-la — o ramo passaria a ensinar leitura de notação.
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramosDaAbertura(opening)) {
+        if (ramo.autor !== 'aluno') continue
+        const divergencia = ramo.ramificacao.indiceDaDivergencia
+        if (divergencia === null) continue
+        expect(
+          percursoDoRamo(opening, ramo).demonstrados,
+          `${opening.slug} / ${ramo.nome}`,
+        ).toBeLessThanOrEqual(divergencia)
+      }
+    }
+  })
+
+  it('o aluno só é cobrado pelos lances do próprio lado, também nos ramos', () => {
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramosDaAbertura(opening)) {
+        for (const decisao of percursoDoRamo(opening, ramo).decisoes) {
+          const lance = ramo.ramificacao.variacao.line[decisao.indice]
+          const ehDasBrancas = (lance?.ply ?? 0) % 2 === 1
+          expect(ehDasBrancas, `${opening.slug} / ${ramo.nome} / ${decisao.san}`).toBe(
+            opening.side === 'white',
+          )
+        }
+      }
+    }
+  })
+
+  it('a ajuda também decresce dentro de um ramo', () => {
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramosDaAbertura(opening)) {
+        const niveis = percursoDoRamo(opening, ramo).decisoes.map((d) => PESO[d.nivel])
+        for (let i = 1; i < niveis.length; i += 1) {
+          expect(niveis[i], `${opening.slug} / ${ramo.nome}`).toBeGreaterThanOrEqual(niveis[i - 1]!)
+        }
+      }
+    }
+  })
+
+  it('o objetivo de um ramo também nunca entrega o lance', () => {
+    for (const opening of OPENING_COURSES) {
+      for (const ramo of ramosDaAbertura(opening)) {
+        for (const decisao of percursoDoRamo(opening, ramo).decisoes) {
+          if (!decisao.objetivo) continue
+          expect(
+            decisao.objetivo.includes(decisao.san),
+            `${opening.slug} / ${ramo.nome}: "${decisao.objetivo}" entrega ${decisao.san}`,
+          ).toBe(false)
+        }
+      }
+    }
   })
 })

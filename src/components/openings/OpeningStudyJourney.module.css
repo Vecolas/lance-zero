@@ -193,3 +193,91 @@
   font-size: 0.8125rem;
   color: var(--text-muted);
 }
+
+/*
+  A BIBLIOTECA DE RAMOS EM CARDS.
+
+  A GRADE É `auto-fill` COM `minmax`, e não um número fixo de colunas: as
+  aberturas têm de um a quatro ramos, e um grid de três colunas deixaria a
+  Escocesa com dois cards esticados e um buraco. `auto-fill` com piso de 11rem
+  dá uma coluna em 360px e quantas couberem no desktop.
+*/
+.ramos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ramoCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/*
+  O RECOMENDADO É MARCADO POR BORDA, e a palavra "Recomendado agora" vai junto
+  dentro do card. Cor sozinha não é estado — é a regra do projeto, e aqui ela
+  pesa duas vezes: quem não distingue as cores perderia exatamente a única
+  orientação que a biblioteca oferece.
+*/
+.ramoCard[data-recomendado='true'] {
+  border-color: var(--accent-strong);
+  border-width: 2px;
+  padding: calc(var(--space-3) - 1px);
+}
+
+.ramoCard:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+/*
+  `aspect-ratio: 1` NÃO É ESTÉTICA. Sem ele o tabuleiro estica com a coluna e as
+  casas deixam de ser casas — numa prévia de posição isso é pior que em qualquer
+  outra imagem, porque a posição é justamente o que se quer reconhecer.
+*/
+.ramoTabuleiro {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-bottom: var(--space-2);
+}
+
+.ramoTabuleiro > * {
+  width: 100%;
+  height: 100%;
+}
+
+.ramoNome {
+  font-weight: 650;
+}
+
+.ramoLance {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ramoMeta {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.ramoRecomendado {
+  margin-top: var(--space-1);
+  color: var(--accent-strong);
+  font-size: 0.875rem;
+  font-weight: 650;
+}

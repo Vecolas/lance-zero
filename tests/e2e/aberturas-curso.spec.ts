@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test'
 import { legalMoves } from '@/lib/chess'
 import { OPENING_COURSE_BY_SLUG } from '@/content/openings/course'
 import { posicoesDaLinha } from '@/domain/openings/variacoes'
+import { ramosDaAbertura } from '@/domain/openings/ramos'
+import { percursoDoRamo } from '@/domain/openings/linha-principal'
 
 /**
  * A jornada da abertura, medida no navegador.
@@ -166,10 +168,32 @@ test('a biblioteca de variações ensina cada ramo no tabuleiro, sem explorador'
 
   await irAteEtapa(page, /Variações importantes/)
 
-  // A ETAPA ENSINA NO TABULEIRO, e começa NO DESVIO — não no `e4` que a etapa
-  // anterior já percorreu.
-  await expect(page.locator('[data-testid="chessboard"]').first()).toBeVisible()
-  await expect(page.getByRole('group', { name: 'Escolher a variação' })).toBeVisible()
+  /*
+    A BIBLIOTECA É UMA GRADE DE CARDS, e cada card traz um MINI-TABULEIRO na
+    posição em que o ramo bifurca. O card existe para o aluno reconhecer a
+    POSIÇÃO — é ela que aparece numa partida, não o nome da variação.
+  */
+  const cards = page.getByRole('button', { name: /Defesa dos Dois Cavalos/ })
+  await expect(cards).toBeVisible()
+  // Um tabuleiro por card, e não um só compartilhado.
+  expect(await page.locator('[data-testid="chessboard"]').count()).toBeGreaterThan(1)
+
+  /*
+    IMPORTÂNCIA E ESTADO EM TEXTO, dentro do card. Status nunca depende só de
+    cor — e aqui pesa duas vezes, porque o estado é a única orientação que a
+    biblioteca oferece a quem ainda não sabe por onde começar.
+  */
+  await expect(page.getByRole('button', { name: /Defesa Húngara.*complementar/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /não visto/ }).first()).toBeVisible()
+  await expect(page.getByText('Recomendado agora')).toBeVisible()
+
+  // NENHUMA FREQUÊNCIA INVENTADA (plano §17.2): `frequency` conta linhas
+  // autoradas, não partidas do mundo.
+  await expect(page.getByText(/% das partidas/)).toHaveCount(0)
+
+  // ABRIR UM CARD LEVA AO ESTUDO DO RAMO, que começa NO DESVIO — não no `e4`
+  // que a etapa anterior já percorreu.
+  await cards.click()
   await expect(page.getByText(/tudo igual à linha principal/)).toBeVisible()
   await expect(page.getByText('6. Nf6')).toBeVisible()
 
@@ -185,14 +209,16 @@ test('a biblioteca de variações ensina cada ramo no tabuleiro, sem explorador'
   await expect(page.getByText(/O que ele quer\./)).toBeVisible()
   await expect(page.getByText(/Seu objetivo\./)).toBeVisible()
 
-  // UMA LISTA SÓ: o ramo do ALUNO e o do ADVERSÁRIO convivem no mesmo seletor.
+  // E DÁ PARA VOLTAR. Um estudo sem saída seria o beco que o ADR-0016 desfez.
+  await page.getByRole('button', { name: /Todas as variações/ }).click()
+  await expect(page.getByRole('button', { name: /Giuoco Piano/ })).toBeVisible()
+
+  // UMA LISTA SÓ: o ramo do ALUNO e o do ADVERSÁRIO convivem na mesma grade.
   await page.getByRole('button', { name: /Defesa Húngara/ }).click()
   await expect(page.getByText('6. Be7')).toBeVisible()
+  await page.getByRole('button', { name: /Todas as variações/ }).click()
   await page.getByRole('button', { name: /Giuoco Piano/ }).click()
   await expect(page.getByText(/não é um desvio/)).toBeVisible()
-
-  // A importância aparece em TEXTO no chip, nunca só por cor.
-  await expect(page.getByRole('button', { name: /Defesa Húngara.*complementar/ })).toBeVisible()
 
   // E nada de explorador: nem o painel, nem uma única consulta.
   await expect(page.getByText('O que o mundo joga (opcional)')).toHaveCount(0)
@@ -348,15 +374,13 @@ test('a lista é UMA só: um ramo do adversário e um do aluno convivem nela', a
 
   await irAteEtapa(page, /Variações importantes/)
 
-  const seletor = page.getByRole('group', { name: 'Escolher a variação' })
-  await expect(seletor).toBeVisible()
-
   // O ramo do adversário: a frase diz quem joga.
-  await seletor.getByRole('button', { name: /Variante da Troca/ }).click()
+  await page.getByRole('button', { name: /Variante da Troca/ }).click()
   await expect(page.getByText(/O adversário joga/)).toBeVisible()
 
-  // E o ramo do ALUNO, no MESMO seletor, com a frase invertida.
-  await seletor.getByRole('button', { name: /Estrutura com c6/ }).click()
+  // E o ramo do ALUNO, na MESMA grade, com a frase invertida.
+  await page.getByRole('button', { name: /Todas as variações/ }).click()
+  await page.getByRole('button', { name: /Estrutura com c6/ }).click()
   await expect(page.getByText(/Você joga/)).toBeVisible()
 
   // Nenhuma tela fala mais em "respostas do adversário" como etapa.
@@ -474,4 +498,80 @@ test('a linha principal demonstra, depois cobra, e o computador responde sozinho
   */
   await expect(page.getByText(`${certo.san} é o lance da linha.`)).toBeVisible()
   await expect(page.getByText(certo.comment)).toBeVisible()
+})
+
+/**
+ * O RAMO TAMBÉM SE JOGA — é o que separa estudar de ler sobre.
+ *
+ * ANTES DESTA ENTREGA o ramo explicava o desvio, dizia o que fazer, e nunca
+ * pedia que a pessoa o fizesse. Era o mesmo defeito que a linha principal tinha,
+ * numa tela que parecia completa: três parágrafos bem escritos e nenhuma
+ * produção.
+ *
+ * O ESTADO DO CARD É A OUTRA METADE. "praticado" só aparece depois de o lance
+ * certo ter sido jogado — um rótulo que mudasse ao abrir mediria cliques.
+ */
+test('o ramo se joga, e o card passa a dizer praticado', async ({ page }) => {
+  const italiana = OPENING_COURSE_BY_SLUG.get('italiana')
+  if (!italiana) throw new Error('conteúdo da Italiana ausente')
+
+  /*
+    O RAMO E O LANCE SAEM DO CONTEÚDO, e não do teste. Cravar "Bc4" aqui criaria
+    a segunda fonte da mesma verdade — livre para divergir em silêncio no dia em
+    que alguém reescrevesse a variação.
+  */
+  const ramo = ramosDaAbertura(italiana).find(
+    (item) => item.ramificacao.indiceDaDivergencia !== null,
+  )
+  if (!ramo) throw new Error('nenhum ramo com desvio')
+  const percurso = percursoDoRamo(italiana, ramo)
+  const decisao = percurso.decisoes[0]
+  if (!decisao) throw new Error('o ramo não cobra nenhuma decisão')
+
+  await page.goto('/aberturas/italiana')
+  await irAteEtapa(page, /Variações importantes/)
+
+  const card = page.getByRole('button', { name: new RegExp(ramo.nome) })
+  // ANTES: não visto. É o estado que prova que o depois significa alguma coisa.
+  await expect(
+    page.getByRole('button', { name: new RegExp(`${ramo.nome}[\\s\\S]*não visto`) }),
+  ).toBeVisible()
+  await card.click()
+
+  // Percorre o exemplo resolvido até a porta.
+  const proximo = page.getByRole('button', { name: 'Próximo lance →' })
+  for (let i = 0; i < 12; i += 1) {
+    if ((await proximo.count()) === 0) break
+    if (await proximo.isDisabled()) break
+    await proximo.click()
+  }
+
+  const jogar = page.getByRole('button', { name: /Jogue a continuação/ })
+  await expect(jogar).toBeVisible()
+  await jogar.click()
+
+  const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
+  await expect(tabuleiro).toBeVisible()
+  // A prática começa na posição que a demonstração deixou, e não na inicial.
+  await expect(tabuleiro).toHaveAttribute('data-fen', percurso.linha.fenInicial)
+
+  await page.locator('#lancezero-board-square-' + decisao.uci.slice(0, 2)).click()
+  await page.locator('#lancezero-board-square-' + decisao.uci.slice(2, 4)).click()
+
+  /*
+    O TEXTO DE FIM NOMEIA O RAMO, e esta asserção existe porque a primeira
+    versão dizia "Linha principal completa" aqui dentro — o app afirmando que o
+    aluno tinha acabado outra coisa. O componente serve às duas telas; o texto,
+    não.
+  */
+  await expect(page.getByText(`${ramo.nome} — praticada`)).toBeVisible()
+
+  /*
+    E O ESTADO MUDOU, e está gravado: voltar à lista mostra "praticado". Sem esta
+    asserção o card poderia estar contando o clique de abrir.
+  */
+  await page.getByRole('button', { name: /Todas as variações/ }).click()
+  await expect(
+    page.getByRole('button', { name: new RegExp(`${ramo.nome}[\\s\\S]*praticado`) }),
+  ).toBeVisible()
 })

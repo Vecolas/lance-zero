@@ -66,9 +66,17 @@ import {
   type OpeningDefinition,
   type OpeningProgress,
 } from '@/domain/openings'
-import { percursoDaLinhaPrincipal } from '@/domain/openings/linha-principal'
+import { percursoDaLinhaPrincipal, percursoDoRamo } from '@/domain/openings/linha-principal'
 import { migrarJornadaDeAbertura } from '@/domain/openings/migracao'
-import { ramosDaAbertura } from '@/domain/openings/ramos'
+import {
+  estadoDoRamo,
+  idDeRamoPraticado,
+  idDeRamoVisto,
+  ramoRecomendado,
+  ramosDaAbertura,
+  type EstadoDoRamo,
+  type RamoDeAbertura,
+} from '@/domain/openings/ramos'
 import { posicoesDaLinha } from '@/domain/openings/variacoes'
 import {
   iniciarSequencia,
@@ -342,7 +350,14 @@ function ConteudoDeEtapa({
       return <LinhaPrincipalEmDoisTempos opening={opening} />
 
     case 'abertura:variacoes':
-      return <BibliotecaDeRamos opening={opening} />
+      return (
+        <BibliotecaDeRamos
+          opening={opening}
+          stage={stage}
+          jornada={jornada}
+          aoResponder={aoResponder}
+        />
+      )
 
     case 'abertura:planos':
       return (
@@ -694,7 +709,14 @@ function LinhaPrincipalEmDoisTempos({ opening }: { opening: OpeningDefinition })
     )
   }
 
-  return <CompletarALinha opening={opening} percurso={percurso} />
+  return (
+    <CompletarALinha
+      opening={opening}
+      percurso={percurso}
+      tituloDoFim="Linha principal completa"
+      notaDoFim="A etapa seguinte mostra o que fazer quando a partida sai desta linha."
+    />
+  )
 }
 
 /**
@@ -711,9 +733,26 @@ function LinhaPrincipalEmDoisTempos({ opening }: { opening: OpeningDefinition })
 function CompletarALinha({
   opening,
   percurso,
+  antes,
+  tituloDoFim,
+  notaDoFim,
+  aoConcluir,
 }: {
   opening: OpeningDefinition
   percurso: ReturnType<typeof percursoDaLinhaPrincipal>
+  /** O contexto que fica acima da instrução. O ramo usa; a principal, não. */
+  antes?: React.ReactNode
+  /** O que a tela declara concluído. Ver o comentário no painel de fim. */
+  tituloDoFim?: string
+  /** O que vem a seguir, quando há algo a dizer. */
+  notaDoFim?: string
+  /**
+   * Chamado UMA vez, quando a linha termina.
+   *
+   * Existe para o ramo gravar "praticado". A linha principal não passa nada, e
+   * é deliberado: §15.4 proíbe dupla contagem, e a etapa dela é de leitura.
+   */
+  aoConcluir?: () => void
 }) {
   const [estado, setEstado] = useState(() => iniciarSequencia(percurso.linha))
   const [errou, setErrou] = useState(false)
@@ -768,9 +807,16 @@ function CompletarALinha({
       setErrou(false)
       setRevelado(false)
       setEstado(resultado.estado)
+      /*
+        A CONCLUSÃO ACONTECE NO ATO DO LANCE, e não num `useEffect` que observa
+        o estado. Um efeito aqui renderizaria a tela uma vez antes de gravar, e
+        é o padrão que o lint do projeto proíbe com razão — além de, num
+        desmonte rápido, gravar depois de a tela ter sumido.
+      */
+      if (resultado.estado.status === 'concluida') aoConcluir?.()
       return true
     },
-    [estado, percurso.linha],
+    [estado, percurso.linha, aoConcluir],
   )
 
   const lance = useLanceNoTabuleiro({
@@ -780,15 +826,25 @@ function CompletarALinha({
   })
 
   if (esperado === null) {
+    /*
+      O TEXTO DE FIM É DO CHAMADOR, e a razão é um defeito real: este componente
+      serve a linha principal E ao estudo de um ramo, e a primeira versão dizia
+      "Linha principal completa" nos dois. Dentro da Defesa dos Dois Cavalos,
+      isso é o app afirmando que o aluno acabou outra coisa.
+
+      Uma decisão só não é "decisões": um ramo curto cobra UMA, e o plural fixo
+      contaria errado em voz alta.
+    */
+    const quantas =
+      percurso.decisoes.length === 1 ? 'a decisão' : `as ${percurso.decisoes.length} decisões`
     return (
       <ComTabuleiro opening={opening}>
+        {antes}
         <p className={styles.texto} role="status">
-          ✓ Linha principal completa. Você jogou {percurso.decisoes.length} decisões desta abertura
-          sem consultar a notação.
+          ✓ {tituloDoFim ?? 'Linha principal completa'}. Você jogou {quantas} sem consultar a
+          notação.
         </p>
-        <p className={styles.nota}>
-          A etapa seguinte mostra o que fazer quando a partida sai desta linha.
-        </p>
+        {notaDoFim ? <p className={styles.nota}>{notaDoFim}</p> : null}
       </ComTabuleiro>
     )
   }
@@ -807,6 +863,8 @@ function CompletarALinha({
         />
       }
     >
+      {antes}
+
       {/*
         A POSIÇÃO NA SEQUÊNCIA. Só aparece quando de fato existe: um "Decisão 0
         de 3" seria a tela contando errado em voz alta, e um `|| 1` esconderia o
@@ -903,12 +961,24 @@ function CompletarALinha({
  * sequência de lances — e a pergunta que sobrevive à mudança de ordem dos
  * lances é justamente "o que ele está tentando fazer?".
  */
-function BibliotecaDeRamos({ opening }: { opening: OpeningDefinition }) {
+function BibliotecaDeRamos({
+  opening,
+  stage,
+  jornada,
+  aoResponder,
+}: {
+  opening: OpeningDefinition
+  stage: StudyStage
+  jornada: StudyJourney
+  aoResponder: (proxima: StudyJourney) => void
+}) {
   const ramos = useMemo(() => ramosDaAbertura(opening), [opening])
-  const [escolhido, setEscolhido] = useState(0)
-  const ramo = ramos[Math.min(escolhido, Math.max(ramos.length - 1, 0))]
+  const respondidos = jornada.itensRespondidos[stage.id] ?? []
+  /** `null` é a lista; um id é o estudo daquele ramo. Estado de tela, só. */
+  const [aberto, setAberto] = useState<string | null>(null)
+  const ramo = aberto === null ? undefined : ramos.find((item) => item.id === aberto)
 
-  if (!ramo) {
+  if (ramos.length === 0) {
     return (
       <ComTabuleiro opening={opening}>
         <p className={styles.texto}>
@@ -919,90 +989,239 @@ function BibliotecaDeRamos({ opening }: { opening: OpeningDefinition }) {
     )
   }
 
-  const emComum = ramo.ramificacao.lancesEmComum.map((lance) => lance.san).join(' ')
+  if (ramo) {
+    return (
+      <EstudoDoRamo
+        opening={opening}
+        ramo={ramo}
+        stage={stage}
+        jornada={jornada}
+        aoResponder={aoResponder}
+        aoVoltar={() => setAberto(null)}
+      />
+    )
+  }
+
+  const recomendado = ramoRecomendado(ramos, respondidos)
 
   return (
-    <>
-      {ramos.length > 1 ? (
-        <div className={styles.opcoes} role="group" aria-label="Escolher a variação">
-          {ramos.map((opcao, i) => (
-            <button
-              key={opcao.id}
-              type="button"
-              className={i === escolhido ? styles.variacaoAtiva : styles.opcao}
-              aria-pressed={i === escolhido}
-              onClick={() => setEscolhido(i)}
-            >
-              {opcao.nome}
-              {opcao.importancia === 'core' ? null : (
-                /* O rótulo é TEXTO, e não só uma cor: status nunca depende de cor. */
-                <span className={styles.selo}> · {ROTULO_DA_IMPORTANCIA[opcao.importancia]}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      ) : null}
+    <div className={styles.bloco}>
+      <p className={styles.texto}>
+        Cada card é uma decisão que a partida pode tomar a partir daqui. O tabuleiro mostra a
+        posição em que ela acontece — é ela que você vai reconhecer no jogo, não o nome.
+      </p>
 
-      <LinhaComentada
-        // A remontagem ao trocar de ramo reposiciona a navegação no desvio do
-        // ramo novo, sem efeito que escreve estado.
-        key={ramo.id}
-        opening={opening}
-        lances={ramo.ramificacao.variacao.line}
-        inicio={ramo.ramificacao.indiceDaDivergencia ?? 0}
-        antes={
-          <>
-            <h3 className={styles.blocoTitulo}>{ramo.nome}</h3>
-            <p className={styles.texto}>{ramo.descricao}</p>
-
-            {/* O QUE MUDOU — a decisão, dita com o lance que ela recusa. */}
-            {ramo.lanceQueRamifica === null ? (
-              <p className={styles.nota}>
-                Este é o nome da linha principal até aqui — não é um desvio. Você já a percorreu na
-                etapa anterior.
-              </p>
-            ) : (
-              <p className={styles.nota}>
-                {emComum ? <>Até {emComum}, tudo igual à linha principal. </> : null}
-                {ramo.autor === 'adversario' ? 'O adversário joga' : 'Você joga'}{' '}
-                <strong>{ramo.lanceQueRamifica}</strong>
+      <ul className={styles.ramos}>
+        {ramos.map((item) => {
+          const estado = estadoDoRamo(respondidos, item.id)
+          const ehRecomendado = item.id === recomendado?.id
+          return (
+            <li key={item.id}>
+              <button
+                type="button"
+                className={styles.ramoCard}
+                data-recomendado={ehRecomendado ? 'true' : undefined}
+                onClick={() => {
+                  /*
+                    ABRIR JÁ GRAVA "visto". É a evidência mais fraca que existe e
+                    é honesta: o rótulo que ela produz diz "visto", não
+                    "estudada". Ver `estadoDoRamo`.
+                  */
+                  aoResponder(registrarItem(jornada, stage.id, idDeRamoVisto(item.id)))
+                  setAberto(item.id)
+                }}
+              >
                 {/*
-                  A LINHA PRINCIPAL PODE SIMPLESMENTE TER ACABADO — é o caso da
-                  Escocesa, cuja principal termina em Cxd4 e cujos ramos vêm logo
-                  depois. Não há lance recusado, e escrever "no lugar de" ali
-                  inventaria uma alternativa que o conteúdo não tem.
+                  O MINI-TABULEIRO MOSTRA O PONTO DE BIFURCAÇÃO, e não a posição
+                  inicial: é a posição em que a decisão acontece que o aluno
+                  precisa reconhecer numa partida.
+
+                  `aria-hidden` porque ele é PRÉVIA — anunciar casa por casa daria
+                  a quem usa leitor de tela um despejo de coordenadas em vez de
+                  uma escolha. O que identifica o ramo, para essa pessoa, é o
+                  texto logo abaixo.
                 */}
-                {ramo.lanceRecusado ? (
-                  <> no lugar de {ramo.lanceRecusado}, e é daí em diante que a partida muda.</>
-                ) : (
-                  <>: a linha principal termina aqui, e daqui em diante quem escolhe é ele.</>
-                )}
-              </p>
-            )}
+                <span className={styles.ramoTabuleiro} aria-hidden="true">
+                  <ChessBoardView
+                    fen={fenDaBifurcacao(opening, item)}
+                    orientation={opening.side === 'white' ? 'w' : 'b'}
+                    interactive={false}
+                  />
+                </span>
 
-            {/*
-              AS DUAS PERGUNTAS QUE O ALUNO LEVA PARA A PARTIDA. Elas vêm do
-              conteúdo, e um portão exige as duas em todo ramo `core`.
-            */}
-            {ramo.intencaoDoAdversario ? (
-              <p className={styles.nota}>
-                <strong>O que ele quer.</strong> {ramo.intencaoDoAdversario}
-              </p>
-            ) : null}
-            {ramo.objetivoDoAluno ? (
-              <p className={styles.nota}>
-                <strong>Seu objetivo.</strong> {ramo.objetivoDoAluno}
-              </p>
-            ) : null}
-          </>
-        }
-      />
+                <span className={styles.ramoNome}>{item.nome}</span>
+                {item.lanceQueRamifica ? (
+                  <span className={styles.ramoLance}>{item.lanceQueRamifica}</span>
+                ) : null}
+                <span className={styles.ramoMeta}>
+                  {ROTULO_DA_IMPORTANCIA[item.importancia] ?? 'essencial'}
+                  {' · '}
+                  {/*
+                    ESTADO NUNCA DEPENDE SÓ DE COR: símbolo e palavra, sempre —
+                    é regra do projeto e é o que faz o card funcionar impresso,
+                    em alto contraste e para quem não distingue as cores.
+                  */}
+                  {SIMBOLO_DO_RAMO[estado]} {ROTULO_DO_ESTADO_DO_RAMO[estado]}
+                </span>
+                {ehRecomendado ? (
+                  <span className={styles.ramoRecomendado}>Recomendado agora</span>
+                ) : null}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
 
+      {/*
+        NENHUMA FREQUÊNCIA APARECE AQUI, e a ausência é decisão (plano §17.2). O
+        campo `frequency` do grafo conta LINHAS AUTORADAS, não partidas do
+        mundo. Renderizá-lo como "72% das partidas" seria inventar estatística a
+        partir de um número que mede outra coisa.
+      */}
       <p className={styles.nota}>
         Você vai encontrar estas linhas no treino: o computador joga a principal na primeira partida
         e os desvios quando você recomeça.
       </p>
+    </div>
+  )
+}
+
+/** O símbolo de cada estado. Par obrigatório da palavra, nunca substituto dela. */
+const SIMBOLO_DO_RAMO: Record<EstadoDoRamo, string> = {
+  praticado: '✓',
+  visto: '◉',
+  'nao-visto': '○',
+}
+
+const ROTULO_DO_ESTADO_DO_RAMO: Record<EstadoDoRamo, string> = {
+  praticado: 'praticado',
+  visto: 'visto',
+  'nao-visto': 'não visto',
+}
+
+/**
+ * A posição em que o ramo bifurca.
+ *
+ * NÃO É A POSIÇÃO INICIAL nem a final: é onde a decisão acontece. O plano §57 é
+ * explícito — mini-board tem de ser posição identificável, e o tabuleiro da
+ * posição inicial não diz nada sobre variação nenhuma.
+ *
+ * O ramo que não bifurca (o Giuoco Piano) mostra o fim da própria linha, que é
+ * a posição que ele nomeia.
+ */
+function fenDaBifurcacao(opening: OpeningDefinition, ramo: RamoDeAbertura): string {
+  const linha = ramo.ramificacao.variacao.line
+  const posicoes = posicoesDaLinha(opening.rootFen, linha)
+  const divergencia = ramo.ramificacao.indiceDaDivergencia
+  const indice = divergencia === null ? posicoes.length - 1 : divergencia + 1
+  return posicoes[Math.min(Math.max(indice, 0), posicoes.length - 1)] ?? opening.rootFen
+}
+
+/**
+ * O ESTUDO DE UM RAMO: as três perguntas, o exemplo, e então a decisão.
+ *
+ * A SEQUÊNCIA É A DO PLANO §18.1 — o que mudou, o que ele quer, qual é o seu
+ * objetivo, exemplo curto, você joga, o computador responde. As três primeiras
+ * já vinham do conteúdo desde que o ramo virou a unidade; o que entra agora é o
+ * fim: **o aluno produz a decisão que o ramo existe para ensinar**.
+ *
+ * SEM ISSO O RAMO ERA UMA FICHA DE LEITURA. Ele explicava o desvio, dizia o que
+ * fazer, e nunca pedia que a pessoa o fizesse — o mesmo defeito que a linha
+ * principal tinha e que o ADR-0023 corrigiu lá.
+ */
+function EstudoDoRamo({
+  opening,
+  ramo,
+  stage,
+  jornada,
+  aoResponder,
+  aoVoltar,
+}: {
+  opening: OpeningDefinition
+  ramo: RamoDeAbertura
+  stage: StudyStage
+  jornada: StudyJourney
+  aoResponder: (proxima: StudyJourney) => void
+  aoVoltar: () => void
+}) {
+  const percurso = useMemo(() => percursoDoRamo(opening, ramo), [opening, ramo])
+  const [praticando, setPraticando] = useState(false)
+
+  const emComum = ramo.ramificacao.lancesEmComum.map((lance) => lance.san).join(' ')
+
+  const contexto = (
+    <>
+      <button type="button" className={styles.secundario} onClick={aoVoltar}>
+        ← Todas as variações
+      </button>
+      <h3 className={styles.blocoTitulo}>{ramo.nome}</h3>
+      <p className={styles.texto}>{ramo.descricao}</p>
+
+      {/* O QUE MUDOU — a decisão, dita com o lance que ela recusa. */}
+      {ramo.lanceQueRamifica === null ? (
+        <p className={styles.nota}>
+          Este é o nome da linha principal até aqui — não é um desvio. Você já a percorreu na etapa
+          anterior.
+        </p>
+      ) : (
+        <p className={styles.nota}>
+          {emComum ? <>Até {emComum}, tudo igual à linha principal. </> : null}
+          {ramo.autor === 'adversario' ? 'O adversário joga' : 'Você joga'}{' '}
+          <strong>{ramo.lanceQueRamifica}</strong>
+          {/*
+            A LINHA PRINCIPAL PODE SIMPLESMENTE TER ACABADO — é o caso da
+            Escocesa, cuja principal termina em Cxd4 e cujos ramos vêm logo
+            depois. Não há lance recusado, e escrever "no lugar de" ali
+            inventaria uma alternativa que o conteúdo não tem.
+          */}
+          {ramo.lanceRecusado ? (
+            <> no lugar de {ramo.lanceRecusado}, e é daí em diante que a partida muda.</>
+          ) : (
+            <>: a linha principal termina aqui, e daqui em diante quem escolhe é ele.</>
+          )}
+        </p>
+      )}
+
+      {/*
+        AS DUAS PERGUNTAS QUE O ALUNO LEVA PARA A PARTIDA. Elas vêm do conteúdo,
+        e um portão exige as duas em todo ramo `core`.
+      */}
+      {ramo.intencaoDoAdversario ? (
+        <p className={styles.nota}>
+          <strong>O que ele quer.</strong> {ramo.intencaoDoAdversario}
+        </p>
+      ) : null}
+      {ramo.objetivoDoAluno ? (
+        <p className={styles.nota}>
+          <strong>Seu objetivo.</strong> {ramo.objetivoDoAluno}
+        </p>
+      ) : null}
     </>
+  )
+
+  if (!praticando) {
+    return (
+      <LinhaComentada
+        key={ramo.id}
+        opening={opening}
+        lances={ramo.ramificacao.variacao.line}
+        inicio={ramo.ramificacao.indiceDaDivergencia ?? 0}
+        antes={contexto}
+        aoTerminar={() => setPraticando(true)}
+        rotuloDoFim="Jogue a continuação →"
+      />
+    )
+  }
+
+  return (
+    <CompletarALinha
+      opening={opening}
+      percurso={percurso}
+      antes={contexto}
+      tituloDoFim={`${ramo.nome} — praticada`}
+      notaDoFim="Volte à lista para escolher a próxima, ou siga para os planos."
+      aoConcluir={() => aoResponder(registrarItem(jornada, stage.id, idDeRamoPraticado(ramo.id)))}
+    />
   )
 }
 

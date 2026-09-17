@@ -20,7 +20,14 @@ import {
   ramificacoesDaAbertura,
   variacaoEmCurso,
 } from '@/domain/openings/variacoes'
-import { ramosCore, ramosDaAbertura } from '@/domain/openings/ramos'
+import {
+  estadoDoRamo,
+  idDeRamoPraticado,
+  idDeRamoVisto,
+  ramoRecomendado,
+  ramosCore,
+  ramosDaAbertura,
+} from '@/domain/openings/ramos'
 import { identidadeDePosicao } from '@/lib/chess'
 
 const ITALIANA = OPENING_COURSES.find((o) => o.slug === 'italiana') ?? OPENING_COURSES[0]
@@ -295,5 +302,65 @@ describe('em qual variação a partida está', () => {
     // Um lance legal que a abertura não cobre não pertence a variação nenhuma —
     // e inventar um nome para ele seria a explicação que o projeto proíbe.
     expect(variacaoEmCurso(ITALIANA, ['e2e4', 'e7e5', 'd1h5'])).toBeNull()
+  })
+})
+
+describe('o estado de um ramo tem evidência, e não rótulo', () => {
+  const ITALIANA = OPENING_COURSES.find((o) => o.slug === 'italiana')!
+  const RAMOS = ramosDaAbertura(ITALIANA)
+
+  it('sem nada gravado, nenhum ramo se diz visto', () => {
+    for (const ramo of RAMOS) {
+      expect(estadoDoRamo([], ramo.id)).toBe('nao-visto')
+    }
+  })
+
+  it('abrir marca visto; jogar marca praticado', () => {
+    const ramo = RAMOS[0]!
+    expect(estadoDoRamo([idDeRamoVisto(ramo.id)], ramo.id)).toBe('visto')
+    expect(estadoDoRamo([idDeRamoPraticado(ramo.id)], ramo.id)).toBe('praticado')
+  })
+
+  it('praticado vence visto, em qualquer ordem', () => {
+    /*
+      A GRAVAÇÃO DO PRIMEIRO ID PODE FALHAR — é IndexedDB, e o segundo evento
+      pode chegar sozinho. Um ramo que o aluno JOGOU aparecendo como "não visto"
+      seria o app contradizendo o que a pessoa acabou de fazer.
+    */
+    const ramo = RAMOS[0]!
+    expect(estadoDoRamo([idDeRamoPraticado(ramo.id), idDeRamoVisto(ramo.id)], ramo.id)).toBe(
+      'praticado',
+    )
+    expect(estadoDoRamo([idDeRamoVisto(ramo.id), idDeRamoPraticado(ramo.id)], ramo.id)).toBe(
+      'praticado',
+    )
+  })
+
+  it('o id de um ramo não se confunde com o de outro', () => {
+    // Prefixo e sufixo existem para conviver com outros tipos de item na mesma
+    // etapa. Ids crus colidiriam em silêncio, e o silêncio é o problema.
+    const [a, b] = RAMOS
+    if (!a || !b) throw new Error('a Italiana precisa de dois ramos para este teste')
+    expect(estadoDoRamo([idDeRamoVisto(a.id)], b.id)).toBe('nao-visto')
+  })
+
+  it('a recomendação é o primeiro core pendente, e some quando acaba', () => {
+    const core = RAMOS.filter((ramo) => ramo.importancia === 'core')
+    expect(ramoRecomendado(RAMOS, [])?.id).toBe(core[0]?.id)
+
+    // Praticados todos, a recomendação passa ao resto; praticado tudo, não há.
+    const todosPraticados = RAMOS.map((ramo) => idDeRamoPraticado(ramo.id))
+    expect(ramoRecomendado(RAMOS, todosPraticados)).toBeUndefined()
+  })
+
+  it('a recomendação NÃO tranca: ela ignora quem só foi visto', () => {
+    /*
+      Ver não é praticar. Se "visto" bastasse, o aluno que abriu todos os cards
+      sem jogar nenhum receberia "acabou" — e a biblioteca passaria a medir
+      cliques.
+    */
+    const core = RAMOS.filter((ramo) => ramo.importancia === 'core')
+    const soVistos = RAMOS.map((ramo) => idDeRamoVisto(ramo.id))
+    expect(ramoRecomendado(RAMOS, soVistos)?.id).toBe(core[0]?.id)
   })
 })
