@@ -118,3 +118,50 @@ describe('verificação de exercício posicional', () => {
     )
   })
 })
+
+describe('a continuação, quando existe', () => {
+  /*
+    O PORTÃO DA CONTINUAÇÃO PRECISA MORDER PARA DENTRO, e este bloco é o único
+    lugar que prova isso. O catálogo real ainda não tem nenhuma continuação
+    autorada — varrê-lo só afirmaria que zero continuações estão corretas, que é
+    verdade sobre coisa nenhuma.
+
+    O modo de falha coberto é SILENCIOSO por natureza: o motor de sequência PARA
+    no primeiro lance impossível, sem erro. Uma continuação com um typo vira, na
+    tela, um exercício que acaba cedo — o aluno acerta, o computador não
+    responde, e nada diz que faltou conteúdo.
+  */
+
+  /** O peão de b7 sai da diagonal, e o bispo de d5 segue até a8. */
+  const AVANCA_O_PEAO = 'b7b6'
+  const BISPO_ATE_A8 = 'd5a8'
+
+  it('continuação legal do começo ao fim não gera falha', () => {
+    expect(
+      verificarExercicio(exercicio({ continuacao: [COME_A_DAMA, AVANCA_O_PEAO, BISPO_ATE_A8] })),
+    ).toEqual([])
+  })
+
+  it('acusa lance impossível no meio da continuação', () => {
+    expect(problemas(exercicio({ continuacao: [COME_A_DAMA, 'h7h5'] }))).toContain(
+      'a continuação tem lance impossível na posição',
+    )
+  })
+
+  it('acusa continuação que não começa pelo lance que o exercício cobra', () => {
+    expect(problemas(exercicio({ continuacao: [ANDA_O_REI] }))).toContain(
+      'não está entre os lances aceitos',
+    )
+  })
+
+  it('acusa continuação que termina no lance do computador', () => {
+    /*
+      É o defeito que deixaria a tela pedindo uma jogada que a linha não tem: o
+      aluno olharia a posição esperando instrução, e o exercício nunca
+      concluiria. Ninguém veria erro — só um exercício travado.
+    */
+    expect(problemas(exercicio({ continuacao: [COME_A_DAMA, AVANCA_O_PEAO] }))).toContain(
+      'termina num lance do computador',
+    )
+  })
+})

@@ -234,6 +234,15 @@ const LANCES_CANDIDATOS = definirLicao({
     ladoDoAluno: 'b',
     objetivo: { tipo: 'ganha-material', saldoMinimo: 400 },
     lancesAceitos: ['e3c2'],
+    /*
+      O GARFO SÓ SE PROVA QUANDO A TORRE É RECOLHIDA.
+
+      Parar em Cc2+ deixa o exercício terminar no lance que PARECE ganhar. O
+      aluno que joga o xeque e vê a tela dizer "certo" aprendeu a reconhecer um
+      xeque duplo de cavalo; ele não viu o rei sair nem a torre cair, que é a
+      parte que transforma o garfo em material.
+    */
+    continuacao: ['e3c2', 'e1d2', 'c2a1'],
     alternativas: ['e3g2', 'e3d1', 'e8e7'],
     raciocinioJaFeito: [
       'O cavalo preto em e3 tem seis casas. Duas delas dão xeque: g2, que também captura o peão, e c2.',

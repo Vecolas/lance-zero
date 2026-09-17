@@ -1,0 +1,130 @@
+/*
+  O EXERCÍCIO NO TABULEIRO.
+
+  NÃO HÁ GRADE AQUI, e essa ausência é a decisão: quem põe o tabuleiro à
+  esquerda e a instrução na coluna de 24 rem é `MesaDeEstudo`, a mesma mesa das
+  jornadas de Abertura e de Final. Este arquivo cuida só do que vive DENTRO da
+  coluna de texto.
+
+  As quatro grades que existiam antes — a da lição em 52 rem, a da prática de
+  habilidade com a proporção invertida, e as de `PuzzleTrainer` e `ReviewSession`
+  em 60 rem — eram quatro respostas para a mesma pergunta, livres para divergir.
+  Uma delas já tinha divergido: na prática de habilidade o TABULEIRO era a coluna
+  estreita.
+*/
+
+.texto {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-width: 60ch;
+}
+
+.nota {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  max-width: 60ch;
+}
+
+/*
+  A FRASE DE ESTADO tem altura reservada de propósito.
+
+  Ela troca de texto a cada lance, e sem uma altura mínima a coluna reflui —
+  fazendo a tela pular exatamente no instante em que o aluno está olhando para o
+  tabuleiro. "Sem atualizar a página" também é isto.
+*/
+.estado {
+  margin: 0;
+  min-height: 2.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text);
+  font-weight: 650;
+}
+
+.veredito {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.acertou,
+.errou {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.acertou {
+  color: var(--positive);
+}
+
+.errou {
+  color: var(--danger);
+}
+
+/*
+  A pergunta mental é o que o aluno leva embora. Ela ganha destaque tipográfico
+  porque é a única parte do feedback que vale para a próxima posição.
+*/
+.pergunta {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--accent-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  max-width: 60ch;
+}
+
+.dicas {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.dicaDegrau {
+  font-weight: 650;
+  color: var(--text);
+}
+
+.primario,
+.ghost {
+  align-self: flex-start;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.primario {
+  border: 1px solid transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.primario:hover {
+  background: var(--accent-hover);
+}
+
+.ghost {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.primario:focus-visible,
+.ghost:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}

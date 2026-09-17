@@ -14,4 +14,6 @@
 export * from './material'
 export * from './objetivo'
 export * from './exercicio'
+export * from './lances'
 export * from './resposta-no-tabuleiro'
+export * from './sequencia'

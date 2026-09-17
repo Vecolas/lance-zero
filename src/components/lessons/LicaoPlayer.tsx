@@ -33,7 +33,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { ChessBoardView } from '@/components/chess/ChessBoardView'
-import { useLanceNoTabuleiro } from '@/components/chess/useLanceNoTabuleiro'
+import { ExercicioNoTabuleiro } from '@/components/exercicios/ExercicioNoTabuleiro'
 import {
   ETAPAS_DA_LICAO,
   TITULO_DA_ETAPA,
@@ -43,19 +43,10 @@ import {
   type ExercicioGuiado,
   type Licao,
 } from '@/domain/lessons'
-import {
-  DEGRAUS_DE_DICA,
-  feedbackGenerico,
-  foiIndependente,
-  nivelDeApoio,
-  responderAoErro,
-  type NivelDeApoio,
-} from '@/domain/aprendizado'
+import { DEGRAUS_DE_DICA, foiIndependente, type NivelDeApoio } from '@/domain/aprendizado'
 import { acertou } from '@/domain/diagnostic'
-import { julgarLanceDaLicao, type ExercicioPosicional } from '@/domain/exercicios'
 import { getSkill } from '@/domain/skills/catalog'
 import { applyMove, normalizeUci, parseUci } from '@/lib/chess'
-import type { PromotionPiece, SquareName } from '@/lib/chess'
 import styles from './LicaoPlayer.module.css'
 
 /** O que o leitor devolve a quem o hospeda, a cada etapa vencida. */
@@ -342,11 +333,11 @@ function Completion({
           <li key={i}>{passo}</li>
         ))}
       </ol>
-      <Tabuleiro
+      <ExercicioNoTabuleiro
         exercicio={exercicio}
         enunciado={exercicio.enunciado}
         explicacao={exercicio.explicacao}
-        dicas={[]}
+        rotuloDoDegrau={rotuloDoDegrau}
         aoConcluir={aoConcluir}
       />
     </>
@@ -369,12 +360,13 @@ function Guiada({
         Agora é com você, e as dicas estão disponíveis. Abrir uma dica não é falhar — é o que esta
         etapa existe para oferecer.
       </p>
-      <Tabuleiro
+      <ExercicioNoTabuleiro
         key={exercicio.id}
         exercicio={exercicio}
         enunciado={exercicio.enunciado}
         explicacao={exercicio.explicacao}
         dicas={exercicio.dicas}
+        rotuloDoDegrau={rotuloDoDegrau}
         aoConcluir={(resultado) => {
           aoConcluir(exercicio.id, resultado)
           if (indice < exercicios.length - 1) setIndice(indice + 1)
@@ -400,12 +392,12 @@ function Recuperacao({
         Sem dica e sem o tema na tela. É a tentativa de recuperar sozinho que fixa o que você
         aprendeu — e errar aqui também é informação útil.
       </p>
-      <Tabuleiro
+      <ExercicioNoTabuleiro
         key={exercicio.id}
         exercicio={exercicio}
         enunciado={exercicio.enunciado}
         explicacao={exercicio.explicacao}
-        dicas={[]}
+        rotuloDoDegrau={rotuloDoDegrau}
         aoConcluir={(resultado) => {
           aoConcluir(exercicio.id, resultado)
           if (indice < exercicios.length - 1) setIndice(indice + 1)
@@ -415,248 +407,18 @@ function Recuperacao({
   )
 }
 
-/**
- * O tabuleiro onde o aluno RESPONDE, a escada de dicas e o feedback.
- *
- * A REGRA CENTRAL: se a pergunta pode ser respondida com um lance, a resposta
- * acontece no tabuleiro. Aqui havia `[Rxc6] [Rxd5] [Qxd4]` — e com três strings
- * na tela o aluno não resolve a posição: ele lê e escolhe. Dava para acertar sem
- * localizar a peça, sem ver de onde ela é atacada, e sem nunca executar o
- * movimento. A evidência de aprendizado era "clicou no botão certo".
- *
- * AQUI NÃO EXISTE "TENTAR DE NOVO" COMO BOTÃO. Ao errar, `responderAoErro`
- * decide o próximo degrau de assistência e o tabuleiro volta a aceitar lance
- * sozinho — obrigar um clique em "Tentar novamente" é atrito sem função. A
- * função é pura e mora no domínio, então "nunca há tentativa cega infinita" é
- * provado por teste unitário e não por inspeção deste JSX.
- *
- * LANCE ILEGAL NÃO É ERRO. Ver `julgarLanceDaLicao`: o tabuleiro devolve a peça
- * e a tela diz que aquele lance não existe nesta posição, sem mexer na contagem
- * de erros nem na escada de dicas.
- */
-function Tabuleiro({
-  exercicio,
-  enunciado,
-  explicacao,
-  dicas,
-  aoConcluir,
-}: {
-  exercicio: ExercicioPosicional
-  enunciado: string
-  explicacao: string
-  dicas: readonly { degrau: string; texto: string }[]
-  aoConcluir: (resultado: { acertou: boolean; apoio: NivelDeApoio }) => void
-}) {
-  const [escolhido, setEscolhido] = useState<string | null>(null)
-  const [erros, setErros] = useState(0)
-  const [dicasAbertas, setDicasAbertas] = useState(0)
-  const [revelou, setRevelou] = useState(false)
-  /** O último arraste que não era lance. Discreto, e some no lance seguinte. */
-  const [recusa, setRecusa] = useState<string | null>(null)
+/*
+  O `Tabuleiro` DESTE ARQUIVO VIROU `@/components/exercicios/ExercicioNoTabuleiro`.
 
-  const certo = escolhido !== null && acertou(exercicio, escolhido)
-  const apoio = nivelDeApoio(dicasAbertas, revelou)
+  Ele mantinha a posição CONGELADA — `fen={exercicio.fen}` do começo ao fim —,
+  então o lance certo nunca aparecia no tabuleiro e o adversário não existia. E
+  ele tinha uma cópia quase literal em `PraticaDeHabilidade`, livre para
+  divergir: lá a grade estava invertida, com o tabuleiro na coluna estreita.
 
-  /*
-    A SOLUÇÃO DESENHADA NO TABULEIRO, e não escrita como "Rxc6".
-
-    É a §26 do plano: quando a escada de assistência termina e a resposta
-    precisa aparecer, ela aparece ONDE acontece. Um aluno que lê a notação
-    aprende a notação; um que vê as duas casas acesas aprende o lance.
-  */
-  const casasDaSolucao = useMemo(() => {
-    const chave = exercicio.lancesAceitos[0]
-    const lance = chave ? parseUci(chave) : null
-    return lance ? [lance.from, lance.to] : []
-  }, [exercicio.lancesAceitos])
-  const resposta = erros > 0 && !certo ? responderAoErro(erros, dicasAbertas) : null
-  const mostrarSolucao =
-    revelou || resposta?.acao === 'mostrar-solucao' || resposta?.acao === 'trocar-posicao'
-
-  /**
-   * O aluno soltou uma peça.
-   *
-   * Devolve `false` quando o lance não existe: é isso que faz o tabuleiro
-   * devolver a peça à casa de origem (snapback) em vez de aceitá-la.
-   */
-  function soltar(origem: SquareName, destino: SquareName, promocao?: PromotionPiece): boolean {
-    if (certo || mostrarSolucao) return false
-
-    const veredito = julgarLanceDaLicao(exercicio, origem, destino, promocao)
-    if (veredito.tipo === 'ilegal') {
-      /*
-        NÃO MEXE EM NADA PEDAGÓGICO. Sem contar erro, sem abrir dica, sem
-        registrar tentativa: o aluno não afirmou nada sobre a posição — ele
-        arrastou para um lugar onde a peça não vai.
-      */
-      setRecusa(`${origem}${destino}`)
-      return false
-    }
-
-    setRecusa(null)
-    escolher(veredito.uci)
-    return true
-  }
-
-  function escolher(uci: string) {
-    setEscolhido(uci)
-    if (!acertou(exercicio, uci)) {
-      const proximo = erros + 1
-      setErros(proximo)
-      const reacao = responderAoErro(proximo, dicasAbertas)
-      // A dica ABRE SOZINHA no erro: obrigar o aluno a pedir ajuda depois de
-      // errar é o convite para ele chutar de novo em vez de pedir.
-      if (reacao.acao === 'dica' && dicas.length > 0) {
-        setDicasAbertas((n) => Math.min(n + 1, dicas.length))
-      }
-      if (reacao.acao === 'mostrar-solucao' || reacao.acao === 'trocar-posicao') setRevelou(true)
-    }
-  }
-
-  const feedback = feedbackGenerico()
-
-  /*
-    O CLIQUE EM DUAS CASAS é a outra porta da mesma resposta — ver
-    `useLanceNoTabuleiro`. Arrastar exige apontador e coordenação fina; sem o
-    clique, "a resposta acontece no tabuleiro" viraria "quem não arrasta não
-    responde".
-  */
-  const lance = useLanceNoTabuleiro({
-    fen: exercicio.fen,
-    ativo: !certo && !mostrarSolucao,
-    aoTentar: (origem, destino) => soltar(origem, destino),
-  })
-
-  return (
-    <div className={styles.comTabuleiro}>
-      <div className={styles.tabuleiro}>
-        {/*
-          O TABULEIRO É A ÚNICA FORMA DE RESPONDER.
-
-          `interactive` cai quando já não há o que descobrir — acertou, ou a
-          solução foi revelada. Continuar aceitando lance ali recomeçaria o laço
-          que o degrau de assistência acabou de fechar.
-
-          `lastMove` mostra a solução NO TABULEIRO quando a escada chega ao fim:
-          o plano é explícito em não revelar a resposta como texto "Rxc6", e sim
-          desenhá-la onde ela acontece.
-        */}
-        <ChessBoardView
-          fen={exercicio.fen}
-          orientation={exercicio.ladoDoAluno}
-          interactive={!certo && !mostrarSolucao}
-          selected={lance.selecionada}
-          targets={lance.destinos}
-          onMove={soltar}
-          onSquareClick={lance.aoClicarNaCasa}
-          onIllegalMove={(origem, destino) => setRecusa(`${origem}${destino}`)}
-          lastMove={mostrarSolucao ? casasDaSolucao : undefined}
-        />
-      </div>
-      <div className={styles.aoLado}>
-        <p className={styles.texto}>{enunciado}</p>
-        {/*
-          A INSTRUÇÃO DIZ COMO RESPONDER. Sem ela o aluno olha para uma posição
-          e um enunciado e não sabe que a resposta é um arraste — o tabuleiro
-          parecia ilustração na versão com botões, e o hábito fica.
-        */}
-        {escolhido === null && !mostrarSolucao ? (
-          <p className={styles.nota}>Jogue o lance no tabuleiro.</p>
-        ) : null}
-
-        {/*
-          A RECUSA DE LANCE ILEGAL é discreta e não é erro.
-
-          `role="status"` e não `alert`: o aluno arrastou para um lugar onde a
-          peça não vai, e isso não é uma afirmação errada sobre a posição — é um
-          gesto que não virou lance.
-        */}
-        {recusa !== null && escolhido === null ? (
-          <p className={styles.nota} role="status" data-testid="recusa-do-lance">
-            Esse lance não é legal nesta posição.
-          </p>
-        ) : null}
-
-        {dicasAbertas > 0 && dicas.length > 0 ? (
-          <ol className={styles.dicas} aria-label="Dicas abertas">
-            {dicas.slice(0, dicasAbertas).map((dica) => (
-              <li key={dica.degrau}>
-                <span className={styles.dicaDegrau}>{rotuloDoDegrau(dica.degrau)}</span>{' '}
-                {dica.texto}
-              </li>
-            ))}
-          </ol>
-        ) : null}
-
-        {dicas.length > dicasAbertas && !certo && !mostrarSolucao ? (
-          <button
-            type="button"
-            className={styles.ghost}
-            onClick={() => setDicasAbertas((n) => n + 1)}
-          >
-            Abrir uma dica
-          </button>
-        ) : null}
-
-        {escolhido !== null ? (
-          <div className={styles.veredito} role="status">
-            {/* Cor + símbolo + TEXTO: o estado nunca depende só da cor. */}
-            <p className={certo ? styles.acertou : styles.errou}>
-              {certo ? '✓ Cumpriu o objetivo.' : '✕ Não cumpre o objetivo.'}
-            </p>
-
-            {certo || mostrarSolucao ? (
-              <p className={styles.texto}>{explicacao}</p>
-            ) : (
-              <>
-                {/*
-                  As quatro perguntas da §18. Genéricas quando o conteúdo não
-                  escreveu um feedback específico — e genéricas de propósito:
-                  afirmar qual peça ficou pendurada sem ter conferido seria o
-                  motivo inventado que o CLAUDE.md proíbe.
-                */}
-                <p className={styles.texto}>{feedback.oQueAconteceu}</p>
-                <p className={styles.nota}>{feedback.porQueParecia}</p>
-                {resposta?.acao === 'decompor' ? (
-                  <p className={styles.texto}>
-                    Vamos por partes: antes de escolher o lance, responda para você mesmo o que o
-                    adversário está ameaçando agora.
-                  </p>
-                ) : null}
-                <p className={styles.pergunta}>{feedback.perguntaQueEvitaria}</p>
-              </>
-            )}
-
-            {certo || mostrarSolucao ? (
-              <button
-                type="button"
-                className={styles.primario}
-                onClick={() => aoConcluir({ acertou: certo, apoio })}
-              >
-                Continuar
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-
-        {/*
-          Sair sem responder é PERMITIDO, e é a §19 em forma de botão: concluir
-          não depende de acertar, então prender o aluno aqui só produziria o
-          chute que este trabalho veio remover.
-        */}
-        {escolhido === null ? (
-          <button
-            type="button"
-            className={styles.ghost}
-            onClick={() => aoConcluir({ acertou: false, apoio: 'solucao-revelada' })}
-          >
-            Pular este exercício
-          </button>
-        ) : null}
-      </div>
-    </div>
-  )
-}
+  Não recriar aqui. Quem precisa de um exercício respondido no tabuleiro importa
+  o componente compartilhado; quem precisa de outra regra muda o componente
+  compartilhado, e as duas telas mudam juntas.
+*/
 
 function Resumo({
   itens,
