@@ -22,6 +22,7 @@ import {
   contextoDaRevisao,
   noDoCardDeAbertura,
   ramoDoNo,
+  revisaoVencidaDaAbertura,
 } from '@/domain/openings/revisao-agrupada'
 import { ramosDaAbertura } from '@/domain/openings/ramos'
 import { emptyOpeningProgress } from '@/domain/openings'
@@ -230,5 +231,37 @@ describe('a reconstrução de contexto', () => {
     const contexto = contextoDaRevisao(ITALIANA, orfao)
     expect(contexto.lances).toEqual([])
     expect(contexto.fenInicial).toBe(orfao.fen)
+  })
+})
+
+describe('a revisão vencida no card do catálogo', () => {
+  it('sem nada vencido, devolve zero — e o card não mostra linha nenhuma', () => {
+    /*
+      UM CONTADOR ZERADO NUMA BIBLIOTECA ensina o aluno a ignorar a linha
+      inteira: ele lê "0 posições para revisar" na primeira visita e para de
+      olhar ali. Quem decide mostrar é a tela, e ela só mostra acima de zero.
+    */
+    expect(revisaoVencidaDaAbertura(ITALIANA, [])).toEqual({ cards: 0, ramos: 0 })
+  })
+
+  it('conta as posições E as linhas em que elas estão', () => {
+    /*
+      DOIS NÚMEROS, porque respondem perguntas diferentes: quantas posições
+      esqueci, e quão espalhado está o esquecimento. Doze posições numa linha só
+      é um assunto; doze em quatro linhas é a abertura inteira escorrendo.
+    */
+    const resultado = revisaoVencidaDaAbertura(ITALIANA, cardsDaItaliana())
+    expect(resultado.cards).toBe(cardsDaItaliana().length)
+    expect(resultado.ramos).toBeGreaterThan(1)
+  })
+
+  it('cards de outra abertura não contam', () => {
+    const outra = OPENING_COURSES.find((o) => o.slug === 'caro-kann')!
+    const cards = openingReviewCards(
+      outra,
+      { ...emptyOpeningProgress(outra.id), learnedNodeIds: [...outra.graph.keys()] },
+      AGORA,
+    )
+    expect(revisaoVencidaDaAbertura(ITALIANA, cards)).toEqual({ cards: 0, ramos: 0 })
   })
 })

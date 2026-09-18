@@ -304,3 +304,34 @@ export function tituloDoItemDeAbertura(
   const ramo = ramosDaAbertura(opening).find((item) => item.id === sufixo)
   return ramo ? `${opening.name} — ${ramo.nome}` : opening.name
 }
+
+/**
+ * Quantos cards de uma abertura estão vencidos, e em quantos ramos.
+ *
+ * O QUE ISTO RESOLVE NA BIBLIOTECA (plano VNext §60). O card do catálogo sabia
+ * o estado do REPERTÓRIO e o progresso da JORNADA — nenhum dos dois sabe de
+ * revisão. Um aluno com doze posições vencidas na Italiana via "Concluída" e
+ * nenhum sinal de que havia o que refazer.
+ *
+ * "Concluída" é verdade e é a informação errada para quem abre a biblioteca
+ * procurando o que fazer hoje. Concluir o estudo não é dominar para sempre — o
+ * §39 do plano diz isso com todas as letras, e a tela precisa dizer também.
+ *
+ * DEVOLVE ZERO QUANDO NÃO HÁ NADA, e quem chama decide se mostra. Um contador
+ * zerado na tela ensina a ignorá-lo.
+ */
+export interface RevisaoVencidaDaAbertura {
+  cards: number
+  ramos: number
+}
+
+export function revisaoVencidaDaAbertura(
+  opening: OpeningDefinition,
+  vencidos: readonly ReviewCard[],
+): RevisaoVencidaDaAbertura {
+  const itens = agruparRevisaoDeAbertura(opening, vencidos)
+  return {
+    cards: itens.reduce((total, item) => total + item.cards.length, 0),
+    ramos: itens.length,
+  }
+}
