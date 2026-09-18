@@ -49,7 +49,22 @@ export interface OpeningMoveEdge {
   uci: string
   san: string
   nextNodeId: string
-  frequency: number
+  /**
+   * Quantas LINHAS AUTORADAS passam por esta aresta.
+   *
+   * ELA SE CHAMAVA `frequency`, E O NOME MENTIA. Duas linhas do conteúdo que
+   * começam com 1.e4 dão 2 aqui — isso não é frequência de nada no mundo, é
+   * contagem de quanto o nosso próprio material repete um lance.
+   *
+   * O NOME IMPORTA PORQUE CONVIDA AO ERRO: qualquer leitor que encontrasse
+   * `frequency` numa aresta de abertura pensaria em "jogado em 34% das
+   * partidas", e apresentá-lo assim seria estatística inventada — o que o
+   * plano §58 proíbe e o CLAUDE.md chama de falsa precisão.
+   *
+   * SE UM DIA HOUVER FREQUÊNCIA DE VERDADE, ela entra como campo separado com
+   * fonte, população e data (plano §10.2), e nunca misturada com esta.
+   */
+  linhasAutoradas: number
   role: OpeningMoveRole
   explanation?: string
   lesson?: OpeningMoveLesson
@@ -359,14 +374,14 @@ export function buildOpeningGraph(
       }
       const existing = from.outgoingMoves.find((edge) => edge.uci === applied.move.uci)
       if (existing) {
-        existing.frequency += 1
+        existing.linhasAutoradas += 1
         existing.lesson ??= lesson
       } else {
         from.outgoingMoves.push({
           uci: applied.move.uci,
           san: applied.move.san,
           nextNodeId: toId,
-          frequency: 1,
+          linhasAutoradas: 1,
           role: line.role,
           explanation: lesson.comment,
           lesson,
@@ -518,7 +533,7 @@ export function trainingNode(
     opponentResponses: node.outgoingMoves.map((edge) => ({
       uci: edge.uci,
       san: edge.san,
-      weight: Math.max(1, edge.frequency),
+      weight: Math.max(1, edge.linhasAutoradas),
       nextNodeId: edge.nextNodeId,
     })),
     explanationAfterAttempt:
@@ -593,7 +608,7 @@ export function chooseOpeningTrainingOpponent(
   const weighted = candidates.map((edge) => ({
     edge,
     weight:
-      Math.max(1, edge.frequency) *
+      Math.max(1, edge.linhasAutoradas) *
       (weak.has(edge.nextNodeId) ? 2 : 1) *
       (edge.role === 'main' ? 1.2 : 1),
   }))

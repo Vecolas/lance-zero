@@ -31,8 +31,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { legalMoves } from '@/lib/chess'
 
-const COLUNAS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const
-
 /** Quantos pares origem→destino tentar antes de desistir e REPROVAR. */
 const TENTATIVAS_MAXIMAS_DE_LANCE = 80
 

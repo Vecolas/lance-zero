@@ -668,7 +668,7 @@ function LinhaComentada({
  * repertório — a linha principal, os ramos, a importância de cada um — é
  * conteúdo que alguém escreveu. Aqui o conteúdo é o que o aluno de fato
  * enfrentou, e por isso esta é a única contagem do módulo que pode dizer
- * "aconteceu N vezes". O campo `frequency` do grafo não pode: ele conta linhas
+ * "aconteceu N vezes". O campo `linhasAutoradas` do grafo não pode: ele conta
  * autoradas, e o plano §58 proíbe apresentá-lo como estatística.
  *
  * ELA É SECUNDÁRIA, e de propósito (plano §36): aparece abaixo do conteúdo da
@@ -1520,7 +1520,7 @@ function BibliotecaDeRamos({
 
       {/*
         NENHUMA FREQUÊNCIA APARECE AQUI, e a ausência é decisão (plano §17.2). O
-        campo `frequency` do grafo conta LINHAS AUTORADAS, não partidas do
+        campo `linhasAutoradas` do grafo conta o NOSSO material, não partidas do
         mundo. Renderizá-lo como "72% das partidas" seria inventar estatística a
         partir de um número que mede outra coisa.
       */}

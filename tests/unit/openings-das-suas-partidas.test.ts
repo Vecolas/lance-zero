@@ -4,7 +4,7 @@
  * TODO O RESTO DO REPERTÓRIO É AUTORADO por nós — a linha principal, os ramos, a
  * importância de cada um. Esta seção mede o que o aluno de fato enfrentou, e por
  * isso é a única contagem do módulo de aberturas que pode ser apresentada como
- * "aconteceu N vezes". O campo `frequency` do grafo NÃO pode: ele conta linhas
+ * "aconteceu N vezes". O campo `linhasAutoradas` do grafo NÃO pode: ele conta
  * autoradas.
  *
  * O QUE ESTES TESTES GUARDAM, além do agrupamento: a recusa do §38.2 em

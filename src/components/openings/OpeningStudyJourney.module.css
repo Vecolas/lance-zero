@@ -7,8 +7,7 @@
 }
 
 .texto,
-.nota,
-.linha {
+.nota {
   margin: 0;
   max-width: 62ch;
 }
@@ -18,12 +17,6 @@
 }
 
 .nota {
-  color: var(--text-muted);
-  font-size: 0.9375rem;
-}
-
-.linha {
-  font-family: var(--font-mono);
   color: var(--text-muted);
   font-size: 0.9375rem;
 }
@@ -81,16 +74,6 @@
   gap: var(--space-3);
 }
 
-.opcoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.opcao,
 .primario,
 .secundario {
   min-height: 2.75rem;
@@ -100,41 +83,12 @@
   cursor: pointer;
 }
 
-.opcao,
 .secundario {
   border: 1px solid var(--border-strong);
   background: var(--surface-raised);
   color: var(--text);
 }
 
-.opcao[aria-pressed='true'] {
-  border-color: var(--accent-strong);
-}
-
-/*
-  A VARIAÇÃO ESCOLHIDA, no seletor da etapa de variações.
-
-  Marcada por fundo E peso, nunca só por cor — a regra vale também para "qual
-  destes chips está ativo", que é informação de estado como qualquer outra.
-*/
-.variacaoAtiva {
-  min-height: 2.75rem;
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--accent-strong);
-  border-radius: var(--radius-md);
-  background: var(--accent-strong);
-  color: var(--on-accent);
-  font: inherit;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.variacaoAtiva:focus-visible {
-  outline: 2px solid var(--focus, var(--accent-strong));
-  outline-offset: 2px;
-}
-
-.opcao:disabled,
 .secundario:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -148,7 +102,6 @@
   justify-self: start;
 }
 
-.opcao:focus-visible,
 .primario:focus-visible,
 .secundario:focus-visible {
   outline: 2px solid var(--focus, var(--accent-strong));
@@ -178,20 +131,6 @@
 
 .errou {
   color: var(--attention-text, var(--attention, var(--warning)));
-}
-
-/*
-  O SELO DA IMPORTÂNCIA, no chip da variação.
-
-  Ele é TEXTO, e não uma cor ou um ponto: "complementar" e "opcional" são
-  informação de estado como qualquer outra, e a regra do projeto é que status
-  nunca depende só de cor. Peso menor porque o nome da variação é o que o aluno
-  procura — o selo responde uma segunda pergunta, não a primeira.
-*/
-.selo {
-  font-weight: 400;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
 }
 
 /*

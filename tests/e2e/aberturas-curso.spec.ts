@@ -209,7 +209,7 @@ test('a biblioteca de variações ensina cada ramo no tabuleiro, sem explorador'
   await expect(page.getByRole('button', { name: /não visto/ }).first()).toBeVisible()
   await expect(page.getByText('Recomendado agora')).toBeVisible()
 
-  // NENHUMA FREQUÊNCIA INVENTADA (plano §17.2): `frequency` conta linhas
+  // NENHUMA FREQUÊNCIA INVENTADA (plano §17.2): `linhasAutoradas` conta linhas
   // autoradas, não partidas do mundo.
   await expect(page.getByText(/% das partidas/)).toHaveCount(0)
 

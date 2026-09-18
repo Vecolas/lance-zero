@@ -160,8 +160,10 @@ estruturas de peões, erros comuns, e um grafo derivado na carga.
 
 **O grafo** (`buildOpeningGraph`) é posição → arestas, com identidade de posição
 como chave — é o que reconhece transposições. Cuidado documentado: o campo
-`frequency` das arestas é **quantas linhas autoradas passam ali**, e não
-popularidade do mundo. Nunca deve ser apresentado como estatística.
+`linhasAutoradas` das arestas é **quantas linhas do nosso conteúdo passam
+ali**, e não popularidade do mundo. Ele se chamava `frequency`, e o nome
+convidava a apresentá-lo como "jogado em 34% das partidas" — estatística
+inventada. A única contagem real do módulo é a de "Das suas partidas".
 
 ### A jornada, oito etapas
 
@@ -185,18 +187,49 @@ duas etapas separadas por **quem tomava a decisão**, e foram fundidas numa só
   o ramo aparece. Só ramo `core` bloqueia a conclusão; `secondary` e `optional`
   continuam visíveis. Cada ramo `core` traz `intencaoDoAdversario` e
   `objetivoDoAluno`, exigidos por portão.
-- **Prática guiada (7/8)** — o aluno joga a linha principal no tabuleiro e o
-  computador responde pelo outro lado, na mesma transição. Sem botão entre
-  lances. Errar faz _snapback_ e abre a explicação do lance estudado.
-- **Treino final (8/8)** — regra de `cobertura`: linha principal, cada variação
-  e a **perspectiva reversa** (jogar a mesma abertura pelo outro lado). Os alvos
-  são derivados do conteúdo, então quem acrescenta uma variação passa a ter de
-  demonstrá-la sem editar código. **Ponto cego declarado:** a cobertura ainda
-  deriva de `opening.variations` inteiro, e não de `ramosCore` — um ramo
-  `secondary` continua sendo cobrado.
+- **Planos (5/8)** — cada plano é um card com o mini-tabuleiro da posição em
+  que ELE acontece, e o estudo responde quatro perguntas: quando usar, por que
+  funciona, o que precisa estar preparado, o que o adversário tenta (ADR-0024).
+  Dois dos sete planos cobram o lance que os começa; os outros cinco declaram no
+  conteúdo por que não têm — no Sistema Londres, a seta do plano é um lance legal
+  que perde um peão.
+- **Dois lados (6/8)** — uma tabela ramo × papel (ADR-0025). Linha principal
+  obrigatória nos dois papéis; ramo `core` só do lado do repertório; o resto
+  recomendado. O curso não dobra de tamanho por causa da perspectiva reversa.
+- **Prática guiada (7/8)** — o roteiro passa pela linha principal E por cada ramo
+  `core`, cada um começando no próprio desvio (ADR-0026). O computador responde
+  na mesma transição, sem botão entre lances. Lance ilegal faz _snapback_
+  silencioso; lance fora do repertório diz "pode ser jogável, mas não é a
+  resposta que este curso está consolidando".
+- **Treino final (8/8)** — regra de `cobertura`, derivada da matriz do ADR-0025:
+  linha principal nos dois papéis e cada ramo `core` do lado do repertório. Os
+  alvos são derivados do conteúdo, então quem acrescenta um ramo `core` passa a
+  ter de demonstrá-lo sem editar código — e um ramo `secondary` **deixou de ser
+  cobrado**, fechando o ponto cego que o ADR-0022 tinha declarado.
 
-**Sparring** (`SparringDaAbertura`) fica disponível depois de concluir: partidas
-livres contra o bot do repertório, que nomeia a variação quando ela é jogada.
+  A rodada tem **tipo** (ADR-0027): a primeira vez de um ramo parte do início da
+  abertura e reconstrói o caminho; revisitá-lo parte de perto do desvio. Ao
+  terminar, o painel não diz "linha concluída" — diz que o aluno **chegou ao tipo
+  de posição que a abertura procura**, com o plano que ela autoriza.
+
+**Sparring** (`SparringDaAbertura`) fica disponível depois de concluir, e a
+etapa de treino ANUNCIA que ele existe — um recurso que aparece sem aviso parece
+ter estado escondido. Abri-lo antes foi tentado e revertido: ele tem tabuleiro
+próprio e toda etapa também tem, então os dois na mesma tela produzem ids de DOM
+duplicados. O bot escolhe entre todas as continuações conhecidas, variando com o
+ply; a rodada 0 é a linha principal inteira, para a estreia confirmar o que foi
+ensinado.
+
+**"Das suas partidas"** (ADR-0029) é a única seção do curso cujo material não é
+autorado: ela mostra os pontos em que as partidas reais saíram do repertório, com
+o que foi jogado e o que o repertório previa. Quando o adversário joga algo que o
+curso não cobre, o botão diz "analisar" — nunca inventa um ramo.
+
+**A evidência por ramo** (`estado-do-ramo.ts`) registra tentativas, acertos de
+primeira, dicas, falhas em revisão e desvios em partida real. Ela é **local**:
+mora no `OpeningProgress` do aparelho e sai só no backup. Existe para calibrar o
+score adaptativo do plano — que ainda não foi escrito, porque escrevê-lo com
+pesos inventados seria falsa adaptação.
 
 **O explorador da Lichess saiu da jornada** (ADR-0018) e vive em `/openings`. O
 motivo é do plano de aberturas: §60 _"não usar como UI principal"_, §61

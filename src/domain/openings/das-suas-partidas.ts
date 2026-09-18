@@ -64,7 +64,7 @@ export interface DesvioNasPartidas {
  * Agrega os desvios das partidas do aluno numa abertura.
  *
  * ORDENADO POR FREQUÊNCIA, e a frequência aqui é REAL — ao contrário do campo
- * `frequency` do grafo, que conta linhas autoradas. Esta é a única contagem do
+ * `linhasAutoradas` do grafo, que conta o nosso material. Esta é a única contagem
  * módulo de aberturas que mede partidas de verdade, e por isso é a única que
  * pode ser apresentada como "aconteceu N vezes".
  *

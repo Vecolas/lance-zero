@@ -17,12 +17,7 @@ import { nomeDaAbertura } from '@/lib/i18n/nomes-de-conteudo'
 import { CHAVE_DA_RETOMADA } from '@/lib/i18n/retomada'
 import { construirJornadaDeAbertura } from '@/domain/openings/jornada'
 import { idDaJornadaDeAbertura } from '@/components/openings/OpeningStudyJourney'
-import type {
-  OpeningDefinition,
-  OpeningProgress,
-  OpeningSide,
-  OpeningStatus,
-} from '@/domain/openings'
+import type { OpeningDefinition, OpeningProgress, OpeningSide } from '@/domain/openings'
 import styles from './OpeningCatalog.module.css'
 
 type Filter = 'all' | OpeningSide
