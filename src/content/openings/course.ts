@@ -962,6 +962,87 @@ const jobavaMain = [
   }),
 ]
 
+/* --------------------------------------------------------- Najdorf */
+
+/** 1.e4 c5 2.Cf3 d6 3.d4 cxd4 4.Cxd4 Cf6 5.Cc3 a6 — a Najdorf. */
+const najdorfMain = [
+  ...sicilianaMain.slice(0, 7),
+  lesson(8, 'Nf6', 'O cavalo desenvolve atacando e4 e obriga as brancas a defender.', {
+    arrows: [{ from: 'f6', to: 'e4' }],
+    strategicIdea: 'Desenvolver com ameaça: o cavalo escolhe qual peça branca vai a c3.',
+  }),
+  lesson(9, 'Nc3', 'O cavalo defende e4 — a única defesa que também desenvolve.', {
+    highlights: ['e4'],
+  }),
+  lesson(
+    10,
+    'a6',
+    'O lance de Najdorf: um peão na borda que tira as casas b5 de todas as peças brancas.',
+    {
+      highlights: ['b5'],
+      strategicIdea:
+        'Um lance de espera que não é espera: sem b5, a estrutura preta fica livre para ...e5.',
+      resultingPlan: '...e5 expulsando o cavalo de d4, com ...Be6 e ...Cbd7 depois.',
+    },
+  ),
+]
+
+/* ---------------------------------------------------------- Dragão */
+
+/** 1.e4 c5 2.Cf3 d6 3.d4 cxd4 4.Cxd4 Cf6 5.Cc3 g6 — o Dragão. */
+const dragaoMain = [
+  ...sicilianaMain.slice(0, 7),
+  lesson(8, 'Nf6', 'O cavalo ataca e4 e força o desenvolvimento branco a c3.', {
+    arrows: [{ from: 'f6', to: 'e4' }],
+    strategicIdea: 'Atacar antes de fianchetar: o cavalo em f6 impede c4 e o Bind de Maróczy.',
+  }),
+  lesson(9, 'Nc3', 'A única defesa de e4 que também desenvolve.', { highlights: ['e4'] }),
+  lesson(
+    10,
+    'g6',
+    'O fianchetto do Dragão: o bispo vai a g7 e aponta para a1, atravessando o tabuleiro inteiro.',
+    {
+      arrows: [{ from: 'f8', to: 'g7' }],
+      strategicIdea:
+        'O bispo de g7 é a peça mais forte da defesa e o primeiro alvo do ataque branco.',
+      resultingPlan: '...Bg7, ...O-O e ...Tc8, com pressão pela coluna c e pela diagonal longa.',
+    },
+  ),
+]
+
+/* ------------------------------------------------------ Sveshnikov */
+
+/** 1.e4 c5 2.Cf3 Cc6 3.d4 cxd4 4.Cxd4 Cf6 5.Cc3 e5 — a Sveshnikov. */
+const sveshnikovMain = [
+  ...sicilianaMain.slice(0, 3),
+  lesson(4, 'Nc6', 'O cavalo desenvolve e disputa d4 antes de qualquer peão preto se mexer.', {
+    highlights: ['d4'],
+    strategicIdea: 'Sem ...d6, as pretas guardam o direito de jogar ...e5 com força total.',
+  }),
+  lesson(5, 'd4', 'As brancas abrem o centro — a Siciliana Aberta de sempre.', {
+    arrows: [{ from: 'd2', to: 'd4' }],
+  }),
+  lesson(6, 'cxd4', 'As pretas trocam o peão de flanco pelo peão central.', {
+    strategicIdea: 'O lucro estrutural da Siciliana, cobrado no quarto lance.',
+  }),
+  lesson(7, 'Nxd4', 'O cavalo ocupa o centro.', { highlights: ['d4'] }),
+  lesson(8, 'Nf6', 'O segundo cavalo ataca e4 e força Cc3.', {
+    arrows: [{ from: 'f6', to: 'e4' }],
+  }),
+  lesson(9, 'Nc3', 'A defesa que também desenvolve.', { highlights: ['e4'] }),
+  lesson(
+    10,
+    'e5',
+    'O lance da Sveshnikov: as pretas expulsam o cavalo e aceitam de propósito um buraco em d5.',
+    {
+      arrows: [{ from: 'e5', to: 'd4' }],
+      strategicIdea:
+        'Uma fraqueza permanente em troca de peças ativas e do par de bispos — a aposta mais clara do repertório.',
+      resultingPlan: 'Depois de Cdb5 d6 e Bg5 a6, as pretas ganham espaço com ...b5 e ...f5.',
+    },
+  ),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -7726,6 +7807,593 @@ const jobava = course({
   version: 1,
 })
 
+const najdorf = course({
+  id: 'siciliana-najdorf',
+  slug: 'siciliana-najdorf',
+  name: 'Siciliana Najdorf',
+  side: 'black',
+  ecoCodes: ['B90', 'B92', 'B96'],
+  description:
+    'O lance ...a6 e tudo o que ele compra: a casa b5 negada, ...e5 liberado e a Siciliana mais jogada do mundo.',
+  philosophy:
+    'Um peão na borda pode ser o lance mais importante da posição quando ele tira uma casa.',
+  difficulty: 3,
+  prerequisites: ['siciliana-foundation'],
+  tags: ['semi-open', 'sharp', 'asymmetric'],
+  transitionToMiddlegame:
+    'A abertura termina quando as pretas jogam ...e5 ou ...e6 e escolhem a estrutura. A partir daí a pergunta é quem ataca primeiro, e em qual ala.',
+  mainline: najdorfMain,
+  /* Os dois ramos bifurcam no sexto lance branco — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        6.Bg5 É A LINHA MAIS AGUDA DO XADREZ. Core porque ela força ...e6 e
+        muda a estrutura inteira, e porque a resposta natural (...e5) é ruim
+        aqui por uma razão concreta.
+      */
+      id: 'najdorf-bg5',
+      importancia: 'core',
+      eco: 'B96',
+      conceitos: [
+        'concept.king-safety-timing',
+        'concept.material-vs-initiative',
+        'concept.open-file',
+      ],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'e5',
+        porque:
+          'Jogar ...e5 com o bispo já em g5 deixa a casa d5 furada e o cavalo de f6 cravado ao mesmo tempo: as brancas trocam em f6 e ocupam d5 com um cavalo eterno. Contra Bg5, a estrutura correta é ...e6.',
+      },
+      fronteira: { type: 'handoff', planId: 'najdorf-e6' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se cravar antes de qualquer lance de peão e apostar na iniciativa.',
+      intencaoDoAdversario:
+        'Cravar o cavalo de f6, trocar em f6 na hora certa e ocupar a casa d5 de forma permanente.',
+      objetivoDoAluno:
+        'Escolher ...e6 e não ...e5: com o cavalo cravado, a casa d5 precisa de um peão e não de uma peça.',
+      name: 'Ataque com 6.Bg5',
+      description: 'As brancas cravam o cavalo de f6 e forçam a estrutura preta.',
+      rootNodeId: '',
+      line: [
+        ...najdorfMain.slice(0, 10),
+        lesson(
+          11,
+          'Bg5',
+          'A cravada mais agressiva da Siciliana: o cavalo de f6 para de defender d5 e e4.',
+          {
+            arrows: [{ from: 'c1', to: 'g5' }],
+            strategicIdea: 'Cravar é tirar de uma peça o trabalho que ela fazia, sem capturá-la.',
+            resultingPlan: 'f4, Df3 e O-O-O, com ataque direto na ala do rei.',
+          },
+        ),
+        lesson(
+          12,
+          'e6',
+          'O peão defende d5 no lugar do cavalo cravado — a estrutura muda, e essa é a resposta.',
+          {
+            highlights: ['d5'],
+            resultingPlan: '...Be7, ...Dc7 e ...Cbd7, com contrajogo pela coluna c.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        6.Be3 É O ATAQUE INGLÊS: Dd2, f3, O-O-O e peões contra o rei. Core
+        porque é o sistema mais jogado hoje e porque ele deixa ...e5 disponível
+        — a diferença exata em relação ao ramo anterior.
+      */
+      id: 'najdorf-ingles',
+      importancia: 'core',
+      eco: 'B90',
+      conceitos: ['concept.space-vs-counterplay', 'concept.backward-pawn', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'e6',
+        porque:
+          'Jogar ...e6 contra o Ataque Inglês devolve o tempo que ...a6 comprou: sem o cavalo branco expulso de d4, ele fica na melhor casa do tabuleiro e o ataque com f3 e g4 chega mais rápido. Sem bispo em g5, o lance é ...e5.',
+      },
+      fronteira: { type: 'handoff', planId: 'najdorf-e5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se montar o ataque de peões com f3, g4 e h4 depois do roque longo.',
+      intencaoDoAdversario:
+        'Rocar do lado oposto e avançar f3, g4 e h4 contra o rei preto antes de o contrajogo chegar.',
+      objetivoDoAluno:
+        'Expulsar o cavalo de d4 com ...e5 e correr pela coluna c: em roques opostos, quem chega primeiro ganha.',
+      name: 'Ataque Inglês',
+      description: 'As brancas preparam Dd2, f3 e o roque longo com ataque de peões.',
+      rootNodeId: '',
+      line: [
+        ...najdorfMain.slice(0, 10),
+        lesson(
+          11,
+          'Be3',
+          'O bispo prepara Dd2 e o roque longo: as brancas anunciam que os reis vão para lados opostos.',
+          {
+            strategicIdea: 'Roques opostos transformam a partida numa corrida, e não numa manobra.',
+            resultingPlan: 'Dd2, f3, O-O-O e o avanço g4-g5 contra o rei preto.',
+          },
+        ),
+        lesson(
+          12,
+          'e5',
+          'O lance que ...a6 comprou: o cavalo de d4 é expulso e a casa b5 não existe para ele.',
+          {
+            arrows: [{ from: 'e5', to: 'd4' }],
+            resultingPlan: '...Be6, ...Cbd7 e ...b5, com a corrida começando pela coluna c.',
+          },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'najdorf-e5',
+      name: 'O avanço ...e5',
+      positionNodeId: 'root',
+      positionPly: 10,
+      objective: 'Expulsar o cavalo de d4 e ocupar o centro com um peão.',
+      when: 'Contra tudo menos 6.Bg5, e sempre depois de ...a6.',
+      risk: 'Deixar a casa d5 permanentemente fraca sem peças para disputá-la.',
+      porQueFunciona:
+        'O cavalo em d4 é a melhor peça branca da Siciliana Aberta: ele fica no centro, protegido, e mira b5, f5 e c6. O lance ...e5 o expulsa, e ...a6 já tirou dele a casa b5 — a soma dos dois manda a peça para b3 ou f3, longe do centro. O preço é a casa d5, e o resto da abertura é sobre pagá-lo.',
+      preparacao:
+        'O lance ...a6 jogado. Sem ele, Cb5 responderia ao avanço e as pretas ficariam pior na mesma hora.',
+      oQueOAdversarioTenta:
+        'Ocupar d5 com um cavalo apoiado, ou trocar o cavalo de f6 para que a casa fique sem disputa.',
+      arrows: [{ from: 'e7', to: 'e5' }],
+    },
+    {
+      id: 'najdorf-e6',
+      name: 'A estrutura com ...e6',
+      positionNodeId: 'root',
+      positionPly: 10,
+      objective: 'Defender d5 com um peão quando o cavalo de f6 estiver cravado ou ameaçado.',
+      when: 'Contra 6.Bg5 e contra qualquer sistema que mire a troca em f6.',
+      risk: 'Ficar com o bispo de c8 trancado e sem o espaço que ...e5 daria.',
+      porQueFunciona:
+        'A casa d5 é a única fraqueza estrutural da Najdorf, e ela é defendida pelo cavalo de f6 e pelo peão de e. Quando o cavalo é cravado, ele para de defender — e defender com o peão é a única forma de a casa continuar disputada. A estrutura fica mais modesta e não fica furada.',
+      preparacao:
+        'Reconhecer a cravada antes de escolher o peão: a decisão é do sexto lance, e ela vale a partida inteira.',
+      oQueOAdversarioTenta:
+        'Avançar e5 empurrando o cavalo, ou montar o ataque com f4 e Df3 enquanto as pretas se organizam.',
+    },
+    {
+      id: 'najdorf-b5',
+      name: 'A casa b5 negada',
+      positionNodeId: 'root',
+      positionPly: 9,
+      objective: 'Entender que ...a6 é um lance de casa, e não um lance de peão.',
+      when: 'No quinto lance, sempre — é a definição da abertura.',
+      risk: 'Tratar ...a6 como lance de espera e adiá-lo: um lance de tempo perdido aqui muda a avaliação.',
+      porQueFunciona:
+        'Três peças brancas querem a casa b5 na Siciliana Aberta: o cavalo de d4, o cavalo de c3 e o bispo de f1. O peão em a6 nega a casa às três de uma vez. É o lance mais barato do tabuleiro em termos de desenvolvimento e o mais caro em termos do que ele impede.',
+      preparacao: 'Nenhuma — e é por isso que ele vem tão cedo, antes até de o rei se resolver.',
+      oQueOAdversarioTenta:
+        'Jogar a4 parando ...b5, ou atacar imediatamente para que o lance de peão na borda custe um tempo.',
+      arrows: [{ from: 'a7', to: 'a6' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Estrutura da Najdorf com ...e5',
+      description:
+        'Peões pretos em d6 e e5 contra peão branco em e4, com a casa d5 furada e a coluna c aberta. A fraqueza é permanente e conhecida; o contrajogo pela coluna c e pelo avanço ...b5 também é.',
+      pawnBreaks: ['b5', 'd5', 'f5'],
+      weakSquares: ['d5', 'b6'],
+      openFiles: ['c'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'najdorf-erro-e5-cedo',
+      nodeId: 'root',
+      positionPly: 9,
+      moveSan: 'e5',
+      explanation:
+        'Jogar ...e5 antes de ...a6 permite Bb5+, e as pretas precisam bloquear com o bispo ou com o cavalo em condições ruins. A ordem da Najdorf existe por isso: primeiro a casa b5 é negada, depois o centro avança.',
+      principle:
+        'Quando um avanço abre uma casa para o adversário, o lance que fecha essa casa vem antes — e não depois.',
+    },
+  ],
+  version: 1,
+})
+
+const dragao = course({
+  id: 'siciliana-dragao',
+  slug: 'siciliana-dragao',
+  name: 'Siciliana Dragão',
+  side: 'black',
+  ecoCodes: ['B70', 'B76', 'B78'],
+  description:
+    'O bispo de g7 atravessando o tabuleiro, a coluna c aberta e uma corrida de peões contra o rei.',
+  philosophy:
+    'Em roques opostos não existe lance tranquilo: cada lance ou acelera o ataque ou atrasa o do outro.',
+  difficulty: 3,
+  prerequisites: ['siciliana-foundation'],
+  tags: ['semi-open', 'sharp', 'attacking'],
+  transitionToMiddlegame:
+    'A abertura termina quando as brancas rocam do lado grande e as pretas põem a torre em c8. A partir daí a pergunta é só uma: quem chega primeiro.',
+  mainline: dragaoMain,
+  /* Os dois ramos bifurcam no sexto lance branco — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        O IUGOSLAVO É O ATAQUE que define a variante: Be3, Dd2, Bc4, O-O-O e
+        h4-h5. Core porque quem joga o Dragão sem saber a resposta a ele perde
+        em vinte lances.
+      */
+      id: 'dragao-iugoslavo',
+      importancia: 'core',
+      eco: 'B76',
+      conceitos: [
+        'concept.king-safety-timing',
+        'concept.open-file',
+        'concept.material-vs-initiative',
+      ],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.exchange-sac-c3'],
+      erroComum: {
+        lance: 'Ng4',
+        porque:
+          'Atacar o bispo de e3 com o cavalo perde tempo numa corrida em que o tempo é tudo: as brancas jogam Bb5+ ou Bg5 e o cavalo volta. No Iugoslavo, cada lance preto precisa acelerar a coluna c — e este não acelera nada.',
+      },
+      fronteira: { type: 'handoff', planId: 'dragao-coluna-c' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se rocar do lado grande e correr com h4-h5 contra o fianchetto preto.',
+      intencaoDoAdversario:
+        'Rocar do lado grande, abrir a coluna h com h4-h5 e trocar o bispo de g7 com Bh6.',
+      objetivoDoAluno:
+        'Correr pela coluna c com ...Tc8 e ...Ce5, aceitando dar qualidade em c3 quando isso abre a posição do rei branco.',
+      name: 'Ataque Iugoslavo',
+      description: 'As brancas rocam do lado grande e atacam com peões na ala do rei.',
+      rootNodeId: '',
+      line: [
+        ...dragaoMain.slice(0, 10),
+        lesson(
+          11,
+          'Be3',
+          'O bispo prepara Dd2 e Bh6: as brancas anunciam roque longo e corrida de peões.',
+          {
+            strategicIdea: 'Trocar o bispo de g7 é meio ataque pronto — o resto são peões.',
+            resultingPlan: 'Dd2, Bc4, O-O-O e h4-h5, com tudo apontado para o roque preto.',
+          },
+        ),
+        lesson(
+          12,
+          'Bg7',
+          'As pretas completam o fianchetto e começam a própria corrida pela coluna c.',
+          {
+            arrows: [{ from: 'g7', to: 'a1' }],
+            resultingPlan: '...O-O, ...Tc8 e ...Ce5, com a torre apontada para o rei branco.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        O LEVENFISH (6.f4) CARREGA UMA ARMADILHA CONCRETA: o lance natural
+        ...Bg7 perde material por e5. Core porque é a punição mais rápida de
+        quem joga o Dragão no piloto automático.
+      */
+      id: 'dragao-levenfish',
+      importancia: 'core',
+      eco: 'B71',
+      conceitos: [
+        'concept.space-vs-counterplay',
+        'concept.material-vs-initiative',
+        'concept.open-file',
+      ],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'Bg7',
+        porque:
+          'O lance natural do Dragão perde material aqui: as brancas jogam e5, e depois de ...dxe5 fxe5 o cavalo de f6 está atacado e a dama em d8 fica na mira de Bb5+ e da coluna d. Contra 6.f4, o lance é ...Cc6, defendendo antes de fianchetar.',
+      },
+      fronteira: { type: 'handoff', planId: 'dragao-ordem' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se avançar f4 cedo para punir o fianchetto no automático.',
+      intencaoDoAdversario:
+        'Jogar e5 no lance seguinte, aproveitando que a dama preta em d8 e o cavalo em f6 ficam na mesma coluna.',
+      objetivoDoAluno:
+        'Jogar ...Cc6 antes de ...Bg7: o cavalo cobre e5 e a armadilha inteira deixa de existir.',
+      name: 'Ataque Levenfish',
+      description: 'As brancas avançam f4 cedo e ameaçam e5 contra o fianchetto automático.',
+      rootNodeId: '',
+      line: [
+        ...dragaoMain.slice(0, 10),
+        lesson(
+          11,
+          'f4',
+          'O avanço imediato: as brancas preparam e5 antes de as pretas terminarem o fianchetto.',
+          {
+            arrows: [{ from: 'f2', to: 'f4' }],
+            strategicIdea:
+              'Uma ruptura preparada vale mais que uma peça desenvolvida, por um lance.',
+            resultingPlan: 'e5 em seguida, atacando o cavalo de f6 e a coluna d ao mesmo tempo.',
+          },
+        ),
+        lesson(
+          12,
+          'Nc6',
+          'O cavalo cobre e5 antes de qualquer outra coisa — a armadilha some com um lance.',
+          {
+            highlights: ['e5'],
+            resultingPlan: '...Bg7 no lance seguinte, agora com a ruptura branca neutralizada.',
+          },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'dragao-coluna-c',
+      name: 'A corrida pela coluna c',
+      positionNodeId: 'root',
+      positionPly: 10,
+      objective: 'Pôr a torre em c8 e somar peças contra o cavalo de c3 e o rei branco atrás dele.',
+      when: 'Assim que as brancas rocarem do lado grande.',
+      risk: 'Gastar lances em defesa: num ataque de roques opostos, cada lance defensivo é meio tempo perdido.',
+      porQueFunciona:
+        'A troca ...cxd4 abriu a coluna c no quarto lance, e o rei branco vai para exatamente essa ala. A torre em c8, o bispo de g7 e a dama em a5 apontam todos para c3 — e o sacrifício de qualidade em c3, que parece extravagante, é só o lance que remove o último defensor do rei.',
+      preparacao:
+        'Roque feito, torre em c8 e o cavalo com caminho para e5 ou c4. É o plano inteiro da defesa.',
+      oQueOAdversarioTenta:
+        'Abrir a coluna h com h4-h5 e trocar o bispo de g7, ou jogar Rb1 tirando o rei da coluna c a tempo.',
+      arrows: [{ from: 'c8', to: 'c3' }],
+    },
+    {
+      id: 'dragao-ordem',
+      name: 'A ordem dos lances é a defesa',
+      positionNodeId: 'root',
+      positionPly: 9,
+      objective: 'Escolher entre ...Bg7 e ...Cc6 conforme as brancas tiverem jogado f4 ou não.',
+      when: 'No sexto lance preto, sempre — antes de completar o fianchetto.',
+      risk: 'Adiar o fianchetto tempo demais e perder a peça que dá nome e força à variante.',
+      porQueFunciona:
+        'O Dragão tem uma formação fixa e uma ordem que depende do adversário. Com f4 jogado, a ruptura e5 ataca o cavalo de f6 e a coluna d de uma vez, e a única peça que a neutraliza é o cavalo em c6. Sem f4, o fianchetto vem primeiro porque o bispo é a peça mais importante da posição.',
+      preparacao:
+        'Olhar o peão de f branco antes de decidir. É uma pergunta de um segundo que evita perder material no sexto lance.',
+      oQueOAdversarioTenta:
+        'Jogar f4 e esperar o fianchetto automático, que é o erro mais comum de quem aprendeu a variante por decoreba.',
+    },
+    {
+      id: 'dragao-bispo',
+      name: 'O bispo de g7 vale a partida',
+      positionNodeId: 'root',
+      positionPly: 10,
+      objective: 'Não deixar o bispo ser trocado sem cobrar algo caro por ele.',
+      when: 'Contra Be3 e Dd2, que é o plano que sempre acaba em Bh6.',
+      risk: 'Gastar ...h5 e ...Rh7 defendendo o bispo enquanto o ataque branco chega pela coluna c.',
+      porQueFunciona:
+        'O bispo em g7 faz três coisas ao mesmo tempo: ataca c3, ataca b2 e defende as casas escuras ao redor do rei preto. Trocá-lo por um bispo que só foi a h6 tira as três de uma vez, e por isso o Iugoslavo gasta dois lances nessa troca. Cada lance que o adiar vale mais que um lance de desenvolvimento.',
+      preparacao:
+        '...h5 no momento certo parando h4-h5, e a torre em c8 já pronta para que a corrida continue enquanto isso.',
+      oQueOAdversarioTenta:
+        'Forçar Bh6 e trocar, depois avançar h5 abrindo a coluna contra um rei sem o defensor das casas escuras.',
+      arrows: [{ from: 'g7', to: 'b2' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Estrutura do Dragão',
+      description:
+        'Peões pretos em d6, e7, f7, g6 e h7 contra peão branco em e4, com a coluna c aberta e os reis em alas opostas. Nenhum dos dois lados tem fraqueza estrutural — o que decide é o número de lances até o rei adversário.',
+      pawnBreaks: ['b5', 'd5', 'h5'],
+      weakSquares: ['d5', 'h6'],
+      openFiles: ['c', 'h'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'dragao-erro-g6-cedo',
+      nodeId: 'root',
+      positionPly: 7,
+      moveSan: 'g6',
+      explanation:
+        'Fianchetar antes de ...Cf6 permite c4, e as brancas montam o Bind de Maróczy: com peões em c4 e e4, a ruptura ...d5 fica impossível e o Dragão perde o contrajogo que o justifica.',
+      principle: 'O lance que impede o plano do adversário vem antes do lance que executa o meu.',
+    },
+  ],
+  version: 1,
+})
+
+const sveshnikov = course({
+  id: 'siciliana-sveshnikov',
+  slug: 'siciliana-sveshnikov',
+  name: 'Siciliana Sveshnikov',
+  side: 'black',
+  ecoCodes: ['B33'],
+  description:
+    'Aceitar um buraco em d5 no quinto lance e provar, pelos vinte seguintes, que as peças valem mais que a casa.',
+  philosophy:
+    'Uma fraqueza escolhida e planejada é um investimento; uma fraqueza sofrida é só uma fraqueza.',
+  difficulty: 3,
+  prerequisites: ['siciliana-foundation'],
+  tags: ['semi-open', 'sharp', 'positional'],
+  transitionToMiddlegame:
+    'A abertura termina quando as pretas jogam ...b5 e ...f5 e o buraco em d5 está disputado por peças. A partir daí a pergunta é se ele vira posto avançado branco ou casa vazia.',
+  mainline: sveshnikovMain,
+  /* Os dois ramos bifurcam no sexto lance branco — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        6.Cdb5 É A LINHA PRINCIPAL e a única que cobra o buraco. Core porque
+        toda a abertura é a resposta a este lance.
+      */
+      id: 'sveshnikov-ndb5',
+      importancia: 'core',
+      eco: 'B33',
+      conceitos: ['concept.backward-pawn', 'concept.bishop-pair', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.fork-on-d5'],
+      erroComum: {
+        lance: 'a6',
+        porque:
+          'Expulsar o cavalo antes de defender d6 perde material: as brancas jogam Cd6+ com xeque e o bispo de f8 nunca sai. A ordem é ...d6 primeiro, tapando a casa, e só depois ...a6.',
+      },
+      fronteira: { type: 'handoff', planId: 'sveshnikov-d5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se ocupar a casa que o avanço preto abriu e cobrar o buraco em d5.',
+      intencaoDoAdversario:
+        'Ocupar a casa d6 com o cavalo ou plantar uma peça em d5 de forma permanente.',
+      objetivoDoAluno:
+        'Tapar d6 com o peão antes de expulsar o cavalo: numa posição com buraco, a ordem dos lances é a defesa.',
+      name: 'Linha principal com 6.Cdb5',
+      description: 'O cavalo pula para b5 mirando a casa d6 que o avanço preto abriu.',
+      rootNodeId: '',
+      line: [
+        ...sveshnikovMain.slice(0, 10),
+        lesson(
+          11,
+          'Ndb5',
+          'O cavalo vai para a casa que o avanço preto acabou de abrir, mirando d6 com xeque.',
+          {
+            highlights: ['d6'],
+            strategicIdea:
+              'Todo avanço de peão abre uma casa: a arte é ocupá-la antes de ela ser tapada.',
+            resultingPlan: 'Bg5 e Cd5, cravando e ocupando a casa fraca ao mesmo tempo.',
+          },
+        ),
+        lesson(
+          12,
+          'd6',
+          'O peão tapa a casa antes de qualquer outra coisa — é o lance que torna a abertura jogável.',
+          {
+            highlights: ['d6'],
+            resultingPlan: '...a6 expulsando o cavalo, e depois ...b5 e ...Be6 disputando d5.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        6.Cf3 RECUA E RECUSA A DISCUSSÃO. Core porque parece inofensivo e não é:
+        sem o cavalo indo a b5, as pretas precisam achar outro plano — e o certo
+        é a cravada imediata.
+      */
+      id: 'sveshnikov-recuo',
+      importancia: 'core',
+      eco: 'B33',
+      conceitos: ['concept.bishop-pair', 'concept.space-vs-counterplay', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'd6',
+        porque:
+          'Tapar a casa d6 sem necessidade entrega um tempo: aqui nenhum cavalo está indo para lá, e o lance fecha a diagonal do bispo de f8. Com o cavalo recuado, as pretas têm um lance mais ativo — cravar o cavalo de c3.',
+      },
+      fronteira: { type: 'handoff', planId: 'sveshnikov-pecas' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se recuar o cavalo e jogar contra o buraco em d5 sem pressa.',
+      intencaoDoAdversario:
+        'Recuar sem se comprometer e ocupar d5 com peças no próprio tempo, sem dar alvos.',
+      objetivoDoAluno:
+        'Cravar o cavalo de c3 com ...Bb4: sem ele, a casa d5 fica sem o defensor que ia ocupá-la.',
+      name: 'Recuo com 6.Cf3',
+      description: 'O cavalo recua e as brancas jogam contra o buraco sem pressa.',
+      rootNodeId: '',
+      line: [
+        ...sveshnikovMain.slice(0, 10),
+        lesson(
+          11,
+          'Nf3',
+          'O recuo tranquilo: as brancas não ocupam nada agora e miram a casa fraca a longo prazo.',
+          {
+            strategicIdea:
+              'Contra uma fraqueza permanente, não há pressa — ela não vai a lugar nenhum.',
+            resultingPlan: 'Bc4, O-O e Cd5, ocupando a casa quando as peças estiverem prontas.',
+          },
+        ),
+        lesson(
+          12,
+          'Bb4',
+          'A cravada imediata: a peça que ia ocupar d5 fica presa, e a fraqueza deixa de ser cobrável.',
+          {
+            arrows: [{ from: 'b4', to: 'c3' }],
+            resultingPlan:
+              '...O-O e ...Bxc3, trocando o defensor da casa e ficando com o par de bispos.',
+          },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'sveshnikov-d5',
+      name: 'Disputar a casa d5 com peças',
+      positionNodeId: 'root',
+      positionPly: 10,
+      objective: 'Somar atacantes sobre d5 até nenhuma peça branca conseguir ficar lá.',
+      when: 'Do sexto lance ao final da partida — é a discussão inteira da abertura.',
+      risk: 'Trocar as peças que disputam a casa e ficar com o buraco sem quem o cubra.',
+      porQueFunciona:
+        'O avanço ...e5 deixa d5 sem peão preto para sempre. Mas uma casa fraca só custa se o adversário puder MANTER uma peça nela: com ...Be6, ...Cf6 e, depois de ...b5, o bispo de b7, as pretas atacam d5 tantas vezes quanto as brancas a defendem — e uma casa disputada é uma casa vazia.',
+      preparacao:
+        'O peão em d6 já tapando a casa vizinha, e ...a6 e ...b5 abrindo caminho para o bispo de c8.',
+      oQueOAdversarioTenta:
+        'Trocar em f6 com Bxf6 e plantar um cavalo em d5 que nenhuma peça preta alcance.',
+      arrows: [{ from: 'e6', to: 'd5' }],
+    },
+    {
+      id: 'sveshnikov-pecas',
+      name: 'As peças pagam o buraco',
+      positionNodeId: 'root',
+      positionPly: 10,
+      objective: 'Manter as peças ativas e o par de bispos, que é o que a estrutura comprou.',
+      when: 'Sempre — a conta da abertura só fecha com peças no tabuleiro.',
+      risk: 'Entrar num final de peças menores: lá o buraco em d5 é a única coisa que ainda existe.',
+      porQueFunciona:
+        'O lance ...e5 expulsa o melhor cavalo branco do centro e abre a diagonal do bispo de f8. A Sveshnikov troca uma casa permanente por atividade permanente, e enquanto as duas coisas convivem, a atividade decide mais partidas. É a mesma aposta da Tarrasch, feita numa posição mais aguda.',
+      preparacao:
+        'Desenvolvimento completo e o avanço ...b5 já feito, para que o bispo de c8 entre na diagonal longa.',
+      oQueOAdversarioTenta:
+        'Trocar peças em série até sobrar a fraqueza, que é o plano correto contra qualquer estrutura deste tipo.',
+    },
+    {
+      id: 'sveshnikov-b5',
+      name: 'A expansão ...b5 e ...f5',
+      positionNodeId: 'root',
+      positionPly: 10,
+      objective: 'Ganhar espaço nas duas alas e abrir as diagonais dos dois bispos.',
+      when: 'Depois de ...a6 e da troca em f6, quando a estrutura já estiver definida.',
+      risk: 'Avançar peões na frente do próprio rei antes de ele estar seguro.',
+      porQueFunciona:
+        'Depois de Bxf6 gxf6, as pretas têm peões dobrados e, em troca, duas colunas e um centro de peões que anda. Os avanços ...b5 e ...f5 usam exatamente esses peões: eles ganham espaço, abrem as diagonais dos dois bispos e disputam a casa d5 pela terceira e quarta vez.',
+      preparacao:
+        'O rei resolvido e o peão em d6 firme. São avanços comprometidos, e comprometer-se com o rei no meio é outra coisa.',
+      oQueOAdversarioTenta:
+        'Parar a expansão com a4, ou ocupar d5 antes de os peões pretos chegarem a disputá-la.',
+      arrows: [{ from: 'f7', to: 'f5' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Estrutura da Sveshnikov',
+      description:
+        'Peões pretos em d6 e e5 com a casa d5 sem defensor de peão, e frequentemente peões dobrados em f6 e f7. É a estrutura mais comprometida do repertório preto — e a que dá em troca as peças mais ativas.',
+      pawnBreaks: ['b5', 'f5', 'd5'],
+      weakSquares: ['d5', 'd6'],
+      openFiles: ['c', 'g'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'sveshnikov-erro-e5-cedo',
+      nodeId: 'root',
+      positionPly: 7,
+      moveSan: 'e5',
+      explanation:
+        'Avançar antes de ...Cf6 deixa as pretas sem a peça que disputa d5: as brancas jogam Cb5 e, depois de ...a6, Cd6+ com xeque e o bispo de f8 preso. O cavalo em f6 vem primeiro por isso.',
+      principle:
+        'Antes de abrir uma casa fraca de propósito, contar quantas peças próprias vão disputá-la.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -7759,6 +8427,9 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   bogo,
   tarrasch,
   jobava,
+  najdorf,
+  dragao,
+  sveshnikov,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),
