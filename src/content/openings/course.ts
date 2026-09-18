@@ -65,6 +65,97 @@ const italianaMain = [
   }),
 ]
 
+/* ------------------------------------------------------------------ Ruy López */
+
+/**
+ * A linha principal da Ruy López: 1.e4 e5 2.Cf3 Cc6 3.Bb5 a6 4.Ba4 Cf6 5.O-O Be7.
+ *
+ * A ESCOLHA DA PRINCIPAL É PEDAGÓGICA. A Morphy com ...a6 é a linha que o aluno
+ * de clube encontra em quase toda partida, e ela ensina a pergunta que define a
+ * abertura: o bispo recua ou troca? Começar pela Berlim daria uma aula de final
+ * antes de uma aula de abertura.
+ */
+const ruyMain = [
+  lesson(1, 'e4', 'O peão ocupa o centro e abre as linhas do bispo e da dama.', {
+    strategicIdea: 'Controle o centro antes de procurar alvos.',
+  }),
+  lesson(2, 'e5', 'As pretas disputam o centro de imediato e abrem as próprias linhas.', {
+    strategicIdea: 'Jogo aberto: as peças vão valer mais que a estrutura.',
+  }),
+  lesson(3, 'Nf3', 'O cavalo ataca e5 e prepara o roque num só lance.', {
+    highlights: ['e5'],
+    arrows: [{ from: 'g1', to: 'f3' }],
+    resultingPlan: 'Desenvolver o bispo e rocar antes de decidir o centro.',
+  }),
+  lesson(4, 'Nc6', 'As pretas defendem e5 desenvolvendo — defesa que também ganha tempo.', {
+    strategicIdea: 'A melhor defesa é a que acrescenta uma peça ao jogo.',
+  }),
+  lesson(5, 'Bb5', 'O bispo ataca o defensor de e5 em vez do peão. É a ideia da Ruy López.', {
+    highlights: ['c6'],
+    arrows: [{ from: 'f1', to: 'b5' }],
+    strategicIdea: 'Atacar quem defende vale mais que atacar o que está defendido.',
+    resultingPlan: 'Roque rápido e pressão permanente sobre e5.',
+  }),
+  lesson(6, 'a6', 'As pretas perguntam ao bispo: trocar ou recuar? É o lance mais jogado.', {
+    strategicIdea: 'Perguntar a uma peça ativa sempre ganha alguma coisa — a troca ou o tempo.',
+  }),
+  lesson(7, 'Ba4', 'O bispo recua mantendo a diagonal e a pressão sobre c6.', {
+    arrows: [{ from: 'b5', to: 'a4' }],
+    resultingPlan: 'O-O, Te1 e c3 preparando d4.',
+  }),
+  lesson(8, 'Nf6', 'As pretas desenvolvem atacando e4 — o tempo é delas agora.', {
+    highlights: ['e4'],
+  }),
+  lesson(9, 'O-O', 'O rei sai do meio e a torre entra. e4 fica indefeso de propósito.', {
+    strategicIdea: 'Na Ruy López, e4 pode esperar: quem captura paga em desenvolvimento.',
+    resultingPlan: 'Te1 recupera o controle de e4 e prepara c3 e d4.',
+  }),
+  lesson(10, 'Be7', 'As pretas completam o desenvolvimento e preparam o roque.', {
+    resultingPlan: 'O-O e depois ...d6 ou ...b5 conforme as brancas se comprometam.',
+  }),
+]
+
+/* ------------------------------------------------------------------- Francesa */
+
+/**
+ * A linha principal da Francesa: 1.e4 e6 2.d4 d5 3.e5 c5 4.c3 Cc6.
+ *
+ * A AVANÇADA É A PRINCIPAL PORQUE É O QUE O ALUNO ENCONTRA. Em nível de clube,
+ * `3.e5` é a resposta mais comum de longe — e é a que produz a estrutura que dá
+ * identidade à defesa: a cadeia de peões e o bispo de c8 preso atrás dela.
+ * Começar pela Winawer daria uma aula de teoria antes de uma aula de estrutura.
+ */
+const francesaMain = [
+  lesson(1, 'e4', 'As brancas ocupam o centro e abrem as linhas do bispo e da dama.', {
+    strategicIdea: 'Contra 1.e4, a Francesa escolhe solidez em vez de simetria.',
+  }),
+  lesson(2, 'e6', 'O peão prepara ...d5 sem entregar nada — e tranca o bispo de c8 por enquanto.', {
+    strategicIdea: 'Este é o compromisso da Francesa: centro sólido, bispo com problema.',
+    resultingPlan: '...d5 no próximo lance, disputando o centro de frente.',
+  }),
+  lesson(3, 'd4', 'As brancas montam o centro completo.', { highlights: ['d4', 'e4'] }),
+  lesson(4, 'd5', 'Agora a disputa: as pretas atacam e4 e obrigam uma decisão.', {
+    highlights: ['e4'],
+    strategicIdea: 'Avançar, trocar ou defender — a partida inteira sai dessa escolha.',
+  }),
+  lesson(5, 'e5', 'As brancas avançam e ganham espaço, fechando o centro.', {
+    arrows: [{ from: 'e4', to: 'e5' }],
+    strategicIdea: 'Cadeia de peões: quem tem espaço manobra, quem tem menos precisa romper.',
+    resultingPlan: 'As pretas atacam a BASE da cadeia, e não o topo.',
+  }),
+  lesson(6, 'c5', 'A ruptura padrão: atacar a base em d4, e não o peão avançado em e5.', {
+    arrows: [{ from: 'c7', to: 'c5' }],
+    strategicIdea: 'Cadeia se ataca pela base. O topo é o que está mais defendido.',
+  }),
+  lesson(7, 'c3', 'As brancas sustentam d4 com peão, como a estrutura pede.', {
+    resultingPlan: 'Cf3, Be2 e O-O, mantendo o espaço.',
+  }),
+  lesson(8, 'Nc6', 'Mais um atacante sobre d4 — a pressão se soma, ela não vem de um lance só.', {
+    highlights: ['d4'],
+    resultingPlan: '...Qb6 e ...Nh6-f5 aumentando a pressão sobre a base.',
+  }),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -1737,6 +1828,494 @@ const slav = course({
   version: 1,
 })
 
+const ruyLopez = course({
+  id: 'ruy-lopez',
+  slug: 'ruy-lopez',
+  name: 'Abertura Espanhola',
+  side: 'white',
+  ecoCodes: ['C60', 'C65', 'C68', 'C80', 'C84'],
+  description:
+    'A abertura clássica do jogo aberto: pressão permanente sobre e5, roque rápido e a manobra que prepara d4.',
+  philosophy:
+    'Atacar quem defende, não o que está defendido. A pressão sobre c6 dura a partida inteira.',
+  difficulty: 3,
+  prerequisites: ['italiana'],
+  tags: ['open', 'positional', 'classical'],
+  transitionToMiddlegame:
+    'A abertura termina quando as duas partes rocaram e a ruptura d4 está preparada por c3. A partir daí a pergunta deixa de ser qual lance e passa a ser em que ala jogar.',
+  mainline: ruyMain,
+  /*
+    ESTE CURSO NASCE COM DOIS RAMOS, E A AUSÊNCIA DOS OUTROS É DECISÃO.
+
+    O §15 lista também a Variante Aberta e a Steinitz Moderna. Elas foram
+    escritas e REMOVIDAS desta entrega por um portão: o do sparring, que exige
+    que o bot alcance toda variação autorada em poucas rodadas — "variação que o
+    bot nunca joga é decoração".
+
+    A linha principal da Espanhola tem dez plies e vários pontos de bifurcação, e
+    essas duas desviam no oitavo e no décimo lance. O bot escolhe entre as
+    continuações conhecidas com um sorteio determinístico; alcançar um desvio tão
+    fundo exigiria que ele acertasse a principal em todos os pontos anteriores.
+
+    TENTEI CONSERTAR O BOT E PIOREI: contar pontos de bifurcação pelo histórico
+    conta os dois lados, e o bot só decide nos lances dele — a mudança quebrou a
+    alcançabilidade de cinco ramos que já funcionavam. Revertida.
+
+    O conteúdo é que se adapta. As duas linhas voltam quando a seleção do bot
+    souber percorrer os desvios sistematicamente, e isso é entrega própria.
+  */
+  variations: [
+    {
+      /*
+        A BERLIM É CORE PORQUE ELA É A RESPOSTA QUE MAIS MUDA O JOGO. Ela não
+        pergunta ao bispo: ataca e4 e convida à troca de damas. Quem só estudou
+        a Morphy chega ao quarto lance sem plano nenhum.
+      */
+      id: 'ruy-berlim',
+      importancia: 'core',
+      eco: 'C65',
+      conceitos: ['concept.bishop-pair', 'concept.space-vs-counterplay', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Nxe5',
+        porque:
+          'Capturar em e5 antes de trocar em c6 devolve tudo: ...Qe7 ou ...Nxe4 recuperam o material com as pretas melhor desenvolvidas. Na Espanhola, o peão de e5 só cai depois de o defensor sair.',
+      },
+      fronteira: { type: 'handoff', planId: 'ruy-d4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se aceitar a estrutura danificada em troca do par de bispos e de um final sólido.',
+      intencaoDoAdversario:
+        'Atacar e4 de imediato e forçar um jogo em que as damas saem cedo e a estrutura vale mais que a iniciativa.',
+      objetivoDoAluno:
+        'Trocar em c6 no momento certo e usar a maioria de peões da ala do rei, sem esperar ataque rápido.',
+      name: 'Defesa Berlim',
+      description: 'As pretas atacam e4 no terceiro lance em vez de perguntar ao bispo.',
+      rootNodeId: '',
+      line: [
+        ...ruyMain.slice(0, 5),
+        lesson(6, 'Nf6', 'As pretas ignoram o bispo e atacam e4 diretamente.', {
+          highlights: ['e4'],
+          strategicIdea:
+            'Quem não pergunta ao bispo aceita outra partida: mais estrutura, menos ataque.',
+        }),
+        lesson(
+          7,
+          'O-O',
+          'As brancas rocam e deixam e4 de lado — a captura custa tempo às pretas.',
+          {
+            resultingPlan: 'Te1 e d4 depois de a estrutura se definir.',
+          },
+        ),
+        lesson(8, 'Nxe4', 'As pretas aceitam o peão, e agora a troca em c6 ganha sentido.', {
+          strategicIdea: 'O peão volta. O que fica é a estrutura.',
+        }),
+      ],
+    },
+    {
+      /*
+        A TROCA É A LIÇÃO DE ESTRUTURA DO CURSO. Ela entrega o par de bispos de
+        graça e ganha uma maioria sã na ala do rei — a conta que decide se um
+        final é bom ou ruim.
+      */
+      id: 'ruy-troca',
+      importancia: 'core',
+      eco: 'C68',
+      conceitos: ['concept.bishop-pair', 'concept.backward-pawn', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Nxe5',
+        porque:
+          'Capturar logo depois da troca parece ganhar um peão e perde a vantagem: ...Qd4 recupera o material com garfo sobre o cavalo e e4. A troca em c6 prepara o final, não um golpe imediato.',
+      },
+      fronteira: { type: 'handoff', planId: 'ruy-maioria' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se usar o par de bispos antes que o final chegue: num centro aberto eles valem mais que a estrutura.',
+      intencaoDoAdversario:
+        'Ficar com os dois bispos e abrir a posição antes de o final chegar, quando a estrutura ainda não decide.',
+      objetivoDoAluno:
+        'Trocar peças e chegar a um final com quatro peões contra três na ala do rei — a maioria sã contra a maioria dobrada.',
+      name: 'Variante da Troca',
+      description: 'As brancas trocam em c6 e apostam na estrutura em vez da iniciativa.',
+      rootNodeId: '',
+      line: [
+        ...ruyMain.slice(0, 6),
+        lesson(
+          7,
+          'Bxc6',
+          'O bispo é entregue para danificar a estrutura preta de forma permanente.',
+          {
+            arrows: [{ from: 'a4', to: 'c6' }],
+            strategicIdea: 'Par de bispos por estrutura: a conta fecha no final, e não agora.',
+          },
+        ),
+        lesson(8, 'dxc6', 'As pretas recapturam abrindo a diagonal do bispo de c8.', {
+          resultingPlan: 'Os bispos compensam enquanto houver peças no tabuleiro.',
+        }),
+        lesson(9, 'O-O', 'O rei sai do meio antes de qualquer troca no centro.', {
+          resultingPlan: 'd4 e trocas: cada peça fora aproxima o final da maioria sã.',
+        }),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'ruy-d4',
+      name: 'A ruptura d4 preparada por c3',
+      positionNodeId: 'root',
+      positionPly: 9,
+      objective: 'Montar o centro com c3 e d4 depois de o rei estar seguro.',
+      when: 'Com o roque feito e a torre já em e1.',
+      risk: 'Romper antes de c3: sem apoio, a troca em d4 entrega o centro que a abertura construiu.',
+      porQueFunciona:
+        'A Espanhola gasta cinco lances construindo pressão sobre e5 sem ganhar nada de imediato. O d4 é a cobrança: quando ele vem com c3 sustentando, o centro preto precisa ceder ou trocar em condições piores.',
+      preparacao:
+        'Rei rocado, torre em e1 e o peão em c3. Sem c3, a recaptura em d4 fica com a dama e o tempo se perde.',
+      oQueOAdversarioTenta:
+        'Ganhar espaço na ala da dama com ...b5 e ...Na5 para trocar o bispo, ou fixar o centro com ...d6 antes de o avanço vir.',
+      arrows: [
+        { from: 'c2', to: 'c3' },
+        { from: 'd2', to: 'd4' },
+      ],
+    },
+    {
+      id: 'ruy-manobra',
+      name: 'Manobra Cb1-d2-f1-g3',
+      positionNodeId: 'root',
+      positionPly: 9,
+      objective: 'Levar o cavalo da dama à ala do rei sem abrir a posição.',
+      when: 'Em estruturas fechadas, depois de c3 e antes de d4.',
+      risk: 'Manobrar com o centro já aberto: três lances com um cavalo é um luxo que a posição aberta não permite.',
+      porQueFunciona:
+        'O cavalo de b1 é a peça mais lenta da Espanhola, e em g3 ele vigia e4, f5 e h5. É a manobra que dá nome ao plano clássico, e ela só é possível porque o centro travado dá tempo.',
+      preparacao:
+        'O centro sustentado por c3 e d3 ou d4 fechado; sem isso, a manobra deixa o rei sem defensores no pior momento.',
+      oQueOAdversarioTenta:
+        'Abrir o centro justamente durante a manobra, ou avançar na ala da dama enquanto as peças brancas viajam para o outro lado.',
+      arrows: [
+        { from: 'b1', to: 'd2' },
+        { from: 'd2', to: 'f1' },
+      ],
+    },
+    {
+      id: 'ruy-maioria',
+      name: 'A maioria sã no final',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Trocar peças e usar quatro peões contra três na ala do rei.',
+      when: 'Depois da troca em c6, quando a estrutura preta ficou com peões dobrados.',
+      risk: 'Trocar tudo com os bispos pretos ainda ativos: eles compensam a estrutura enquanto houver peças.',
+      porQueFunciona:
+        'Os peões dobrados em c não produzem um peão passado na ala da dama; a maioria branca na ala do rei produz. O final é ganho de material sem ganho de material — é a estrutura que decide.',
+      preparacao:
+        'Os bispos pretos neutralizados, por troca ou por peões nas casas certas. Com eles ativos, o final ainda não chegou.',
+      oQueOAdversarioTenta:
+        'Evitar trocas, abrir diagonais para os dois bispos e criar jogo antes que a estrutura passe a mandar.',
+    },
+  ],
+  structures: [
+    {
+      name: 'Centro espanhol',
+      description:
+        'Peões brancos em e4 e c3 preparando d4, contra peões pretos em e5 e d6. O espaço é branco; a solidez, preta.',
+      pawnBreaks: ['d4', 'f5'],
+      weakSquares: ['d5', 'f5'],
+      openFiles: ['e'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'ruy-erro-captura-cedo',
+      nodeId: 'root',
+      /*
+        A POSIÇÃO É DEPOIS DE ...a6, E O PORTÃO ME OBRIGOU A ACERTAR DUAS VEZES.
+
+        Eu tinha escrito "trocar em c6 antes de ...a6" — que é IMPOSSÍVEL: nessa
+        posição é a vez das pretas, e as brancas teriam de jogar dois lances
+        seguidos. O portão de legalidade pegou.
+
+        O erro real desta abertura é o oposto: capturar em e5 ANTES de tirar o
+        defensor. É o que faz um iniciante perder uma peça na Espanhola.
+      */
+      positionPly: 6,
+      moveSan: 'Nxe5',
+      explanation:
+        'Capturar em e5 antes de trocar em c6 perde uma peça: o cavalo de c6 simplesmente recaptura, e o bispo de b5 não compensa nada.',
+      principle:
+        'Numa abertura que ataca o DEFENSOR, a ordem é tudo: tire o defensor primeiro, capture depois.',
+    },
+  ],
+  version: 1,
+})
+
+const french = course({
+  id: 'francesa',
+  slug: 'francesa',
+  name: 'Defesa Francesa',
+  side: 'black',
+  ecoCodes: ['C00', 'C01', 'C03', 'C11', 'C15'],
+  description:
+    'Uma defesa sólida contra 1.e4: centro disputado de frente, cadeia de peões e um plano claro de ruptura.',
+  philosophy:
+    'Aceitar menos espaço em troca de um centro sem fraquezas, e atacar a base da cadeia em vez do topo.',
+  difficulty: 2,
+  prerequisites: [],
+  tags: ['semi-open', 'positional', 'closed'],
+  transitionToMiddlegame:
+    'A abertura termina quando a pressão sobre d4 está montada e as brancas precisam decidir entre sustentar, trocar ou avançar. A partir daí a pergunta é o que fazer com o bispo de c8.',
+  mainline: francesaMain,
+  variations: [
+    {
+      /*
+        A TARRASCH É A LINHA MAIS COMUM DEPOIS DA AVANÇADA e a que mais confunde:
+        `3.Cd2` parece passivo e é flexível. Ela é core porque o aluno precisa
+        saber que existe uma resposta que NÃO trava o centro.
+      */
+      id: 'francesa-tarrasch',
+      importancia: 'core',
+      eco: 'C03',
+      conceitos: ['concept.iqp', 'concept.break-c5', 'concept.bad-bishop'],
+      estrutura: 'structure.iqp',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'Bb4',
+        porque:
+          'A cravada não existe aqui: com o cavalo em d2 e não em c3, o bispo em b4 não crava nada e ainda pode ser expulso com c3 ganhando tempo. A resposta certa é atacar o centro com ...c5.',
+      },
+      fronteira: { type: 'handoff', planId: 'francesa-c5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se escolher a flexibilidade: o cavalo em d2 não bloqueia o peão de c e mantém o centro em aberto.',
+      intencaoDoAdversario:
+        'Desenvolver sem travar o peão de c, mantendo a opção de trocar no centro e jogar contra um peão isolado depois.',
+      objetivoDoAluno:
+        'Atacar o centro imediatamente com ...c5: contra a Tarrasch, o tempo vale mais que a estrutura.',
+      name: 'Variante Tarrasch',
+      description: 'As brancas desenvolvem o cavalo em d2 e mantêm o centro flexível.',
+      rootNodeId: '',
+      line: [
+        ...francesaMain.slice(0, 4),
+        lesson(
+          5,
+          'Nd2',
+          'O cavalo vai para d2 em vez de c3: ele não bloqueia o peão de c e evita a cravada.',
+          {
+            strategicIdea: 'Lance modesto, ideia flexível: o centro não fecha.',
+            resultingPlan: 'exd5 ou e5 depois, conforme as pretas se comprometam.',
+          },
+        ),
+        lesson(
+          6,
+          'c5',
+          'As pretas atacam o centro de imediato, antes que as brancas escolham a estrutura.',
+          {
+            arrows: [{ from: 'c7', to: 'c5' }],
+            resultingPlan:
+              'A partida costuma chegar a um peão isolado — e ele é jogável dos dois lados.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        A WINAWER É A LINHA MAIS AFIADA DA DEFESA: as pretas entregam o par de
+        bispos para danificar a estrutura branca. Ela é core porque ensina a
+        conta que aparece em toda a Francesa — estrutura contra bispos.
+      */
+      id: 'francesa-winawer',
+      importancia: 'core',
+      eco: 'C15',
+      conceitos: ['concept.bishop-pair', 'concept.backward-pawn', 'concept.break-c5'],
+      estrutura: 'structure.french-chain',
+      erroComum: {
+        lance: 'Nf6',
+        porque:
+          'Desenvolver o cavalo aqui permite Bg5 com pressão e devolve a iniciativa: a Winawer existe justamente porque ...Bb4 pergunta ao cavalo de c3 ANTES de as brancas se organizarem.',
+      },
+      fronteira: { type: 'handoff', planId: 'francesa-c5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se aceitar os peões dobrados em troca do par de bispos e do espaço no centro.',
+      intencaoDoAdversario:
+        'Ocupar o centro com o cavalo em c3 e desenvolver naturalmente, sem conceder estrutura.',
+      objetivoDoAluno:
+        'Cravar o cavalo que sustenta e4 e forçar uma decisão: ou as brancas quebram a própria estrutura, ou perdem o centro.',
+      name: 'Variante Winawer',
+      description: 'As pretas cravam o cavalo de c3 e aceitam entregar o par de bispos.',
+      rootNodeId: '',
+      line: [
+        ...francesaMain.slice(0, 4),
+        lesson(
+          5,
+          'Nc3',
+          'O cavalo defende e4 e ocupa a casa natural de desenvolvimento — mas fica preso à defesa do centro.',
+          {
+            highlights: ['e4'],
+            resultingPlan: 'e5 ou Bg5 depois, conforme as pretas se comprometam.',
+          },
+        ),
+        lesson(
+          6,
+          'Bb4',
+          'A cravada: o cavalo que defende e4 fica preso, e as brancas precisam escolher.',
+          {
+            arrows: [{ from: 'f8', to: 'b4' }],
+            strategicIdea: 'Atacar o defensor do centro vale mais que atacar o centro.',
+            resultingPlan:
+              'Depois de a4 e Bxc3, a estrutura branca fica danificada de forma permanente.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        A TROCA É A LINHA QUE PARECE MORTA E NÃO É. Ela some com a tensão e com
+        o problema do bispo — e por isso é core: o aluno precisa saber que a
+        Francesa também produz posições simétricas, e como jogá-las.
+      */
+      id: 'francesa-troca',
+      importancia: 'core',
+      eco: 'C01',
+      conceitos: ['concept.open-file', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Qxd5',
+        porque:
+          'Recapturar com a dama entrega o tempo a Cc3 e não resolve nada: é o peão de e6 que recaptura, e com ele o bispo de c8 finalmente ganha uma diagonal.',
+      },
+      fronteira: { type: 'handoff', planId: 'francesa-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se que simetria não é empate: quem desenvolve com propósito e ocupa a coluna aberta primeiro joga melhor.',
+      intencaoDoAdversario:
+        'Tirar a tensão e jogar uma posição simétrica, apostando que a Francesa sem cadeia perde o plano.',
+      objetivoDoAluno:
+        'Recapturar com o peão de e, soltar o bispo de c8 e disputar a coluna e antes das brancas.',
+      name: 'Variante da Troca',
+      description: 'As brancas trocam em d5 e a estrutura fica simétrica.',
+      rootNodeId: '',
+      line: [
+        ...francesaMain.slice(0, 4),
+        lesson(5, 'exd5', 'As brancas simplificam e a tensão central desaparece.', {
+          strategicIdea:
+            'Sem cadeia, ninguém tem alvo fixo — e o bispo preso deixa de ser problema.',
+        }),
+        lesson(6, 'exd5', 'Recapture com o peão de e: é ele que abre a diagonal do bispo de c8.', {
+          arrows: [{ from: 'c8', to: 'f5' }],
+          resultingPlan: '...Bd6, ...Cf6 e ...O-O, com a coluna e disputada.',
+        }),
+      ],
+    },
+    {
+      /*
+        `secondary`: a Clássica é boa e menos frequente em clube que as três
+        acima. Ela entra para o aluno reconhecer a cravada em g5, não para ser
+        cobrada no treino.
+      */
+      id: 'francesa-classica',
+      importancia: 'secondary',
+      intencaoDoAdversario:
+        'Desenvolver com Cc3 e cravar o cavalo de f6, somando pressão sobre d5 antes de decidir o centro.',
+      objetivoDoAluno:
+        'Escolher entre desfazer a cravada e contra-atacar o centro, sabendo que as duas são jogáveis.',
+      name: 'Variante Clássica',
+      description: 'As pretas desenvolvem o cavalo e as brancas cravam com Bg5.',
+      rootNodeId: '',
+      line: [
+        ...francesaMain.slice(0, 4),
+        lesson(
+          5,
+          'Nc3',
+          'O cavalo defende e4 e abre caminho para Bg5, somando pressão sobre d5 de forma indireta.',
+          {
+            highlights: ['e4'],
+            resultingPlan: 'Bg5 cravando o cavalo, e depois e5 com tempo.',
+          },
+        ),
+        lesson(6, 'Nf6', 'As pretas desenvolvem e somam pressão sobre e4.', {
+          strategicIdea: 'Outra forma de perguntar ao centro: com peça, e não com o bispo.',
+        }),
+        lesson(7, 'Bg5', 'A cravada aumenta a pressão sobre d5 de forma indireta.', {
+          resultingPlan: 'e5 depois, expulsando o cavalo com tempo.',
+        }),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'francesa-c5',
+      name: 'Atacar a base da cadeia',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Somar atacantes sobre d4 até que a base da cadeia ceda.',
+      when: 'Sempre que as brancas fecharem o centro com e5.',
+      risk: 'Trocar em d4 cedo demais: sem atacantes suficientes, a troca só melhora as brancas.',
+      porQueFunciona:
+        'Uma cadeia de peões só pode ser atacada pela base — o topo está defendido pelo próprio peão de trás. Com ...c5, ...Cc6 e ...Db6, três peças pressionam d4, e as brancas precisam sustentar com peças em vez de peões.',
+      preparacao:
+        'O cavalo em c6 e a dama em b6 antes de qualquer captura. A pressão da Francesa é cumulativa: ela nunca vem de um lance só.',
+      oQueOAdversarioTenta:
+        'Sustentar d4 com c3 e Cf3 e, quando a pressão apertar, trocar em c5 para abrir a posição a favor do espaço.',
+      arrows: [{ from: 'c7', to: 'c5' }],
+    },
+    {
+      id: 'francesa-bispo',
+      name: 'Resolver o bispo de c8',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Dar uma diagonal ao bispo que o peão de e6 trancou.',
+      when: 'Em toda estrutura da Francesa — é o problema permanente da defesa.',
+      risk: 'Gastar lances demais com uma peça e ficar atrasado no resto do desenvolvimento.',
+      porQueFunciona:
+        'O peão em e6 é o preço da solidez, e ele tranca o bispo de casas claras. As três saídas são ...b6 com ...Ba6, ...Bd7-b5 e a troca depois de ...exd5. Uma peça que não joga é material a menos.',
+      preparacao:
+        'O centro estável o bastante para gastar dois lances com uma peça. Com a cadeia sob ataque, a ruptura vem antes.',
+      oQueOAdversarioTenta:
+        'Manter a cadeia fechada para que o bispo nunca encontre diagonal, e trocar as peças ativas pretas.',
+    },
+    {
+      id: 'francesa-f6',
+      name: 'A segunda ruptura: ...f6',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Atacar o topo da cadeia depois que a base já está pressionada.',
+      when: 'Quando ...c5 sozinho não basta e o peão de e5 é o que sufoca a posição.',
+      risk: 'Abrir a coluna f com o rei ainda no meio: a ruptura é boa depois do roque, não antes.',
+      porQueFunciona:
+        'Depois de ...c5, o peão de e5 costuma ficar sustentado só pelo peão de d4 ou por peças. ...f6 ataca esse ponto e devolve espaço às pretas — e a troca em f6 abre a coluna para a torre.',
+      preparacao:
+        'Rei já rocado e a pressão sobre d4 montada. As duas rupturas juntas são o plano; cada uma sozinha é meia ideia.',
+      oQueOAdversarioTenta:
+        'Sustentar e5 com f4 e Cf3, ou responder à ruptura com exf6 para deixar o peão de e6 atrasado.',
+      arrows: [{ from: 'f7', to: 'f6' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Cadeia da Francesa',
+      description:
+        'Peões brancos em d4 e e5 contra peões pretos em d5 e e6. As brancas têm espaço; as pretas têm um plano de ruptura escrito na própria estrutura.',
+      pawnBreaks: ['c5', 'f6', 'f5'],
+      weakSquares: ['d4', 'e5'],
+      openFiles: ['c', 'f'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'francesa-erro-bispo-preso',
+      nodeId: 'root',
+      /*
+        PLY 5, E NÃO 4: depois de quatro lances é a vez das BRANCAS, e ...Bd7 é
+        lance preto. O portão de legalidade pegou — um erro comum ancorado na
+        vez errada é notação que o aluno não consegue reproduzir.
+      */
+      positionPly: 5,
+      moveSan: 'Bd7',
+      explanation:
+        'Desenvolver o bispo para d7 antes de decidir a estrutura o deixa numa casa sem futuro: ele bloqueia a própria dama e continua sem diagonal.',
+      principle:
+        'Na Francesa, o bispo de c8 não se desenvolve — ele se RESOLVE, e a solução depende de como o centro fechar.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -1744,6 +2323,8 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   caroKann,
   qgd,
   slav,
+  ruyLopez,
+  french,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),

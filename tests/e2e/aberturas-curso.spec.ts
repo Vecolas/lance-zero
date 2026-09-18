@@ -284,6 +284,24 @@ test('o catálogo filtra por lado e por nível, na mesma fileira', async ({ page
   await page.getByRole('button', { name: 'Todas', exact: true }).click()
   await page.getByRole('button', { name: /Filtrar por nível/ }).click()
   await page.getByRole('button', { name: 'Avançada' }).click()
+  /*
+    O FILTRO PASSOU A MEDIR O FILTRO, e a mudança veio de um vermelho real.
+
+    A asserção antiga era que "Avançada" não devolvia NADA — verdade enquanto o
+    catálogo tinha só cursos de nível 1 e 2. A Abertura Espanhola entrou com
+    nível 3, e o estado vazio deixou de aparecer.
+
+    O teste não estava protegendo o estado vazio: ele estava protegendo o
+    FILTRO. Medir que ele separa o avançado do iniciante é mais forte do que
+    medir que ele esvazia a lista — e continua valendo quando o catálogo crescer
+    de novo.
+  */
+  await expect(page.getByRole('link', { name: /Abertura Espanhola/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Abertura Italiana/ })).toBeHidden()
+
+  // E o estado vazio continua existindo, para a combinação que de fato não tem
+  // nenhum curso: avançada E pelas pretas.
+  await page.getByRole('button', { name: 'Pretas', exact: true }).click()
   await expect(page.getByText(/Nenhuma abertura corresponde aos filtros/)).toBeVisible()
 })
 

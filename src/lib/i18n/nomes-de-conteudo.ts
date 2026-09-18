@@ -56,6 +56,14 @@ const HABILIDADE_EM_INGLES: Record<string, string> = {
 /** Abertura → nome oficial em inglês. */
 const ABERTURA_EM_INGLES: Record<string, string> = {
   italiana: 'Italian Game',
+  francesa: 'French Defence',
+  /*
+    "Ruy Lopez" é o nome oficial em inglês — não "Spanish Opening". Em
+    português a abertura é a Espanhola, e em inglês ela leva o nome do padre
+    que a descreveu. Traduzir literalmente produziria um nome que nenhuma
+    fonte usa. Ver `docs/i18n-glossary.md`.
+  */
+  'ruy-lopez': 'Ruy Lopez',
   escocesa: 'Scotch Game',
   'sistema-londres': 'London System',
   'caro-kann': 'Caro-Kann Defence',
