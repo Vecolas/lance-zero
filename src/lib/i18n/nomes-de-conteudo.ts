@@ -56,6 +56,7 @@ const HABILIDADE_EM_INGLES: Record<string, string> = {
 /** Abertura → nome oficial em inglês. */
 const ABERTURA_EM_INGLES: Record<string, string> = {
   italiana: 'Italian Game',
+  'gambito-da-dama-aceito': "Queen's Gambit Accepted",
   /*
     A CHAVE É O ID DO CURSO, E NÃO O SLUG. Eles coincidem em quase todos e
     divergem neste: o endereço é `/aberturas/siciliana`, mas o curso se chama

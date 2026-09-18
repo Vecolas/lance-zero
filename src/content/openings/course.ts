@@ -204,6 +204,39 @@ const sicilianaMain = [
   }),
 ]
 
+/* ----------------------------------------------- Gambito da Dama Aceito */
+
+/** 1.d4 d5 2.c4 dxc4 3.Cf3 Cf6 4.e3 e6 — desenvolvimento antes de segurar o peão. */
+const qgaMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro com o peão da dama.', {
+    strategicIdea: 'Aberturas de 1.d4 são mais lentas e mais estruturais que as de 1.e4.',
+  }),
+  lesson(2, 'd5', 'As pretas disputam o centro de frente, sem conceder espaço.', {
+    highlights: ['d5'],
+  }),
+  lesson(3, 'c4', 'O gambito: o peão de c ataca d5 e oferece material por centro.', {
+    arrows: [{ from: 'c2', to: 'c4' }],
+    strategicIdea: 'Não é gambito de verdade — o peão volta. O que se compra é tempo e centro.',
+  }),
+  lesson(4, 'dxc4', 'As pretas aceitam e cedem o centro por enquanto, ganhando um tempo livre.', {
+    strategicIdea: 'Aceitar não é ganância: é abrir a diagonal e escolher onde desenvolver.',
+    resultingPlan: '...e6 e ...c5 atacando o centro que as brancas vão montar.',
+  }),
+  lesson(5, 'Nf3', 'O cavalo impede ...e5 e desenvolve antes de recuperar o peão.', {
+    highlights: ['e5'],
+    resultingPlan: 'e3 e Bxc4, com o peão de volta e o desenvolvimento pronto.',
+  }),
+  lesson(6, 'Nf6', 'As pretas desenvolvem e vigiam d5, sem tentar segurar o peão a mais.', {
+    strategicIdea: 'Quem tenta segurar o peão de c4 com ...b5 paga com a estrutura.',
+  }),
+  lesson(7, 'e3', 'O peão abre a diagonal do bispo de f1, que vai recuperar o material.', {
+    resultingPlan: 'Bxc4, O-O e a ruptura e4 quando as peças estiverem prontas.',
+  }),
+  lesson(8, 'e6', 'As pretas abrem a saída do bispo de f8 e preparam a ruptura ...c5.', {
+    resultingPlan: '...c5 atacando a base do centro branco, e ...Cc6 somando pressão.',
+  }),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -2598,6 +2631,197 @@ const sicilianFoundation = course({
   version: 1,
 })
 
+const qga = course({
+  id: 'gambito-da-dama-aceito',
+  slug: 'gambito-da-dama-aceito',
+  name: 'Gambito da Dama Aceito',
+  side: 'black',
+  ecoCodes: ['D20', 'D21', 'D24', 'D27'],
+  description:
+    'Aceitar o peão de c4 sem tentar segurá-lo: ceder o centro por um tempo e atacá-lo com ...c5 depois.',
+  philosophy: 'O peão volta. O que fica é o tempo livre e a diagonal aberta para o bispo de c8.',
+  difficulty: 2,
+  prerequisites: [],
+  tags: ['closed', 'positional'],
+  transitionToMiddlegame:
+    'A abertura termina quando as brancas recuperam o peão e as pretas jogam ...c5. A partir daí a pergunta é quem controla a casa d4.',
+  mainline: qgaMain,
+  variations: [
+    {
+      /*
+        A VARIANTE CENTRAL É A PUNIÇÃO DE QUEM ACEITA POR GANÂNCIA: as brancas
+        montam e4 de imediato e ficam com centro grande. Core porque é o teste
+        mais direto da defesa.
+      */
+      id: 'qga-central',
+      importancia: 'core',
+      eco: 'D20',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.break-c5',
+        'concept.space-vs-counterplay',
+      ],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'b5',
+        porque:
+          'Tentar segurar o peão com ...b5 enfraquece a6 e c6 de forma permanente, e depois de a4 a estrutura preta racha. O peão de c4 nunca foi o objetivo — ele é a moeda que compra tempo.',
+      },
+      fronteira: { type: 'handoff', planId: 'qga-c5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se montar o centro grande de imediato e usar o tempo que a captura preta custou.',
+      intencaoDoAdversario:
+        'Ocupar o centro inteiro com e4 e d4 e provar que o peão a mais custou às pretas o direito de disputar o meio do tabuleiro.',
+      objetivoDoAluno:
+        'Atacar o centro antes que ele se consolide: com ...e5 ou ...c5, um centro grande demais vira alvo grande demais.',
+      name: 'Variante Central',
+      description: 'As brancas montam e4 de imediato em vez de recuperar o peão com calma.',
+      rootNodeId: '',
+      line: [
+        ...qgaMain.slice(0, 4),
+        lesson(
+          5,
+          'e4',
+          'As brancas ocupam o centro inteiro e deixam o peão de c4 para depois — espaço agora, material depois.',
+          {
+            arrows: [{ from: 'e2', to: 'e4' }],
+            strategicIdea: 'Centro grande é força e alvo ao mesmo tempo.',
+            resultingPlan: 'Bxc4 mais tarde, com o centro já montado.',
+          },
+        ),
+        lesson(
+          6,
+          'e5',
+          'As pretas atacam o centro antes que ele se consolide, abrindo a própria diagonal.',
+          {
+            highlights: ['d4'],
+            resultingPlan:
+              '...exd4 e ...Cc6, com o centro branco desfeito antes de virar vantagem.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        A CLÁSSICA COM a6 É O SISTEMA MAIS SÓLIDO DA DEFESA e o mais jogado em
+        clube. Core porque ensina a ordem: ...a6 tira b5 das peças brancas ANTES
+        de o bispo sair.
+      */
+      id: 'qga-classica',
+      importancia: 'core',
+      eco: 'D27',
+      conceitos: ['concept.break-c5', 'concept.hanging-pawns', 'concept.open-file'],
+      estrutura: 'structure.hanging-pawns',
+      erroComum: {
+        lance: 'Nc6',
+        porque:
+          'Desenvolver o cavalo para c6 antes de ...c5 bloqueia justamente o peão que precisa avançar, e a ruptura que dá vida à defesa fica impossível sem perder mais um tempo.',
+      },
+      fronteira: { type: 'handoff', planId: 'qga-c5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se recuperar o peão com desenvolvimento e ocupar a casa d4 antes da ruptura preta.',
+      intencaoDoAdversario:
+        'Recuperar o peão com Bxc4 e ocupar o centro, apostando que as pretas demoram a jogar ...c5.',
+      objetivoDoAluno:
+        'Preparar ...c5 com ...a6 e ...b5, ganhando espaço na ala da dama antes de atacar o centro.',
+      name: 'Variante Clássica',
+      description: 'As brancas recuperam o peão com o bispo e as pretas preparam ...c5 com ...a6.',
+      rootNodeId: '',
+      line: [
+        ...qgaMain.slice(0, 7),
+        lesson(
+          8,
+          'a6',
+          'Antes de qualquer outra coisa, tirar a casa b5 das peças brancas e preparar ...b5.',
+          {
+            strategicIdea:
+              'A ordem é o conteúdo: tirar a casa antes de romper garante o espaço na ala.',
+            resultingPlan: '...b5, ...Bb7 e ...c5, com a ala da dama ocupada.',
+          },
+        ),
+        lesson(
+          9,
+          'Bxc4',
+          'As brancas finalmente recuperam o peão, já com todo o desenvolvimento pronto.',
+          { resultingPlan: 'O-O e a disputa da casa d4.' },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'qga-c5',
+      name: 'A ruptura ...c5',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Atacar a base do centro branco e disputar a casa d4.',
+      when: 'Depois de ...e6 e, idealmente, de ...a6 com ...b5.',
+      risk: 'Romper com o rei ainda no meio: o centro abre a favor de quem já rocou.',
+      porQueFunciona:
+        'O peão de c4 foi capturado justamente para que a coluna c fique livre. Com ...c5 as pretas atacam d4, abrem a coluna para a torre e transformam o tempo ganho na abertura em pressão concreta.',
+      preparacao:
+        'O bispo de f8 já com saída por ...e6 e, quando possível, ...a6 e ...b5 garantindo espaço. Sem isso, a ruptura só abre linhas para o adversário.',
+      oQueOAdversarioTenta:
+        'Ocupar d4 com peça depois da troca, ou avançar d5 antes da ruptura para fechar o centro a favor do espaço.',
+      arrows: [{ from: 'c7', to: 'c5' }],
+    },
+    {
+      id: 'qga-bispo',
+      name: 'A diagonal do bispo de c8',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Usar a diagonal que a captura em c4 abriu, antes de fechá-la com peões.',
+      when: 'Logo depois de ...dxc4, e sempre antes de ...e6 travar a saída.',
+      risk: 'Esquecer o bispo e jogar ...e6 cedo: a defesa perde a única vantagem que a captura deu.',
+      porQueFunciona:
+        'Capturar em c4 abre a diagonal c8-h3 de graça. É a diferença entre o Gambito Aceito e o Recusado: aqui o bispo problemático da família toda tem saída natural.',
+      preparacao:
+        'Nenhuma além da própria captura. O que exige cuidado é a ORDEM — ...e6 antes de resolver o bispo desfaz a vantagem.',
+      oQueOAdversarioTenta:
+        'Jogar e3 e Bd3 rapidamente para disputar a diagonal, ou forçar ...e6 com pressão sobre d5.',
+    },
+    {
+      id: 'qga-devolver',
+      name: 'Não segurar o peão',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Devolver c4 sem resistência e investir os tempos em desenvolvimento.',
+      when: 'Sempre que segurá-lo custar um lance de peão na ala da dama.',
+      risk: 'Devolver antes de ganhar nada: o peão deve custar ao adversário pelo menos um tempo.',
+      porQueFunciona:
+        'O peão de c4 é indefensável a longo prazo, e tentar segurá-lo com ...b5 cria fraquezas permanentes em a6 e c6. Quem aceita e devolve termina a abertura com desenvolvimento igual e uma diagonal a mais.',
+      preparacao:
+        'Nada. O plano é justamente a ausência de plano ganancioso — a disciplina de não gastar lances defendendo o que vai cair.',
+      oQueOAdversarioTenta:
+        'Recuperar o peão com ganho de tempo, tipicamente com Bxc4 atacando alguma peça mal colocada.',
+    },
+  ],
+  structures: [
+    {
+      name: 'Centro contra peões pendentes',
+      description:
+        'Depois de ...c5 e das trocas, as brancas costumam ficar com peões em c e d lado a lado. São força enquanto avançam juntos e alvo quando param.',
+      pawnBreaks: ['c5', 'd5', 'e4'],
+      weakSquares: ['d4', 'c4'],
+      openFiles: ['c', 'd'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'qga-erro-segurar',
+      nodeId: 'root',
+      /* Ply 7: depois de e3 e a vez das PRETAS, e ...b5 e lance preto. */
+      positionPly: 7,
+      moveSan: 'b5',
+      explanation:
+        'Segurar o peão com ...b5 enfraquece a6 e c6 para sempre, e depois de a4 a estrutura preta racha sem compensação.',
+      principle:
+        'Num gambito que se aceita por tempo, o material é a moeda — quem tenta guardá-la paga com a posição.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -2608,6 +2832,7 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   ruyLopez,
   french,
   sicilianFoundation,
+  qga,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),
