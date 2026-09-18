@@ -17,13 +17,26 @@ issue no GitHub com critérios de aceite verificáveis.
 | 9    | Aberturas                                | ✅ concluída (ECO, repertório, explorer e FSRS)              |
 | 10   | Diagnóstico e conteúdo                   | ✅ concluída (diagnóstico, primeira semana e lições)         |
 | 11   | PWA, qualidade e beta                    | em andamento (shell e rotas públicas offline; beta pendente) |
-| 12   | Sync opcional                            | depois de validar o loop                                     |
+| 12   | Sync opcional                            | código pronto; falta provisionar o Supabase e validar o loop |
 | 13   | Maia / sparring humanoide                | opcional, AGPL-3.0                                           |
 
 ## Backlog priorizado
 
-O fluxo autenticado de sincronizaÃ§Ã£o da fase 12 jÃ¡ estÃ¡ implementado; a operaÃ§Ã£o
-real do projeto Supabase continua sendo uma etapa de provisionamento externo.
+A fase 12 está num estado que a tabela sozinha não conta, e vale dizer com todas
+as letras: **o código do sync autenticado está implementado e testado** — rota de
+sincronização, painel de conta, exportação e exclusão, quatro migrations com RLS —
+e **nada disso está ligado em produção**. Sem `NEXT_PUBLIC_SUPABASE_URL` o cliente
+devolve `null` e o app segue local-first, que é o princípio 9.
+
+A consequência prática importa para a triagem: enquanto não houver projeto
+Supabase provisionado, não existe conta, e não existe dado de conta para vazar. As
+issues de segurança do sync (#26, #27, #28, #33, #34) travam a ATIVAÇÃO da fase
+12, e não o produto de hoje — por isso elas saíram do P0, cuja definição logo
+abaixo é "precisa existir para provar a ideia" e não inclui sync nem conta.
+
+A exceção é a #30, de CSP: ela vale para o app publicado, independe de conta, e
+continua P0. A política em produção é `Content-Security-Policy-Report-Only`, ou
+seja, observa e não bloqueia.
 
 **P0 — precisa existir para provar a ideia**
 tabuleiro · Stockfish local · puzzles · persistência · FSRS · plano diário ·
