@@ -56,6 +56,13 @@ const HABILIDADE_EM_INGLES: Record<string, string> = {
 /** Abertura → nome oficial em inglês. */
 const ABERTURA_EM_INGLES: Record<string, string> = {
   italiana: 'Italian Game',
+  /*
+    A CHAVE É O ID DO CURSO, E NÃO O SLUG. Eles coincidem em quase todos e
+    divergem neste: o endereço é `/aberturas/siciliana`, mas o curso se chama
+    `siciliana-foundation` porque haverá cursos filhos. Um portão pegou a
+    diferença — o nome em inglês caía no português.
+  */
+  'siciliana-foundation': 'Sicilian Defence — Foundations',
   francesa: 'French Defence',
   /*
     "Ruy Lopez" é o nome oficial em inglês — não "Spanish Opening". Em

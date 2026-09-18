@@ -156,6 +156,54 @@ const francesaMain = [
   }),
 ]
 
+/* ------------------------------------------------------------------ Siciliana */
+
+/**
+ * A linha principal da Siciliana Foundation: 1.e4 c5 2.Cf3 d6 3.d4 cxd4 4.Cxd4 Cf6.
+ *
+ * ESTE CURSO É UM MAPA, E NÃO UMA ENCICLOPÉDIA (plano de expansão §4 e §16). A
+ * Siciliana tem mais teoria que qualquer outra abertura, e o erro óbvio seria
+ * tentar cobrir Najdorf, Dragão, Scheveningen, Sveshnikov, Taimanov e Kan num
+ * curso só. O Foundation ensina o TERRITÓRIO: como a Aberta funciona, e o que
+ * muda quando as brancas recusam entrar nela.
+ *
+ * A PRINCIPAL É A ABERTA porque é a partir dela que todos os cursos filhos
+ * nascem. Quem entende a troca em d4 e o cavalo em d4 entende a família inteira.
+ */
+const sicilianaMain = [
+  lesson(1, 'e4', 'As brancas ocupam o centro.', {
+    strategicIdea: 'Contra 1.e4, a Siciliana recusa a simetria desde o primeiro lance.',
+  }),
+  lesson(2, 'c5', 'As pretas disputam d4 sem abrir a própria posição — a marca da defesa.', {
+    highlights: ['d4'],
+    strategicIdea: 'Assimetria desde o começo: as duas partes jogam em alas diferentes.',
+    resultingPlan: 'Trocar o peão de c pelo peão de d das brancas e ficar com maioria central.',
+  }),
+  lesson(3, 'Nf3', 'O cavalo prepara d4 e desenvolve.', {
+    arrows: [{ from: 'g1', to: 'f3' }],
+  }),
+  lesson(4, 'd6', 'O peão sustenta e5 no futuro e abre a diagonal do bispo de c8.', {
+    strategicIdea:
+      'Lance flexível: ele mantém abertas as portas da Najdorf, do Dragão e da Scheveningen.',
+  }),
+  lesson(5, 'd4', 'As brancas abrem o centro — é isto que define a Siciliana Aberta.', {
+    arrows: [{ from: 'd2', to: 'd4' }],
+    strategicIdea: 'Trocar o peão de d pelo peão de c é o negócio que a defesa inteira propõe.',
+  }),
+  lesson(6, 'cxd4', 'As pretas aceitam: elas trocam um peão de flanco por um peão CENTRAL.', {
+    strategicIdea: 'É esse o lucro estrutural da Siciliana, e ele dura até o final.',
+    resultingPlan: 'Maioria de peões no centro e coluna c aberta para as torres.',
+  }),
+  lesson(7, 'Nxd4', 'O cavalo ocupa o centro e a posição fica aberta e desequilibrada.', {
+    highlights: ['d4'],
+    resultingPlan: 'Cc3 e o desenvolvimento, com as duas partes jogando em alas opostas.',
+  }),
+  lesson(8, 'Nf6', 'O cavalo ataca e4 e obriga as brancas a defendê-lo com Cc3.', {
+    highlights: ['e4'],
+    resultingPlan: 'Depois de Cc3, a escolha do quinto lance preto abre a família inteira.',
+  }),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -2316,6 +2364,240 @@ const french = course({
   version: 1,
 })
 
+const sicilianFoundation = course({
+  id: 'siciliana-foundation',
+  slug: 'siciliana',
+  name: 'Defesa Siciliana — Fundamentos',
+  side: 'black',
+  ecoCodes: ['B20', 'B22', 'B23', 'B50', 'B90'],
+  description:
+    'O mapa da Siciliana: a Aberta, e o que muda quando as brancas recusam entrar nela com Alapin, Fechada ou Smith-Morra.',
+  philosophy:
+    'Trocar um peão de flanco por um peão central e jogar por desequilíbrio, não por igualdade.',
+  difficulty: 3,
+  prerequisites: [],
+  tags: ['semi-open', 'sharp', 'asymmetric'],
+  transitionToMiddlegame:
+    'A abertura termina quando o centro já trocou e as duas partes escolheram as alas. A partir daí a pergunta deixa de ser qual lance e passa a ser quem chega primeiro.',
+  mainline: sicilianaMain,
+  /*
+    ESTE CURSO É UM MAPA, E A AUSÊNCIA DE NAJDORF, DRAGÃO E SVESHNIKOV É A
+    DECISÃO CENTRAL DELE (plano de expansão §4 e §16).
+
+    A Siciliana tem mais teoria publicada que qualquer outra abertura. Um curso
+    que tentasse cobri-la inteira teria quinze ramos core — e o §3 é explícito:
+    "se um curso precisa de 15 branches core, ele está grande demais; criar
+    curso filho".
+
+    O Foundation ensina o TERRITÓRIO: o que a Aberta propõe, e o que muda quando
+    as brancas recusam entrar nela. Najdorf, Dragão e Sveshnikov são cursos
+    próprios, e eles pressupõem este.
+  */
+  variations: [
+    {
+      /*
+        A ALAPIN É A RECUSA MAIS COMUM EM CLUBE. Ela é core porque quem estudou
+        só a Aberta trava no segundo lance — e porque ela ensina a pergunta
+        oposta: como jogar contra um centro que NÃO abriu.
+      */
+      id: 'siciliana-alapin',
+      importancia: 'core',
+      eco: 'B22',
+      conceitos: ['concept.iqp', 'concept.break-d4', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.iqp',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'd6',
+        porque:
+          'O lance flexível da Aberta é passivo aqui: com c3 jogado, as brancas montam d4 sem trocas e ficam com centro grande de graça. Contra a Alapin, as pretas atacam o centro de imediato com ...d5 ou ...Nf6.',
+      },
+      fronteira: { type: 'handoff', planId: 'siciliana-centro' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se recusar a Siciliana no próprio terreno: montar d4 com apoio em vez de trocar.',
+      intencaoDoAdversario:
+        'Preparar d4 com c3 e ficar com um centro de peões grande, sem entregar o peão central que a Siciliana quer trocar.',
+      objetivoDoAluno:
+        'Atacar o centro antes que ele se complete — com c3 jogado, o cavalo de b1 perdeu a casa natural e as brancas estão um tempo atrás no desenvolvimento.',
+      name: 'Variante Alapin',
+      description: 'As brancas jogam c3 para montar d4 sem trocar o peão central.',
+      rootNodeId: '',
+      line: [
+        ...sicilianaMain.slice(0, 2),
+        lesson(3, 'c3', 'O peão prepara d4 — as brancas recusam a Siciliana Aberta.', {
+          arrows: [{ from: 'c2', to: 'c3' }],
+          strategicIdea: 'O preço de c3 é a casa do cavalo de b1.',
+        }),
+        lesson(4, 'Nf6', 'As pretas atacam e4 antes que o centro branco se complete.', {
+          highlights: ['e4'],
+          resultingPlan: '...d5 depois, aproveitando que o cavalo de b1 não chega a c3.',
+        }),
+      ],
+    },
+    {
+      /*
+        A FECHADA muda a natureza do jogo: sem troca no centro, a Siciliana
+        perde o lucro estrutural e ganha uma partida de flanco. Core porque é
+        comum e porque exige um plano completamente diferente.
+      */
+      id: 'siciliana-fechada',
+      importancia: 'core',
+      eco: 'B23',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.king-safety-timing'],
+      estrutura: 'structure.kid-locked-center',
+      erroComum: {
+        lance: 'd5',
+        porque:
+          'Romper no centro cedo perde material: depois de exd5 nenhuma peça preta recaptura em boas condições, porque o cavalo de c3 já vigia a casa. Contra a Fechada, o jogo é nas alas — não no centro.',
+      },
+      fronteira: { type: 'handoff', planId: 'siciliana-ala' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se o ataque de flanco: f4, Cf3 e g4, com o centro fechado dando tempo.',
+      intencaoDoAdversario:
+        'Evitar a troca central e montar um ataque de flanco com f4 e g4, num centro que não abre.',
+      objetivoDoAluno:
+        'Ganhar espaço na ala da dama com ...Cc6, ...g6 e ...Tb8, e correr do outro lado — quem tem centro fechado joga nas alas.',
+      name: 'Siciliana Fechada',
+      description: 'As brancas jogam Cc3 e mantêm o centro fechado, mirando um ataque de flanco.',
+      rootNodeId: '',
+      line: [
+        ...sicilianaMain.slice(0, 2),
+        lesson(3, 'Nc3', 'O cavalo desenvolve sem preparar d4 — o centro vai ficar fechado.', {
+          strategicIdea: 'Sem troca no centro, a partida vira uma corrida nas alas.',
+        }),
+        lesson(4, 'Nc6', 'As pretas desenvolvem e começam a ocupar a ala da dama.', {
+          resultingPlan: '...g6, ...Bg7 e ...Rb8 preparando ...b5.',
+        }),
+      ],
+    },
+    {
+      /*
+        O SMITH-MORRA É O GAMBITO QUE MAIS APARECE CONTRA A SICILIANA EM CLUBE,
+        e é core porque quem não sabe o que fazer com um peão a mais perde a
+        partida por medo.
+      */
+      id: 'siciliana-morra',
+      importancia: 'core',
+      eco: 'B21',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.open-file',
+        'concept.king-safety-timing',
+      ],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'Nf6',
+        porque:
+          'Desenvolver naturalmente permite e5 com tempo sobre o cavalo, e a iniciativa branca vira ataque real. Contra o Morra, a ordem correta começa por ...d6 e ...a6, tirando as casas que as peças brancas querem.',
+      },
+      fronteira: { type: 'handoff', planId: 'siciliana-devolver' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se a conta do gambito: dois tempos e duas colunas abertas contra um peão.',
+      intencaoDoAdversario:
+        'Entregar um peão para abrir as colunas c e d e desenvolver com ameaça antes de você completar o desenvolvimento.',
+      objetivoDoAluno:
+        'Aceitar sem pânico e devolver o peão no momento certo: segurá-lo custa desenvolvimento, e é o desenvolvimento que decide um centro aberto.',
+      name: 'Gambito Smith-Morra',
+      description: 'As brancas entregam um peão para abrir colunas e ganhar tempo.',
+      rootNodeId: '',
+      line: [
+        ...sicilianaMain.slice(0, 2),
+        lesson(
+          3,
+          'd4',
+          'As brancas abrem o centro de imediato, sem o lance preparatório que a Aberta usa.',
+          {
+            arrows: [{ from: 'd2', to: 'd4' }],
+            resultingPlan: 'c3 depois, oferecendo o peão para abrir a coluna c.',
+          },
+        ),
+        lesson(
+          4,
+          'cxd4',
+          'As pretas aceitam a troca, como sempre — o peão de flanco sai pelo peão central.',
+          { strategicIdea: 'Aceitar é correto; o que muda é o que vem depois.' },
+        ),
+        lesson(5, 'c3', 'Agora o gambito: o peão é oferecido para abrir a coluna c.', {
+          strategicIdea: 'Material por iniciativa — a conta fecha se os tempos virarem ataque.',
+        }),
+        lesson(6, 'd6', 'Antes de desenvolver peças, tirar a casa e5 das brancas.', {
+          resultingPlan: '...a6 depois, tirando b5 do bispo, e só então o desenvolvimento.',
+        }),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'siciliana-centro',
+      name: 'A maioria central',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Usar o peão de d contra o peão de e depois da troca em d4.',
+      when: 'Em toda linha da Siciliana Aberta, do meio-jogo ao final.',
+      risk: 'Esquecer que a maioria só vale se as peças sobreviverem: um ataque branco rápido a torna irrelevante.',
+      porQueFunciona:
+        'A troca do peão de c pelo peão de d deixa as pretas com dois peões centrais contra um. É uma vantagem pequena e permanente — ela não ganha a partida, mas decide muitos finais.',
+      preparacao:
+        'Rei seguro e a coluna c ocupada. A maioria é um ativo de longo prazo; sem sobreviver ao meio-jogo, ela não chega a existir.',
+      oQueOAdversarioTenta:
+        'Atacar antes que o final chegue, tipicamente com e5, f4 e peças na ala do rei.',
+    },
+    {
+      id: 'siciliana-ala',
+      name: 'A corrida nas alas',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Avançar na ala da dama com ...b5 e ...a5 enquanto as brancas avançam na do rei.',
+      when: 'Sempre que os reis rocarem em lados opostos ou o centro travar.',
+      risk: 'Abrir a própria ala antes de chegar: numa corrida, um tempo perdido é a partida.',
+      porQueFunciona:
+        'Com o centro fechado ou trocado, os peões das alas viram a única moeda. A Siciliana dá às pretas a coluna c aberta e a maioria na ala da dama — as duas apontam para o mesmo lado.',
+      preparacao:
+        'A torre em c8 e o rei fora da ala em que se vai avançar. Avançar peões na frente do próprio rei é a forma mais rápida de perder a corrida.',
+      oQueOAdversarioTenta:
+        'Chegar primeiro com g4-g5 e h4-h5, ou abrir o centro no meio da corrida para que os peões avançados virem fraqueza.',
+    },
+    {
+      id: 'siciliana-devolver',
+      name: 'Devolver o peão na hora certa',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Trocar o peão a mais por desenvolvimento quando a pressão apertar.',
+      when: 'Contra gambitos — Smith-Morra, principalmente.',
+      risk: 'Devolver cedo demais e ficar sem compensação nenhuma: o peão é a moeda, não o objetivo.',
+      porQueFunciona:
+        'Quem dá um gambito conta com o adversário segurar o material e ficar atrasado. Devolver o peão desarma a ideia inteira: as colunas abertas deixam de valer quando as peças estão todas no jogo.',
+      preparacao:
+        'As casas que as peças brancas querem já tiradas — ...d6 contra e5, ...a6 contra Bb5. Devolver sem isso é devolver de graça.',
+      oQueOAdversarioTenta:
+        'Recusar a devolução e manter a pressão, ou abrir mais uma coluna antes de aceitar o peão de volta.',
+    },
+  ],
+  structures: [
+    {
+      name: 'Estrutura da Siciliana Aberta',
+      description:
+        'Peões pretos em d6 e e7 (ou e6) contra o peão branco em e4, com a coluna c aberta. A assimetria é o conteúdo: cada lado joga na sua ala.',
+      pawnBreaks: ['d5', 'b5', 'e5'],
+      weakSquares: ['d5', 'b5'],
+      openFiles: ['c', 'd'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'siciliana-erro-dama-cedo',
+      nodeId: 'root',
+      positionPly: 6,
+      moveSan: 'Qxd4',
+      explanation:
+        'Recapturar em d4 com a dama entrega o tempo: ...Cc6 a ataca e as pretas se desenvolvem de graça, exatamente o que a Siciliana quer.',
+      principle:
+        'Num centro aberto, quem sai com a dama cedo paga em tempo — e tempo é a moeda de toda posição aberta.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -2325,6 +2607,7 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   slav,
   ruyLopez,
   french,
+  sicilianFoundation,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),
