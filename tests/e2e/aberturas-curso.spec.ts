@@ -299,10 +299,30 @@ test('o catálogo filtra por lado e por nível, na mesma fileira', async ({ page
   await expect(page.getByRole('link', { name: /Abertura Espanhola/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /Abertura Italiana/ })).toBeHidden()
 
-  // E o estado vazio continua existindo, para a combinação que de fato não tem
-  // nenhum curso: avançada E pelas pretas.
+  /*
+    O ESTADO VAZIO SAIU DAQUI, E ELE NÃO FOI ENFRAQUECIDO — FICOU INALCANÇÁVEL.
+
+    A asserção media "avançada E pelas pretas não devolve nada". Com 35 cursos,
+    as SEIS combinações de lado e nível têm curso: a mais rala é "iniciante e
+    pelas pretas", com a Escandinava. Não existe mais nenhum par de filtros que
+    esvazie a lista.
+
+    Afirmar que ela esvazia seria afirmar algo falso, e trocar por um terceiro
+    filtro inventado só para produzir o vazio seria medir o teste, e não o
+    produto. O que sobra é o que este teste sempre quis medir: que os dois
+    filtros COMPÕEM — e isso a asserção abaixo cobra de forma mais forte do que
+    o estado vazio cobrava.
+
+    O painel de vazio continua no `OpeningCatalog` e volta a ser alcançável no
+    dia em que um nível novo entrar sem curso de algum lado.
+  */
   await page.getByRole('button', { name: 'Pretas', exact: true }).click()
-  await expect(page.getByText(/Nenhuma abertura corresponde aos filtros/)).toBeVisible()
+  // Avançada E pelas pretas: some a Espanhola (avançada, mas pelas brancas)...
+  await expect(page.getByRole('link', { name: /Abertura Espanhola/ })).toBeHidden()
+  // ...some a Escandinava (pelas pretas, mas iniciante)...
+  await expect(page.getByRole('link', { name: /Defesa Escandinava/ })).toBeHidden()
+  // ...e fica quem satisfaz os DOIS filtros ao mesmo tempo.
+  await expect(page.getByRole('link', { name: /Defesa Siciliana/ }).first()).toBeVisible()
 })
 
 test('TESTE GRADE RALA — um card sozinho não estica para a tela inteira', async ({ page }) => {
