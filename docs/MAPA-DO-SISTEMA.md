@@ -160,31 +160,76 @@ estruturas de peões, erros comuns, e um grafo derivado na carga.
 
 **O grafo** (`buildOpeningGraph`) é posição → arestas, com identidade de posição
 como chave — é o que reconhece transposições. Cuidado documentado: o campo
-`frequency` das arestas é **quantas linhas autoradas passam ali**, e não
-popularidade do mundo. Nunca deve ser apresentado como estatística.
+`linhasAutoradas` das arestas é **quantas linhas do nosso conteúdo passam
+ali**, e não popularidade do mundo. Ele se chamava `frequency`, e o nome
+convidava a apresentá-lo como "jogado em 34% das partidas" — estatística
+inventada. A única contagem real do módulo é a de "Das suas partidas".
 
-### A jornada, nove etapas
+### A jornada, oito etapas
 
-`visão → ideias → linha principal → melhores respostas do adversário →
-variações → planos → jogar pelos dois lados → prática guiada → treino final`
+`visão → ideias → linha principal → variações → planos → jogar pelos dois lados
+→ prática guiada → treino final`
 
-- **Linha principal (3/9)** — `LinhaComentada`: tabuleiro fixo, um lance por
-  vez, comentário ao lado, navegação ← / →.
-- **Respostas (4/9) e Variações (5/9)** — a mesma tela, com listas
-  **complementares**, separadas por **quem toma a decisão** (ADR-0018):
-  `respostasDoAdversario` são os ramos em que quem recusa a principal é o outro;
-  `variacoesDoAluno` é o complemento exato. Um portão afirma que a soma das duas
-  é o total e que nenhum id aparece nas duas.
-- **Prática guiada (8/9)** — o aluno joga a linha principal no tabuleiro e o
-  computador responde pelo outro lado, na mesma transição. Sem botão entre
-  lances. Errar faz _snapback_ e abre a explicação do lance estudado.
-- **Treino final (9/9)** — regra de `cobertura`: linha principal, cada variação
-  e a **perspectiva reversa** (jogar a mesma abertura pelo outro lado). Os alvos
-  são derivados do conteúdo, então quem acrescenta uma variação passa a ter de
-  demonstrá-la sem editar código.
+Eram nove. "Melhores respostas do adversário" e "Variações importantes" eram
+duas etapas separadas por **quem tomava a decisão**, e foram fundidas numa só
+(ADR-0022). Quem estudou antes da fusão é traduzido por
+`migrarJornadaDeAbertura`, que é idempotente e roda no caminho de leitura.
 
-**Sparring** (`SparringDaAbertura`) fica disponível depois de concluir: partidas
-livres contra o bot do repertório, que nomeia a variação quando ela é jogada.
+- **Linha principal (3/8)** — dois tempos dentro da mesma etapa (ADR-0023). Em
+  **entender**, o computador demonstra os primeiros lances comentados, com
+  navegação ← / →. Em **completar**, o aluno joga o resto no tabuleiro e o
+  computador responde pelo outro lado na mesma transição. A ajuda decresce:
+  objetivo + casa, depois só objetivo, depois só a posição. Quem decide onde a
+  demonstração para é `percursoDaLinhaPrincipal`, no domínio.
+- **Variações (4/8)** — `BibliotecaDeRamos`: UMA lista, ordenada por
+  importância. `autor` (aluno/adversário/nenhum) virou metadata — decide se a
+  frase diz "o adversário joga" ou "você joga", e deixou de decidir em que etapa
+  o ramo aparece. Só ramo `core` bloqueia a conclusão; `secondary` e `optional`
+  continuam visíveis. Cada ramo `core` traz `intencaoDoAdversario` e
+  `objetivoDoAluno`, exigidos por portão.
+- **Planos (5/8)** — cada plano é um card com o mini-tabuleiro da posição em
+  que ELE acontece, e o estudo responde quatro perguntas: quando usar, por que
+  funciona, o que precisa estar preparado, o que o adversário tenta (ADR-0024).
+  Dois dos sete planos cobram o lance que os começa; os outros cinco declaram no
+  conteúdo por que não têm — no Sistema Londres, a seta do plano é um lance legal
+  que perde um peão.
+- **Dois lados (6/8)** — uma tabela ramo × papel (ADR-0025). Linha principal
+  obrigatória nos dois papéis; ramo `core` só do lado do repertório; o resto
+  recomendado. O curso não dobra de tamanho por causa da perspectiva reversa.
+- **Prática guiada (7/8)** — o roteiro passa pela linha principal E por cada ramo
+  `core`, cada um começando no próprio desvio (ADR-0026). O computador responde
+  na mesma transição, sem botão entre lances. Lance ilegal faz _snapback_
+  silencioso; lance fora do repertório diz "pode ser jogável, mas não é a
+  resposta que este curso está consolidando".
+- **Treino final (8/8)** — regra de `cobertura`, derivada da matriz do ADR-0025:
+  linha principal nos dois papéis e cada ramo `core` do lado do repertório. Os
+  alvos são derivados do conteúdo, então quem acrescenta um ramo `core` passa a
+  ter de demonstrá-lo sem editar código — e um ramo `secondary` **deixou de ser
+  cobrado**, fechando o ponto cego que o ADR-0022 tinha declarado.
+
+  A rodada tem **tipo** (ADR-0027): a primeira vez de um ramo parte do início da
+  abertura e reconstrói o caminho; revisitá-lo parte de perto do desvio. Ao
+  terminar, o painel não diz "linha concluída" — diz que o aluno **chegou ao tipo
+  de posição que a abertura procura**, com o plano que ela autoriza.
+
+**Sparring** (`SparringDaAbertura`) fica disponível depois de concluir, e a
+etapa de treino ANUNCIA que ele existe — um recurso que aparece sem aviso parece
+ter estado escondido. Abri-lo antes foi tentado e revertido: ele tem tabuleiro
+próprio e toda etapa também tem, então os dois na mesma tela produzem ids de DOM
+duplicados. O bot escolhe entre todas as continuações conhecidas, variando com o
+ply; a rodada 0 é a linha principal inteira, para a estreia confirmar o que foi
+ensinado.
+
+**"Das suas partidas"** (ADR-0029) é a única seção do curso cujo material não é
+autorado: ela mostra os pontos em que as partidas reais saíram do repertório, com
+o que foi jogado e o que o repertório previa. Quando o adversário joga algo que o
+curso não cobre, o botão diz "analisar" — nunca inventa um ramo.
+
+**A evidência por ramo** (`estado-do-ramo.ts`) registra tentativas, acertos de
+primeira, dicas, falhas em revisão e desvios em partida real. Ela é **local**:
+mora no `OpeningProgress` do aparelho e sai só no backup. Existe para calibrar o
+score adaptativo do plano — que ainda não foi escrito, porque escrevê-lo com
+pesos inventados seria falsa adaptação.
 
 **O explorador da Lichess saiu da jornada** (ADR-0018) e vive em `/openings`. O
 motivo é do plano de aberturas: §60 _"não usar como UI principal"_, §61

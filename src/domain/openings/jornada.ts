@@ -36,6 +36,7 @@ import {
   type StudyStage,
 } from '@/domain/jornada'
 import { itensDaPraticaGuiadaDeAbertura } from './itens-da-etapa'
+import { ramosDaAbertura } from './ramos'
 import {
   chooseOpeningTrainingOpponent,
   classifyOpeningAttempt,
@@ -43,6 +44,7 @@ import {
   type OpeningDefinition,
   type OpeningMoveLesson,
   type OpeningProgress,
+  type ImportanciaDoRamo,
   type OpeningSide,
   type WeightedMove,
 } from './index'
@@ -69,6 +71,15 @@ export interface ConfigDeTreinoDeAbertura {
   plyMinimoAlemDaRaiz: number
   /** Quantos alvos recentes o anti-repetição lembra entre rodadas. */
   recentesLembrados: number
+  /**
+   * Quantas decisões do aluno uma rodada de ramo mostra ANTES da bifurcação.
+   *
+   * O plano §33.2 pede "1–2 decisões antes". Zero faria a rodada abrir na
+   * posição exata do desvio, que é treinar uma FEN isolada — o aluno reconhece
+   * o quadro e não o caminho. O número alto desfaz a economia e vira rodada de
+   * contexto com outro nome.
+   */
+  decisoesDeContextoNoRamo: number
 }
 
 /**
@@ -95,6 +106,7 @@ export const ABERTURA_TREINO_CONFIG: ConfigDeTreinoDeAbertura = {
   plyMaximoDaRodada: 24,
   plyMinimoAlemDaRaiz: 2,
   recentesLembrados: 2,
+  decisoesDeContextoNoRamo: 1,
 }
 
 /* -------------------------------------------------------------------------- */
@@ -120,15 +132,137 @@ export const ALVO_PERSPECTIVA_REVERSA = 'perspectiva-reversa'
  * ter de demonstrá-la, sem editar este arquivo. Uma lista fixa aqui seria a
  * segunda fonte da mesma verdade, e a que envelheceria primeiro.
  */
+/**
+ * O prefixo de um alvo jogado pelo OUTRO lado.
+ *
+ * `perspectiva-reversa` continua sendo o id do lado de lá da LINHA PRINCIPAL, e
+ * não virou `reverso:mainline`. A inconsistência é deliberada: `alvosCobertos` é
+ * PERSISTIDO, e renomear aquele id descartaria em silêncio a cobertura de quem
+ * já demonstrou os dois lados. Compatibilidade ganhou de simetria.
+ */
+export const PREFIXO_REVERSO = 'reverso:'
+
+/** O alvo que cobra este ramo pelo lado de lá. */
+export function alvoReverso(ramoId: string): string {
+  return ramoId === ALVO_MAINLINE ? ALVO_PERSPECTIVA_REVERSA : `${PREFIXO_REVERSO}${ramoId}`
+}
+
+/** Este alvo é jogado pelo lado de lá? */
+export function ehAlvoReverso(alvo: string): boolean {
+  return alvo === ALVO_PERSPECTIVA_REVERSA || alvo.startsWith(PREFIXO_REVERSO)
+}
+
+/**
+ * O ramo que um alvo cobra, sem o papel.
+ *
+ * É ELE QUE MANTÉM A RODADA CERTA. `raizDoAlvo` e `profundidadeDoAlvo` procuram
+ * a variação por id; um alvo `reverso:italiana-dois-cavalos` não casaria com
+ * nenhuma, e as duas cairiam silenciosamente na linha principal — o aluno
+ * pediria para treinar um ramo pelo outro lado e receberia a principal, sem
+ * nada na tela dizendo que o pedido foi ignorado.
+ */
+export function ramoDoAlvo(alvo: string): string {
+  if (alvo === ALVO_PERSPECTIVA_REVERSA) return ALVO_MAINLINE
+  return alvo.startsWith(PREFIXO_REVERSO) ? alvo.slice(PREFIXO_REVERSO.length) : alvo
+}
+
+/** Uma linha da matriz ramo × papel (plano VNext §27.2). */
+export interface LinhaDaMatrizDeCobertura {
+  ramoId: string
+  nome: string
+  importancia: ImportanciaDoRamo
+  /** O alvo que cobra este ramo pelo lado do repertório. */
+  alvoNoSeuLado: string
+  /** O alvo que o cobra pelo lado de lá. */
+  alvoNoOutroLado: string
+  exigidoNoSeuLado: boolean
+  exigidoNoOutroLado: boolean
+}
+
+/**
+ * A matriz de cobertura: cada ramo, nos dois papéis.
+ *
+ * O QUE ELA SUBSTITUI é um alvo único chamado `perspectiva-reversa`, que o plano
+ * §27.1 diagnostica como "amplo demais". Ele significava "jogou a abertura pelo
+ * outro lado uma vez" — o que não diz nada sobre QUAL linha foi enfrentada.
+ *
+ * A REGRA DO QUE BLOQUEIA:
+ *
+ *   - linha principal, nos DOIS papéis — obrigatória;
+ *   - ramo `core`, no lado do repertório — obrigatório;
+ *   - ramo `core` pelo outro lado — recomendado, não bloqueia;
+ *   - `secondary` e `optional` — recomendados nos dois papéis.
+ *
+ * O SEGUNDO ITEM É A CORREÇÃO DO PONTO CEGO DECLARADO NO ADR-0022: a cobertura
+ * derivava de `opening.variations` INTEIRO, então um ramo `secondary` — que o
+ * curso diz não ser necessário para concluir — era cobrado no treino assim
+ * mesmo. As duas metades do produto discordavam sobre o que é essencial.
+ *
+ * E O TERCEIRO É O §27.3, "não dobrar o curso". Exigir todo ramo core nos dois
+ * papéis transformaria uma jornada de seis rodadas em uma de dez, sem que o
+ * conteúdo tivesse crescido — e a etapa que ensina viraria a etapa que cansa.
+ */
+export function matrizDeCobertura(opening: OpeningDefinition): LinhaDaMatrizDeCobertura[] {
+  const principal: LinhaDaMatrizDeCobertura = {
+    ramoId: ALVO_MAINLINE,
+    nome: 'Linha principal',
+    importancia: 'core',
+    alvoNoSeuLado: ALVO_MAINLINE,
+    alvoNoOutroLado: ALVO_PERSPECTIVA_REVERSA,
+    exigidoNoSeuLado: true,
+    exigidoNoOutroLado: true,
+  }
+
+  return [
+    principal,
+    ...ramosDaAbertura(opening).map((ramo) => ({
+      ramoId: ramo.id,
+      nome: ramo.nome,
+      importancia: ramo.importancia,
+      alvoNoSeuLado: ramo.id,
+      alvoNoOutroLado: alvoReverso(ramo.id),
+      exigidoNoSeuLado: ramo.importancia === 'core',
+      exigidoNoOutroLado: false,
+    })),
+  ]
+}
+
+/**
+ * Os alvos que o treino final EXIGE.
+ *
+ * DERIVADOS, nunca cravados: quem acrescenta um ramo `core` ao conteúdo passa a
+ * ter de demonstrá-lo, sem editar este arquivo. Uma lista fixa aqui seria a
+ * segunda fonte da mesma verdade, e a que envelheceria primeiro.
+ */
 export function alvosDeTreinoFinal(opening: OpeningDefinition): string[] {
-  const alvos = [ALVO_MAINLINE, ...opening.variations.map((variacao) => variacao.id)]
+  const alvos = matrizDeCobertura(opening).flatMap((linha) => [
+    ...(linha.exigidoNoSeuLado ? [linha.alvoNoSeuLado] : []),
+    ...(linha.exigidoNoOutroLado ? [linha.alvoNoOutroLado] : []),
+  ])
   const unicos = alvos.filter((alvo, indice) => alvos.indexOf(alvo) === indice)
+  /*
+    A PERSPECTIVA REVERSA FICA POR ÚLTIMO. Enfrentar a abertura antes de saber
+    jogá-la é a ordem errada — e a seleção do próximo alvo segue esta lista.
+  */
   return [...unicos.filter((alvo) => alvo !== ALVO_PERSPECTIVA_REVERSA), ALVO_PERSPECTIVA_REVERSA]
 }
 
-/** O lado que o aluno joga num alvo. A perspectiva reversa inverte; o resto não. */
+/**
+ * Os alvos que a matriz RECOMENDA e não cobra.
+ *
+ * Eles existem para a tela poder oferecê-los. Esconder o que não é obrigatório
+ * seria o defeito que o ADR-0016 desfez; cobrá-lo seria dobrar o curso.
+ */
+export function alvosRecomendados(opening: OpeningDefinition): string[] {
+  const exigidos = new Set(alvosDeTreinoFinal(opening))
+  return matrizDeCobertura(opening)
+    .flatMap((linha) => [linha.alvoNoSeuLado, linha.alvoNoOutroLado])
+    .filter((alvo) => !exigidos.has(alvo))
+}
+
+/** O lado que o aluno joga num alvo. Os alvos reversos invertem; o resto não. */
 export function ladoDoAlvo(opening: OpeningDefinition, alvo: string): OpeningSide {
-  if (alvo !== ALVO_PERSPECTIVA_REVERSA) return opening.side
+  if (!ehAlvoReverso(alvo)) return opening.side
   return opening.side === 'white' ? 'black' : 'white'
 }
 
@@ -193,26 +327,25 @@ export function construirJornadaDeAbertura(opening: OpeningDefinition): StudySta
       regra: { tipo: 'leitura' },
     },
     {
-      id: 'respostas',
-      tipo: 'abertura:respostas',
-      titulo: 'Melhores respostas do adversário',
-      rotuloCurto: 'Respostas',
-      objetivo: `Antecipar o que as ${ladoOposto} realmente jogam nesta posição.`,
-      regra: { tipo: 'leitura' },
-    },
-    {
+      /*
+        AS DUAS ETAPAS VIRARAM UMA. Ver o plano VNext §0 e o ADR desta entrega.
+
+        Havia "Melhores respostas do adversário" e "Variações importantes",
+        separadas por QUEM TOMAVA A DECISÃO. A separação é limpa no domínio e
+        artificial na cabeça de quem estuda: o jogador pensa "estou na Defesa
+        dos Dois Cavalos", não "estou na lista de ramos cujo autor da decisão
+        foi o oponente".
+
+        O id continua `variacoes` de propósito — é ele que está gravado em
+        `studyJourneys` de quem já estudou, e trocá-lo obrigaria a migrar por
+        nome em vez de por identidade. Quem estava em `respostas` é migrado para
+        cá; ver `migrarJornadaDeAbertura`.
+      */
       id: 'variacoes',
       tipo: 'abertura:variacoes',
       titulo: 'Variações importantes',
-      /*
-        O OBJETIVO MUDOU JUNTO COM A PARTIÇÃO (ADR-0018). Ele dizia "saber o que
-        muda quando o ADVERSÁRIO desvia da linha principal" — que é, palavra por
-        palavra, a etapa anterior. Enquanto as duas etapas liam a mesma lista, a
-        duplicação passava despercebida; separá-las tornou a frase falsa, e uma
-        promessa falsa no cabeçalho é pior que uma etapa magra.
-      */
       rotuloCurto: 'Variações',
-      objetivo: 'Saber onde VOCÊ escolhe a linha, e o que cada escolha compromete.',
+      objetivo: `Saber o que fazer quando a partida sai da linha principal — de quem quer que seja a escolha.`,
       regra: { tipo: 'leitura' },
     },
     {
@@ -261,12 +394,30 @@ export const ETAPA_DE_TREINO_DE_ABERTURA = 'treino-final'
 /** Por que a rodada acabou mal. Só existem duas razões, e elas dizem coisas diferentes. */
 export type MotivoDeFalhaNaAbertura = 'out_of_repertoire' | 'illegal'
 
+/**
+ * De onde a rodada parte (plano VNext §33).
+ *
+ * `contexto` começa no início da abertura: é a rodada que RECONSTRÓI o caminho,
+ * e é a certa na primeira vez que um ramo é treinado — saber a resposta sem
+ * saber como se chegou até ela é decorar uma FEN.
+ *
+ * `ramo` começa poucas decisões antes da bifurcação: é prática eficiente, e é a
+ * certa para revisitar um ramo já demonstrado. Repetir o prefixo inteiro toda
+ * vez é o que faz o aluno parar de treinar variação.
+ *
+ * O PLANO §33.3 PROÍBE OS DOIS EXTREMOS: nem sempre da posição inicial, nem
+ * sempre de uma FEN isolada.
+ */
+export type TipoDeRodadaDeAbertura = 'contexto' | 'ramo'
+
 export interface OpeningTrainingRound {
   /** Nomeia O QUE a rodada treina, não quando: derivado, para continuar puro. */
   id: string
   openingId: string
   /** O alvo de cobertura que esta rodada tenta cobrir. */
   branchScopeId: string
+  /** De onde ela parte. Ver `TipoDeRodadaDeAbertura`. */
+  tipo: TipoDeRodadaDeAbertura
   startFen: string
   startNodeId: string
   userSide: OpeningSide
@@ -298,14 +449,27 @@ interface RaizDoAlvo {
  * é autorado e nada o valida, e uma profundidade errada aqui produziria um alvo
  * inalcançável — falha silenciosa, não erro.
  */
-function raizDoAlvo(opening: OpeningDefinition, alvo: string): RaizDoAlvo {
+function raizDoAlvo(
+  opening: OpeningDefinition,
+  alvo: string,
+  tipo: TipoDeRodadaDeAbertura = 'ramo',
+  config: ConfigDeTreinoDeAbertura = ABERTURA_TREINO_CONFIG,
+): RaizDoAlvo {
   const raiz: RaizDoAlvo = {
     nodeId: opening.rootNodeId,
     fen: opening.rootFen,
     ply: 0,
   }
-  const variacao = opening.variations.find((candidata) => candidata.id === alvo)
+  const variacao = opening.variations.find((candidata) => candidata.id === ramoDoAlvo(alvo))
   if (!variacao) return raiz
+
+  /*
+    A RODADA DE CONTEXTO PARTE DO INÍCIO, mesmo para um ramo. É a rodada que
+    reconstrói o caminho até a bifurcação — saber a resposta sem saber como se
+    chegou até ela é decorar uma FEN, e o repertório deixa de servir na partida
+    em que a ordem dos lances muda.
+  */
+  if (tipo === 'contexto') return raiz
 
   let fen = START_FEN
   for (let indice = 0; indice < variacao.line.length; indice += 1) {
@@ -315,15 +479,54 @@ function raizDoAlvo(opening: OpeningDefinition, alvo: string): RaizDoAlvo {
     if (!aplicado) break
     fen = aplicado.fenAfter
     if (identidadeDePosicao(fen) === variacao.rootNodeId) {
-      return { nodeId: variacao.rootNodeId, fen, ply: indice + 1 }
+      /*
+        RECUA ALGUMAS DECISÕES ANTES DO DESVIO (plano §33.2). Abrir na posição
+        exata da bifurcação é treinar uma FEN isolada: o aluno reconhece o
+        quadro e não o caminho, e numa partida a posição nunca chega sozinha.
+      */
+      return recuar(opening, variacao.line, indice + 1, config.decisoesDeContextoNoRamo)
     }
   }
   return raiz
 }
 
+/**
+ * Recua N decisões do aluno a partir de um ply da linha.
+ *
+ * DECISÕES, E NÃO PLIES: recuar dois plies numa linha alternada devolve a mesma
+ * vez ao aluno mas pula o lance do adversário que a motivou. O que dá contexto é
+ * ver o outro lado escolher.
+ *
+ * Nunca devolve algo antes da raiz, e nunca uma posição em que não seja a vez do
+ * aluno — uma rodada que abre na vez do computador faria a tela pedir um lance a
+ * quem não é de jogar.
+ */
+function recuar(
+  opening: OpeningDefinition,
+  linha: readonly OpeningMoveLesson[],
+  plyDoDesvio: number,
+  decisoes: number,
+): RaizDoAlvo {
+  const passos = Math.max(decisoes, 0) * 2
+  const destino = Math.max(plyDoDesvio - passos, 0)
+  if (destino === 0) {
+    return { nodeId: opening.rootNodeId, fen: opening.rootFen, ply: 0 }
+  }
+
+  let fen = START_FEN
+  for (let indice = 0; indice < destino; indice += 1) {
+    const lance = linha[indice]
+    if (!lance) break
+    const aplicado = applyMove(fen, lance.san)
+    if (!aplicado) break
+    fen = aplicado.fenAfter
+  }
+  return { nodeId: identidadeDePosicao(fen), fen, ply: destino }
+}
+
 /** Quantos plies a linha do alvo ensina. É daqui que sai o limite da rodada. */
 function profundidadeDoAlvo(opening: OpeningDefinition, alvo: string): number {
-  const variacao = opening.variations.find((candidata) => candidata.id === alvo)
+  const variacao = opening.variations.find((candidata) => candidata.id === ramoDoAlvo(alvo))
   const linha: readonly OpeningMoveLesson[] = variacao?.line ?? opening.mainline
   return linha.length
 }
@@ -351,13 +554,27 @@ export function iniciarRodadaDeAbertura(
   opening: OpeningDefinition,
   alvo: string,
   userSide: OpeningSide,
+  /*
+    `tipo` É OBRIGATÓRIO, e a ausência de valor padrão é a decisão.
+
+    Ele nasceu com padrão `'ramo'`, e isso mudou em silêncio o comportamento de
+    todo chamador que não o passava: a rodada passou a recuar antes do desvio.
+    Quatro testes reprovaram na hora, e estavam certos — o comportamento mudou
+    sem ninguém pedir.
+
+    Sem padrão, cada chamador declara de onde a rodada parte. É uma decisão
+    pedagógica, não um detalhe: ver o adversário escolher é o que dá sentido à
+    resposta, e pular isso é o que transforma repertório em memória de imagem.
+  */
+  tipo: TipoDeRodadaDeAbertura,
   config: ConfigDeTreinoDeAbertura = ABERTURA_TREINO_CONFIG,
 ): OpeningTrainingRound {
-  const raiz = raizDoAlvo(opening, alvo)
+  const raiz = raizDoAlvo(opening, alvo, tipo, config)
   return {
-    id: `${opening.id}:${alvo}:${userSide}`,
+    id: `${opening.id}:${alvo}:${userSide}:${tipo}`,
     openingId: opening.id,
     branchScopeId: alvo,
+    tipo,
     startFen: raiz.fen,
     startNodeId: raiz.nodeId,
     userSide,
@@ -694,5 +911,62 @@ export function coberturaDaAbertura(
     cobertos,
     faltando,
     completa: exigidos.length > 0 && faltando.length === 0,
+  }
+}
+
+/**
+ * De onde a próxima rodada deste alvo deve partir (plano VNext §33.3).
+ *
+ * A REGRA É PEDAGÓGICA, e a ordem importa: na PRIMEIRA vez que um ramo é
+ * treinado, a rodada é de CONTEXTO — ela reconstrói o caminho até a bifurcação.
+ * Saber a resposta sem saber como se chegou até ela é decorar uma FEN, e um
+ * repertório assim para de servir na partida em que a ordem dos lances muda.
+ *
+ * Depois de o ramo ter sido demonstrado uma vez, revisitá-lo vira rodada de
+ * RAMO: poucas decisões antes do desvio, que é prática eficiente. Repetir o
+ * prefixo inteiro toda vez é o que faz o aluno parar de treinar variação.
+ *
+ * A LINHA PRINCIPAL É SEMPRE CONTEXTO, nos dois papéis: ela não tem bifurcação
+ * de onde recuar — ela É a linha.
+ *
+ * O §33.3 proíbe os dois extremos: nem sempre da posição inicial, nem sempre de
+ * uma FEN isolada. Esta função é onde essa mistura acontece.
+ */
+export function tipoDaRodada(
+  alvo: string,
+  alvosCobertos: readonly string[],
+): TipoDeRodadaDeAbertura {
+  if (ramoDoAlvo(alvo) === ALVO_MAINLINE) return 'contexto'
+  return alvosCobertos.includes(alvo) ? 'ramo' : 'contexto'
+}
+
+/**
+ * A fronteira da rodada: onde o repertório acaba e o plano começa.
+ *
+ * O PLANO §22 e §23. Chegar ao fim da linha não é "acabou a lista": é ter
+ * alcançado o TIPO DE POSIÇÃO que a abertura procura. Dizer só "linha
+ * concluída" produz exatamente o efeito que o plano nomeia — "sei 8 lances e
+ * depois não sei o que fazer".
+ *
+ * O texto vem do conteúdo autorado (`transitionToMiddlegame`), e o plano
+ * sugerido é o primeiro da abertura. Nada aqui é inventado: se o conteúdo não
+ * declarar, a tela mostra menos, e não algo falso.
+ */
+export interface FronteiraDaAbertura {
+  /** O que a abertura buscava, nas palavras de quem autorou. */
+  transicao: string
+  /** O plano que essa posição autoriza, quando o conteúdo declara um. */
+  planoId: string | null
+  planoNome: string | null
+  planoObjetivo: string | null
+}
+
+export function fronteiraDaAbertura(opening: OpeningDefinition): FronteiraDaAbertura {
+  const plano = opening.plans[0]
+  return {
+    transicao: opening.transitionToMiddlegame,
+    planoId: plano?.id ?? null,
+    planoNome: plano?.name ?? null,
+    planoObjetivo: plano?.objective ?? null,
   }
 }

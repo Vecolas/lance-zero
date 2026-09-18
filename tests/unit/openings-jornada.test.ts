@@ -53,6 +53,10 @@ import {
   vezDe,
   type OpeningTrainingRound,
 } from '@/domain/openings/jornada'
+import {
+  itensDaPraticaGuiadaDeAbertura,
+  roteiroDaPraticaGuiada,
+} from '@/domain/openings/itens-da-etapa'
 
 const AGORA = new Date('2026-01-01T12:00:00.000Z')
 
@@ -148,6 +152,16 @@ const ABERTURA: OpeningDefinition = buildOpeningDefinition({
 })
 
 const ETAPAS = construirJornadaDeAbertura(ABERTURA)
+
+/**
+ * Config que abre a rodada EXATAMENTE na raiz do ramo, sem recuo de contexto.
+ *
+ * Os testes deste arquivo medem COBERTURA, TRANSPOSIÇÃO e DETERMINISMO — não de
+ * onde a rodada parte. Eles roteiram os lances do aluno a partir do desvio, e o
+ * recuo do ADR-0027 acrescentaria lances antes disso. Declarar zero aqui mantém
+ * cada teste medindo o que ele diz medir.
+ */
+const NA_RAIZ_DO_RAMO = { ...ABERTURA_TREINO_CONFIG, decisoesDeContextoNoRamo: 0 }
 const ALVOS = alvosDeTreinoFinal(ABERTURA)
 
 function etapaDeTreino(): StudyStage {
@@ -227,7 +241,7 @@ const LANCES_DO_ALUNO: Record<string, string[]> = {
 function cobrirAlvo(jornada: StudyJourney, alvo: string, rng: () => number): StudyJourney {
   const lado: OpeningSide = ladoDoAlvo(ABERTURA, alvo)
   const round = jogarRodada(
-    iniciarRodadaDeAbertura(ABERTURA, alvo, lado),
+    iniciarRodadaDeAbertura(ABERTURA, alvo, lado, 'ramo', NA_RAIZ_DO_RAMO),
     LANCES_DO_ALUNO[alvo] ?? [],
     rng,
   )
@@ -236,12 +250,17 @@ function cobrirAlvo(jornada: StudyJourney, alvo: string, rng: () => number): Stu
 }
 
 describe('currículo da jornada de abertura', () => {
-  it('tem as nove etapas na ordem em que se aprende, com o treino marcado', () => {
+  it('tem as oito etapas na ordem em que se aprende, com o treino marcado', () => {
+    /*
+      ERAM NOVE. "Melhores respostas do adversário" e "Variações importantes"
+      eram duas etapas separadas por quem tomava a decisão, e viraram uma: o ramo
+      é a unidade que o aluno vê, e `autor` voltou a ser metadata. Ver o ADR
+      desta entrega e `@/domain/openings/ramos`.
+    */
     expect(ETAPAS.map((stage) => stage.id)).toEqual([
       'visao',
       'ideias',
       'linha-principal',
-      'respostas',
       'variacoes',
       'planos',
       'dois-lados',
@@ -274,10 +293,66 @@ describe('currículo da jornada de abertura', () => {
     expect(treino.regra).toEqual({ tipo: 'cobertura', alvosExigidos: ALVOS })
   })
 
-  it('deriva os itens da prática guiada das decisões do aluno na linha', () => {
+  it('deriva os itens da prática guiada das decisões do aluno, na principal E nos ramos', () => {
+    /*
+      A REGRA CONTINUA SENDO A CONTAGEM DA LISTA — é o contrato do ADR-0020, e é
+      o que impede a etapa de cobrar o que a tela não oferece.
+
+      O QUE MUDOU (plano VNext §28): a lista deixou de ser só a linha principal.
+      A prática guiada treinava a principal e o treino final cobrava os ramos —
+      o degrau com apoio ensaiava uma coisa e a prova cobrava outra.
+    */
     const guiada = ETAPAS.find((stage) => stage.id === 'pratica-guiada')
     expect(guiada?.regra).toEqual({ tipo: 'itens', total: itensDePraticaGuiada(ABERTURA) })
-    expect(itensDePraticaGuiada(ABERTURA)).toBe(3)
+
+    const itens = itensDaPraticaGuiadaDeAbertura(ABERTURA)
+    // A principal das brancas tem três decisões: e4, Nf3, Bc4.
+    expect(itens.filter((item) => item.ramoId === null).map((item) => item.san)).toEqual([
+      'e4',
+      'Nf3',
+      'Bc4',
+    ])
+    // E os ramos acrescentam as decisões que vêm DEPOIS do desvio.
+    expect(itens.some((item) => item.ramoId !== null)).toBe(true)
+  })
+
+  it('o ramo só cobra o que vem depois da bifurcação', () => {
+    /*
+      Um ramo compartilha o começo com a principal. Cobrar de novo os lances
+      comuns faria o aluno repetir o que acabou de responder — contagem maior,
+      nada aprendido.
+    */
+    const itens = itensDaPraticaGuiadaDeAbertura(ABERTURA)
+    const doisCavalos = itens.filter((item) => item.ramoId === 'variacao-a')
+    // A variação é e4 e5 Cf3 Cc6 Bc4 Cf6 d3: o desvio é Cf6 (índice 5), e a
+    // única decisão das brancas depois dele é d3.
+    expect(doisCavalos.map((item) => item.san)).toEqual(['d3'])
+  })
+
+  it('os ids da linha principal NÃO mudaram de formato', () => {
+    /*
+      `itensRespondidos` é PERSISTIDO. Trocar `guiada:<indice>` por outro formato
+      descartaria em silêncio tudo o que já foi respondido, e o aluno reabriria a
+      etapa do zero sem nada ter acontecido.
+    */
+    const itens = itensDaPraticaGuiadaDeAbertura(ABERTURA)
+    expect(itens.filter((item) => item.ramoId === null).map((item) => item.id)).toEqual([
+      'guiada:0',
+      'guiada:2',
+      'guiada:4',
+    ])
+  })
+
+  it('o roteiro põe a principal primeiro, e cada trecho começa no próprio desvio', () => {
+    const roteiro = roteiroDaPraticaGuiada(ABERTURA)
+    expect(roteiro[0]?.ramoId).toBeNull()
+    expect(roteiro[0]?.inicio).toBe(0)
+    for (const trecho of roteiro.slice(1)) {
+      // Treinar o desvio antes da linha que ele recusa é ensinar a exceção antes
+      // da regra — e começar do zero repetiria lances já cobrados.
+      expect(trecho.inicio, `${trecho.nome}`).toBeGreaterThan(0)
+      expect(trecho.itens.length, `${trecho.nome}`).toBeGreaterThan(0)
+    }
   })
 
   it('não usa um limite global: cada alvo herda a profundidade da própria linha', () => {
@@ -298,7 +373,7 @@ describe('currículo da jornada de abertura', () => {
 
 describe('a trava: rodada encerrada não é atividade concluída', () => {
   it('lance legal fora do repertório falha a rodada e não conclui a etapa de treino', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white')
+    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO)
     // d2d4 é perfeitamente legal e não pertence ao repertório treinado.
     const { round: depois, resultado, aceito } = jogarNaRodada(ABERTURA, round, 'd2d4')
 
@@ -332,7 +407,7 @@ describe('a trava: rodada encerrada não é atividade concluída', () => {
   })
 
   it('lance ilegal encerra a rodada com motivo próprio, e não avança cobertura', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white')
+    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO)
     const { round: depois, aceito } = jogarNaRodada(ABERTURA, round, 'e2e5')
     expect(aceito).toBe(false)
     expect(depois.desfecho).toBe('falhou')
@@ -348,7 +423,7 @@ describe('a trava: rodada encerrada não é atividade concluída', () => {
   })
 
   it('não julga lance nenhum depois que a rodada terminou', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white')
+    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO)
     const falha = jogarNaRodada(ABERTURA, round, 'd2d4').round
     const depois = jogarNaRodada(ABERTURA, falha, 'e2e4')
     expect(depois.resultado).toBeNull()
@@ -365,7 +440,7 @@ describe('a trava: rodada encerrada não é atividade concluída', () => {
     expect(antes.cobertos).toEqual([ALVO_MAINLINE, 'variacao-a'])
 
     // A rodada da variação B sai do repertório logo no primeiro lance do aluno.
-    const roundB = iniciarRodadaDeAbertura(ABERTURA, 'variacao-b', 'white')
+    const roundB = iniciarRodadaDeAbertura(ABERTURA, 'variacao-b', 'white', 'ramo', NA_RAIZ_DO_RAMO)
     const falhaB = jogarNaRodada(ABERTURA, roundB, 'b1c3').round
     expect(falhaB.desfecho).toBe('falhou')
     expect(falhaB.failureReason).toBe('out_of_repertoire')
@@ -386,7 +461,7 @@ describe('a trava: rodada encerrada não é atividade concluída', () => {
 describe('rodada bem-sucedida', () => {
   it('atingir o alvo devolve sucesso e o alvo entra na cobertura', () => {
     const round = jogarRodada(
-      iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white'),
+      iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO),
       LANCES_DO_ALUNO[ALVO_MAINLINE] ?? [],
       semente(1),
     )
@@ -431,7 +506,13 @@ describe('rodada bem-sucedida', () => {
   })
 
   it('a perspectiva reversa é jogada pelo outro lado', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_PERSPECTIVA_REVERSA, 'black')
+    const round = iniciarRodadaDeAbertura(
+      ABERTURA,
+      ALVO_PERSPECTIVA_REVERSA,
+      'black',
+      'ramo',
+      NA_RAIZ_DO_RAMO,
+    )
     expect(round.userSide).toBe('black')
     // É a vez das brancas na posição inicial: quem abre é o computador.
     expect(vezDe(round.currentFen)).toBe('white')
@@ -448,7 +529,13 @@ describe('rodada bem-sucedida', () => {
 describe('transposição', () => {
   it('chegar por outra ordem de lances cai no mesmo nó do repertório', () => {
     const noDaPrincipal = noApos(['e4', 'e5', 'Nf3', 'Nc6', 'Bc4'])
-    const round = iniciarRodadaDeAbertura(ABERTURA, 'variacao-transposta', 'white')
+    const round = iniciarRodadaDeAbertura(
+      ABERTURA,
+      'variacao-transposta',
+      'white',
+      'ramo',
+      NA_RAIZ_DO_RAMO,
+    )
 
     // 1.e4 e5 já está na raiz do ramo; o aluno joga 2.Bc4 e depois 3.Cf3.
     const aposBispo = jogarNaRodada(ABERTURA, round, 'f1c4')
@@ -546,7 +633,7 @@ describe('determinismo', () => {
     // diante o oponente volta a ser sorteado, e é o sorteio que se prova estável.
     const partida = jogarNaRodada(
       ABERTURA,
-      iniciarRodadaDeAbertura(ABERTURA, 'variacao-transposta', 'white'),
+      iniciarRodadaDeAbertura(ABERTURA, 'variacao-transposta', 'white', 'ramo', NA_RAIZ_DO_RAMO),
       'g1f3',
     ).round
     const progresso = emptyOpeningProgress(ABERTURA.id)
@@ -563,7 +650,7 @@ describe('determinismo', () => {
   it('a mesma semente joga a mesma rodada inteira', () => {
     const jogar = (valor: number) =>
       jogarRodada(
-        iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white'),
+        iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO),
         LANCES_DO_ALUNO[ALVO_MAINLINE] ?? [],
         semente(valor),
       )
@@ -573,7 +660,7 @@ describe('determinismo', () => {
 
 describe('pureza', () => {
   it('jogar não muta a rodada recebida', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white')
+    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO)
     const copia = structuredClone(round)
     jogarNaRodada(ABERTURA, round, 'e2e4')
     jogarNaRodada(ABERTURA, round, 'd2d4')

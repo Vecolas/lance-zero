@@ -7,8 +7,7 @@
 }
 
 .texto,
-.nota,
-.linha {
+.nota {
   margin: 0;
   max-width: 62ch;
 }
@@ -18,12 +17,6 @@
 }
 
 .nota {
-  color: var(--text-muted);
-  font-size: 0.9375rem;
-}
-
-.linha {
-  font-family: var(--font-mono);
   color: var(--text-muted);
   font-size: 0.9375rem;
 }
@@ -81,16 +74,6 @@
   gap: var(--space-3);
 }
 
-.opcoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.opcao,
 .primario,
 .secundario {
   min-height: 2.75rem;
@@ -100,41 +83,12 @@
   cursor: pointer;
 }
 
-.opcao,
 .secundario {
   border: 1px solid var(--border-strong);
   background: var(--surface-raised);
   color: var(--text);
 }
 
-.opcao[aria-pressed='true'] {
-  border-color: var(--accent-strong);
-}
-
-/*
-  A VARIAÇÃO ESCOLHIDA, no seletor da etapa de variações.
-
-  Marcada por fundo E peso, nunca só por cor — a regra vale também para "qual
-  destes chips está ativo", que é informação de estado como qualquer outra.
-*/
-.variacaoAtiva {
-  min-height: 2.75rem;
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--accent-strong);
-  border-radius: var(--radius-md);
-  background: var(--accent-strong);
-  color: var(--on-accent);
-  font: inherit;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.variacaoAtiva:focus-visible {
-  outline: 2px solid var(--focus, var(--accent-strong));
-  outline-offset: 2px;
-}
-
-.opcao:disabled,
 .secundario:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -148,7 +102,6 @@
   justify-self: start;
 }
 
-.opcao:focus-visible,
 .primario:focus-visible,
 .secundario:focus-visible {
   outline: 2px solid var(--focus, var(--accent-strong));
@@ -178,4 +131,142 @@
 
 .errou {
   color: var(--attention-text, var(--attention, var(--warning)));
+}
+
+/*
+  A BIBLIOTECA DE RAMOS EM CARDS.
+
+  A GRADE É `auto-fill` COM `minmax`, e não um número fixo de colunas: as
+  aberturas têm de um a quatro ramos, e um grid de três colunas deixaria a
+  Escocesa com dois cards esticados e um buraco. `auto-fill` com piso de 11rem
+  dá uma coluna em 360px e quantas couberem no desktop.
+*/
+.ramos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ramoCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/*
+  O RECOMENDADO É MARCADO POR BORDA, e a palavra "Recomendado agora" vai junto
+  dentro do card. Cor sozinha não é estado — é a regra do projeto, e aqui ela
+  pesa duas vezes: quem não distingue as cores perderia exatamente a única
+  orientação que a biblioteca oferece.
+*/
+.ramoCard[data-recomendado='true'] {
+  border-color: var(--accent-strong);
+  border-width: 2px;
+  padding: calc(var(--space-3) - 1px);
+}
+
+.ramoCard:focus-visible {
+  outline: 2px solid var(--focus, var(--accent-strong));
+  outline-offset: 2px;
+}
+
+/*
+  `aspect-ratio: 1` NÃO É ESTÉTICA. Sem ele o tabuleiro estica com a coluna e as
+  casas deixam de ser casas — numa prévia de posição isso é pior que em qualquer
+  outra imagem, porque a posição é justamente o que se quer reconhecer.
+*/
+.ramoTabuleiro {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-bottom: var(--space-2);
+}
+
+.ramoTabuleiro > * {
+  width: 100%;
+  height: 100%;
+}
+
+.ramoNome {
+  font-weight: 650;
+}
+
+.ramoLance {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ramoMeta {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.ramoRecomendado {
+  margin-top: var(--space-1);
+  color: var(--accent-strong);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+/*
+  A MATRIZ DE COBERTURA DOS DOIS LADOS.
+
+  `display: table` de verdade, e não grid com cara de tabela: esta é a tela que
+  responde "o que falta para eu terminar", e uma grade de divs lê como uma
+  sequência de palavras soltas em leitor de tela.
+*/
+.matriz {
+  width: 100%;
+  margin: var(--space-4) 0;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.matrizLegenda {
+  margin-bottom: var(--space-2);
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.matriz th,
+.matriz td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.matriz thead th {
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+.matriz tbody th {
+  font-weight: 650;
+}
+
+.matrizFeito {
+  color: var(--positive);
+  font-weight: 650;
+}
+
+.matrizExigido {
+  color: var(--text);
+}
+
+.matrizOpcional {
+  color: var(--text-muted);
 }

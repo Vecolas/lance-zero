@@ -173,6 +173,8 @@
     "all": "All",
     "white": "White",
     "black": "Black",
+    "reviewDueOne": "{n} positions to review",
+    "reviewDueMany": "{n} positions to review, across {ramos} lines",
     "essential": "Essential",
     "level": "Level",
     "allMasculine": "All",

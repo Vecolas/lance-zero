@@ -289,3 +289,63 @@ describe('as funções não mutam a entrada', () => {
     expect(original).toEqual(copia)
   })
 })
+
+describe('conteúdo que cresce não desconclui quem já terminou', () => {
+  /**
+   * O DEFEITO É SILENCIOSO E RETROATIVO, e apareceu de verdade: a prática guiada
+   * passou a treinar também os ramos, e o total de itens da etapa subiu.
+   *
+   * Sem a regra abaixo, `respondidos >= total` volta a ser FALSA para quem já
+   * tinha terminado — `jornadaConcluida` deixa de valer, o Sparring some da tela
+   * e a marca de concluída desaparece. Nada aconteceu do lado do aluno, e nada
+   * na tela explica.
+   */
+  const guiadaComTotal = (total: number): StudyStage => ({
+    ...ETAPAS[1]!,
+    regra: { tipo: 'itens', total },
+  })
+
+  function alunoQueTerminouAGuiada() {
+    let jornada = criarJornada('teste', 'teste', 'abertura', ETAPAS)
+    jornada = { ...jornada, currentStageId: 'guiada' }
+    jornada = registrarItem(jornada, 'guiada', 'guiada:0')
+    jornada = registrarItem(jornada, 'guiada', 'guiada:2')
+    return concluirEtapa(jornada, ETAPAS, AGORA)
+  }
+
+  it('a etapa concluída sob a regra antiga continua concluída com a nova', () => {
+    const jornada = alunoQueTerminouAGuiada()
+    expect(jornada.completedStageIds).toContain('guiada')
+
+    // O conteúdo dobrou: a etapa agora oferece quatro itens em vez de dois.
+    expect(etapaCumprida(jornada, guiadaComTotal(4))).toBe(true)
+  })
+
+  it('quem estava no MEIO passa a ver os itens novos', () => {
+    /*
+      A regra só protege quem CONCLUIU. Metade não é conclusão, e promover
+      esconderia para sempre o conteúdo que a pessoa não viu — o mesmo raciocínio
+      da migração de nove etapas para oito.
+    */
+    let jornada = criarJornada('teste', 'teste', 'abertura', ETAPAS)
+    jornada = registrarItem(jornada, 'guiada', 'guiada:0')
+
+    expect(jornada.completedStageIds).not.toContain('guiada')
+    expect(etapaCumprida(jornada, guiadaComTotal(4))).toBe(false)
+  })
+
+  it('o carimbo de concluída não vale para etapa que nunca foi cumprida', () => {
+    /*
+      `completedStageIds` só recebe uma etapa de itens depois de ela ter sido
+      cumprida — `concluirEtapa` recusa antes disso. Este teste guarda essa
+      premissa: se um dia algum caminho gravasse conclusão sem a regra, a
+      proteção acima viraria uma porta dos fundos.
+    */
+    let jornada = criarJornada('teste', 'teste', 'abertura', ETAPAS)
+    jornada = { ...jornada, currentStageId: 'guiada' }
+    const tentativa = concluirEtapa(jornada, ETAPAS, AGORA)
+
+    expect(tentativa.completedStageIds).not.toContain('guiada')
+    expect(etapaCumprida(tentativa, ETAPAS[1]!)).toBe(false)
+  })
+})

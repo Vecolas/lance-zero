@@ -49,29 +49,52 @@ import {
   alvosDeTreinoFinal,
   aplicarRespostaDoComputador,
   coberturaDaAbertura,
+  matrizDeCobertura,
   construirJornadaDeAbertura,
   iniciarRodadaDeAbertura,
   jogarNaRodada,
+  ALVO_MAINLINE,
+  ehAlvoReverso,
   ladoDoAlvo,
+  ramoDoAlvo,
   proximoAlvoDeCobertura,
+  fronteiraDaAbertura,
   registrarAlvoRecente,
   respostaDoComputador,
+  tipoDaRodada,
   type OpeningTrainingRound,
 } from '@/domain/openings/jornada'
-import { itensDaPraticaGuiadaDeAbertura } from '@/domain/openings/itens-da-etapa'
+import {
+  itensDaPraticaGuiadaDeAbertura,
+  roteiroDaPraticaGuiada,
+  type TrechoDaPraticaGuiada,
+} from '@/domain/openings/itens-da-etapa'
 import {
   activateOpeningRepertoire,
   emptyOpeningProgress,
   openingDiagnosticQuestions,
   type OpeningDefinition,
+  type OpeningPlan,
   type OpeningProgress,
 } from '@/domain/openings'
+import { percursoDaLinhaPrincipal, percursoDoRamo } from '@/domain/openings/linha-principal'
+import { registrarEventoDeRamo, type EventoDoRamo } from '@/domain/openings/estado-do-ramo'
+import { migrarJornadaDeAbertura } from '@/domain/openings/migracao'
 import {
-  posicoesDaLinha,
-  respostasDoAdversario,
-  variacoesDoAluno,
-  type RamificacaoDaVariacao,
-} from '@/domain/openings/variacoes'
+  estadoDoRamo,
+  idDeRamoPraticado,
+  idDeRamoVisto,
+  ramoRecomendado,
+  ramosDaAbertura,
+  type EstadoDoRamo,
+  type RamoDeAbertura,
+} from '@/domain/openings/ramos'
+import { posicoesDaLinha } from '@/domain/openings/variacoes'
+import {
+  acaoDoDesvio,
+  desviosNasSuasPartidas,
+  type DesvioNasPartidas,
+} from '@/domain/openings/das-suas-partidas'
 import {
   iniciarSequencia,
   jogarNaSequencia,
@@ -81,7 +104,7 @@ import {
   lanceEsperado as lanceEsperadoNaLinha,
   type LinhaTreinavel,
 } from '@/domain/exercicios'
-import { applyMove, legalMoves, type PromotionPiece, type SquareName } from '@/lib/chess'
+import { applyMove, legalMoves, parsePgn, type PromotionPiece, type SquareName } from '@/lib/chess'
 import styles from './OpeningStudyJourney.module.css'
 
 /** O id da jornada carrega o domínio: ver o contrato em `@/domain/types`. */
@@ -138,8 +161,21 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
         repo.getOpeningProgress(opening.id),
       ])
       if (cancelado) return
+      /*
+        A JORNADA GRAVADA PASSA PELA MIGRAÇÃO ANTES DE CHEGAR À TELA.
+
+        Quem estudou antes do VNext tem nove etapas no armazenamento, e um
+        cursor que pode apontar para `respostas` — id que não existe mais. Sem
+        traduzir, `stages.find` devolveria `undefined`, a tela cairia no
+        `?? stages[0]` e o aluno voltaria para a Visão sem nenhuma mensagem.
+
+        A migração é IDEMPOTENTE e só grava quando de fato mudou algo: chamar no
+        caminho de leitura não reescreve o registro de quem já migrou.
+      */
       const base = gravada ?? criarJornada(id, opening.id, 'abertura', stages)
-      setJornada(aplicarEtapaDaUrl(base, stages))
+      const { jornada: migrada, migrou } = migrarJornadaDeAbertura(base, stages)
+      if (migrou && repo) void repo.saveStudyJourney(migrada)
+      setJornada(aplicarEtapaDaUrl(migrada, stages))
       if (prog) setProgress({ ...emptyOpeningProgress(opening.id), ...prog })
     }
 
@@ -210,6 +246,30 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
       ) : (
         <ConteudoDeEtapa opening={opening} stage={stage} jornada={jornada} aoResponder={gravar} />
       )}
+      {/*
+        "DAS SUAS PARTIDAS" fica ABAIXO do conteúdo da etapa, e aparece em todas
+        elas: o ponto em que o aluno erra na vida real não pertence a uma etapa
+        do currículo — ele é o motivo de voltar ao curso.
+      */}
+      <DasSuasPartidas opening={opening} progress={progress} />
+      {/*
+        O SPARRING CONTINUA DEPOIS DA CONCLUSÃO, e eu tentei o contrário.
+
+        O plano §47 oferece duas saídas: mantê-lo como conteúdo pós-conclusão, ou
+        abri-lo cedo com uma recomendação. O ADR-0016 empurra para a segunda — e
+        ela NÃO CABE nesta moldura.
+
+        O MOTIVO É CONCRETO: o sparring tem tabuleiro próprio, e toda etapa da
+        jornada também tem. Montar os dois na mesma tela produz DOIS tabuleiros
+        interativos disputando o mesmo gesto e, pior, IDS DE DOM DUPLICADOS —
+        `ChessBoardView` nomeia cada casa com um id fixo. Um portão de e2e caiu
+        acusando exatamente isso ("strict mode violation: resolved to 2
+        elements"), e o defeito não era do teste.
+
+        Abrir cedo de verdade exige o sparring ter lugar próprio, e isso é
+        entrega à parte. Enquanto não tem, a etapa de treino DIZ que ele existe,
+        em vez de o aluno descobrir sozinho depois.
+      */}
       {concluiu ? <SparringDaAbertura opening={opening} /> : null}
     </StudyJourneyShell>
   )
@@ -328,88 +388,23 @@ function ConteudoDeEtapa({
       )
 
     case 'abertura:linha-principal':
-      return <LinhaComentada lances={opening.mainline} opening={opening} />
-
-    case 'abertura:respostas':
-      return (
-        <LinhasEnsinadas
-          opening={opening}
-          ramos={respostasDoAdversario(opening)}
-          rotuloDoSeletor="Escolher a resposta"
-          intro="Saber o que o adversário QUER é diferente de saber qual é o seu próximo lance. Cada resposta abaixo começa na posição em que ele decide, e segue com o que você joga em seguida."
-          vazio="Esta abertura ainda não tem respostas autoradas. No treino, o computador joga a linha principal."
-          fecho="Você vai encontrar estas respostas no treino: o computador joga a linha principal na primeira partida e os desvios quando você recomeça."
-        />
-      )
+      return <LinhaPrincipalEmDoisTempos opening={opening} />
 
     case 'abertura:variacoes':
       return (
-        <LinhasEnsinadas
+        <BibliotecaDeRamos
           opening={opening}
-          ramos={variacoesDoAluno(opening)}
-          rotuloDoSeletor="Escolher a variação"
-          intro="Estas são as linhas em que quem escolhe outro caminho é VOCÊ — ou o nome que uma parte da linha principal já tem."
-          vazio="Esta abertura não tem nenhuma variação sua para estudar, e isso não é conteúdo faltando: contra cada resposta do adversário, a continuação do repertório é uma só. Quem decide aqui é o adversário, e você viu essas decisões na etapa anterior."
-          fecho="Estas linhas também entram no treino final: o repertório aceita o que você estudou, e não só a linha principal."
+          stage={stage}
+          jornada={jornada}
+          aoResponder={aoResponder}
         />
       )
 
     case 'abertura:planos':
-      return (
-        <ComTabuleiro opening={opening}>
-          {opening.plans.map((plano) => (
-            <div key={plano.id} className={styles.bloco}>
-              <h3 className={styles.blocoTitulo}>{plano.name}</h3>
-              <p className={styles.texto}>{plano.objective}</p>
-              <p className={styles.nota}>Quando: {plano.when}</p>
-              <p className={styles.nota}>Risco: {plano.risk}</p>
-              {/*
-                A ROTA VISUAL veio da aba de Planos. Ela é TEXTO e não só setas
-                no tabuleiro, de propósito: a regra de acessibilidade do projeto
-                diz que toda informação importante também existe em texto, e uma
-                rota que só existe como seta some para quem usa leitor de tela.
-              */}
-              {plano.arrows && plano.arrows.length > 0 ? (
-                <p className={styles.nota}>
-                  Rota visual: {plano.arrows.map((seta) => `${seta.from} → ${seta.to}`).join(' · ')}
-                </p>
-              ) : null}
-            </div>
-          ))}
-          <div className={styles.bloco}>
-            <h3 className={styles.blocoTitulo}>Erros comuns</h3>
-            <ul className={styles.lista}>
-              {opening.mistakes.map((erro) => (
-                <li key={erro.id}>
-                  <strong>{erro.moveSan}.</strong> {erro.explanation} {erro.principle}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </ComTabuleiro>
-      )
+      return <PlanosDaAbertura opening={opening} />
 
     case 'abertura:dois-lados':
-      return (
-        <ComTabuleiro opening={opening}>
-          <p className={styles.texto}>
-            Esta abertura é do seu repertório de {opening.side === 'white' ? 'brancas' : 'pretas'}.
-            Entender a posição pelo outro lado não é estudar outro curso: é saber o que o seu
-            adversário está tentando fazer, e por que os lances dele fazem sentido.
-          </p>
-          <p className={styles.texto}>
-            No treino final você vai jogar uma rodada pelo lado oposto. Ela existe para você
-            reconhecer o plano do adversário no tabuleiro, não para memorizar a teoria dele.
-          </p>
-          {/*
-            ATIVAR NO REPERTÓRIO veio da aba de Progresso. Fica nesta etapa, e
-            não no fim: é aqui que o aluno já viu a linha inteira e os planos, e
-            portanto tem base para decidir se esta abertura é dele. Oferecer isso
-            na primeira tela seria pedir um compromisso antes do conhecimento.
-          */}
-          <AtivarRepertorio opening={opening} />
-        </ComTabuleiro>
-      )
+      return <DoisLados opening={opening} jornada={jornada} />
 
     case 'abertura:pratica-guiada':
       return (
@@ -596,11 +591,23 @@ function LinhaComentada({
   opening,
   inicio = 0,
   antes,
+  aoTerminar,
+  rotuloDoFim,
 }: {
-  lances: OpeningDefinition['mainline']
+  lances: readonly OpeningDefinition['mainline'][number][]
   opening: OpeningDefinition
   inicio?: number
   antes?: React.ReactNode
+  /**
+   * O que fazer quando o aluno chega ao último lance.
+   *
+   * Ausente, o "Próximo lance" simplesmente desabilita — é o comportamento de
+   * referência, que a biblioteca de ramos usa. Presente, o fim da linha VIRA
+   * uma porta: é assim que a linha principal passa de entender para completar
+   * sem trocar de etapa nem de tela.
+   */
+  aoTerminar?: () => void
+  rotuloDoFim?: string
 }) {
   const primeiro = Math.min(Math.max(inicio, 0), Math.max(lances.length - 1, 0))
   const [indice, setIndice] = useState(primeiro)
@@ -635,146 +642,1043 @@ function LinhaComentada({
         >
           ← Lance anterior
         </button>
-        <button
-          type="button"
-          className={styles.secundario}
-          onClick={() => setIndice((n) => Math.min(lances.length - 1, n + 1))}
-          disabled={indice >= lances.length - 1}
-        >
-          Próximo lance →
-        </button>
+        {indice >= lances.length - 1 && aoTerminar ? (
+          <button type="button" className={styles.primario} onClick={aoTerminar}>
+            {rotuloDoFim ?? 'Continuar →'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.secundario}
+            onClick={() => setIndice((n) => Math.min(lances.length - 1, n + 1))}
+            disabled={indice >= lances.length - 1}
+          >
+            Próximo lance →
+          </button>
+        )}
       </div>
     </MesaDeEstudo>
   )
 }
 
 /**
- * UM CONJUNTO DE LINHAS, ENSINADO NO TABULEIRO — e não listado como texto.
+ * "DAS SUAS PARTIDAS" — onde a teoria e o seu tabuleiro se separaram.
  *
- * Atende as DUAS etapas que falam de desvio, porque elas fazem a mesma coisa com
- * conteúdos diferentes: "Melhores respostas do adversário" mostra os ramos em
- * que quem escolhe é o OUTRO, e "Variações importantes" mostra o complemento.
- * Quem separa é `respostasDoAdversario`/`variacoesDoAluno`, no domínio; aqui só
- * chega a lista já separada.
+ * A ÚNICA SEÇÃO DO CURSO CUJO MATERIAL NÃO É AUTORADO POR NÓS. Tudo o mais no
+ * repertório — a linha principal, os ramos, a importância de cada um — é
+ * conteúdo que alguém escreveu. Aqui o conteúdo é o que o aluno de fato
+ * enfrentou, e por isso esta é a única contagem do módulo que pode dizer
+ * "aconteceu N vezes". O campo `linhasAutoradas` do grafo não pode: ele conta
+ * autoradas, e o plano §58 proíbe apresentá-lo como estatística.
  *
- * POR QUE NÃO SÃO DOIS COMPONENTES: eram duas telas dizendo a mesma coisa de
- * jeitos diferentes — uma com tabuleiro, a outra com uma lista de nomes e um
- * menu para consultar o explorador. Duas cópias da mesma tela divergem na
- * primeira correção que só uma delas recebe.
+ * ELA É SECUNDÁRIA, e de propósito (plano §36): aparece abaixo do conteúdo da
+ * etapa, não no lugar dele. Um aluno sem partidas importadas não vê nada — e não
+ * uma seção vazia com zeros, que é pior que ausência.
  *
- * ELA COMEÇA ONDE A LINHA COMEÇA. O tabuleiro abre na posição da decisão, e o
- * primeiro lance mostrado é o desvio — não o `e4` que a linha principal já
- * ensinou.
- *
- * E ELA AVISA QUE ISTO VOLTA NO TREINO. É o mesmo conjunto de linhas que o bot
- * joga na prática: ensinar aqui e enfrentar lá é o laço que faz a etapa valer.
+ * O QUE ELA RECUSA A FAZER: criar ramo no repertório porque o adversário jogou
+ * algo (§38.2). Quando não há resposta autorada, o botão diz "analisar" em vez
+ * de fingir que o curso cobre aquilo.
  */
-function LinhasEnsinadas({
+function DasSuasPartidas({
   opening,
-  ramos,
-  intro,
-  vazio,
-  fecho,
-  rotuloDoSeletor,
+  progress,
 }: {
   opening: OpeningDefinition
-  ramos: readonly RamificacaoDaVariacao[]
-  intro: string
-  vazio: string
-  fecho: string
-  rotuloDoSeletor: string
+  progress: OpeningProgress
 }) {
-  const [escolhida, setEscolhida] = useState(0)
-  const ramo = ramos[Math.min(escolhida, Math.max(ramos.length - 1, 0))]
+  const { repo, status } = useRepository()
+  const [desvios, setDesvios] = useState<DesvioNasPartidas[] | null>(null)
 
-  // Sem linha autorada não se mostra um seletor vazio nem um tabuleiro sem
-  // assunto: a etapa mostra a posição que o repertório busca e diz o que falta.
-  if (!ramo) {
+  useEffect(() => {
+    if (status !== 'pronto' || !repo) return
+    let cancelado = false
+    void (async () => {
+      try {
+        const partidas = await repo.listGames()
+        if (cancelado) return
+        /*
+          O PGN É LIDO AQUI e não guardado analisado: `Game` guarda o texto, que
+          é a fonte. Uma cópia analisada no armazenamento seria a metade que
+          envelhece quando o parser melhorar.
+
+          PGN inválido é PULADO em silêncio — uma partida que não abre não é
+          motivo para a seção inteira sumir, e o lugar de reclamar de importação
+          é a tela de importação.
+        */
+        const lidas = partidas.flatMap((partida) => {
+          try {
+            return [{ jogo: parsePgn(partida.pgn), corDoAluno: partida.userColor }]
+          } catch {
+            return []
+          }
+        })
+        setDesvios(desviosNasSuasPartidas(opening, lidas, progress))
+      } catch {
+        if (!cancelado) setDesvios([])
+      }
+    })()
+    return () => {
+      cancelado = true
+    }
+  }, [opening, progress, repo, status])
+
+  // SEM PARTIDAS, SEM SEÇÃO. Zeros numa tela de diagnóstico ensinam a ignorá-la.
+  if (!desvios || desvios.length === 0) return null
+
+  return (
+    <section className={styles.bloco} aria-labelledby="das-suas-partidas">
+      <h3 id="das-suas-partidas" className={styles.blocoTitulo}>
+        Das suas partidas
+      </h3>
+      <p className={styles.texto}>
+        Os pontos em que as suas partidas saíram desta linha. Esta é a única contagem do curso que
+        mede partidas de verdade.
+      </p>
+
+      <ul className={styles.ramos}>
+        {desvios.map((desvio) => (
+          <li key={`${desvio.nodeId}:${desvio.jogadoSan}`}>
+            <a className={styles.ramoCard} href={desvio.rota}>
+              {/* Prévia: ver o comentário do mini-tabuleiro da biblioteca de ramos. */}
+              <span className={styles.ramoTabuleiro} aria-hidden="true">
+                <ChessBoardView
+                  fen={desvio.fen}
+                  orientation={opening.side === 'white' ? 'w' : 'b'}
+                  interactive={false}
+                />
+              </span>
+
+              <span className={styles.ramoNome}>
+                {desvio.partidas === 1
+                  ? '1 partida saiu daqui'
+                  : `${desvio.partidas} partidas saíram daqui`}
+              </span>
+
+              {/*
+                O PAR É O CONTEÚDO DA TELA. "Você saiu do repertório" sozinho não
+                ensina nada: o aluno fica sabendo que errou e não o que era certo.
+              */}
+              <span className={styles.ramoLance}>
+                {desvio.autor === 'aluno' ? 'Você jogou' : 'O adversário jogou'} {desvio.jogadoSan}
+                {desvio.esperadoSan ? ` · o repertório diz ${desvio.esperadoSan}` : null}
+              </span>
+
+              <span className={styles.ramoMeta}>{ROTULO_DA_ACAO[acaoDoDesvio(desvio)]}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/**
+ * O que o botão oferece, e a diferença entre os três é o que o app SABE.
+ *
+ * "Analisar" existe para o caso em que o adversário jogou algo que o curso não
+ * cobre. Dizer "treinar a resposta" ali seria prometer conteúdo que não existe.
+ */
+const ROTULO_DA_ACAO: Record<'reaprender' | 'treinar' | 'analisar', string> = {
+  reaprender: 'Reaprender esta posição →',
+  treinar: 'Treinar a resposta →',
+  analisar: 'O curso não cobre este lance — analisar →',
+}
+
+/**
+ * A LINHA PRINCIPAL EM DOIS TEMPOS: entender, e então completar.
+ *
+ * O QUE ELA ERA: `LinhaComentada` sobre a principal inteira — tabuleiro fixo,
+ * ← / →, comentário. Referência boa, aquisição fraca. O aluno atravessava nove
+ * lances sem produzir nenhum, e saía com a sensação de ter aprendido, que é o
+ * desfecho mais provável e o menos verdadeiro.
+ *
+ * O QUE ELA É AGORA, dentro da MESMA etapa e sem nenhuma aba nova:
+ *
+ *   ENTENDER   o computador demonstra os primeiros lances, comentados;
+ *   COMPLETAR  a partir dali o lance passa a ser do aluno, no tabuleiro, com o
+ *              computador respondendo pelo outro lado na mesma transição.
+ *
+ * A AJUDA DECRESCE. A primeira decisão cobrada vem com objetivo e uma casa para
+ * olhar; a segunda, só com o objetivo; da terceira em diante, só a posição.
+ * Quem decide isso é `percursoDaLinhaPrincipal`, no domínio — a tela lê a
+ * política e não a inventa, senão haveria duas respostas para a mesma pergunta.
+ *
+ * A ETAPA CONTINUA SENDO DE LEITURA, de propósito. Completar é o que ensina,
+ * mas transformar isso em tranca contradiz o ADR-0016: orientar não é
+ * aprisionar, e quem cobra de verdade é o treino final, que exige cobertura.
+ */
+function LinhaPrincipalEmDoisTempos({ opening }: { opening: OpeningDefinition }) {
+  const percurso = useMemo(() => percursoDaLinhaPrincipal(opening), [opening])
+  const [completando, setCompletando] = useState(false)
+
+  if (!completando) {
+    return (
+      <LinhaComentada
+        lances={percurso.exemplo}
+        opening={opening}
+        aoTerminar={() => setCompletando(true)}
+        rotuloDoFim="Agora é a sua vez →"
+      />
+    )
+  }
+
+  return (
+    <CompletarALinha
+      opening={opening}
+      percurso={percurso}
+      tituloDoFim="Linha principal completa"
+      notaDoFim="A etapa seguinte mostra o que fazer quando a partida sai desta linha."
+    />
+  )
+}
+
+/**
+ * O segundo tempo: o aluno joga o resto da linha.
+ *
+ * NÃO HÁ BOTÃO ENTRE LANCES. Quem avança é o tabuleiro, e a resposta do
+ * adversário entra na mesma transição do lance do aluno — o desenho que
+ * `sequencia.ts` já garante e que a prática guiada já usa.
+ *
+ * ERRAR NÃO PUNE: a peça volta, a posição não anda, e o texto ao lado diz o que
+ * aconteceu. O aluno fica NA decisão até resolvê-la, em vez de ser arrastado
+ * para a seguinte sem ter entendido esta.
+ */
+function CompletarALinha({
+  opening,
+  percurso,
+  antes,
+  tituloDoFim,
+  notaDoFim,
+  aoConcluir,
+}: {
+  opening: OpeningDefinition
+  percurso: ReturnType<typeof percursoDaLinhaPrincipal>
+  /** O contexto que fica acima da instrução. O ramo usa; a principal, não. */
+  antes?: React.ReactNode
+  /** O que a tela declara concluído. Ver o comentário no painel de fim. */
+  tituloDoFim?: string
+  /** O que vem a seguir, quando há algo a dizer. */
+  notaDoFim?: string
+  /**
+   * Chamado UMA vez, quando a linha termina.
+   *
+   * Existe para o ramo gravar "praticado". A linha principal não passa nada, e
+   * é deliberado: §15.4 proíbe dupla contagem, e a etapa dela é de leitura.
+   */
+  aoConcluir?: () => void
+}) {
+  const [estado, setEstado] = useState(() => iniciarSequencia(percurso.linha))
+  const [errou, setErrou] = useState(false)
+  /** Já revelou a resposta desta decisão? Some quando a linha anda. */
+  const [revelado, setRevelado] = useState(false)
+
+  const esperado = lanceEsperadoNaLinha(percurso.linha, estado)
+  /*
+    O ÍNDICE NA PRINCIPAL é o da demonstração mais o da sequência — a linha
+    treinável começa depois do exemplo, então os dois índices não coincidem.
+    Foi exatamente esse deslocamento que, na prática guiada, fez a tela pedir os
+    lances do adversário.
+  */
+  const indiceNaPrincipal = percurso.demonstrados + estado.indice
+  const ordem = percurso.decisoes.findIndex((item) => item.indice === indiceNaPrincipal)
+  const decisao = percurso.decisoes[ordem]
+  const licaoAtual = opening.mainline[indiceNaPrincipal]
+
+  /*
+    OS DOIS ÚLTIMOS LANCES, e a distância entre eles não é detalhe.
+
+    O motor joga a resposta do adversário na MESMA transição, então quando a tela
+    volta a pedir algo o índice já andou DOIS: o lance do aluno ficou em
+    `indiceNaPrincipal - 2` e a resposta do computador em `- 1`.
+
+    A primeira versão desta tela usava `- 1` para as duas coisas — e confirmava o
+    acerto do aluno exibindo o comentário do lance do ADVERSÁRIO. Nada errava,
+    nada avisava: só o texto explicava a jogada errada, toda vez.
+  */
+  const jogadoPeloAluno =
+    indiceNaPrincipal >= 2 ? opening.mainline[indiceNaPrincipal - 2] : undefined
+  const respostaDoAdversario =
+    indiceNaPrincipal >= 1 ? opening.mainline[indiceNaPrincipal - 1] : undefined
+  const jaJogou = estado.jogados.length > 0
+
+  const tentar = useCallback(
+    (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
+      const resultado = jogarNaSequencia(
+        percurso.linha,
+        estado,
+        `${origem}${destino}${promocao ?? ''}`,
+      )
+
+      // Nem chegou a ser lance: o tabuleiro devolve a peça e nada muda.
+      if (resultado.tipo === 'ilegal') return false
+
+      if (resultado.tipo === 'fora-da-linha') {
+        setErrou(true)
+        return false
+      }
+
+      setErrou(false)
+      setRevelado(false)
+      setEstado(resultado.estado)
+      /*
+        A CONCLUSÃO ACONTECE NO ATO DO LANCE, e não num `useEffect` que observa
+        o estado. Um efeito aqui renderizaria a tela uma vez antes de gravar, e
+        é o padrão que o lint do projeto proíbe com razão — além de, num
+        desmonte rápido, gravar depois de a tela ter sumido.
+      */
+      if (resultado.estado.status === 'concluida') aoConcluir?.()
+      return true
+    },
+    [estado, percurso.linha, aoConcluir],
+  )
+
+  const lance = useLanceNoTabuleiro({
+    fen: estado.fen,
+    ativo: esperado !== null,
+    aoTentar: (origem, destino) => tentar(origem, destino),
+  })
+
+  if (esperado === null) {
+    /*
+      O TEXTO DE FIM É DO CHAMADOR, e a razão é um defeito real: este componente
+      serve a linha principal E ao estudo de um ramo, e a primeira versão dizia
+      "Linha principal completa" nos dois. Dentro da Defesa dos Dois Cavalos,
+      isso é o app afirmando que o aluno acabou outra coisa.
+
+      Uma decisão só não é "decisões": um ramo curto cobra UMA, e o plural fixo
+      contaria errado em voz alta.
+    */
+    const quantas =
+      percurso.decisoes.length === 1 ? 'a decisão' : `as ${percurso.decisoes.length} decisões`
     return (
       <ComTabuleiro opening={opening}>
-        <p className={styles.texto}>{vazio}</p>
+        {antes}
+        <p className={styles.texto} role="status">
+          ✓ {tituloDoFim ?? 'Linha principal completa'}. Você jogou {quantas} sem consultar a
+          notação.
+        </p>
+        {notaDoFim ? <p className={styles.nota}>{notaDoFim}</p> : null}
       </ComTabuleiro>
     )
   }
 
-  const emComum = ramo.lancesEmComum.map((lance) => lance.san).join(' ')
-  const desviaOAdversario = ramo.ladoQueDesvia !== opening.side
-  const lanceDoDesvio =
-    ramo.indiceDaDivergencia === null ? null : ramo.variacao.line[ramo.indiceDaDivergencia]
-
   return (
-    <>
-      {ramos.length > 1 ? (
-        <div className={styles.opcoes} role="group" aria-label={rotuloDoSeletor}>
-          {ramos.map((opcao, i) => (
-            <button
-              key={opcao.variacao.id}
-              type="button"
-              className={i === escolhida ? styles.variacaoAtiva : styles.opcao}
-              aria-pressed={i === escolhida}
-              onClick={() => setEscolhida(i)}
-            >
-              {opcao.variacao.name}
-            </button>
-          ))}
+    <MesaDeEstudo
+      tabuleiro={
+        <ChessBoardView
+          fen={estado.fen}
+          orientation={opening.side === 'white' ? 'w' : 'b'}
+          interactive
+          selected={lance.selecionada}
+          targets={lance.destinos}
+          onMove={tentar}
+          onSquareClick={lance.aoClicarNaCasa}
+        />
+      }
+    >
+      {antes}
+
+      {/*
+        A POSIÇÃO NA SEQUÊNCIA. Só aparece quando de fato existe: um "Decisão 0
+        de 3" seria a tela contando errado em voz alta, e um `|| 1` esconderia o
+        mesmo problema fingindo que é o primeiro.
+      */}
+      {ordem >= 0 ? (
+        <p className={styles.kicker}>
+          Decisão {ordem + 1} de {percurso.decisoes.length}
+        </p>
+      ) : null}
+
+      {/*
+        O ENUNCIADO É O QUE A POLÍTICA MANDA MOSTRAR, e nada além.
+
+        Mostrar sempre o objetivo seria confortável e erraria o alvo: ajuda
+        constante vira muleta, e a etapa passaria a medir leitura em vez de
+        recuperação.
+      */}
+      <p className={styles.texto}>
+        {decisao?.nivel !== 'posicao' && decisao?.objetivo
+          ? decisao.objetivo
+          : 'Sua vez. Qual lance continua a linha?'}
+      </p>
+
+      {decisao?.nivel === 'objetivo-e-dica' && decisao.dica ? (
+        <p className={styles.nota}>
+          {decisao.dica.tipo === 'casa-alvo'
+            ? `A casa que decide é ${decisao.dica.casa}.`
+            : `A peça que joga está em ${decisao.dica.casa}.`}
+        </p>
+      ) : null}
+
+      {/*
+        O FEEDBACK É UM `role="status"` QUE TROCA DE TEXTO, e não um bloco que
+        aparece e some: assim o leitor de tela anuncia sem a página saltar.
+      */}
+      <p className={styles.nota} role="status">
+        {errou
+          ? 'Esse não é o lance desta linha. A posição não mudou — tente de novo.'
+          : jaJogou && respostaDoAdversario
+            ? `O computador respondeu ${respostaDoAdversario.san}.`
+            : 'Jogue no tabuleiro.'}
+      </p>
+
+      {/*
+        A CONFIRMAÇÃO EXPLICA O LANCE DO ALUNO, e não o do adversário. É o lance
+        dele que ele acabou de escolher, e é a razão dele que precisa ficar.
+      */}
+      {jaJogou && !errou && jogadoPeloAluno ? (
+        <div className={styles.veredito}>
+          <p className={styles.acertou}>✓ {jogadoPeloAluno.san} é o lance da linha.</p>
+          <p className={styles.texto}>{jogadoPeloAluno.comment}</p>
         </div>
       ) : null}
 
-      <LinhaComentada
-        // A remontagem ao trocar de linha é deliberada: ela reposiciona a
-        // navegação no desvio da linha nova, sem efeito que escreve estado.
-        key={ramo.variacao.id}
-        opening={opening}
-        lances={ramo.variacao.line}
-        inicio={ramo.indiceDaDivergencia ?? 0}
-        antes={
-          <>
-            <p className={styles.texto}>{intro}</p>
-            <h3 className={styles.blocoTitulo}>{ramo.variacao.name}</h3>
-            <p className={styles.texto}>{ramo.variacao.description}</p>
-            {ramo.indiceDaDivergencia === null ? (
-              /*
-                UMA VARIAÇÃO QUE NÃO DESVIA não é um desvio, e dizer o contrário
-                ensinaria uma bifurcação que não existe no tabuleiro. O Giuoco
-                Piano é o nome da própria linha principal até certo ponto.
-              */
-              <p className={styles.nota}>
-                Este é o nome da linha principal até aqui — não é um desvio. Você já a percorreu na
-                etapa anterior.
-              </p>
-            ) : ramo.lanceRecusado === null ? (
-              /*
-                A LINHA PRINCIPAL PODE SIMPLESMENTE TER ACABADO — é o caso da
-                Escocesa, cuja principal termina em Cxd4 e cujas respostas vêm
-                logo depois. Não há lance recusado, e escrever "no lugar de"
-                aqui inventaria uma alternativa que o conteúdo não tem.
-              */
-              <p className={styles.nota}>
-                A linha principal termina em {emComum ? <>{ultimoLance(emComum)}</> : 'sua raiz'}.
-                Daqui em diante quem escolhe é {desviaOAdversario ? 'o adversário' : 'você'}, e a
-                primeira escolha é <strong>{lanceDoDesvio?.san}</strong>.
-              </p>
-            ) : (
-              <p className={styles.nota}>
-                {emComum ? <>Até {emComum}, tudo igual à linha principal. </> : null}
-                {desviaOAdversario ? 'O adversário joga' : 'Você joga'}{' '}
-                <strong>{lanceDoDesvio?.san}</strong> no lugar de {ramo.lanceRecusado.san}, e é daí
-                em diante que a partida muda.
-              </p>
-            )}
-          </>
-        }
-      />
-
-      <p className={styles.nota}>{fecho}</p>
-    </>
+      {/*
+        A SAÍDA DE QUEM TRAVOU. Sem ela, um aluno que não lembra o lance fica
+        preso na decisão — e a etapa que deveria ensinar vira um portão.
+        Revelar não é falhar: é o degrau final da escada de dicas.
+      */}
+      {revelado && licaoAtual ? (
+        <div className={styles.veredito}>
+          <p className={styles.texto}>
+            O lance é <strong>{licaoAtual.san}</strong>. {licaoAtual.comment}
+          </p>
+        </div>
+      ) : (
+        <button type="button" className={styles.secundario} onClick={() => setRevelado(true)}>
+          Não lembro — mostrar o lance
+        </button>
+      )}
+    </MesaDeEstudo>
   )
 }
 
-/** O último lance de uma sequência em SAN, para a frase não repetir a linha inteira. */
-function ultimoLance(sequencia: string): string {
-  const lances = sequencia.split(' ')
-  return lances[lances.length - 1] ?? sequencia
+/**
+ * OS DOIS LADOS, em matriz: cada ramo, em cada papel.
+ *
+ * COMO ERA: dois parágrafos prometendo que "no treino final você vai jogar uma
+ * rodada pelo lado oposto". A promessa era verdadeira e vaga — UMA rodada, sobre
+ * uma linha que a etapa não nomeava. O aluno não tinha como saber o que ia ser
+ * cobrado nem o que já tinha demonstrado.
+ *
+ * COMO É (plano VNext §27.2): a matriz diz, ramo a ramo e papel a papel, o que o
+ * treino exige, o que ele recomenda e o que já está coberto. É a mesma
+ * informação que o treino final usa para escolher a próxima rodada — lida da
+ * MESMA função, e não de uma segunda contagem que divergiria na primeira
+ * mudança de conteúdo.
+ *
+ * O QUE ELA NÃO FAZ é dobrar o curso (§27.3). O lado de lá só é obrigatório na
+ * linha principal; nos ramos ele é recomendado, e aparece dito assim.
+ */
+function DoisLados({ opening, jornada }: { opening: OpeningDefinition; jornada: StudyJourney }) {
+  const matriz = useMemo(() => matrizDeCobertura(opening), [opening])
+  const cobertos = jornada.alvosCobertos[ETAPA_DE_TREINO_DE_ABERTURA] ?? []
+  const seuLado = opening.side === 'white' ? 'brancas' : 'pretas'
+  const outroLado = opening.side === 'white' ? 'pretas' : 'brancas'
+
+  return (
+    <ComTabuleiro opening={opening}>
+      <p className={styles.texto}>
+        Esta abertura é do seu repertório de {seuLado}. Entender a posição pelo outro lado não é
+        estudar outro curso: é saber o que o seu adversário está tentando fazer, e por que os lances
+        dele fazem sentido.
+      </p>
+
+      {/*
+        A TABELA É TABELA DE VERDADE, com cabeçalhos de linha e de coluna. Uma
+        grade de divs com aparência de tabela lê como uma sequência de palavras
+        soltas em leitor de tela — e esta tela é exatamente a que responde "o que
+        falta para eu terminar".
+      */}
+      <table className={styles.matriz}>
+        <caption className={styles.matrizLegenda}>
+          O que o treino final cobra, linha a linha
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Linha</th>
+            <th scope="col">Pelas {seuLado}</th>
+            <th scope="col">Pelas {outroLado}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {matriz.map((linha) => (
+            <tr key={linha.ramoId}>
+              <th scope="row">{linha.nome}</th>
+              <td>
+                <EstadoNaMatriz
+                  exigido={linha.exigidoNoSeuLado}
+                  coberto={cobertos.includes(linha.alvoNoSeuLado)}
+                />
+              </td>
+              <td>
+                <EstadoNaMatriz
+                  exigido={linha.exigidoNoOutroLado}
+                  coberto={cobertos.includes(linha.alvoNoOutroLado)}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className={styles.nota}>
+        Obrigatório é o que o treino exige para concluir. Recomendado continua disponível e não
+        tranca nada — o curso não dobra de tamanho por causa do outro lado.
+      </p>
+
+      {/*
+        ATIVAR NO REPERTÓRIO veio da aba de Progresso. Fica nesta etapa, e não no
+        fim: é aqui que o aluno já viu a linha inteira e os planos, e portanto tem
+        base para decidir se esta abertura é dele. Oferecer isso na primeira tela
+        seria pedir um compromisso antes do conhecimento.
+      */}
+      <AtivarRepertorio opening={opening} />
+    </ComTabuleiro>
+  )
+}
+
+/**
+ * Uma célula da matriz.
+ *
+ * SÍMBOLO E PALAVRA, sempre — status nunca depende só de cor, e numa tabela de
+ * progresso isso é o conteúdo inteiro da célula.
+ */
+function EstadoNaMatriz({ exigido, coberto }: { exigido: boolean; coberto: boolean }) {
+  if (coberto) return <span className={styles.matrizFeito}>✓ demonstrado</span>
+  return exigido ? (
+    <span className={styles.matrizExigido}>○ obrigatório</span>
+  ) : (
+    <span className={styles.matrizOpcional}>· recomendado</span>
+  )
+}
+
+/**
+ * OS PLANOS: biblioteca de cards, estudo, e uma decisão quando o conteúdo tem.
+ *
+ * COMO ERA: os planos eram empilhados num scroll só, todos abertos ao mesmo
+ * tempo, cada um com três linhas de prosa sobre uma ÚNICA posição — a
+ * característica da abertura, que não é a posição de nenhum deles. O aluno lia
+ * "Ruptura d4" e via uma posição em que d4 não era o assunto.
+ *
+ * COMO É (plano VNext §24): cada plano é um card com o mini-tabuleiro da
+ * posição em que ELE acontece. Abrir o card dá a posição grande e as quatro
+ * perguntas — quando usar, por que funciona, o que precisa estar preparado, e o
+ * que o adversário tenta. E, quando o conteúdo permite, o aluno joga o lance
+ * que começa o plano.
+ *
+ * "QUANDO O CONTEÚDO PERMITE" NÃO É PREGUIÇA: dois dos sete planos do curso têm
+ * microdecisão. Os outros cinco declaram no próprio conteúdo por que não têm, e
+ * o caso do Sistema Londres é o que vale ler — a seta do plano é um lance legal
+ * que perde um peão.
+ */
+function PlanosDaAbertura({ opening }: { opening: OpeningDefinition }) {
+  const [aberto, setAberto] = useState<string | null>(null)
+  const plano = aberto === null ? undefined : opening.plans.find((item) => item.id === aberto)
+
+  if (plano) {
+    return <EstudoDoPlano opening={opening} plano={plano} aoVoltar={() => setAberto(null)} />
+  }
+
+  return (
+    <div className={styles.bloco}>
+      <p className={styles.texto}>
+        Um plano não é um lance: é o que você está tentando conseguir. Cada card mostra a posição em
+        que o plano aparece — reconhecer a posição é o que faz o plano servir numa partida de
+        verdade.
+      </p>
+
+      <ul className={styles.ramos}>
+        {opening.plans.map((item) => (
+          <li key={item.id}>
+            <button type="button" className={styles.ramoCard} onClick={() => setAberto(item.id)}>
+              {/* Prévia: ver o comentário do mini-tabuleiro da biblioteca de ramos. */}
+              <span className={styles.ramoTabuleiro} aria-hidden="true">
+                <ChessBoardView
+                  fen={fenDoPlano(opening, item)}
+                  orientation={opening.side === 'white' ? 'w' : 'b'}
+                  interactive={false}
+                  arrows={item.arrows ?? []}
+                />
+              </span>
+              <span className={styles.ramoNome}>{item.name}</span>
+              <span className={styles.ramoLance}>{item.when}</span>
+              <span className={styles.ramoMeta}>{item.objective}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className={styles.bloco}>
+        <h3 className={styles.blocoTitulo}>Erros comuns</h3>
+        <ul className={styles.lista}>
+          {opening.mistakes.map((erro) => (
+            <li key={erro.id}>
+              <strong>{erro.moveSan}.</strong> {erro.explanation} {erro.principle}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A posição em que o plano acontece.
+ *
+ * NÃO É A POSIÇÃO CARACTERÍSTICA DA ABERTURA. Sete planos apontam para sete
+ * momentos diferentes da linha, e mostrar a mesma posição em todos foi o que
+ * fazia a etapa parecer uma lista de frases: a tela não mudava entre um plano e
+ * outro, então nada nela dizia que o assunto tinha mudado.
+ */
+function fenDoPlano(opening: OpeningDefinition, plano: OpeningPlan): string {
+  const posicoes = posicoesDaLinha(opening.rootFen, opening.mainline)
+  const indice = Math.min(Math.max(plano.positionPly ?? 0, 0), posicoes.length - 1)
+  return posicoes[indice] ?? opening.rootFen
+}
+
+/**
+ * O estudo de um plano: as quatro perguntas e, quando há, a decisão.
+ *
+ * AS QUATRO PERGUNTAS SÃO DO PLANO VNext §24.2, e cada uma existe por um motivo
+ * diferente. "Quando usar" e "por que funciona" já eram o conteúdo antigo sob
+ * outros nomes. As duas novas são as que faltavam: sem "o que precisa estar
+ * preparado", o aluno joga a ruptura cedo; sem "o que o adversário tenta", ele
+ * executa o plano como se o outro lado não existisse.
+ */
+function EstudoDoPlano({
+  opening,
+  plano,
+  aoVoltar,
+}: {
+  opening: OpeningDefinition
+  plano: OpeningPlan
+  aoVoltar: () => void
+}) {
+  const micro = plano.microdecisao
+  const posicoes = useMemo(() => posicoesDaLinha(opening.rootFen, opening.mainline), [opening])
+  const fenDaPergunta = micro ? (posicoes[micro.ply] ?? opening.rootFen) : null
+  const [acertou, setAcertou] = useState(false)
+  const [errou, setErrou] = useState<string | null>(null)
+
+  /*
+    O TABULEIRO MOSTRA A POSIÇÃO DA PERGUNTA QUANDO HÁ PERGUNTA, e a do plano
+    quando não há. Duas posições diferentes na mesma tela confundiriam: o aluno
+    leria sobre uma e jogaria noutra.
+  */
+  const fen = acertou
+    ? (fenDoLanceFeito(fenDaPergunta, micro?.san) ?? fenDaPergunta)
+    : fenDaPergunta
+  const fenNoTabuleiro = fen ?? fenDoPlano(opening, plano)
+
+  const tentar = useCallback(
+    (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
+      if (!micro || !fenDaPergunta || acertou) return false
+      const aplicado = applyMove(fenDaPergunta, {
+        from: origem,
+        to: destino,
+        promotion: promocao,
+      })
+      // Nem chegou a ser lance: o tabuleiro devolve a peça e nada é registrado.
+      if (!aplicado) return false
+      if (aplicado.move.san !== micro.san) {
+        setErrou(aplicado.move.san)
+        /*
+          SNAPBACK. A posição NÃO anda — é a mesma regra da linha principal e do
+          ramo, e ela é o que mantém o aluno na decisão até resolvê-la.
+        */
+        return false
+      }
+      setErrou(null)
+      setAcertou(true)
+      return true
+    },
+    [acertou, fenDaPergunta, micro],
+  )
+
+  const lance = useLanceNoTabuleiro({
+    fen: fenNoTabuleiro,
+    ativo: Boolean(micro) && !acertou,
+    aoTentar: (origem, destino) => tentar(origem, destino),
+  })
+
+  return (
+    <MesaDeEstudo
+      tabuleiro={
+        <ChessBoardView
+          fen={fenNoTabuleiro}
+          orientation={opening.side === 'white' ? 'w' : 'b'}
+          /* As setas somem durante a pergunta: elas SÃO a resposta desenhada. */
+          arrows={micro && !acertou ? [] : (plano.arrows ?? [])}
+          interactive={Boolean(micro) && !acertou}
+          selected={lance.selecionada}
+          targets={lance.destinos}
+          onMove={tentar}
+          onSquareClick={lance.aoClicarNaCasa}
+        />
+      }
+    >
+      <button type="button" className={styles.secundario} onClick={aoVoltar}>
+        ← Todos os planos
+      </button>
+      <h3 className={styles.blocoTitulo}>{plano.name}</h3>
+      <p className={styles.texto}>{plano.objective}</p>
+
+      <p className={styles.nota}>
+        <strong>Quando usar.</strong> {plano.when}
+      </p>
+      {plano.porQueFunciona ? (
+        <p className={styles.nota}>
+          <strong>Por que funciona.</strong> {plano.porQueFunciona}
+        </p>
+      ) : null}
+      {plano.preparacao ? (
+        <p className={styles.nota}>
+          <strong>O que precisa estar preparado.</strong> {plano.preparacao}
+        </p>
+      ) : null}
+      {plano.oQueOAdversarioTenta ? (
+        <p className={styles.nota}>
+          <strong>O que o adversário tenta.</strong> {plano.oQueOAdversarioTenta}
+        </p>
+      ) : null}
+      <p className={styles.nota}>
+        <strong>Risco.</strong> {plano.risk}
+      </p>
+
+      {/*
+        A ROTA EM TEXTO continua, e continua sendo regra de acessibilidade: uma
+        rota que só existe como seta some para quem usa leitor de tela. Ela fica
+        abaixo da pergunta de propósito — acima, entregaria a resposta.
+      */}
+      {micro ? (
+        <div className={styles.veredito}>
+          {acertou ? (
+            <>
+              <p className={styles.acertou}>✓ {micro.san} começa o plano.</p>
+              <p className={styles.texto}>{micro.porque}</p>
+            </>
+          ) : (
+            <>
+              <p className={styles.texto}>{micro.pergunta ?? 'Qual lance começa este plano?'}</p>
+              <p className={styles.nota} role="status">
+                {errou === null
+                  ? 'Jogue no tabuleiro.'
+                  : `${errou} não é o lance deste plano. A posição não mudou — tente de novo.`}
+              </p>
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {plano.arrows && plano.arrows.length > 0 && (!micro || acertou) ? (
+        <p className={styles.nota}>
+          Rota visual: {plano.arrows.map((seta) => `${seta.from} → ${seta.to}`).join(' · ')}
+        </p>
+      ) : null}
+    </MesaDeEstudo>
+  )
+}
+
+/** A posição depois do lance certo, para o tabuleiro mostrar o que aconteceu. */
+function fenDoLanceFeito(fen: string | null, san: string | undefined): string | null {
+  if (!fen || !san) return null
+  return applyMove(fen, san)?.fenAfter ?? null
+}
+
+/**
+ * A BIBLIOTECA DE RAMOS — uma lista só, ensinada no tabuleiro.
+ *
+ * O QUE ELA SUBSTITUI: duas etapas, "Melhores respostas do adversário" e
+ * "Variações importantes", que liam listas separadas por QUEM TOMAVA A DECISÃO.
+ * A separação é limpa no domínio e artificial na cabeça de quem estuda — o
+ * jogador pensa "estou na Defesa dos Dois Cavalos", não "estou na lista de ramos
+ * cujo autor da decisão foi o oponente". Ver o ADR desta entrega.
+ *
+ * `autor` não sumiu: ele decide se a frase diz "o adversário joga" ou "você
+ * joga". Deixou de decidir em QUE ETAPA o aluno encontra o ramo.
+ *
+ * A IMPORTÂNCIA ORDENA E ROTULA. `core` é o que o curso exige para concluir;
+ * `secondary` e `optional` continuam visíveis e estudáveis — esconder conteúdo
+ * é o defeito que o ADR-0016 desfez. O que muda é o que bloqueia a conclusão.
+ *
+ * CADA RAMO RESPONDE TRÊS PERGUNTAS antes de pedir um lance: o que mudou, o que
+ * o adversário quer, e qual é o seu objetivo. Sem elas o ramo volta a ser uma
+ * sequência de lances — e a pergunta que sobrevive à mudança de ordem dos
+ * lances é justamente "o que ele está tentando fazer?".
+ */
+function BibliotecaDeRamos({
+  opening,
+  stage,
+  jornada,
+  aoResponder,
+}: {
+  opening: OpeningDefinition
+  stage: StudyStage
+  jornada: StudyJourney
+  aoResponder: (proxima: StudyJourney) => void
+}) {
+  const ramos = useMemo(() => ramosDaAbertura(opening), [opening])
+  const respondidos = jornada.itensRespondidos[stage.id] ?? []
+  /** `null` é a lista; um id é o estudo daquele ramo. Estado de tela, só. */
+  const [aberto, setAberto] = useState<string | null>(null)
+  const ramo = aberto === null ? undefined : ramos.find((item) => item.id === aberto)
+
+  if (ramos.length === 0) {
+    return (
+      <ComTabuleiro opening={opening}>
+        <p className={styles.texto}>
+          Esta abertura ainda não tem variações autoradas. No treino, o computador joga a linha
+          principal.
+        </p>
+      </ComTabuleiro>
+    )
+  }
+
+  if (ramo) {
+    return (
+      <EstudoDoRamo
+        opening={opening}
+        ramo={ramo}
+        stage={stage}
+        jornada={jornada}
+        aoResponder={aoResponder}
+        aoVoltar={() => setAberto(null)}
+      />
+    )
+  }
+
+  const recomendado = ramoRecomendado(ramos, respondidos)
+
+  return (
+    <div className={styles.bloco}>
+      <p className={styles.texto}>
+        Cada card é uma decisão que a partida pode tomar a partir daqui. O tabuleiro mostra a
+        posição em que ela acontece — é ela que você vai reconhecer no jogo, não o nome.
+      </p>
+
+      <ul className={styles.ramos}>
+        {ramos.map((item) => {
+          const estado = estadoDoRamo(respondidos, item.id)
+          const ehRecomendado = item.id === recomendado?.id
+          return (
+            <li key={item.id}>
+              <button
+                type="button"
+                className={styles.ramoCard}
+                data-recomendado={ehRecomendado ? 'true' : undefined}
+                onClick={() => {
+                  /*
+                    ABRIR JÁ GRAVA "visto". É a evidência mais fraca que existe e
+                    é honesta: o rótulo que ela produz diz "visto", não
+                    "estudada". Ver `estadoDoRamo`.
+                  */
+                  aoResponder(registrarItem(jornada, stage.id, idDeRamoVisto(item.id)))
+                  setAberto(item.id)
+                }}
+              >
+                {/*
+                  O MINI-TABULEIRO MOSTRA O PONTO DE BIFURCAÇÃO, e não a posição
+                  inicial: é a posição em que a decisão acontece que o aluno
+                  precisa reconhecer numa partida.
+
+                  `aria-hidden` porque ele é PRÉVIA — anunciar casa por casa daria
+                  a quem usa leitor de tela um despejo de coordenadas em vez de
+                  uma escolha. O que identifica o ramo, para essa pessoa, é o
+                  texto logo abaixo.
+                */}
+                <span className={styles.ramoTabuleiro} aria-hidden="true">
+                  <ChessBoardView
+                    fen={fenDaBifurcacao(opening, item)}
+                    orientation={opening.side === 'white' ? 'w' : 'b'}
+                    interactive={false}
+                  />
+                </span>
+
+                <span className={styles.ramoNome}>{item.nome}</span>
+                {item.lanceQueRamifica ? (
+                  <span className={styles.ramoLance}>{item.lanceQueRamifica}</span>
+                ) : null}
+                <span className={styles.ramoMeta}>
+                  {ROTULO_DA_IMPORTANCIA[item.importancia] ?? 'essencial'}
+                  {' · '}
+                  {/*
+                    ESTADO NUNCA DEPENDE SÓ DE COR: símbolo e palavra, sempre —
+                    é regra do projeto e é o que faz o card funcionar impresso,
+                    em alto contraste e para quem não distingue as cores.
+                  */}
+                  {SIMBOLO_DO_RAMO[estado]} {ROTULO_DO_ESTADO_DO_RAMO[estado]}
+                </span>
+                {ehRecomendado ? (
+                  <span className={styles.ramoRecomendado}>Recomendado agora</span>
+                ) : null}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+
+      {/*
+        NENHUMA FREQUÊNCIA APARECE AQUI, e a ausência é decisão (plano §17.2). O
+        campo `linhasAutoradas` do grafo conta o NOSSO material, não partidas do
+        mundo. Renderizá-lo como "72% das partidas" seria inventar estatística a
+        partir de um número que mede outra coisa.
+      */}
+      <p className={styles.nota}>
+        Você vai encontrar estas linhas no treino: o computador joga a principal na primeira partida
+        e os desvios quando você recomeça.
+      </p>
+    </div>
+  )
+}
+
+/** O símbolo de cada estado. Par obrigatório da palavra, nunca substituto dela. */
+const SIMBOLO_DO_RAMO: Record<EstadoDoRamo, string> = {
+  praticado: '✓',
+  visto: '◉',
+  'nao-visto': '○',
+}
+
+const ROTULO_DO_ESTADO_DO_RAMO: Record<EstadoDoRamo, string> = {
+  praticado: 'praticado',
+  visto: 'visto',
+  'nao-visto': 'não visto',
+}
+
+/**
+ * A posição em que o ramo bifurca.
+ *
+ * NÃO É A POSIÇÃO INICIAL nem a final: é onde a decisão acontece. O plano §57 é
+ * explícito — mini-board tem de ser posição identificável, e o tabuleiro da
+ * posição inicial não diz nada sobre variação nenhuma.
+ *
+ * O ramo que não bifurca (o Giuoco Piano) mostra o fim da própria linha, que é
+ * a posição que ele nomeia.
+ */
+function fenDaBifurcacao(opening: OpeningDefinition, ramo: RamoDeAbertura): string {
+  const linha = ramo.ramificacao.variacao.line
+  const posicoes = posicoesDaLinha(opening.rootFen, linha)
+  const divergencia = ramo.ramificacao.indiceDaDivergencia
+  const indice = divergencia === null ? posicoes.length - 1 : divergencia + 1
+  return posicoes[Math.min(Math.max(indice, 0), posicoes.length - 1)] ?? opening.rootFen
+}
+
+/**
+ * O ESTUDO DE UM RAMO: as três perguntas, o exemplo, e então a decisão.
+ *
+ * A SEQUÊNCIA É A DO PLANO §18.1 — o que mudou, o que ele quer, qual é o seu
+ * objetivo, exemplo curto, você joga, o computador responde. As três primeiras
+ * já vinham do conteúdo desde que o ramo virou a unidade; o que entra agora é o
+ * fim: **o aluno produz a decisão que o ramo existe para ensinar**.
+ *
+ * SEM ISSO O RAMO ERA UMA FICHA DE LEITURA. Ele explicava o desvio, dizia o que
+ * fazer, e nunca pedia que a pessoa o fizesse — o mesmo defeito que a linha
+ * principal tinha e que o ADR-0023 corrigiu lá.
+ */
+function EstudoDoRamo({
+  opening,
+  ramo,
+  stage,
+  jornada,
+  aoResponder,
+  aoVoltar,
+}: {
+  opening: OpeningDefinition
+  ramo: RamoDeAbertura
+  stage: StudyStage
+  jornada: StudyJourney
+  aoResponder: (proxima: StudyJourney) => void
+  aoVoltar: () => void
+}) {
+  const percurso = useMemo(() => percursoDoRamo(opening, ramo), [opening, ramo])
+  const [praticando, setPraticando] = useState(false)
+  const aoRegistrarEvidencia = useGravadorDeEvidencia(opening.id)
+
+  const emComum = ramo.ramificacao.lancesEmComum.map((lance) => lance.san).join(' ')
+
+  const contexto = (
+    <>
+      <button type="button" className={styles.secundario} onClick={aoVoltar}>
+        ← Todas as variações
+      </button>
+      <h3 className={styles.blocoTitulo}>{ramo.nome}</h3>
+      <p className={styles.texto}>{ramo.descricao}</p>
+
+      {/* O QUE MUDOU — a decisão, dita com o lance que ela recusa. */}
+      {ramo.lanceQueRamifica === null ? (
+        <p className={styles.nota}>
+          Este é o nome da linha principal até aqui — não é um desvio. Você já a percorreu na etapa
+          anterior.
+        </p>
+      ) : (
+        <p className={styles.nota}>
+          {emComum ? <>Até {emComum}, tudo igual à linha principal. </> : null}
+          {ramo.autor === 'adversario' ? 'O adversário joga' : 'Você joga'}{' '}
+          <strong>{ramo.lanceQueRamifica}</strong>
+          {/*
+            A LINHA PRINCIPAL PODE SIMPLESMENTE TER ACABADO — é o caso da
+            Escocesa, cuja principal termina em Cxd4 e cujos ramos vêm logo
+            depois. Não há lance recusado, e escrever "no lugar de" ali
+            inventaria uma alternativa que o conteúdo não tem.
+          */}
+          {ramo.lanceRecusado ? (
+            <> no lugar de {ramo.lanceRecusado}, e é daí em diante que a partida muda.</>
+          ) : (
+            <>: a linha principal termina aqui, e daqui em diante quem escolhe é ele.</>
+          )}
+        </p>
+      )}
+
+      {/*
+        AS DUAS PERGUNTAS QUE O ALUNO LEVA PARA A PARTIDA. Elas vêm do conteúdo,
+        e um portão exige as duas em todo ramo `core`.
+      */}
+      {ramo.intencaoDoAdversario ? (
+        <p className={styles.nota}>
+          <strong>O que ele quer.</strong> {ramo.intencaoDoAdversario}
+        </p>
+      ) : null}
+      {ramo.objetivoDoAluno ? (
+        <p className={styles.nota}>
+          <strong>Seu objetivo.</strong> {ramo.objetivoDoAluno}
+        </p>
+      ) : null}
+    </>
+  )
+
+  if (!praticando) {
+    return (
+      <LinhaComentada
+        key={ramo.id}
+        opening={opening}
+        lances={ramo.ramificacao.variacao.line}
+        inicio={ramo.ramificacao.indiceDaDivergencia ?? 0}
+        antes={contexto}
+        aoTerminar={() => setPraticando(true)}
+        rotuloDoFim="Jogue a continuação →"
+      />
+    )
+  }
+
+  return (
+    <CompletarALinha
+      opening={opening}
+      percurso={percurso}
+      antes={contexto}
+      tituloDoFim={`${ramo.nome} — praticada`}
+      notaDoFim="Volte à lista para escolher a próxima, ou siga para os planos."
+      aoConcluir={() => {
+        aoResponder(registrarItem(jornada, stage.id, idDeRamoPraticado(ramo.id)))
+        void aoRegistrarEvidencia(ramo.id, { tipo: 'guiada', acertouDePrimeira: true, dicas: 0 })
+      }}
+    />
+  )
+}
+
+/** Como cada importância aparece na tela. Só as que não são o padrão. */
+const ROTULO_DA_IMPORTANCIA: Record<string, string> = {
+  secondary: 'complementar',
+  optional: 'opcional',
 }
 
 /**
@@ -806,73 +1710,177 @@ function PraticaGuiada({
   aoResponder: (proxima: StudyJourney) => void
 }) {
   /*
-    OS ITENS VÊM DO DOMÍNIO, e são a MESMA lista que contou o total desta etapa
-    (`regraDeItens(itensDaPraticaGuiadaDeAbertura(opening))`). A tela não pode ter
-    a sua própria contagem: duas contagens da mesma coisa divergem no dia em que
-    só uma for corrigida, e o que aparece é uma etapa que nunca fecha.
-
-    É daqui que sai o ID do item gravado. Um contador paralelo à lista — que era
-    o que esta tela tinha — aponta para o item errado assim que o conteúdo muda
-    de tamanho entre duas sessões.
+    O ROTEIRO VEM DO DOMÍNIO, e é a MESMA lista que contou o total desta etapa
+    (`regraDeItens(itensDaPraticaGuiadaDeAbertura(opening))`). A tela não pode
+    ter a sua própria contagem: duas contagens da mesma coisa divergem no dia em
+    que só uma for corrigida, e o que aparece é uma etapa que nunca fecha.
   */
-  const itens = useMemo(() => itensDaPraticaGuiadaDeAbertura(opening), [opening])
-  const total = itens.length
+  const roteiro = useMemo(() => roteiroDaPraticaGuiada(opening), [opening])
+  const total = useMemo(() => itensDaPraticaGuiadaDeAbertura(opening).length, [opening])
   const respondidos = jornada.itensRespondidos[stage.id] ?? []
-  const feitos = respondidos.length
 
-  /*
-    A LINHA É A PRINCIPAL INTEIRA, e o lado do aluno é o da abertura. Quem
-    decide de quem é cada lance é o motor, lendo o FEN — então um repertório de
-    pretas abre com o computador jogando de brancas, sem nenhum caso especial
-    aqui.
-  */
-  const linha = useMemo<LinhaTreinavel>(
-    () => ({
-      fenInicial: opening.rootFen,
-      ladoDoAluno: opening.side === 'white' ? 'w' : 'b',
-      lances: opening.mainline.map((lance) => lance.uci),
-    }),
-    [opening],
+  /**
+   * O TRECHO ABERTO. É estado de tela, e o índice é o do roteiro.
+   *
+   * Ele NASCE no primeiro trecho com item pendente, e não em zero: quem já
+   * jogou a linha principal e volta à etapa não deveria rejogá-la inteira para
+   * chegar ao ramo que falta.
+   */
+  const [indiceDoTrecho, setIndiceDoTrecho] = useState(() => {
+    const pendente = roteiro.findIndex((trecho) =>
+      trecho.itens.some((item) => !respondidos.includes(item.id)),
+    )
+    return pendente >= 0 ? pendente : 0
+  })
+
+  const trecho = roteiro[Math.min(indiceDoTrecho, Math.max(roteiro.length - 1, 0))]
+
+  if (!trecho || respondidos.length >= total) {
+    return (
+      <ComTabuleiro opening={opening}>
+        <p className={styles.texto} role="status">
+          Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
+        </p>
+      </ComTabuleiro>
+    )
+  }
+
+  return (
+    <TrechoGuiado
+      /*
+        A REMONTAGEM AO TROCAR DE TRECHO zera a sequência sem efeito que escreve
+        estado — o mesmo recurso que a biblioteca de ramos usa ao trocar de ramo.
+      */
+      key={trecho.ramoId ?? 'mainline'}
+      opening={opening}
+      trecho={trecho}
+      stage={stage}
+      jornada={jornada}
+      feitos={respondidos.length}
+      total={total}
+      ultimo={indiceDoTrecho >= roteiro.length - 1}
+      aoResponder={aoResponder}
+      aoAvancarTrecho={() => setIndiceDoTrecho((n) => n + 1)}
+    />
   )
+}
+
+/**
+ * UM TRECHO da prática guiada: uma linha jogada do começo ao fim.
+ *
+ * O APOIO DECRESCE AO LONGO DA ETAPA (plano VNext §29.1), e não dentro de cada
+ * trecho: a escada é do aluno, não da linha. Recomeçá-la a cada ramo daria a
+ * ajuda máxima de novo na quarta linha — que é o contrário de fading.
+ */
+function TrechoGuiado({
+  opening,
+  trecho,
+  stage,
+  jornada,
+  feitos,
+  total,
+  ultimo,
+  aoResponder,
+  aoAvancarTrecho,
+}: {
+  opening: OpeningDefinition
+  trecho: TrechoDaPraticaGuiada
+  stage: StudyStage
+  jornada: StudyJourney
+  feitos: number
+  total: number
+  ultimo: boolean
+  aoResponder: (proxima: StudyJourney) => void
+  aoAvancarTrecho: () => void
+}) {
+  /*
+    A LINHA COMEÇA NO DESVIO, e não na posição inicial.
+
+    O DEFEITO QUE ISTO CORRIGE: a primeira versão montava a sequência com a linha
+    INTEIRA do ramo, então o aluno tinha de rejogar e4, Cf3, Bc4 — os lances da
+    principal que o trecho anterior acabou de cobrar. Pior que a repetição: esses
+    plies não têm item no ramo (os itens começam depois da bifurcação), então
+    respondê-los não mexia na contagem. A etapa pedia lances que não contavam
+    para nada, e um portão de travessia parou nela acusando beco sem saída.
+
+    Agora o computador monta a posição e a jogada começa onde o ramo ensina.
+
+    O lado do aluno é o da abertura; quem decide de quem é cada lance é o motor,
+    lendo o FEN — um repertório de pretas abre com o computador jogando de
+    brancas, sem nenhum caso especial aqui.
+  */
+  const linha = useMemo<LinhaTreinavel>(() => {
+    let fen = opening.rootFen
+    for (const lance of trecho.linha.slice(0, trecho.inicio)) {
+      const aplicado = applyMove(fen, lance.san)
+      // Para no primeiro ilegal: quem reprova linha ilegal é o portão, na build.
+      if (!aplicado) break
+      fen = aplicado.fenAfter
+    }
+    return {
+      fenInicial: fen,
+      ladoDoAluno: opening.side === 'white' ? 'w' : 'b',
+      lances: trecho.linha.slice(trecho.inicio).map((lance) => lance.uci),
+    }
+  }, [opening, trecho])
 
   const [estado, setEstado] = useState(() => iniciarSequencia(linha))
-  /** O lance errado mais recente. Some no acerto seguinte. */
+  /** O lance errado mais recente, em SAN. Some no acerto seguinte. */
   const [errou, setErrou] = useState<string | null>(null)
 
   const esperado = lanceEsperadoNaLinha(linha, estado)
-  const licaoEsperada = opening.mainline[estado.indice]
-  const licaoAnterior = estado.indice > 0 ? opening.mainline[estado.indice - 1] : undefined
+  /*
+    O ÍNDICE DA SEQUÊNCIA É RELATIVO AO CORTE; o do conteúdo é absoluto. Somar
+    `inicio` é o que mantém os dois alinhados — foi exatamente esse deslocamento
+    que, na versão antiga da prática, fez a tela pedir os lances do adversário.
+  */
+  const indiceNaLinha = trecho.inicio + estado.indice
+  const licaoEsperada = trecho.linha[indiceNaLinha]
+  const licaoAnterior = indiceNaLinha > 0 ? trecho.linha[indiceNaLinha - 1] : undefined
 
   const tentar = useCallback(
     (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
       const resultado = jogarNaSequencia(linha, estado, `${origem}${destino}${promocao ?? ''}`)
 
-      // Não virou lance: o tabuleiro devolve a peça e nada é registrado.
+      /*
+        ILEGAL NÃO É ERRO PEDAGÓGICO (plano VNext §30.1). O tabuleiro devolve a
+        peça e nada é registrado nem dito: um arraste torto não é uma decisão
+        errada, e tratá-lo como tal ensinaria o aluno a desconfiar da própria
+        leitura da posição.
+      */
       if (resultado.tipo === 'ilegal') return false
 
       if (resultado.tipo === 'fora-da-linha') {
-        setErrou(resultado.uci)
+        const aplicado = applyMove(estado.fen, {
+          from: origem,
+          to: destino,
+          promotion: promocao,
+        })
+        setErrou(aplicado?.move.san ?? null)
         return false
       }
 
       setErrou(null)
       setEstado(resultado.estado)
       /*
-        UM ITEM POR DECISÃO, com id derivado do índice do lance. `registrarItem`
-        deduplica, então repetir a linha depois de sair e voltar não infla a
-        contagem — e o total da etapa é exatamente o número de decisões do aluno
-        na principal.
+        O ID É O DO ITEM, e não um índice cru: ele carrega a linha e o índice,
+        então acrescentar um lance antes não remexe o que já está gravado em
+        `itensRespondidos`. `registrarItem` deduplica, então repetir a linha
+        depois de sair e voltar não infla a contagem.
       */
       /*
-        O ID É O DO ITEM, e não um índice cru: `itensDaPraticaGuiadaDeAbertura`
-        carrega o índice na linha dentro do próprio id, então acrescentar um
-        lance antes não remexe o que já está gravado em `itensRespondidos`.
+        O ÍNDICE É RECALCULADO AQUI, e não lido da renderização: `estado` dentro
+        do callback é o do fechamento, e usar um valor derivado de fora faria o
+        lint pedir uma dependência que na verdade já está coberta por `estado` e
+        `trecho`. Recalcular é mais curto que explicar.
       */
-      const doItem = itens.find((candidato) => candidato.indiceNaLinha === estado.indice)
+      const doItem = trecho.itens.find(
+        (candidato) => candidato.indiceNaLinha === trecho.inicio + estado.indice,
+      )
       if (doItem) aoResponder(registrarItem(jornada, stage.id, doItem.id))
       return true
     },
-    [estado, itens, jornada, linha, stage.id, aoResponder],
+    [estado, jornada, linha, stage.id, trecho, aoResponder],
   )
 
   /*
@@ -887,15 +1895,42 @@ function PraticaGuiada({
     aoTentar: (origem, destino) => tentar(origem, destino),
   })
 
-  if (feitos >= total || esperado === null) {
+  /*
+    O FIM DE UM TRECHO NÃO É O FIM DA ETAPA. Quando a linha acaba e ainda há
+    ramos, a tela oferece o próximo — com um botão, e não automaticamente: o
+    tabuleiro voltaria ao começo sem aviso, e o aluno leria isso como um erro.
+  */
+  if (esperado === null) {
     return (
       <ComTabuleiro opening={opening}>
         <p className={styles.texto} role="status">
-          Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
+          ✓ {trecho.nome} completa.
         </p>
+        {ultimo ? (
+          <p className={styles.nota}>
+            Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
+          </p>
+        ) : (
+          <>
+            <p className={styles.nota}>
+              Agora a mesma abertura quando o adversário não segue esta linha.
+            </p>
+            <button type="button" className={styles.primario} onClick={aoAvancarTrecho}>
+              Próxima linha →
+            </button>
+          </>
+        )}
       </ComTabuleiro>
     )
   }
+
+  /*
+    A ESCADA DE AJUDA, medida pelo que o aluno JÁ RESPONDEU na etapa inteira.
+    Primeiras decisões com objetivo; depois só a posição. É o §29.1, e derivar
+    da contagem — e não da dificuldade do lance — é o que garante que a ajuda só
+    caia.
+  */
+  const mostraObjetivo = feitos < AJUDA_NA_GUIADA
 
   return (
     <MesaDeEstudo
@@ -911,17 +1946,26 @@ function PraticaGuiada({
         />
       }
     >
+      <p className={styles.kicker}>{trecho.nome}</p>
       <p className={styles.texto}>
-        Jogue a linha principal no tabuleiro. O computador responde pelo outro lado, e este é o
-        degrau com apoio: errar abre a explicação em vez de encerrar a etapa.
+        Jogue a linha no tabuleiro. O computador responde pelo outro lado, e este é o degrau com
+        apoio: errar abre a explicação em vez de encerrar a etapa.
       </p>
+
+      {mostraObjetivo && licaoEsperada?.strategicIdea ? (
+        <p className={styles.nota}>{licaoEsperada.strategicIdea}</p>
+      ) : null}
 
       <p className={styles.nota} role="status">
         {errou !== null
-          ? 'Esse não é o lance do repertório. A posição não mudou — tente de novo.'
-          : licaoAnterior
-            ? `Decisão ${feitos} de ${total} — sua vez.`
-            : 'Jogue o lance no tabuleiro.'}
+          ? /*
+              FORA DO REPERTÓRIO NÃO É "LANCE RUIM" (plano VNext §30.4). O lance
+              pode ser perfeitamente jogável; ele só não é o que este curso está
+              consolidando. Chamá-lo de erro ensinaria que existe um lance certo
+              por posição, que é falso e é o oposto do que a etapa quer.
+            */
+            `${errou} pode ser jogável, mas não é a resposta que este curso está consolidando. A posição não mudou.`
+          : `Decisão ${feitos + 1} de ${total} — sua vez.`}
       </p>
 
       {/*
@@ -935,7 +1979,7 @@ function PraticaGuiada({
         </div>
       ) : null}
 
-      {errou === null && licaoAnterior ? (
+      {errou === null && licaoAnterior && estado.jogados.length > 0 ? (
         <div className={styles.veredito}>
           <p className={styles.acertou}>✓ É o lance do repertório.</p>
           <p className={styles.texto}>{licaoAnterior.comment}</p>
@@ -944,6 +1988,14 @@ function PraticaGuiada({
     </MesaDeEstudo>
   )
 }
+
+/**
+ * Quantas decisões da prática guiada vêm com o objetivo escrito.
+ *
+ * DUAS, e é a mesma escada do ADR-0023 na linha principal. Heurística de
+ * produto, num lugar só para mudar quando houver telemetria.
+ */
+const AJUDA_NA_GUIADA = 2
 
 /* ------------------------------------------------------------------ treino */
 
@@ -975,6 +2027,7 @@ function TreinoDaAbertura({
 }) {
   const alvos = useMemo(() => alvosDeTreinoFinal(opening), [opening])
   const cobertura = coberturaDaAbertura(jornada, stage.id, alvos)
+  const gravarEvidenciaDoRamo = useGravadorDeEvidencia(opening.id)
 
   /**
    * A PRIMEIRA RODADA NASCE NO ESTADO INICIAL, e não num efeito.
@@ -999,7 +2052,14 @@ function TreinoDaAbertura({
     const alvo = proximoAlvoDeCobertura(alvos, cobertura.cobertos, recentes, Math.random)
     setDesvio(null)
     setSelecionada(null)
-    setRound(iniciarRodadaDeAbertura(opening, alvo, ladoDoAlvo(opening, alvo)))
+    setRound(
+      iniciarRodadaDeAbertura(
+        opening,
+        alvo,
+        ladoDoAlvo(opening, alvo),
+        tipoDaRodada(alvo, cobertura.cobertos),
+      ),
+    )
     setRecentes((atuais) => registrarAlvoRecente(atuais, alvo))
   }, [alvos, cobertura.cobertos, opening, recentes])
 
@@ -1048,6 +2108,23 @@ function TreinoDaAbertura({
     // falha, então não existe caminho daqui até "etapa concluída" com erro.
     if (proximo.desfecho !== 'ativa') {
       aoRegistrar(registrarRodada(jornada, stage.id, proximo.branchScopeId, proximo.desfecho))
+      /*
+        A EVIDÊNCIA DO RAMO É GRAVADA AQUI, e a diferença em relação à linha
+        acima é o ponto: `registrarRodada` recusa rodada falha — ela mede
+        COBERTURA, e cobertura não pode avançar com erro. A evidência mede outra
+        coisa: quantas vezes o aluno TENTOU e quantas acertou.
+
+        Contar só os sucessos apagaria a dificuldade, que é justamente o que o
+        score adaptativo do §34.1 precisa enxergar. Por isso as duas escritas
+        convivem em vez de uma virar a outra.
+
+        LOCAL: vai para o `OpeningProgress` do aparelho, e sai só no backup.
+      */
+      void gravarEvidenciaDoRamo(proximo.branchScopeId, {
+        tipo: 'treino',
+        papel: ehAlvoReverso(proximo.branchScopeId) ? 'reverso' : 'principal',
+        sucesso: proximo.desfecho === 'sucesso',
+      })
     }
 
     void resultado
@@ -1093,12 +2170,21 @@ function TreinoDaAbertura({
           desfecho={round.desfecho as 'sucesso' | 'falhou'}
           resumo={
             round.desfecho === 'sucesso'
-              ? 'Você recuperou a linha inteira até o fim da abertura.'
+              ? 'Você chegou ao tipo de posição que esta abertura procura.'
               : 'A rodada terminou aqui. O tabuleiro volta ao início na próxima.'
           }
           cobertura={{ cobertos: cobertura.cobertos.length, exigidos: alvos.length }}
           aoProximaRodada={novaRodada}
         >
+          {/*
+            A FRONTEIRA (plano VNext §22–§23). Dizer só "linha concluída" produz
+            exatamente o efeito que o plano nomeia: "sei 8 lances e depois não
+            sei o que fazer". O fim do repertório é o começo do plano, e a tela
+            precisa fazer essa entrega — com o texto que o conteúdo autorou,
+            nunca com um plano inventado por heurística.
+          */}
+          {round.desfecho === 'sucesso' ? <Fronteira opening={opening} /> : null}
+
           {desvio ? (
             <RepertoireDeviationFeedback
               sanJogado={desvio.jogado}
@@ -1119,9 +2205,100 @@ function TreinoDaAbertura({
             Rodada {cobertura.cobertos.length + 1} de {alvos.length} — treinando{' '}
             {nomeDoAlvo(opening, round.branchScopeId)}.
           </p>
+          {/*
+            DE ONDE ESTA RODADA PARTIU. Sem isto, a rodada de ramo parece um bug:
+            o aluno abre o treino e o tabuleiro já tem lances jogados, sem nada
+            explicar por quê.
+          */}
+          <p className={styles.nota}>
+            {round.tipo === 'contexto'
+              ? 'Do começo da abertura: reconstrua o caminho até a variação.'
+              : 'A partir de perto do desvio: você já demonstrou o caminho até aqui.'}
+          </p>
+          {/*
+            O SPARRING É DITO ANTES DE EXISTIR.
+
+            Ele só aparece depois da conclusão — ver o comentário na moldura da
+            jornada para por que não dá para abri-lo aqui. O que NÃO pode é o
+            aluno descobrir sozinho, depois, que havia uma partida livre: um
+            recurso que aparece sem aviso parece ter estado escondido.
+          */}
+          <p className={styles.nota}>
+            Ao concluir este treino, abre a partida livre contra o computador — ele joga o
+            repertório inteiro, e você escolhe o lado.
+          </p>
         </>
       )}
     </MesaDeEstudo>
+  )
+}
+
+/**
+ * A FRONTEIRA: o que fazer quando o repertório acaba.
+ *
+ * O PLANO §23 É EXPLÍCITO sobre o que isto evita — "sei 8 lances e depois não
+ * sei o que fazer". Uma rodada que termina dizendo apenas "linha concluída"
+ * ensina que a abertura é uma lista que acabou; o que ela precisa dizer é que o
+ * aluno ALCANÇOU a posição que o repertório estava procurando.
+ *
+ * TUDO AQUI É CONTEÚDO AUTORADO. `transitionToMiddlegame` e o plano vêm da
+ * definição da abertura. Se o conteúdo não declarar um plano, esta tela mostra
+ * menos — nunca um plano gerado por heurística, que seria o app ensinando uma
+ * ideia que ninguém escreveu nem revisou.
+ */
+function Fronteira({ opening }: { opening: OpeningDefinition }) {
+  const fronteira = fronteiraDaAbertura(opening)
+  return (
+    <div className={styles.bloco}>
+      <p className={styles.nota}>
+        <strong>A abertura acaba aqui.</strong> {fronteira.transicao}
+      </p>
+      {fronteira.planoNome ? (
+        <p className={styles.nota}>
+          <strong>O que vem agora.</strong> {fronteira.planoNome}
+          {fronteira.planoObjetivo ? <> — {fronteira.planoObjetivo}</> : null}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * Grava a evidência de aprendizado de um ramo no progresso LOCAL da abertura.
+ *
+ * POR QUE UM HOOK E NÃO UMA FUNÇÃO SOLTA: ele precisa do repositório, e dois
+ * lugares diferentes gravam — o treino final e o estudo de um ramo. Duas cópias
+ * desta lógica divergiriam na primeira correção.
+ *
+ * RELÊ O PROGRESSO ANTES DE ESCREVER em vez de usar o que a tela tem em mão. O
+ * `progress` da renderização pode estar velho, e escrever por cima dele apagaria
+ * uma contagem gravada por outra aba — ou por outra tela deste mesmo app —
+ * entre os dois instantes.
+ *
+ * FALHA EM SILÊNCIO, e é deliberado: telemetria que derruba a tela do aluno é
+ * pior que telemetria que não é gravada. Ela existe para calibrar (plano §75),
+ * não para ser condição de uso.
+ *
+ * LOCAL, SEMPRE. Ver `docs/PRIVACIDADE.md`: isto mora no IndexedDB do aparelho e
+ * sai só no backup do próprio aluno.
+ */
+function useGravadorDeEvidencia(openingId: string) {
+  const { repo } = useRepository()
+  return useCallback(
+    async (alvoOuRamo: string, evento: EventoDoRamo) => {
+      if (!repo) return
+      const ramoId = ramoDoAlvo(alvoOuRamo)
+      // A linha principal não é ramo: ela não tem estado próprio a registrar.
+      if (ramoId === ALVO_MAINLINE) return
+      try {
+        const atual = (await repo.getOpeningProgress(openingId)) ?? emptyOpeningProgress(openingId)
+        const proximo = registrarEventoDeRamo(atual, ramoId, evento, new Date().toISOString())
+        if (proximo !== atual) await repo.saveOpeningProgress(proximo)
+      } catch {
+        /* ver acima: evidência não derruba a tela. */
+      }
+    },
+    [openingId, repo],
   )
 }
 
@@ -1142,7 +2319,16 @@ function abrirRodada(
 ): OpeningTrainingRound | null {
   const alvo = proximoAlvoDeCobertura(alvos, cobertos, recentes, Math.random)
   if (!alvo) return null
-  return iniciarRodadaDeAbertura(opening, alvo, ladoDoAlvo(opening, alvo))
+  /*
+    O TIPO VEM DO DOMÍNIO, e não de um sorteio aqui: a primeira vez de um ramo é
+    rodada de CONTEXTO, e revisitá-lo é rodada de RAMO. Ver `tipoDaRodada`.
+  */
+  return iniciarRodadaDeAbertura(
+    opening,
+    alvo,
+    ladoDoAlvo(opening, alvo),
+    tipoDaRodada(alvo, cobertos),
+  )
 }
 
 function vezDoAluno(round: OpeningTrainingRound): boolean {

@@ -158,7 +158,35 @@ export function lanceDoBot(
 ): ContinuacaoConhecida | null {
   const opcoes = continuacoesConhecidas(opening, estado.historico)
   if (opcoes.length === 0) return null
-  return opcoes[Math.abs(seed) % opcoes.length] ?? null
+  return opcoes[indiceDaEscolha(seed, estado.historico.length, opcoes.length)] ?? null
+}
+
+/**
+ * Qual das continuações conhecidas o bot joga (plano VNext §48).
+ *
+ * O QUE ISTO CORRIGE: a versão anterior era `seed % opcoes.length`, e o `seed` é
+ * a RODADA — o mesmo valor em todos os lances da partida. Isso tornava o bot
+ * previsível de um jeito específico e chato: na rodada 1 ele pegava a SEGUNDA
+ * opção em cada bifurcação, na 2 a terceira, e o aluno aprendia o padrão do
+ * sorteio em vez do repertório.
+ *
+ * Agora o ply entra na conta, então as escolhas variam DENTRO da partida.
+ *
+ * A RODADA 0 CONTINUA SENDO A LINHA PRINCIPAL INTEIRA, e a exceção é
+ * deliberada: a primeira partida confirma o que foi ensinado. Sem ela, quem
+ * acabou de estudar entraria no sparring e encontraria um desvio logo no
+ * terceiro lance — o que é bom treino e péssima estreia.
+ *
+ * "SEM SACRIFICAR QUALIDADE" é grátis aqui: toda opção é lance do repertório.
+ * A variedade não vem de afrouxar o critério, vem de usar melhor o que existe.
+ *
+ * DETERMINÍSTICO. Um `Math.random()` tornaria impossível escrever o teste que
+ * prova "o bot nunca sai da árvore".
+ */
+export function indiceDaEscolha(seed: number, ply: number, opcoes: number): number {
+  if (opcoes <= 0) return 0
+  if (seed === 0) return 0
+  return Math.abs(seed + ply) % opcoes
 }
 
 export type ResultadoDoLance =

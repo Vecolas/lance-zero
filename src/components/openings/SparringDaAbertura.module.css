@@ -115,3 +115,17 @@
 .recomecar:hover {
   background: var(--surface-sunken);
 }
+
+/*
+  A RECOMENDAÇÃO não é erro nem alerta: é orientação. Fica com a cor de atenção
+  e peso normal — um bloco vermelho aqui diria que o aluno fez algo errado ao
+  abrir uma tela que está aberta de propósito.
+*/
+.recomendacao {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}

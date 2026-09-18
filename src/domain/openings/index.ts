@@ -9,6 +9,8 @@
 import { applyMove, identidadeDePosicao, START_FEN, type SquareName } from '@/lib/chess'
 
 export type OpeningSide = 'white' | 'black'
+import type { EstadoDeAprendizadoDoRamo } from './estado-do-ramo'
+
 export type OpeningStatus =
   'not_started' | 'learning' | 'training' | 'consolidating' | 'active_repertoire'
 
@@ -47,7 +49,22 @@ export interface OpeningMoveEdge {
   uci: string
   san: string
   nextNodeId: string
-  frequency: number
+  /**
+   * Quantas LINHAS AUTORADAS passam por esta aresta.
+   *
+   * ELA SE CHAMAVA `frequency`, E O NOME MENTIA. Duas linhas do conteúdo que
+   * começam com 1.e4 dão 2 aqui — isso não é frequência de nada no mundo, é
+   * contagem de quanto o nosso próprio material repete um lance.
+   *
+   * O NOME IMPORTA PORQUE CONVIDA AO ERRO: qualquer leitor que encontrasse
+   * `frequency` numa aresta de abertura pensaria em "jogado em 34% das
+   * partidas", e apresentá-lo assim seria estatística inventada — o que o
+   * plano §58 proíbe e o CLAUDE.md chama de falsa precisão.
+   *
+   * SE UM DIA HOUVER FREQUÊNCIA DE VERDADE, ela entra como campo separado com
+   * fonte, população e data (plano §10.2), e nunca misturada com esta.
+   */
+  linhasAutoradas: number
   role: OpeningMoveRole
   explanation?: string
   lesson?: OpeningMoveLesson
@@ -65,12 +82,62 @@ export interface OpeningNode {
   lessonComment?: string
 }
 
+/**
+ * Quanto um ramo pesa no currículo desta abertura.
+ *
+ * EXISTE PARA O CURSO NÃO SER INFINITO. Um repertório de verdade tem dezenas de
+ * desvios possíveis, e exigir todos antes de deixar o aluno concluir é a forma
+ * mais rápida de ele nunca concluir. Só `core` bloqueia a conclusão inicial; o
+ * resto continua estudável, e continua visível — esconder conteúdo é o defeito
+ * que o ADR-0016 desfez.
+ */
+export type ImportanciaDoRamo = 'core' | 'secondary' | 'optional'
+
 export interface OpeningVariation {
   id: string
   name: string
   description: string
   rootNodeId: string
   line: OpeningMoveLesson[]
+  /**
+   * Ausente significa `core`, e o padrão é deliberado: um ramo autorado sem
+   * classificação é um ramo que alguém achou importante o bastante para
+   * escrever. Rebaixá-lo por omissão esconderia conteúdo em silêncio.
+   */
+  importancia?: ImportanciaDoRamo
+  /**
+   * O QUE O ADVERSÁRIO QUER com este desvio, na voz de quem ensina.
+   *
+   * Sem isto o ramo vira uma sequência de lances outra vez. A pergunta que o
+   * aluno leva para a partida não é "qual era o lance?", é "o que ele está
+   * tentando fazer?" — e essa é a que sobrevive quando a ordem de lances muda.
+   */
+  intencaoDoAdversario?: string
+  /** O que VOCÊ busca nesta posição. O par da pergunta acima. */
+  objetivoDoAluno?: string
+}
+
+/**
+ * A MICRODECISÃO DE UM PLANO: o lance que o começa, jogado no tabuleiro.
+ *
+ * ELA TEM PLY PRÓPRIO, e não reaproveita o `positionPly` do plano. A razão é de
+ * conteúdo: `positionPly` é a posição que ILUSTRA o plano, e ela quase nunca é
+ * a posição em que o primeiro lance já é correto. Forçar as duas a serem a
+ * mesma produziria microdecisões que contradizem a própria condição do plano —
+ * "jogue a ruptura" numa posição em que o plano diz "só depois do roque".
+ *
+ * É OPCIONAL, e o plano VNext §24.3 diz "quando possível". Um plano sem lance
+ * inicial jogável não ganha uma pergunta inventada.
+ */
+export interface OpeningPlanMicrodecision {
+  /** O ply da linha principal em que a pergunta é feita. */
+  ply: number
+  /** O lance que começa o plano, em SAN. Conferido por portão. */
+  san: string
+  /** A pergunta, quando a genérica não serve. */
+  pergunta?: string
+  /** Por que este lance, e não outro. Aparece DEPOIS da resposta. */
+  porque: string
 }
 
 export interface OpeningPlan {
@@ -83,6 +150,18 @@ export interface OpeningPlan {
   arrows?: BoardArrow[]
   /** Posição semântica na linha principal para conteúdo autorado. */
   positionPly?: number
+  /**
+   * AS TRÊS PERGUNTAS QUE FALTAVAM (plano VNext §24.2).
+   *
+   * O plano já respondia "quando usar" (`when`) e "o que busco" (`objective`).
+   * Sem as de baixo ele continuava sendo uma frase de intenção — e intenção sem
+   * mecanismo é o que faz o aluno reconhecer o nome do plano e não saber
+   * executá-lo.
+   */
+  porQueFunciona?: string
+  preparacao?: string
+  oQueOAdversarioTenta?: string
+  microdecisao?: OpeningPlanMicrodecision
 }
 
 export interface OpeningStructure {
@@ -141,6 +220,19 @@ export interface OpeningProgress {
   confidence: number
   lessonPly: number
   lastSection: 'learn' | 'train' | null
+  /**
+   * A evidência por ramo (plano VNext §41 e §75).
+   *
+   * OPCIONAL, E ISSO EVITA UMA MIGRAÇÃO: o store do IndexedDB guarda o objeto
+   * inteiro, então um registro gravado antes deste campo simplesmente não o tem.
+   * `estadoDoRamoNoProgresso` trata a ausência como "nada demonstrado", que é a
+   * verdade — e não como zero de desempenho, que seria mentira.
+   *
+   * LOCAL, SEMPRE. Ver `docs/PRIVACIDADE.md` e o cabeçalho de
+   * `estado-do-ramo.ts`: esta telemetria existe para calibrar, mora no aparelho
+   * do aluno e sai só no backup dele.
+   */
+  ramos?: Record<string, EstadoDeAprendizadoDoRamo>
 }
 
 export interface OpeningTrainingNode {
@@ -282,14 +374,14 @@ export function buildOpeningGraph(
       }
       const existing = from.outgoingMoves.find((edge) => edge.uci === applied.move.uci)
       if (existing) {
-        existing.frequency += 1
+        existing.linhasAutoradas += 1
         existing.lesson ??= lesson
       } else {
         from.outgoingMoves.push({
           uci: applied.move.uci,
           san: applied.move.san,
           nextNodeId: toId,
-          frequency: 1,
+          linhasAutoradas: 1,
           role: line.role,
           explanation: lesson.comment,
           lesson,
@@ -441,7 +533,7 @@ export function trainingNode(
     opponentResponses: node.outgoingMoves.map((edge) => ({
       uci: edge.uci,
       san: edge.san,
-      weight: Math.max(1, edge.frequency),
+      weight: Math.max(1, edge.linhasAutoradas),
       nextNodeId: edge.nextNodeId,
     })),
     explanationAfterAttempt:
@@ -516,7 +608,7 @@ export function chooseOpeningTrainingOpponent(
   const weighted = candidates.map((edge) => ({
     edge,
     weight:
-      Math.max(1, edge.frequency) *
+      Math.max(1, edge.linhasAutoradas) *
       (weak.has(edge.nextNodeId) ? 2 : 1) *
       (edge.role === 'main' ? 1.2 : 1),
   }))

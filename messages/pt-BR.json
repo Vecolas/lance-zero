@@ -173,6 +173,8 @@
     "all": "Todas",
     "white": "Brancas",
     "black": "Pretas",
+    "reviewDueOne": "{n} posições para revisar",
+    "reviewDueMany": "{n} posições para revisar, em {ramos} linhas",
     "essential": "Essencial",
     "level": "Nível",
     "allMasculine": "Todos",

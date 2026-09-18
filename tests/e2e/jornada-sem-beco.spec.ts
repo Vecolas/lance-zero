@@ -31,8 +31,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { legalMoves } from '@/lib/chess'
 
-const COLUNAS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const
-
 /** Quantos pares origem→destino tentar antes de desistir e REPROVAR. */
 const TENTATIVAS_MAXIMAS_DE_LANCE = 80
 
@@ -58,72 +56,6 @@ async function textoDoPendente(page: Page): Promise<string> {
   const pendente = page.getByText(/Faltam \d+ de \d+ exercícios para seguir\./)
   if ((await pendente.count()) === 0) return ''
   return (await pendente.first().textContent()) ?? ''
-}
-
-/** Os vizinhos de uma casa, mais os saltos de cavalo e o avanço duplo do peão. */
-function destinosPlausiveis(casa: string): string[] {
-  const coluna = COLUNAS.indexOf(casa[0] as (typeof COLUNAS)[number])
-  const linha = Number(casa[1])
-  const deltas: [number, number][] = [
-    [-1, -1],
-    [-1, 0],
-    [-1, 1],
-    [0, -1],
-    [0, 1],
-    [1, -1],
-    [1, 0],
-    [1, 1],
-    // saltos de cavalo
-    [-2, -1],
-    [-2, 1],
-    [-1, -2],
-    [-1, 2],
-    [1, -2],
-    [1, 2],
-    [2, -1],
-    [2, 1],
-    // avanço duplo do peão, nos dois sentidos
-    [0, -2],
-    [0, 2],
-  ]
-  const saida: string[] = []
-  for (const [dc, dl] of deltas) {
-    const c = COLUNAS[coluna + dc]
-    const l = linha + dl
-    if (c && l >= 1 && l <= 8) saida.push(`${c}${l}`)
-  }
-  return saida
-}
-
-/**
- * As casas ocupadas por quem está na vez, lidas do FEN que o tabuleiro publica.
- *
- * Ler a posição em vez de varrer as 64 casas não é otimização: a varredura cega
- * estourava o timeout de 30 s do Playwright, e portão lento é portão que alguém
- * desliga. Cravar o UCI no teste seria pior — amarraria o portão a uma FEN do
- * catálogo e ele reprovaria quando o CONTEÚDO mudasse.
- */
-async function casasDeQuemJoga(page: Page): Promise<string[]> {
-  const fen = await page.getByTestId('chessboard').first().getAttribute('data-fen')
-  if (!fen) throw new Error('o tabuleiro não publicou a posição em `data-fen`')
-
-  const [posicao, vez] = fen.split(' ')
-  const brancas = vez !== 'b'
-  const casas: string[] = []
-  posicao!.split('/').forEach((fileira, indice) => {
-    const linha = 8 - indice
-    let coluna = 0
-    for (const caractere of fileira) {
-      if (/\d/.test(caractere)) {
-        coluna += Number(caractere)
-        continue
-      }
-      const ehBranca = caractere === caractere.toUpperCase()
-      if (ehBranca === brancas) casas.push(`${COLUNAS[coluna]}${linha}`)
-      coluna += 1
-    }
-  })
-  return casas
 }
 
 /**
@@ -225,6 +157,24 @@ async function responderUmItem(page: Page): Promise<void> {
 async function responderAEtapa(page: Page): Promise<void> {
   for (let i = 0; i < ITENS_MAXIMOS_POR_ETAPA; i += 1) {
     if (await botaoContinuar(page).isEnabled()) return
+
+    /*
+      UMA ETAPA PODE TER MAIS DE UMA LINHA, e entre elas não há tabuleiro.
+
+      A prática guiada da abertura passou a treinar a principal E os ramos core
+      (plano VNext §28). Ao fim de cada linha a tela fica passiva e oferece
+      "Próxima linha" — o rodapé continua travado, porque ainda faltam itens.
+
+      Sem este ramo o ajudante chamava `responderUmItem`, que fica esperando um
+      tabuleiro interativo que não existe, e o teste morria por RELÓGIO em vez de
+      acusar um beco. O erro parecia lentidão e era falta de um passo.
+    */
+    const proximaLinha = page.getByRole('button', { name: /Próxima linha →/ })
+    if ((await proximaLinha.count()) > 0) {
+      await proximaLinha.first().click()
+      continue
+    }
+
     await responderUmItem(page)
   }
 }
@@ -290,11 +240,14 @@ test('a jornada de uma abertura atravessa todas as etapas até o treino', async 
   // desenho, e o relógio padrão de 30s mede a máquina, não o beco sem saída.
   test.setTimeout(120_000)
   await page.goto('/aberturas/italiana')
-  await expect(page.getByText(/Etapa 1 de 9/)).toBeVisible()
+  await expect(page.getByText(/Etapa 1 de 8/)).toBeVisible()
 
-  const visitadas = await percorrerAteOTreino(page, 9)
+  const visitadas = await percorrerAteOTreino(page, 8)
 
-  expect(visitadas, 'a jornada não chegou ao treino').toBe(8)
+  // SETE, e não oito: a travessia PARA no treino, que esconde o rodapé inteiro.
+  // A jornada de abertura tem oito etapas desde que "Respostas do adversário"
+  // foi fundida em "Variações" — ver ADR-0022.
+  expect(visitadas, 'a jornada não chegou ao treino').toBe(7)
   await expect(page.getByRole('heading', { level: 2 }).first()).toContainText('Treino')
 })
 

@@ -10,17 +10,14 @@ import { FilterBar, StatePanel } from '@/components/ui/primitives'
 import { FiltroSuspenso } from '@/components/ui/FiltroSuspenso'
 import { OPENING_COURSES } from '@/content/openings/course'
 import { progressoDaJornada, retomadaDaJornada, type StudyJourney } from '@/domain/jornada'
+import { revisaoVencidaDaAbertura } from '@/domain/openings/revisao-agrupada'
+import type { ReviewCard } from '@/domain/types'
 import { useIdioma, useTraduzir } from '@/components/providers/LocaleProvider'
 import { nomeDaAbertura } from '@/lib/i18n/nomes-de-conteudo'
 import { CHAVE_DA_RETOMADA } from '@/lib/i18n/retomada'
 import { construirJornadaDeAbertura } from '@/domain/openings/jornada'
 import { idDaJornadaDeAbertura } from '@/components/openings/OpeningStudyJourney'
-import type {
-  OpeningDefinition,
-  OpeningProgress,
-  OpeningSide,
-  OpeningStatus,
-} from '@/domain/openings'
+import type { OpeningDefinition, OpeningProgress, OpeningSide } from '@/domain/openings'
 import styles from './OpeningCatalog.module.css'
 
 type Filter = 'all' | OpeningSide
@@ -42,6 +39,14 @@ export function OpeningCatalog() {
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
   const [progress, setProgress] = useState<Record<string, OpeningProgress>>({})
   const [jornadas, setJornadas] = useState<Record<string, StudyJourney>>({})
+  /**
+   * Cards vencidos, por abertura.
+   *
+   * Sem eles o card mostra "Concluída" para quem tem doze posições esquecidas —
+   * verdade, e a informação errada para quem abriu a biblioteca procurando o
+   * que fazer hoje. Ver `revisaoVencidaDaAbertura`.
+   */
+  const [vencidos, setVencidos] = useState<ReviewCard[]>([])
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
@@ -53,9 +58,19 @@ export function OpeningCatalog() {
     // As duas leituras juntas: o card mostra progresso E estado da jornada, e
     // carregá-las em momentos diferentes faria o CTA piscar de "Estudar" para
     // "Continuar estudo" depois que a tela já apareceu.
-    void Promise.all([repo.listOpeningProgress(), repo.listStudyJourneys()])
-      .then(([items, todasAsJornadas]) => {
+    void Promise.all([
+      repo.listOpeningProgress(),
+      repo.listStudyJourneys(),
+      /*
+        A TERCEIRA LEITURA ENTRA NO MESMO `Promise.all` de propósito: carregá-la
+        depois faria o card aparecer sem o aviso de revisão e ganhá-lo um quadro
+        adiante, que é a piscada que o comentário abaixo já evitava para o CTA.
+      */
+      repo.getDueCards(new Date()),
+    ])
+      .then(([items, todasAsJornadas, cardsVencidos]) => {
         if (cancelled) return
+        setVencidos(cardsVencidos)
         setProgress(Object.fromEntries(items.map((item) => [item.openingId, item])))
         setJornadas(
           Object.fromEntries(
@@ -152,6 +167,7 @@ export function OpeningCatalog() {
             opening={opening}
             progress={progress[opening.id]}
             jornada={jornadas[idDaJornadaDeAbertura(opening.id)]}
+            vencidos={vencidos}
           />
         ))}
       </div>
@@ -170,10 +186,13 @@ function OpeningCard({
   opening,
   progress,
   jornada,
+  vencidos,
 }: {
   opening: OpeningDefinition
   progress?: OpeningProgress
   jornada?: StudyJourney
+  /** TODOS os cards vencidos; o card filtra os desta abertura. */
+  vencidos: readonly ReviewCard[]
 }) {
   const { locale, t } = useIdioma()
   /*
@@ -204,6 +223,17 @@ function OpeningCard({
   */
   const stages = construirJornadaDeAbertura(opening)
   const etapas = jornada ? progressoDaJornada(jornada, stages) : null
+
+  /*
+    A REVISÃO VENCIDA É A INFORMAÇÃO MAIS NOVA SOBRE ESTA ABERTURA.
+
+    O card sabia o estado do REPERTÓRIO e o progresso da JORNADA — nenhum dos
+    dois sabe de revisão. Quem tinha doze posições esquecidas na Italiana via
+    "Concluída" e nenhum sinal de que havia o que refazer. É verdade, e é a
+    informação errada para quem abriu a biblioteca procurando o que fazer hoje:
+    concluir o estudo não é dominar para sempre (plano §39).
+  */
+  const revisao = revisaoVencidaDaAbertura(opening, vencidos)
 
   return (
     <Link
@@ -242,6 +272,19 @@ function OpeningCard({
           <span aria-hidden="true">{concluida ? '✓' : '○'}</span>{' '}
           {concluida && status === 'not_started' ? t('openings.status.completed') : labels[status]}
         </span>
+        {/*
+          O AVISO DE REVISÃO É ADICIONAL, e não substitui o estado: "Concluída"
+          continua verdade. Ele só aparece quando há algo vencido — um contador
+          zerado numa biblioteca ensina o aluno a ignorar a linha inteira.
+        */}
+        {revisao.cards > 0 ? (
+          <span className={styles.revisar}>
+            <span aria-hidden="true">↻</span>{' '}
+            {revisao.ramos === 1
+              ? t('openings.reviewDueOne', { n: revisao.cards })
+              : t('openings.reviewDueMany', { n: revisao.cards, ramos: revisao.ramos })}
+          </span>
+        ) : null}
         <span>
           {etapas === null
             ? t('journey.stagesTotal', { count: stages.length })
