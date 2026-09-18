@@ -23,6 +23,7 @@ import {
   jogarNoSparring,
   lanceDoBot,
   vezDe,
+  indiceDaEscolha,
 } from '@/domain/openings/sparring'
 import { ramificacoesDaAbertura } from '@/domain/openings/variacoes'
 
@@ -302,5 +303,52 @@ describe('de quem é a vez', () => {
     const daVez = vezDe(estado)
     expect(ehVezDoBot(estado, daVez)).toBe(false)
     expect(ehVezDoBot(estado, daVez === 'w' ? 'b' : 'w')).toBe(true)
+  })
+})
+
+describe('a escolha do bot se espalha dentro da partida', () => {
+  /**
+   * O QUE ISTO CORRIGE (plano VNext §48). A seleção era `seed % opcoes`, e o
+   * `seed` é a RODADA — o mesmo valor em todos os lances. O bot pegava a SEGUNDA
+   * opção em cada bifurcação da rodada 1, a terceira na rodada 2, e o aluno
+   * aprendia o padrão do sorteio em vez do repertório.
+   */
+  it('a rodada 0 é a linha principal do começo ao fim', () => {
+    /*
+      A EXCEÇÃO É DELIBERADA: a primeira partida confirma o que foi ensinado. Sem
+      ela, quem acabou de estudar entraria no sparring e encontraria um desvio no
+      terceiro lance — bom treino, péssima estreia.
+    */
+    for (let ply = 0; ply < 12; ply += 1) {
+      expect(indiceDaEscolha(0, ply, 4), `ply ${ply}`).toBe(0)
+    }
+  })
+
+  it('a partir da rodada 1, o índice varia com o ply', () => {
+    const indices = Array.from({ length: 6 }, (_, ply) => indiceDaEscolha(1, ply, 3))
+    expect(new Set(indices).size).toBeGreaterThan(1)
+  })
+
+  it('nunca aponta para fora da lista', () => {
+    // Um índice fora da faixa devolveria `undefined` e o bot pararia de jogar no
+    // meio da partida, como se a teoria tivesse acabado.
+    for (const seed of [0, 1, 2, 7, 99]) {
+      for (let ply = 0; ply < 20; ply += 1) {
+        for (const total of [1, 2, 3, 5]) {
+          const indice = indiceDaEscolha(seed, ply, total)
+          expect(indice, `seed ${seed} ply ${ply} total ${total}`).toBeGreaterThanOrEqual(0)
+          expect(indice).toBeLessThan(total)
+        }
+      }
+    }
+  })
+
+  it('lista vazia não quebra', () => {
+    expect(indiceDaEscolha(3, 5, 0)).toBe(0)
+  })
+
+  it('é determinístico: mesma entrada, mesma escolha', () => {
+    // É o que torna possível o teste que prova "o bot nunca sai da árvore".
+    expect(indiceDaEscolha(4, 7, 3)).toBe(indiceDaEscolha(4, 7, 3))
   })
 })

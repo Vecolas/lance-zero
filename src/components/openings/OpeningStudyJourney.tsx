@@ -248,6 +248,24 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
         do currículo — ele é o motivo de voltar ao curso.
       */}
       <DasSuasPartidas opening={opening} progress={progress} />
+      {/*
+        O SPARRING CONTINUA DEPOIS DA CONCLUSÃO, e eu tentei o contrário.
+
+        O plano §47 oferece duas saídas: mantê-lo como conteúdo pós-conclusão, ou
+        abri-lo cedo com uma recomendação. O ADR-0016 empurra para a segunda — e
+        ela NÃO CABE nesta moldura.
+
+        O MOTIVO É CONCRETO: o sparring tem tabuleiro próprio, e toda etapa da
+        jornada também tem. Montar os dois na mesma tela produz DOIS tabuleiros
+        interativos disputando o mesmo gesto e, pior, IDS DE DOM DUPLICADOS —
+        `ChessBoardView` nomeia cada casa com um id fixo. Um portão de e2e caiu
+        acusando exatamente isso ("strict mode violation: resolved to 2
+        elements"), e o defeito não era do teste.
+
+        Abrir cedo de verdade exige o sparring ter lugar próprio, e isso é
+        entrega à parte. Enquanto não tem, a etapa de treino DIZ que ele existe,
+        em vez de o aluno descobrir sozinho depois.
+      */}
       {concluiu ? <SparringDaAbertura opening={opening} /> : null}
     </StudyJourneyShell>
   )
@@ -2170,6 +2188,18 @@ function TreinoDaAbertura({
             {round.tipo === 'contexto'
               ? 'Do começo da abertura: reconstrua o caminho até a variação.'
               : 'A partir de perto do desvio: você já demonstrou o caminho até aqui.'}
+          </p>
+          {/*
+            O SPARRING É DITO ANTES DE EXISTIR.
+
+            Ele só aparece depois da conclusão — ver o comentário na moldura da
+            jornada para por que não dá para abri-lo aqui. O que NÃO pode é o
+            aluno descobrir sozinho, depois, que havia uma partida livre: um
+            recurso que aparece sem aviso parece ter estado escondido.
+          */}
+          <p className={styles.nota}>
+            Ao concluir este treino, abre a partida livre contra o computador — ele joga o
+            repertório inteiro, e você escolhe o lado.
           </p>
         </>
       )}

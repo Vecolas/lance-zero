@@ -848,3 +848,28 @@ test('sem partidas importadas, a seção "Das suas partidas" não aparece', asyn
   // E nada de contadores zerados sobrando na tela.
   await expect(page.getByText(/0 partidas saíram/)).toHaveCount(0)
 })
+
+/**
+ * O SPARRING É ANUNCIADO ANTES DE EXISTIR.
+ *
+ * O plano §47 oferece duas saídas: mantê-lo como conteúdo pós-conclusão, ou
+ * abri-lo cedo com uma recomendação. EU TENTEI A SEGUNDA e um portão a derrubou:
+ * o sparring tem tabuleiro próprio e toda etapa também tem, então montar os dois
+ * na mesma tela produz dois tabuleiros interativos e IDS DE DOM DUPLICADOS.
+ *
+ * Ficou a primeira saída — e com ela a obrigação de AVISAR. Um recurso que
+ * aparece sem aviso depois da conclusão parece ter estado escondido, que é
+ * exatamente a sensação que o ADR-0016 combateu.
+ */
+test('o treino anuncia a partida livre antes de ela existir', async ({ page }) => {
+  await page.goto('/aberturas/italiana')
+
+  // Antes do treino ele NÃO está na tela — e não há dois tabuleiros disputando.
+  await expect(page.getByRole('heading', { name: 'Praticar contra o computador' })).toHaveCount(0)
+  expect(await page.locator('[data-testid="chessboard"]').count()).toBeLessThanOrEqual(1)
+
+  await irAteEtapa(page, /Treino final/)
+
+  // E na etapa do treino, o aluno fica sabendo que ela existe.
+  await expect(page.getByText(/abre a partida livre contra o computador/)).toBeVisible()
+})
