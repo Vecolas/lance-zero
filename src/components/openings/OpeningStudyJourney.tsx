@@ -53,7 +53,10 @@ import {
   construirJornadaDeAbertura,
   iniciarRodadaDeAbertura,
   jogarNaRodada,
+  ALVO_MAINLINE,
+  ehAlvoReverso,
   ladoDoAlvo,
+  ramoDoAlvo,
   proximoAlvoDeCobertura,
   fronteiraDaAbertura,
   registrarAlvoRecente,
@@ -75,6 +78,7 @@ import {
   type OpeningProgress,
 } from '@/domain/openings'
 import { percursoDaLinhaPrincipal, percursoDoRamo } from '@/domain/openings/linha-principal'
+import { registrarEventoDeRamo, type EventoDoRamo } from '@/domain/openings/estado-do-ramo'
 import { migrarJornadaDeAbertura } from '@/domain/openings/migracao'
 import {
   estadoDoRamo,
@@ -1588,6 +1592,7 @@ function EstudoDoRamo({
 }) {
   const percurso = useMemo(() => percursoDoRamo(opening, ramo), [opening, ramo])
   const [praticando, setPraticando] = useState(false)
+  const aoRegistrarEvidencia = useGravadorDeEvidencia(opening.id)
 
   const emComum = ramo.ramificacao.lancesEmComum.map((lance) => lance.san).join(' ')
 
@@ -1662,7 +1667,10 @@ function EstudoDoRamo({
       antes={contexto}
       tituloDoFim={`${ramo.nome} — praticada`}
       notaDoFim="Volte à lista para escolher a próxima, ou siga para os planos."
-      aoConcluir={() => aoResponder(registrarItem(jornada, stage.id, idDeRamoPraticado(ramo.id)))}
+      aoConcluir={() => {
+        aoResponder(registrarItem(jornada, stage.id, idDeRamoPraticado(ramo.id)))
+        void aoRegistrarEvidencia(ramo.id, { tipo: 'guiada', acertouDePrimeira: true, dicas: 0 })
+      }}
     />
   )
 }
@@ -2019,6 +2027,7 @@ function TreinoDaAbertura({
 }) {
   const alvos = useMemo(() => alvosDeTreinoFinal(opening), [opening])
   const cobertura = coberturaDaAbertura(jornada, stage.id, alvos)
+  const gravarEvidenciaDoRamo = useGravadorDeEvidencia(opening.id)
 
   /**
    * A PRIMEIRA RODADA NASCE NO ESTADO INICIAL, e não num efeito.
@@ -2099,6 +2108,23 @@ function TreinoDaAbertura({
     // falha, então não existe caminho daqui até "etapa concluída" com erro.
     if (proximo.desfecho !== 'ativa') {
       aoRegistrar(registrarRodada(jornada, stage.id, proximo.branchScopeId, proximo.desfecho))
+      /*
+        A EVIDÊNCIA DO RAMO É GRAVADA AQUI, e a diferença em relação à linha
+        acima é o ponto: `registrarRodada` recusa rodada falha — ela mede
+        COBERTURA, e cobertura não pode avançar com erro. A evidência mede outra
+        coisa: quantas vezes o aluno TENTOU e quantas acertou.
+
+        Contar só os sucessos apagaria a dificuldade, que é justamente o que o
+        score adaptativo do §34.1 precisa enxergar. Por isso as duas escritas
+        convivem em vez de uma virar a outra.
+
+        LOCAL: vai para o `OpeningProgress` do aparelho, e sai só no backup.
+      */
+      void gravarEvidenciaDoRamo(proximo.branchScopeId, {
+        tipo: 'treino',
+        papel: ehAlvoReverso(proximo.branchScopeId) ? 'reverso' : 'principal',
+        sucesso: proximo.desfecho === 'sucesso',
+      })
     }
 
     void resultado
@@ -2234,6 +2260,45 @@ function Fronteira({ opening }: { opening: OpeningDefinition }) {
         </p>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * Grava a evidência de aprendizado de um ramo no progresso LOCAL da abertura.
+ *
+ * POR QUE UM HOOK E NÃO UMA FUNÇÃO SOLTA: ele precisa do repositório, e dois
+ * lugares diferentes gravam — o treino final e o estudo de um ramo. Duas cópias
+ * desta lógica divergiriam na primeira correção.
+ *
+ * RELÊ O PROGRESSO ANTES DE ESCREVER em vez de usar o que a tela tem em mão. O
+ * `progress` da renderização pode estar velho, e escrever por cima dele apagaria
+ * uma contagem gravada por outra aba — ou por outra tela deste mesmo app —
+ * entre os dois instantes.
+ *
+ * FALHA EM SILÊNCIO, e é deliberado: telemetria que derruba a tela do aluno é
+ * pior que telemetria que não é gravada. Ela existe para calibrar (plano §75),
+ * não para ser condição de uso.
+ *
+ * LOCAL, SEMPRE. Ver `docs/PRIVACIDADE.md`: isto mora no IndexedDB do aparelho e
+ * sai só no backup do próprio aluno.
+ */
+function useGravadorDeEvidencia(openingId: string) {
+  const { repo } = useRepository()
+  return useCallback(
+    async (alvoOuRamo: string, evento: EventoDoRamo) => {
+      if (!repo) return
+      const ramoId = ramoDoAlvo(alvoOuRamo)
+      // A linha principal não é ramo: ela não tem estado próprio a registrar.
+      if (ramoId === ALVO_MAINLINE) return
+      try {
+        const atual = (await repo.getOpeningProgress(openingId)) ?? emptyOpeningProgress(openingId)
+        const proximo = registrarEventoDeRamo(atual, ramoId, evento, new Date().toISOString())
+        if (proximo !== atual) await repo.saveOpeningProgress(proximo)
+      } catch {
+        /* ver acima: evidência não derruba a tela. */
+      }
+    },
+    [openingId, repo],
   )
 }
 

@@ -9,6 +9,8 @@
 import { applyMove, identidadeDePosicao, START_FEN, type SquareName } from '@/lib/chess'
 
 export type OpeningSide = 'white' | 'black'
+import type { EstadoDeAprendizadoDoRamo } from './estado-do-ramo'
+
 export type OpeningStatus =
   'not_started' | 'learning' | 'training' | 'consolidating' | 'active_repertoire'
 
@@ -203,6 +205,19 @@ export interface OpeningProgress {
   confidence: number
   lessonPly: number
   lastSection: 'learn' | 'train' | null
+  /**
+   * A evidência por ramo (plano VNext §41 e §75).
+   *
+   * OPCIONAL, E ISSO EVITA UMA MIGRAÇÃO: o store do IndexedDB guarda o objeto
+   * inteiro, então um registro gravado antes deste campo simplesmente não o tem.
+   * `estadoDoRamoNoProgresso` trata a ausência como "nada demonstrado", que é a
+   * verdade — e não como zero de desempenho, que seria mentira.
+   *
+   * LOCAL, SEMPRE. Ver `docs/PRIVACIDADE.md` e o cabeçalho de
+   * `estado-do-ramo.ts`: esta telemetria existe para calibrar, mora no aparelho
+   * do aluno e sai só no backup dele.
+   */
+  ramos?: Record<string, EstadoDeAprendizadoDoRamo>
 }
 
 export interface OpeningTrainingNode {
