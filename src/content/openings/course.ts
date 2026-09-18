@@ -292,6 +292,44 @@ const kidMain = [
   ),
 ]
 
+/* --------------------------------------------------------- Nimzo-Índia */
+
+/** 1.d4 Cf6 2.c4 e6 3.Cc3 Bb4 4.e3 O-O — a Rubinstein. */
+const nimzoMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro com o peão da dama.', {
+    strategicIdea: 'A Nimzo responde a 1.d4 sem disputar o centro com peões.',
+  }),
+  lesson(2, 'Nf6', 'O cavalo vigia e4 e mantém as defesas indianas em aberto.', {
+    highlights: ['e4'],
+  }),
+  lesson(3, 'c4', 'O segundo peão central entra e as brancas ganham espaço.', {
+    arrows: [{ from: 'c2', to: 'c4' }],
+  }),
+  lesson(4, 'e6', 'O peão abre a diagonal do bispo de f8 e prepara a cravada.', {
+    strategicIdea: 'Lance modesto com ideia concreta: o bispo vai para b4.',
+    resultingPlan: '...Bb4 cravando o cavalo que defende e4.',
+  }),
+  lesson(5, 'Nc3', 'O cavalo defende e4 e prepara o centro completo.', {
+    highlights: ['e4'],
+  }),
+  lesson(
+    6,
+    'Bb4',
+    'A cravada que dá nome à defesa: o cavalo que controla e4 fica preso à própria dama.',
+    {
+      arrows: [{ from: 'f8', to: 'b4' }],
+      strategicIdea: 'Controlar e4 pela peça que o defende, e não ocupando a casa.',
+      resultingPlan: 'Trocar em c3 no momento certo e jogar contra os peões dobrados.',
+    },
+  ),
+  lesson(7, 'e3', 'As brancas desenvolvem sem se comprometer — é a resposta mais sólida.', {
+    resultingPlan: 'Bd3, Cf3 e O-O, com o centro preparado para e4.',
+  }),
+  lesson(8, 'O-O', 'As pretas rocam antes de decidir o que fazer com o bispo de b4.', {
+    resultingPlan: '...d5 ou ...c5 conforme as brancas escolherem a estrutura.',
+  }),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -3070,12 +3108,245 @@ const kingsIndian = course({
     {
       id: 'kid-erro-centro-cedo',
       nodeId: 'root',
-      positionPly: 4,
+      /*
+        PLY 3, E NÃO 4 — e este passou no portão por COINCIDÊNCIA.
+
+        Com quatro plies é a vez das brancas, e `d5` também é lance branco
+        (d4-d5), então a legalidade passava enquanto a explicação falava de um
+        lance PRETO. O portão media o que podia medir; o texto é que estava
+        descrito do lado errado. Com três plies a vez é das pretas, e ...d5 é o
+        lance que a explicação de fato comenta.
+      */
+      positionPly: 3,
       moveSan: 'd5',
       explanation:
         'Disputar o centro de frente com ...d5 contradiz a ideia da defesa: a Índia do Rei cede o centro de propósito para atacá-lo depois com peças.',
       principle:
         'Escolher uma defesa é escolher um plano — jogar contra o próprio plano custa mais que jogar contra o adversário.',
+    },
+  ],
+  version: 1,
+})
+
+const nimzoIndian = course({
+  id: 'nimzo-india',
+  slug: 'nimzo-india',
+  name: 'Defesa Nimzo-Índia',
+  side: 'black',
+  ecoCodes: ['E20', 'E32', 'E40', 'E46'],
+  description:
+    'Controlar e4 cravando quem o defende: a cravada em b4, o par de bispos como moeda e os peões dobrados como alvo.',
+  philosophy:
+    'Estrutura contra bispos. As pretas entregam uma peça boa para deixar uma fraqueza que não anda.',
+  difficulty: 3,
+  prerequisites: [],
+  tags: ['closed', 'positional'],
+  transitionToMiddlegame:
+    'A abertura termina quando as pretas decidem se trocam em c3 e com que estrutura. A partir daí a pergunta é se os bispos brancos chegam antes de os peões dobrados pesarem.',
+  mainline: nimzoMain,
+  /*
+    TODOS OS RAMOS BIFURCAM NO MESMO PONTO — o quarto lance branco — e isso é
+    exigência do bot de sparring, não estética. Ele percorre as alternativas de
+    um ponto por rodada; ramos espalhados por pontos diferentes fazem o mais
+    raso afastar do mais fundo, e o fundo nunca é jogado. Ver a Índia do Rei.
+  */
+  variations: [
+    {
+      /*
+        A CLÁSSICA (4.Dc2) É A LINHA MAIS AMBICIOSA: as brancas recusam os peões
+        dobrados e apostam tudo no par de bispos. Core porque ela desfaz a ideia
+        central da defesa, e o aluno precisa de outro plano.
+      */
+      id: 'nimzo-classica',
+      importancia: 'core',
+      eco: 'E32',
+      conceitos: ['concept.bishop-pair', 'concept.break-c5', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.slav-triangle',
+      erroComum: {
+        lance: 'Bxc3',
+        porque:
+          'Trocar em c3 quando a dama recaptura não cria peões dobrados nenhum — as pretas entregam o par de bispos de graça. Contra 4.Dc2, o bispo fica e o jogo é no centro com ...d5 ou ...c5.',
+      },
+      fronteira: { type: 'handoff', planId: 'nimzo-estrutura' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se recusar a estrutura danificada e converter o par de bispos em vantagem de longo prazo.',
+      intencaoDoAdversario:
+        'Recapturar em c3 com a DAMA e não com o peão, ficando com os dois bispos e nenhuma fraqueza.',
+      objetivoDoAluno:
+        'Não trocar de graça: com a dama em c2, a cravada perde valor e o jogo passa a ser central.',
+      name: 'Variante Clássica',
+      description: 'As brancas põem a dama em c2 para recapturar em c3 sem dobrar peões.',
+      rootNodeId: '',
+      line: [
+        ...nimzoMain.slice(0, 6),
+        lesson(
+          7,
+          'Qc2',
+          'A dama prepara a recaptura em c3 com peça, recusando os peões dobrados que a defesa procura.',
+          {
+            strategicIdea:
+              'Quem recusa a fraqueza paga em tempo: a dama sai antes das peças menores.',
+            resultingPlan: 'a3 no momento certo, forçando a decisão do bispo.',
+          },
+        ),
+        lesson(
+          8,
+          'd5',
+          'As pretas mudam de plano e disputam o centro, já que a cravada perdeu a função.',
+          { resultingPlan: '...c5 depois, atacando a base do centro branco.' },
+        ),
+      ],
+    },
+    {
+      /*
+        A SÄMISCH (4.a3) COMPRA OS PEÕES DOBRADOS DE PROPÓSITO: as brancas
+        aceitam a fraqueza em troca dos dois bispos e do centro. Core porque é
+        a linha que mais testa se o aluno entendeu a troca.
+      */
+      id: 'nimzo-samisch',
+      importancia: 'core',
+      eco: 'E24',
+      conceitos: ['concept.bishop-pair', 'concept.backward-pawn', 'concept.break-c5'],
+      estrutura: 'structure.slav-triangle',
+      motivos: ['motif.fork-on-d5'],
+      erroComum: {
+        lance: 'Be7',
+        porque:
+          'Recuar o bispo devolve o tempo de a3 e deixa as brancas com centro e desenvolvimento de graça. Quando o adversário pergunta ao bispo com a3, a resposta é trocar: é por isso que ele foi para b4.',
+      },
+      fronteira: { type: 'handoff', planId: 'nimzo-estrutura' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se pagar por estrutura para ganhar bispos e centro, e abrir a posição antes que os peões pesem.',
+      intencaoDoAdversario:
+        'Forçar a troca em c3 já, aceitando os peões dobrados em troca do par de bispos e de um centro grande.',
+      objetivoDoAluno:
+        'Trocar e depois fechar o jogo: peões dobrados só viram fraqueza em posição travada, e bispos só valem em posição aberta.',
+      name: 'Variante Sämisch',
+      description: 'As brancas jogam a3 e compram os peões dobrados em troca dos bispos.',
+      rootNodeId: '',
+      line: [
+        ...nimzoMain.slice(0, 6),
+        lesson(
+          7,
+          'a3',
+          'O peão pergunta ao bispo e força a decisão: trocar em c3 ou recuar perdendo tempo.',
+          {
+            strategicIdea: 'Perguntar sempre ganha alguma coisa — aqui, a estrutura ou o tempo.',
+            resultingPlan: 'bxc3 e e3, com dois bispos e um centro grande.',
+          },
+        ),
+        lesson(
+          8,
+          'Bxc3',
+          'As pretas trocam: era para isso que o bispo foi a b4, e os peões dobrados são permanentes.',
+          { resultingPlan: '...c5 e ...d6, travando a posição para que os bispos não respirem.' },
+        ),
+      ],
+    },
+    {
+      /*
+        A LENINGRADO (4.Bg5) pressiona antes de resolver o centro. `secondary`
+        porque é menos comum em clube que as duas acima, mas ela entra para o
+        aluno não estranhar a cravada dupla.
+      */
+      id: 'nimzo-leningrado',
+      importancia: 'secondary',
+      intencaoDoAdversario:
+        'Cravar o cavalo de f6 antes de decidir a estrutura, somando pressão sobre d5 e e4.',
+      objetivoDoAluno:
+        'Responder com ...h6 e ...c5, atacando o centro enquanto o bispo branco está longe da defesa.',
+      name: 'Variante Leningrado',
+      description: 'As brancas cravam o cavalo de f6 antes de tocar no centro.',
+      rootNodeId: '',
+      line: [
+        ...nimzoMain.slice(0, 6),
+        lesson(
+          7,
+          'Bg5',
+          'O bispo crava o cavalo de f6 e aumenta a pressão sobre o centro sem mover peão nenhum.',
+          {
+            strategicIdea:
+              'Duas cravadas ao mesmo tempo: a das brancas em f6 e a das pretas em c3.',
+            resultingPlan: 'e3 e Bd3 depois, com a tensão mantida.',
+          },
+        ),
+        lesson(
+          8,
+          'h6',
+          'A pergunta de sempre: o bispo troca em f6 e ajuda a estrutura preta, ou recua perdendo tempo.',
+          { resultingPlan: '...c5 em seguida, atacando o centro.' },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'nimzo-estrutura',
+      name: 'Travar a posição contra os bispos',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Fechar o jogo com ...c5 e ...d6 para que o par de bispos não tenha diagonais.',
+      when: 'Sempre que a troca em c3 já tiver acontecido.',
+      risk: 'Travar sem ter criado os peões dobrados: aí é só uma posição sem espaço.',
+      porQueFunciona:
+        'Peões dobrados são fraqueza permanente e os bispos são vantagem condicional: eles só valem em posição aberta. Quem tem a estrutura melhor joga para fechar; quem tem os bispos joga para abrir. As duas metades da mesma conta.',
+      preparacao:
+        'A troca em c3 feita e o centro sob controle. Trocar antes de ter com que fechar entrega os bispos sem cobrar nada.',
+      oQueOAdversarioTenta:
+        'Abrir o centro com e4 e f4, ou avançar d5 para dar ar aos bispos antes de a estrutura pesar.',
+      arrows: [{ from: 'c7', to: 'c5' }],
+    },
+    {
+      id: 'nimzo-e4',
+      name: 'Disputar a casa e4',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Impedir e4 com peças, e não com peões.',
+      when: 'Em toda a Nimzo — é a razão de a cravada existir.',
+      risk: 'Esquecer a casa e concentrar-se nos peões: o centro branco completo desfaz a defesa.',
+      porQueFunciona:
+        'A Nimzo nunca ocupa e4; ela controla a casa cravando o cavalo que a defende e somando ...d5, ...Cbd7 e ...b6 com ...Bb7. Quando e4 fica impossível, o espaço branco vira estrutura parada.',
+      preparacao:
+        'O bispo já em b4 e o cavalo de f6 no jogo. Sem a cravada, o controle vira torcida.',
+      oQueOAdversarioTenta: 'Desfazer a cravada com a3 ou Dc2 e então jogar e4 com tudo defendido.',
+    },
+    {
+      id: 'nimzo-bispo-b7',
+      name: 'O bispo por b7',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Resolver o bispo de c8 pela diagonal longa, mirando e4 de longe.',
+      when: 'Nas estruturas em que ...d5 não é possível ou não é desejável.',
+      risk: 'Gastar dois lances com o bispo enquanto o centro branco avança.',
+      porQueFunciona:
+        'Com ...b6 e ...Bb7 o bispo aponta para e4 — a mesma casa que a cravada disputa. As duas peças fazem a mesma pergunta de lados diferentes, e é essa soma que trava o centro branco.',
+      preparacao:
+        'Rei rocado e a cravada ainda de pé: sem ela, o bispo em b7 pressiona sozinho e não basta.',
+      oQueOAdversarioTenta:
+        'Jogar d5 fechando a diagonal, ou trocar o bispo de b7 com Bf3 e Cd2 antes de o centro abrir.',
+    },
+  ],
+  structures: [
+    {
+      name: 'Peões dobrados em c',
+      description:
+        'Depois de ...Bxc3 bxc3, as brancas ficam com peões em c3 e c4. São fraqueza fixa em posição fechada e irrelevantes em posição aberta — a mesma estrutura vale coisas opostas conforme o jogo.',
+      pawnBreaks: ['c5', 'e4', 'd5'],
+      weakSquares: ['c4', 'a4'],
+      openFiles: ['b'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'nimzo-erro-troca-cedo',
+      nodeId: 'root',
+      /* Ply 7: depois de e3 e a vez das PRETAS, e ...Bxc3 e lance preto. */
+      positionPly: 7,
+      moveSan: 'Bxc3',
+      explanation:
+        'Trocar em c3 sem ser perguntado entrega o par de bispos e deixa as brancas escolherem com que peça recapturar — o tempo da troca é parte do valor dela.',
+      principle:
+        'Não troque uma peça ativa antes de o adversário pedir: quem troca cedo perde o direito de escolher a estrutura.',
     },
   ],
   version: 1,
@@ -3093,6 +3364,7 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   sicilianFoundation,
   qga,
   kingsIndian,
+  nimzoIndian,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),
