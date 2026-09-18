@@ -117,14 +117,37 @@ describe('a microdecisão de um plano', () => {
     }
   })
 
-  it('pelo menos um plano do curso tem microdecisão', () => {
+  it('CADA CURSO tem pelo menos um plano com microdecisão', () => {
     /*
-      ELA É OPCIONAL POR PLANO (§24.3, "quando possível") e OBRIGATÓRIA no
-      conjunto. Sem este piso, remover a última microdecisão do conteúdo deixaria
-      todos os outros testes verdes — eles pulam quem não tem — e a etapa
-      voltaria a ser só leitura sem nenhum vermelho.
+      ESTE PORTÃO MEDIA O CATÁLOGO, E O NOME DELE DIZIA "DO CURSO".
+
+      A asserção era `comMicro.length > 0` sobre todos os planos somados. Dois
+      planos em 35 cursos bastavam para deixá-la verde — e era exatamente a
+      situação: 103 dos 105 planos sem microdecisão, 33 cursos com a etapa
+      "Planos" reduzida a leitura, e nenhum vermelho em lugar nenhum.
+
+      O comentário antigo também citava `§24.3, "quando possível"` para dizer que
+      ela é opcional por plano. A citação existe (é do plano VNext), mas a regra
+      de microdecisão mora no §52 do plano de expansão, e ele não abre exceção:
+      "Cada plano: ... microdecisão no board." A expressão "quando possível" não
+      aparece no plano de expansão nenhuma vez.
+
+      O piso aqui é POR CURSO, e não por plano, e isso é um relaxamento
+      deliberado do §52: forçar microdecisão onde não há escolha de tabuleiro
+      legítima produziria pergunta artificial, que é pior que leitura honesta.
+      O relaxamento está registrado no ADR-0032; o que ele não permite é um
+      curso inteiro sem nenhuma decisão.
+
+      Ver ADR-0032, item 2: o escopo da asserção é o escopo do contrato.
     */
-    const comMicro = PLANOS.filter(({ plano }) => plano.microdecisao)
-    expect(comMicro.length).toBeGreaterThan(0)
+    const semNenhuma = OPENING_COURSES.map((opening) => ({
+      slug: opening.slug,
+      planos: opening.plans.length,
+      comMicro: opening.plans.filter((plano) => plano.microdecisao).length,
+    })).filter((linha) => linha.comMicro === 0)
+
+    expect(semNenhuma.map((l) => `curso "${l.slug}": ${l.planos} planos, 0 microdecisões`)).toEqual(
+      [],
+    )
   })
 })

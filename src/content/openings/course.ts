@@ -1314,6 +1314,13 @@ const italian = course({
         Uma implementação que transformasse toda seta em pergunta pediria aqui um
         lance impossível — e o portão de legalidade reprovaria.
       */
+      microdecisao: {
+        ply: 4,
+        san: 'Bc4',
+        pergunta: 'Para qual casa o bispo sai, mirando o ponto mais frágil do campo preto?',
+        porque:
+          'A casa f7 é defendida só pelo rei no começo da partida. O bispo nesta diagonal é o primeiro dos dois atacantes que a Italiana monta contra ela, e sair antes do peão de d mantém a opção de d3 ou d4.',
+      },
     },
   ],
   structures: [
@@ -1865,6 +1872,13 @@ const qgd = course({
         'O cavalo de f6 já defendido ou a cravada já resolvida com ...h6: sem isso, ...b6 afrouxa o centro no pior momento.',
       oQueOAdversarioTenta:
         'Abrir a posição enquanto o bispo ainda está em casa, tipicamente com cxd5 e e4 no momento certo.',
+      microdecisao: {
+        ply: 3,
+        san: 'e6',
+        pergunta: 'Qual lance sustenta o centro e aceita, de propósito, trancar o bispo de c8?',
+        porque:
+          'A Ortodoxa escolhe solidez e paga com uma peça: o bispo de casas claras fica atrás da cadeia até a troca em d5 ou a manobra por d7. Saber que a conta foi feita é o que separa jogar a defesa de sofrê-la.',
+      },
     },
     {
       id: 'qgd-c5',
@@ -2376,6 +2390,14 @@ const london = course({
       oQueOAdversarioTenta:
         'Recuar o bispo para g6 ou g4 em vez de trocar, mantendo a peça ativa e obrigando você a decidir de novo.',
       arrows: [{ from: 'f1', to: 'd3' }],
+      microdecisao: {
+        ply: 4,
+        san: 'Bf4',
+        pergunta:
+          'Para qual casa o bispo de c1 sai, antes que o próprio peão feche a diagonal dele?',
+        porque:
+          'É a regra que dá nome ao sistema: o bispo sai ANTES de e3. Depois do peão, ele passa a partida atrás da própria cadeia, e o Londres deixa de ter a peça que faz o trabalho dele.',
+      },
     },
     {
       id: 'londres-cadeia',
@@ -2691,6 +2713,13 @@ const slav = course({
         não o bispo. Perguntar pelo bispo ali cobraria um lance que a própria
         linha principal não joga.
       */
+      microdecisao: {
+        ply: 3,
+        san: 'c6',
+        pergunta: 'Qual lance sustenta o centro sem trancar nenhum bispo preto?',
+        porque:
+          'É a diferença inteira entre a Eslava e a Ortodoxa. O peão que defende d5 vem da coluna c, e não da coluna e, e por isso o bispo de casas claras sai por f5 ou g4 antes de a posição fechar.',
+      },
     },
   ],
   structures: [
@@ -2897,6 +2926,13 @@ const ruyLopez = course({
         'Os bispos pretos neutralizados, por troca ou por peões nas casas certas. Com eles ativos, o final ainda não chegou.',
       oQueOAdversarioTenta:
         'Evitar trocas, abrir diagonais para os dois bispos e criar jogo antes que a estrutura passe a mandar.',
+      microdecisao: {
+        ply: 4,
+        san: 'Bb5',
+        pergunta: 'Qual lance ataca o cavalo que defende o peão central preto?',
+        porque:
+          'O bispo nesta casa não ameaça ganhar o peão hoje: ele ameaça a TROCA que reorganiza os peões pretos. Toda a variante da Troca, e a maioria na ala do rei que ela cria, começa aqui.',
+      },
     },
   ],
   structures: [
@@ -3140,6 +3176,13 @@ const french = course({
       oQueOAdversarioTenta:
         'Sustentar d4 com c3 e Cf3 e, quando a pressão apertar, trocar em c5 para abrir a posição a favor do espaço.',
       arrows: [{ from: 'c7', to: 'c5' }],
+      microdecisao: {
+        ply: 5,
+        san: 'c5',
+        pergunta: 'Qual lance ataca a base da cadeia de peões branca?',
+        porque:
+          'Uma cadeia de peões se ataca pela base, e não pela cabeça. Com o centro travado, este é o lance que abre a única frente em que as pretas têm mais peões — e ele vem antes de qualquer desenvolvimento.',
+      },
     },
     {
       id: 'francesa-bispo',
@@ -3380,6 +3423,13 @@ const sicilianFoundation = course({
         'Rei seguro e a coluna c ocupada. A maioria é um ativo de longo prazo; sem sobreviver ao meio-jogo, ela não chega a existir.',
       oQueOAdversarioTenta:
         'Atacar antes que o final chegue, tipicamente com e5, f4 e peças na ala do rei.',
+      microdecisao: {
+        ply: 5,
+        san: 'cxd4',
+        pergunta: 'Qual captura troca um peão de flanco por um peão central?',
+        porque:
+          'É o negócio que a defesa inteira propõe, e ele dura até o final da partida: as pretas ficam com dois peões centrais contra um, e com a coluna c aberta para as torres.',
+      },
     },
     {
       id: 'siciliana-ala',
@@ -3600,6 +3650,13 @@ const qga = course({
         'Nada. O plano é justamente a ausência de plano ganancioso — a disciplina de não gastar lances defendendo o que vai cair.',
       oQueOAdversarioTenta:
         'Recuperar o peão com ganho de tempo, tipicamente com Bxc4 atacando alguma peça mal colocada.',
+      microdecisao: {
+        ply: 3,
+        san: 'dxc4',
+        pergunta: 'Qual captura aceita o gambito, sabendo que o peão vai ser devolvido?',
+        porque:
+          'Aceitar não é tentar segurar. O peão volta com e3 e Bxc4, e o que as pretas compram com a captura é o tempo de jogar ...c5 e ...e6 contra um centro que ficou menor.',
+      },
     },
   ],
   structures: [
@@ -3805,6 +3862,13 @@ const kingsIndian = course({
         'Evitar ...e5 seguido de trocas que fechem a diagonal com peões pretos, e não permitir Bh6 trocando o bispo de graça.',
       oQueOAdversarioTenta:
         'Trocar o bispo com Bh6, ou travar a diagonal com peões em d4 e e5 sustentados por peças.',
+      microdecisao: {
+        ply: 5,
+        san: 'Bg7',
+        pergunta: 'Qual lance completa o fianchetto e aponta a peça mais importante da defesa?',
+        porque:
+          'O bispo desta diagonal é a peça que justifica ceder o centro: ele mira d4 e, quando a posição abrir, a ala da dama inteira. Trocá-lo de graça é abrir mão da compensação.',
+      },
     },
   ],
   structures: [
@@ -4022,6 +4086,13 @@ const nimzoIndian = course({
       preparacao:
         'O bispo já em b4 e o cavalo de f6 no jogo. Sem a cravada, o controle vira torcida.',
       oQueOAdversarioTenta: 'Desfazer a cravada com a3 ou Dc2 e então jogar e4 com tudo defendido.',
+      microdecisao: {
+        ply: 5,
+        san: 'Bb4',
+        pergunta: 'Qual lance crava o defensor natural da casa e4?',
+        porque:
+          'A Nimzo nega e4 com uma peça, e não com um peão. O cavalo de c3 é o único defensor que as brancas têm ali no quarto lance, e cravá-lo vale mais que desenvolver mais uma peça.',
+      },
     },
     {
       id: 'nimzo-bispo-b7',
@@ -4198,6 +4269,13 @@ const catalan = course({
       oQueOAdversarioTenta:
         'Fechar a diagonal com ...c6 e ...d5 sustentado, ou trocar o bispo com ...Ba6 e ...Bb7.',
       arrows: [{ from: 'g2', to: 'a8' }],
+      microdecisao: {
+        ply: 4,
+        san: 'g3',
+        pergunta: 'Qual lance abre a diagonal longa para o bispo do rei?',
+        porque:
+          'A Catalã é um sistema construído em volta de um bispo só. Ele pressiona d5 de longe, sobrevive às trocas centrais e continua útil no final — e este lance é o que o coloca em jogo.',
+      },
     },
     {
       id: 'catala-e4',
@@ -4385,6 +4463,13 @@ const english = course({
         'O fianchetto completo, que é o terceiro atacante da casa. Com dois só, ...d5 costuma ser possível.',
       oQueOAdversarioTenta:
         'Preparar ...d5 com ...e6 e ...Bb4, ou desistir da casa e jogar por ...f5 e espaço no outro lado.',
+      microdecisao: {
+        ply: 2,
+        san: 'Nc3',
+        pergunta: 'Qual lance de peça soma o primeiro controle sobre a casa d5?',
+        porque:
+          'A Inglesa disputa d5 antes de ocupar qualquer coisa. O cavalo é o primeiro dos atacantes, e a ordem importa: ele entra antes do bispo justamente para deixar o fianchetto em aberto.',
+      },
     },
     {
       id: 'inglesa-transposicao',
@@ -4602,6 +4687,13 @@ const scandinavian = course({
         'Escolher a casa da dama ANTES de capturar, olhando para b4, Bd2 e Cd5 — as três ameaças que a expulsariam de novo.',
       oQueOAdversarioTenta:
         'Perseguir a dama com Cd5, Bd2 e b4, cobrando um tempo a cada lance de desenvolvimento.',
+      microdecisao: {
+        ply: 5,
+        san: 'Qa5',
+        pergunta: 'Para qual casa a dama recua, longe do alcance imediato das peças brancas?',
+        porque:
+          'A crítica à Escandinava é que a dama sai cedo e leva tempo. Esta casa é a resposta: de lá ela crava o cavalo de c3, não é atacada por nenhum lance de desenvolvimento, e as pretas terminam o desenvolvimento em paz.',
+      },
     },
   ],
   structures: [
@@ -4788,6 +4880,13 @@ const pirc = course({
         'Decidir o rei ANTES: com o roque adiado, Bh6 perde o sentido, porque não há rei atrás do bispo.',
       oQueOAdversarioTenta:
         'Forçar a troca com Bh6 logo depois do roque preto, e então avançar h4-h5 contra o rei desprotegido.',
+      microdecisao: {
+        ply: 7,
+        san: 'Bg7',
+        pergunta: 'Qual lance põe na diagonal a peça que defende e ataca ao mesmo tempo?',
+        porque:
+          'O bispo faz duas coisas de uma vez: pressiona d4 e cobre as casas escuras ao redor do rei. É por isso que todo sistema de ataque contra a Pirc gasta dois lances para trocá-lo.',
+      },
     },
     {
       id: 'pirc-e5',
@@ -4982,6 +5081,13 @@ const grunfeld = course({
         'O bispo já em g7. Sem ele, a pressão sobre c3 é de uma peça só e some com um lance de defesa.',
       oQueOAdversarioTenta:
         'Expulsar o cavalo com e4 ganhando tempo e espaço, ou defender c3 com Bd2 antes de a pressão somar.',
+      microdecisao: {
+        ply: 7,
+        san: 'Nxd5',
+        pergunta: 'Com qual peça recapturar, para já atacar o cavalo de c3?',
+        porque:
+          'A recaptura de peça, e não de peão, é o que faz a Grünfeld funcionar: o cavalo ataca c3 desde o primeiro instante, e as brancas precisam gastar e4 — que ganha espaço e perde o defensor de d4 no mesmo lance.',
+      },
     },
   ],
   structures: [
@@ -5154,6 +5260,13 @@ const dutch = course({
       preparacao: 'O cavalo em f6 antes do bispo: ele tapa a diagonal e permite rocar sem sustos.',
       oQueOAdversarioTenta:
         'Abrir a diagonal com e4 e Bg5, ou provocar ...g6 para depois atacar as casas escuras.',
+      microdecisao: {
+        ply: 3,
+        san: 'Nf6',
+        pergunta: 'Qual lance tapa a diagonal que leva ao rei preto e permite rocar sem sustos?',
+        porque:
+          'O avanço do peão de f abre a diagonal e8-h4, e todo gambito contra a Holandesa mira nela. O cavalo a fecha e prepara o roque — quem roca cedo paga o preço uma vez, quem adia paga a cada lance.',
+      },
     },
     {
       id: 'holandesa-bispo',
@@ -5351,6 +5464,14 @@ const semiEslava = course({
         'Centro defendido duas vezes, cavalo em d7 e a captura em c4 disponível a qualquer momento.',
       oQueOAdversarioTenta:
         'Fechar a posição de vez com e4-e5, deixando o bispo de c8 sem nenhuma diagonal aberta.',
+      microdecisao: {
+        ply: 7,
+        san: 'e6',
+        pergunta:
+          'Qual lance soma o segundo defensor de peão ao centro, trancando o bispo de propósito?',
+        porque:
+          'É aqui que a Eslava vira Semi-Eslava. O centro fica inatacável e o bispo de c8 vira refém — e toda a teoria da defesa é sobre quantos lances se pode gastar antes de libertá-lo com ...dxc4 e ...b5.',
+      },
     },
   ],
   structures: [
@@ -5501,6 +5622,13 @@ const indiaDaDama = course({
       oQueOAdversarioTenta:
         'Trocar o bispo de b7 com Bg2, ou gastar a3 e Cc3 para empurrar e4 com apoio de peão.',
       arrows: [{ from: 'b7', to: 'e4' }],
+      microdecisao: {
+        ply: 5,
+        san: 'b6',
+        pergunta: 'Qual lance prepara o segundo atacante da casa que a defesa existe para negar?',
+        porque:
+          'Cavalo em f6 e bispo na diagonal longa: são dois atacantes sobre a mesma casa, e nenhum deles é um peão. A Índia da Dama aposta que as brancas nunca conseguem ocupá-la.',
+      },
     },
     {
       id: 'india-da-dama-d5',
@@ -5713,6 +5841,13 @@ const moderna = course({
         'Fianchetto completo primeiro. O bispo de g7 é a peça que faz o trabalho que o cavalo em f6 faria.',
       oQueOAdversarioTenta:
         'Ocupar tanto espaço que as pretas precisem desenvolver o cavalo para f6 por falta de casas.',
+      microdecisao: {
+        ply: 5,
+        san: 'd6',
+        pergunta: 'Qual lance de peão nega a casa e5 sem oferecer nenhum alvo?',
+        porque:
+          'É a diferença exata entre a Moderna e a Pirc: sem cavalo em f6, o peão branco de e não tem quem expulsar, e as pretas guardam o tempo que a Pirc gasta. Menos espaço, zero alvos.',
+      },
     },
   ],
   structures: [
@@ -5895,6 +6030,13 @@ const reti = course({
         'O bispo em g2 somando um atacante a d5, para que a tensão pese mais do lado das brancas.',
       oQueOAdversarioTenta:
         'Desfazer a tensão em termos favoráveis com ...dxc4, ou avançar ...d4 ganhando espaço de vez.',
+      microdecisao: {
+        ply: 2,
+        san: 'c4',
+        pergunta: 'Qual lance ataca o centro preto sem ocupá-lo?',
+        porque:
+          'A Réti pressiona de longe e deixa o adversário defender. Enquanto a tensão existir, cada peça preta que cuida do centro é uma peça que não faz outra coisa — e quem troca primeiro acaba com ela.',
+      },
     },
   ],
   structures: [
@@ -6049,6 +6191,13 @@ const viena = course({
       oQueOAdversarioTenta:
         'Devolver o peão para trocar peças, ou contra-atacar no centro com ...d5 antes de a torre chegar.',
       arrows: [{ from: 'f1', to: 'f7' }],
+      microdecisao: {
+        ply: 4,
+        san: 'f4',
+        pergunta: 'Qual lance ataca o centro preto com o peão que ainda não se mexeu?',
+        porque:
+          'O cavalo em c3, e não em f3, é o que guarda esta casa livre. O gambito troca um peão por uma coluna aberta apontada para f7 — e é por isso que a ordem dos dois primeiros lances é a abertura inteira.',
+      },
     },
     {
       id: 'viena-centro',
@@ -6281,6 +6430,13 @@ const gambitoDoRei = course({
       oQueOAdversarioTenta:
         'Provocar uma captura em e5 ou um lance de peão qualquer que deixe a diagonal aberta mais um lance.',
       arrows: [{ from: 'g1', to: 'f3' }],
+      microdecisao: {
+        ply: 4,
+        san: 'Nf3',
+        pergunta: 'Qual lance fecha a diagonal que o avanço do peão de f acabou de abrir?',
+        porque:
+          'É o custo fixo do gambito e vem antes de contar material: sem esta peça, ...Dh4 dá xeque e o rei branco precisa ir a e2. Toda linha do Gambito do Rei começa fechando esta diagonal.',
+      },
     },
   ],
   structures: [
@@ -6464,6 +6620,13 @@ const alekhine = course({
       oQueOAdversarioTenta:
         'Ganhar mais um tempo com a4-a5, expulsando o cavalo de b6 e ganhando ainda mais espaço.',
       arrows: [{ from: 'd5', to: 'b6' }],
+      microdecisao: {
+        ply: 3,
+        san: 'Nd5',
+        pergunta: 'Para qual casa o cavalo recua e continua no centro?',
+        porque:
+          'Provocar só compensa se a peça provocadora terminar num lugar melhor do que estava. Esta é a casa central em que o cavalo continua útil; a borda e a volta para casa devolvem os dois tempos comprados.',
+      },
     },
   ],
   structures: [
@@ -6635,6 +6798,13 @@ const benoni = course({
       preparacao: 'A troca ...exd5 feita, e o fianchetto no lugar. O resto é consequência.',
       oQueOAdversarioTenta:
         'Travar a ala da dama com a4, ou abrir o centro com e5 antes de a estrutura preta virar plano.',
+      microdecisao: {
+        ply: 7,
+        san: 'exd5',
+        pergunta: 'Qual captura cria a maioria na ala da dama e abre a coluna do lado do rei?',
+        porque:
+          'A estrutura da Benoni nasce nesta troca, e ela é o plano inteiro: maioria de peões de um lado, coluna semiaberta do outro, e o bispo de g7 apontando para os dois. Sem ela sobra apenas menos espaço.',
+      },
     },
     {
       id: 'benoni-e5',
@@ -6803,6 +6973,13 @@ const benko = course({
       oQueOAdversarioTenta:
         'Devolver o peão para trocar torres, ou jogar e4-e5 no centro antes de a pressão se organizar.',
       arrows: [{ from: 'a8', to: 'a1' }],
+      microdecisao: {
+        ply: 5,
+        san: 'b5',
+        pergunta: 'Qual lance oferece o peão que compra as duas colunas da ala da dama?',
+        porque:
+          'O Benko não quer o peão de volta: ele quer as colunas a e b abertas contra uma ala que as brancas ainda não desenvolveram. Um peão expira; uma coluna aberta contra peças presas, não.',
+      },
     },
     {
       id: 'benko-bispo-g7',
@@ -7003,6 +7180,13 @@ const trompowsky = course({
       oQueOAdversarioTenta:
         'Recapturar com a dama, ou jogar ...h6 forçando a decisão antes de ela ser boa.',
       arrows: [{ from: 'g5', to: 'f6' }],
+      microdecisao: {
+        ply: 4,
+        san: 'Bf4',
+        pergunta: 'Para qual casa o bispo recua, continuando útil e fora do alcance do peão de g?',
+        porque:
+          'Recuar para a casa ativa, e não para a casa segura. Em h4 o bispo seria atacado de novo por ...g5 e perdido depois de ...Nxg3; nesta casa ele vigia c7 e e5 e o plano segue de pé.',
+      },
     },
     {
       id: 'trompowsky-cavalo-e4',
@@ -7213,6 +7397,13 @@ const kia = course({
         'Nenhuma — e é justamente esse o ponto. A formação é a primeira coisa do repertório que não precisa de preparação nem de decisão.',
       oQueOAdversarioTenta:
         'Criar uma ameaça concreta cedo — ...Bg4 ou ...Db6 — que obrigue a sair da formação.',
+      microdecisao: {
+        ply: 2,
+        san: 'g3',
+        pergunta: 'Qual lance começa o fianchetto que este sistema monta em toda partida?',
+        porque:
+          'A vantagem prática de um sistema é o tempo de estudo: seis lances cobrem quase toda resposta preta e o esforço sai inteiro para os planos. Isso só funciona se a formação for mesmo automática.',
+      },
     },
   ],
   structures: [
@@ -7399,6 +7590,14 @@ const bogo = course({
       preparacao: 'Nenhuma — é uma decisão de um lance, e é a mais importante da abertura.',
       oQueOAdversarioTenta:
         'Jogar a3 forçando a decisão em termos das brancas, quando o recuo já custa um tempo.',
+      microdecisao: {
+        ply: 5,
+        san: 'Bb4+',
+        pergunta:
+          'Qual lance obriga as brancas a gastar um lance respondendo, antes de se organizarem?',
+        porque:
+          'O xeque vale porque a resposta é obrigada e custa às brancas uma peça numa casa modesta. Depois disso o bispo já fez o trabalho dele, e trocá-lo por hábito entrega o par de bispos de graça.',
+      },
     },
   ],
   structures: [
@@ -7552,6 +7751,13 @@ const tarrasch = course({
       oQueOAdversarioTenta:
         'Trocar peças em série e bloquear o peão com um cavalo em d4, levando a partida para o final.',
       arrows: [{ from: 'c8', to: 'g4' }],
+      microdecisao: {
+        ply: 5,
+        san: 'c5',
+        pergunta: 'Qual lance contra-ataca no centro em vez de defendê-lo?',
+        porque:
+          'A Tarrasch aceita um peão isolado de propósito, e o que ela compra são as casas ao lado dele e peças que jogam sozinhas. É uma abertura de meio-jogo: enquanto houver peças, a conta fecha a favor.',
+      },
     },
     {
       id: 'tarrasch-d4',
@@ -7759,6 +7965,13 @@ const jobava = course({
       oQueOAdversarioTenta:
         'Atacar o centro com ...c5 e ...Cc6, ou ocupar d5 antes de a ruptura sair.',
       arrows: [{ from: 'e2', to: 'e4' }],
+      microdecisao: {
+        ply: 4,
+        san: 'e4',
+        pergunta: 'Qual lance ocupa a segunda casa central, já que o cavalo de c3 a defende?',
+        porque:
+          'É o que a Londres normal não pode fazer: lá o peão de c3 ocupa a casa e não defende nada. Com uma peça no lugar do peão, o sistema ocupa o centro inteiro num lance e vira abertura de iniciativa.',
+      },
     },
     {
       id: 'jobava-bispo',
@@ -7974,6 +8187,14 @@ const najdorf = course({
       oQueOAdversarioTenta:
         'Jogar a4 parando ...b5, ou atacar imediatamente para que o lance de peão na borda custe um tempo.',
       arrows: [{ from: 'a7', to: 'a6' }],
+      microdecisao: {
+        ply: 9,
+        san: 'a6',
+        pergunta:
+          'Qual lance de peão nega a mesma casa ao cavalo, ao outro cavalo e ao bispo de f1?',
+        porque:
+          'Três peças brancas querem a casa b5 na Siciliana Aberta, e um peão na borda nega a todas de uma vez. É o lance mais barato do tabuleiro em desenvolvimento e o mais caro no que impede — e é ele que libera ...e5.',
+      },
     },
   ],
   structures: [
@@ -8175,6 +8396,13 @@ const dragao = course({
       oQueOAdversarioTenta:
         'Forçar Bh6 e trocar, depois avançar h5 abrindo a coluna contra um rei sem o defensor das casas escuras.',
       arrows: [{ from: 'g7', to: 'b2' }],
+      microdecisao: {
+        ply: 9,
+        san: 'g6',
+        pergunta: 'Qual lance prepara o fianchetto que dá nome a esta variante?',
+        porque:
+          'O bispo desta diagonal atravessa o tabuleiro inteiro até a ala onde o rei branco vai rocar. Ele é a peça mais forte da defesa e o primeiro alvo do ataque — o Iugoslavo gasta dois lances só para trocá-lo.',
+      },
     },
   ],
   structures: [
@@ -8336,6 +8564,14 @@ const sveshnikov = course({
       oQueOAdversarioTenta:
         'Trocar em f6 com Bxf6 e plantar um cavalo em d5 que nenhuma peça preta alcance.',
       arrows: [{ from: 'e6', to: 'd5' }],
+      microdecisao: {
+        ply: 9,
+        san: 'e5',
+        pergunta:
+          'Qual avanço expulsa o cavalo do centro e aceita um buraco permanente de propósito?',
+        porque:
+          'É a aposta mais clara do repertório: uma casa fraca para sempre em troca de peças ativas e do par de bispos. Enquanto houver peças no tabuleiro a conta fecha; num final de peças menores, ela se inverte.',
+      },
     },
     {
       id: 'sveshnikov-pecas',
