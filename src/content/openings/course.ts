@@ -2872,6 +2872,112 @@ const ruyLopez = course({
         }),
       ],
     },
+    {
+      /*
+        A ABERTA FOI REMOVIDA DO CONTEÚDO UMA VEZ, e não por ser ruim: o bot de
+        sparring não conseguia alcançá-la. A fórmula de escolha amarrava as
+        bifurcações umas às outras, e o conteúdo foi encolhido para caber no
+        defeito. Com o bot enumerando as combinações, ela volta. Ver ADR-0032.
+      */
+      id: 'ruy-aberta',
+      importancia: 'core',
+      eco: 'C80',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.open-file',
+        'concept.space-vs-counterplay',
+      ],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'Re1',
+        porque:
+          'Recuperar o peão na mesma hora com a torre deixa as pretas consolidarem com ...Cc5 e ...e4: elas devolvem o material quando quiserem e ficam com a posição. A resposta certa abre o centro enquanto o cavalo preto ainda está solto.',
+      },
+      fronteira: { type: 'handoff', planId: 'ruy-d4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se pegar o peão central e devolvê-lo no tempo certo, com peças ativas.',
+      intencaoDoAdversario:
+        'Pegar o peão de e4 e aceitar uma posição aberta, apostando em atividade de peças contra o centro branco.',
+      objetivoDoAluno:
+        'Abrir o centro com d4 em vez de correr atrás do peão: contra um cavalo solto, tempo vale mais que material.',
+      name: 'Variante Aberta',
+      description: 'As pretas capturam em e4 e aceitam uma posição aberta e aguda.',
+      rootNodeId: '',
+      line: [
+        ...ruyMain.slice(0, 9),
+        lesson(
+          10,
+          'Nxe4',
+          'As pretas pegam o peão central: a Aberta troca solidez por atividade imediata.',
+          {
+            strategicIdea: 'Um peão central a mais vale o risco de abrir a posição antes de rocar.',
+            resultingPlan:
+              '...b5, ...d5 e ...Be6, sustentando o cavalo e montando um centro próprio.',
+          },
+        ),
+        lesson(
+          11,
+          'd4',
+          'O centro abre enquanto o cavalo preto ainda não tem apoio — e não é o peão que se persegue, é a posição.',
+          {
+            arrows: [{ from: 'd2', to: 'd4' }],
+            strategicIdea:
+              'Contra material tomado cedo, a resposta é linha aberta e não perseguição.',
+            resultingPlan: 'Te1, Bc2 e Cbd2, com pressão sobre o cavalo de e4 e sobre o rei.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        A STEINITZ ADIADA saiu pelo mesmo motivo que a Aberta, e volta pelo
+        mesmo conserto. Ela divide o ponto de decisão com a Aberta — o quinto
+        lance preto — que é como os ramos core deste repositório são autorados.
+      */
+      id: 'ruy-steinitz',
+      importancia: 'core',
+      eco: 'C79',
+      conceitos: ['concept.space-vs-counterplay', 'concept.backward-pawn', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Bxc6',
+        porque:
+          'Trocar em c6 nesta linha dá às pretas o par de bispos numa posição que ainda vai fechar, e é lá que ele vale mais. A troca da Espanhola compensa quando a posição abre; contra a Steinitz Adiada ela chega cedo demais.',
+      },
+      fronteira: { type: 'handoff', planId: 'ruy-manobra' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se sustentar e5 com o peão e aceitar menos espaço por uma posição sem fraquezas.',
+      intencaoDoAdversario:
+        'Sustentar o centro com o peão de d e fechar a posição, tirando das brancas qualquer alvo tático.',
+      objetivoDoAluno:
+        'Preparar d4 com calma: contra uma posição sólida e fechada, a manobra vale mais que a troca imediata.',
+      name: 'Defesa Steinitz Adiada',
+      description: 'As pretas sustentam e5 com o peão de d e fecham a posição.',
+      rootNodeId: '',
+      line: [
+        ...ruyMain.slice(0, 9),
+        lesson(
+          10,
+          'd6',
+          'O peão sustenta e5 e as pretas escolhem solidez: menos espaço, nenhuma fraqueza.',
+          {
+            strategicIdea: 'Fechar a posição tira das brancas o alvo tático e adia a discussão.',
+            resultingPlan: '...Be7, ...O-O e ...Cd7, com a estrutura firme e o jogo lento.',
+          },
+        ),
+        lesson(
+          11,
+          'c3',
+          'A preparação paciente: o peão sustenta d4 para quando ele finalmente sair, e abre c2 para o bispo.',
+          {
+            strategicIdea:
+              'Contra solidez, o lance útil é o que prepara a ruptura — e não o que troca peças.',
+            resultingPlan: 'd4, Cbd2 e Cf1-g3, com a manobra clássica da Espanhola.',
+          },
+        ),
+      ],
+    },
   ],
   plans: [
     {
@@ -3811,6 +3917,54 @@ const kingsIndian = course({
           'Bg7',
           'O bispo ocupa a diagonal mesmo assim: a partida vai se decidir na preparação da ruptura.',
           { resultingPlan: '...O-O, ...d6 e ...Cc6 antes de qualquer avanço de peão.' },
+        ),
+      ],
+    },
+    {
+      /*
+        OS QUATRO PEÕES FORAM REMOVIDOS para contornar o bot, e voltam agora que
+        ele enumera as combinações em vez de sortear. Ver ADR-0032.
+      */
+      id: 'kid-quatro-peoes',
+      importancia: 'core',
+      eco: 'E76',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.king-safety-timing'],
+      estrutura: 'structure.benoni-center',
+      erroComum: {
+        lance: 'e5',
+        porque:
+          'A ruptura natural da Índia do Rei é a errada aqui: com o peão branco em f4, trocar em e5 abre a coluna f para a torre branca bem onde o rei preto acabou de rocar. Contra os quatro peões, a ruptura é do outro lado.',
+      },
+      fronteira: { type: 'handoff', planId: 'kid-alas' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se converter espaço máximo em ataque antes de o contrajogo preto chegar.',
+      intencaoDoAdversario:
+        'Ocupar as quatro casas centrais e sufocar as pretas antes que qualquer ruptura fique pronta.',
+      objetivoDoAluno:
+        'Romper com ...c5 na ala em que as brancas não têm peças: cada peão que avança na frente do rei é um defensor a menos lá.',
+      name: 'Ataque dos Quatro Peões',
+      description: 'As brancas jogam f4 e ocupam o centro inteiro com peões.',
+      rootNodeId: '',
+      line: [
+        ...kidMain.slice(0, 8),
+        lesson(
+          9,
+          'f4',
+          'O quarto peão central entra: as brancas apostam tudo em espaço e ataque direto.',
+          {
+            arrows: [{ from: 'f2', to: 'f4' }],
+            strategicIdea: 'Uma massa de peões avança ou vira alvo — ela não fica parada.',
+            resultingPlan: 'Cf3, Be2 e O-O, com e5 e f5 no horizonte.',
+          },
+        ),
+        lesson(
+          10,
+          'O-O',
+          'As pretas rocam e preparam o contrajogo: contra um ataque de peões, a defesa começa pelo outro lado.',
+          {
+            resultingPlan:
+              '...c5 imediatamente, atacando a base do centro antes de o ataque chegar.',
+          },
         ),
       ],
     },
