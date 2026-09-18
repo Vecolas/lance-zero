@@ -74,7 +74,7 @@ export const openingAuthoringSchema = z.object({
   ecoCodes: z.array(z.string().min(1)).min(1),
   description: z.string().trim().min(1),
   philosophy: z.string().trim().min(1),
-  difficulty: z.number().int().min(1).max(3),
+  theoryComplexity: z.number().int().min(1).max(4),
   prerequisites: z.array(z.string()),
   tags: z.array(z.string().min(1)).min(1),
   transitionToMiddlegame: z.string().trim().min(1),

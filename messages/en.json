@@ -181,6 +181,9 @@
     "beginner": "Beginner",
     "intermediate": "Intermediate",
     "advanced": "Advanced",
+    "specialist": "Specialist",
+    "prerequisite": "Study first:",
+    "prerequisiteSeparator": ", ",
     "statusLabel": "Status",
     "status": {
       "notStarted": "Not started",

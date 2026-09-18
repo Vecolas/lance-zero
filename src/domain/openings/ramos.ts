@@ -68,6 +68,7 @@ export interface RamoDeAbertura {
   conceitos?: readonly string[]
   estrutura?: string
   motivos?: readonly string[]
+  semMotivo?: string
   erroComum?: { lance: string; porque: string }
   fronteira?: OpeningBoundary
   transposicoes?: readonly string[]
@@ -107,6 +108,7 @@ function ramoDaVariacao(opening: OpeningDefinition, variacao: OpeningVariation):
     conceitos: variacao.conceitos,
     estrutura: variacao.estrutura,
     motivos: variacao.motivos,
+    semMotivo: variacao.semMotivo,
     erroComum: variacao.erroComum,
     fronteira: variacao.fronteira,
     transposicoes: variacao.transposicoes,

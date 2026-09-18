@@ -1,0 +1,39 @@
+Copyright (c) 2026 Vecolas. Todos os direitos reservados.
+
+O código-fonte do LanceZero está publicamente visível, e isso NÃO o torna
+software livre. Nenhuma permissão de uso, cópia, modificação, distribuição ou
+criação de obra derivada é concedida por este arquivo.
+
+Se você quer usar qualquer parte deste repositório, fale com o autor primeiro.
+
+--------------------------------------------------------------------------------
+POR QUE "TODOS OS DIREITOS RESERVADOS", E NÃO UMA LICENÇA ABERTA
+--------------------------------------------------------------------------------
+
+Porque a licença do projeto ainda não foi escolhida, e conceder é irreversível.
+
+Um repositório público sem arquivo de licença é ambíguo para quem chega nele:
+juridicamente vale o mesmo que este arquivo, mas o leitor não sabe disso, e
+alguns assumem o contrário. Declarar o estado real remove a ambiguidade sem
+tomar a decisão.
+
+Trocar isto por uma licença aberta — MIT, Apache-2.0, AGPL-3.0 — continua
+possível a qualquer momento, e é assim que deve ser feito: uma decisão
+deliberada, e não o silêncio de um arquivo ausente. O caminho inverso não
+existe: o que foi licenciado sob termos abertos permanece disponível sob eles
+para sempre.
+
+--------------------------------------------------------------------------------
+O QUE ESTE ARQUIVO NÃO COBRE
+--------------------------------------------------------------------------------
+
+Este repositório redistribui software de terceiros sob licenças próprias, e as
+licenças deles prevalecem sobre este arquivo dentro do que é deles.
+
+O caso que mais importa é o Stockfish, em `public/engine/stockfish/`. Ele é
+GPL-3.0, vem com o `COPYING.txt` e o `SOURCE.txt` exigidos, e fica isolado
+naquele diretório de propósito — ele é carregado como programa separado, num Web
+Worker, e não é ligado ao restante do código.
+
+O inventário completo de dependências, com versão, licença e origem de cada uma,
+está em `docs/LICENSES.md`.

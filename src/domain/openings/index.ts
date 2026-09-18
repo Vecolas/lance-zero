@@ -139,6 +139,16 @@ export interface OpeningVariation {
   motivos?: readonly string[]
 
   /**
+   * Por que este ramo NÃO tem motivo tático central. Um id de
+   * `RAZOES_SEM_MOTIVO`.
+   *
+   * Todo ramo `core` declara `motivos` ou `semMotivo`, nunca os dois e nunca
+   * nenhum. A ausência silenciosa era indistinguível de esquecimento — e, em 54
+   * dos 83 ramos, ninguém sabia dizer qual das duas era.
+   */
+  semMotivo?: string
+
+  /**
    * O erro comum DESTE ramo, e por que ele é erro.
    *
    * Por ramo, e não por curso: "as pretas jogam ...Nf6 cedo demais" só faz
@@ -269,7 +279,15 @@ export interface OpeningDefinition {
   mainLineId: string
   variationIds: string[]
   planIds: string[]
-  difficulty: number
+  /**
+   * QUANTO ESTUDO TEÓRICO esta abertura exige. 1 é leve, 4 é especializada.
+   *
+   * ELE NÃO MEDE FORÇA, e não mede pré-requisito. Um número só tentava dizer as
+   * duas coisas e dizia mal: a Siciliana Fundamentos e a Najdorf caíram no
+   * mesmo degrau, sendo uma o pré-requisito da outra. Quem responde "o que eu
+   * preciso saber antes" é `prerequisites`.
+   */
+  theoryComplexity: 1 | 2 | 3 | 4
   prerequisites: string[]
   tags: string[]
   transitionToMiddlegame: string

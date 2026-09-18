@@ -320,12 +320,12 @@ describe('a escolha do bot se espalha dentro da partida', () => {
       terceiro lance — bom treino, péssima estreia.
     */
     for (let ply = 0; ply < 12; ply += 1) {
-      expect(indiceDaEscolha(0, ply, 4), `ply ${ply}`).toBe(0)
+      expect(indiceDaEscolha(0, ply + 1, 4), `ply ${ply}`).toBe(0)
     }
   })
 
-  it('a partir da rodada 1, o índice varia com o ply', () => {
-    const indices = Array.from({ length: 6 }, (_, ply) => indiceDaEscolha(1, ply, 3))
+  it('as rodadas percorrem as opções em vez de repetir uma', () => {
+    const indices = Array.from({ length: 6 }, (_, rodada) => indiceDaEscolha(rodada, 1, 3))
     expect(new Set(indices).size).toBeGreaterThan(1)
   })
 
@@ -335,7 +335,7 @@ describe('a escolha do bot se espalha dentro da partida', () => {
     for (const seed of [0, 1, 2, 7, 99]) {
       for (let ply = 0; ply < 20; ply += 1) {
         for (const total of [1, 2, 3, 5]) {
-          const indice = indiceDaEscolha(seed, ply, total)
+          const indice = indiceDaEscolha(seed, ply + 1, total)
           expect(indice, `seed ${seed} ply ${ply} total ${total}`).toBeGreaterThanOrEqual(0)
           expect(indice).toBeLessThan(total)
         }
@@ -344,11 +344,11 @@ describe('a escolha do bot se espalha dentro da partida', () => {
   })
 
   it('lista vazia não quebra', () => {
-    expect(indiceDaEscolha(3, 5, 0)).toBe(0)
+    expect(indiceDaEscolha(3, 2, 0)).toBe(0)
   })
 
   it('é determinístico: mesma entrada, mesma escolha', () => {
     // É o que torna possível o teste que prova "o bot nunca sai da árvore".
-    expect(indiceDaEscolha(4, 7, 3)).toBe(indiceDaEscolha(4, 7, 3))
+    expect(indiceDaEscolha(4, 2, 3)).toBe(indiceDaEscolha(4, 2, 3))
   })
 })

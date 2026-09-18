@@ -126,3 +126,14 @@
   font-weight: 650;
   font-size: 0.9375rem;
 }
+
+/*
+  O PRÉ-REQUISITO É INFORMAÇÃO SECUNDÁRIA, e a hierarquia tem de dizer isso: ele
+  responde "o que eu deveria saber antes", e não "do que se trata". Menor e mais
+  claro que a descrição, sem virar um selo colorido que compete com o status.
+*/
+.prerequisito {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}

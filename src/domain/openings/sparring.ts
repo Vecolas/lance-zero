@@ -158,35 +158,75 @@ export function lanceDoBot(
 ): ContinuacaoConhecida | null {
   const opcoes = continuacoesConhecidas(opening, estado.historico)
   if (opcoes.length === 0) return null
-  return opcoes[indiceDaEscolha(seed, estado.historico.length, opcoes.length)] ?? null
+  const base = baseDasBifurcacoes(opening, estado.historico)
+  return opcoes[indiceDaEscolha(seed, base, opcoes.length)] ?? null
 }
 
 /**
  * Qual das continuações conhecidas o bot joga (plano VNext §48).
  *
- * O QUE ISTO CORRIGE: a versão anterior era `seed % opcoes.length`, e o `seed` é
- * a RODADA — o mesmo valor em todos os lances da partida. Isso tornava o bot
- * previsível de um jeito específico e chato: na rodada 1 ele pegava a SEGUNDA
- * opção em cada bifurcação, na 2 a terceira, e o aluno aprendia o padrão do
- * sorteio em vez do repertório.
+ * O QUE ISTO CORRIGE, EM TRÊS ETAPAS E TRÊS DEFEITOS DIFERENTES.
  *
- * Agora o ply entra na conta, então as escolhas variam DENTRO da partida.
+ * A primeira versão era `seed % opcoes`, e o `seed` é a RODADA — o mesmo valor
+ * em todos os lances. O bot ficava previsível de um jeito chato: na rodada 1 ele
+ * pegava a SEGUNDA opção em toda bifurcação, e o aluno aprendia o padrão do
+ * sorteio em vez do repertório. A correção foi somar o ply.
  *
- * A RODADA 0 CONTINUA SENDO A LINHA PRINCIPAL INTEIRA, e a exceção é
- * deliberada: a primeira partida confirma o que foi ensinado. Sem ela, quem
- * acabou de estudar entraria no sparring e encontraria um desvio logo no
- * terceiro lance — o que é bom treino e péssima estreia.
+ * SOMAR O PLY TROUXE UM DEFEITO PIOR, e ele custou dois ramos de conteúdo antes
+ * de ser entendido. Com `(seed + ply) % opcoes`, a escolha de uma bifurcação
+ * fica amarrada à de outra. O caso mínimo é a Escandinava:
  *
- * "SEM SACRIFICAR QUALIDADE" é grátis aqui: toda opção é lance do repertório.
- * A variedade não vem de afrouxar o critério, vem de usar melhor o que existe.
+ *   ply 3: opções [Qxd5, Nf6] -> (seed+3) % 2  =>  Qxd5 exige seed ÍMPAR
+ *   ply 5: opções [Qa5, Qd6]  -> (seed+5) % 2  =>  Qd6  exige seed PAR
+ *
+ * Chegar a `Qd6` exige passar por `Qxd5`, e nenhum seed é par e ímpar ao mesmo
+ * tempo. O ramo era inalcançável para sempre — não para alguns seeds.
+ *
+ * TROCAR A FÓRMULA POR UM HASH NÃO SERVE, e essa tentativa também foi feita e
+ * desfeita. Um hash espalha, mas não PROMETE nada: o teste que cobra "alguma
+ * rodada traz esta variação" dá ao aluno um orçamento pequeno de partidas, e
+ * espalhamento aleatório erra uma combinação específica com folga dentro dele.
+ * Seis variações do catálogo pararam de ser jogadas.
+ *
+ * A RESPOSTA É ENUMERAR, E NÃO SORTEAR. A rodada é lida como um número em BASE
+ * MISTA sobre as bifurcações do caminho: cada bifurcação é uma casa, e o número
+ * de opções dela é a base daquela casa. Assim as rodadas 0, 1, 2... percorrem
+ * cada combinação exatamente uma vez, a rodada 0 continua sendo a linha
+ * principal inteira (todos os dígitos em zero), e nenhuma combinação fica de
+ * fora por aritmética.
  *
  * DETERMINÍSTICO. Um `Math.random()` tornaria impossível escrever o teste que
  * prova "o bot nunca sai da árvore".
  */
-export function indiceDaEscolha(seed: number, ply: number, opcoes: number): number {
-  if (opcoes <= 0) return 0
-  if (seed === 0) return 0
-  return Math.abs(seed + ply) % opcoes
+export function indiceDaEscolha(seed: number, base: number, opcoes: number): number {
+  if (opcoes <= 1) return 0
+  return Math.floor(seed / Math.max(1, base)) % opcoes
+}
+
+/**
+ * Quantas combinações de bifurcação já foram gastas no caminho até aqui.
+ *
+ * É o "peso" do dígito desta casa na numeração de base mista: se o caminho já
+ * passou por uma bifurcação de 2 opções e outra de 3, esta casa só troca de
+ * valor a cada 6 rodadas. O produto é o que faz a contagem enumerar cada
+ * combinação uma vez, em vez de repetir umas e pular outras.
+ */
+function baseDasBifurcacoes(opening: OpeningDefinition, historico: readonly string[]): number {
+  /*
+    SÓ AS BIFURCAÇÕES DO BOT CONTAM. Contando também as do aluno, a base inflaria
+    com escolhas que o bot não faz: o dígito dele iria para uma casa alta, e o
+    desvio passaria a exigir rodadas que ninguém joga.
+
+    O lado do bot se deduz da paridade — esta função só é chamada na vez dele, e
+    `historico.length` diz qual é essa vez.
+  */
+  const vezDoBot = historico.length % 2
+  let base = 1
+  for (let i = vezDoBot; i < historico.length; i += 2) {
+    const quantas = continuacoesConhecidas(opening, historico.slice(0, i)).length
+    if (quantas > 1) base *= quantas
+  }
+  return base
 }
 
 export type ResultadoDoLance =

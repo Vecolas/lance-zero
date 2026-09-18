@@ -58,6 +58,11 @@ playwright-report/
 .agents/
 .claude/skills/
 
+# Configuração local da ferramenta: permissões desta máquina, não do projeto.
+# Fica de fora porque um `git add -A` distraído a publicaria — e o repositório
+# passou a ser público.
+.claude/settings.local.json
+
 # Estado local gerado pelo Supabase CLI (link, versões e pooler temporário).
 supabase/.branches/
 supabase/.temp/

@@ -300,21 +300,20 @@ test('o catálogo filtra por lado e por nível, na mesma fileira', async ({ page
   await expect(page.getByRole('link', { name: /Abertura Italiana/ })).toBeHidden()
 
   /*
-    O ESTADO VAZIO SAIU DAQUI, E ELE NÃO FOI ENFRAQUECIDO — FICOU INALCANÇÁVEL.
+    O ESTADO VAZIO VOLTOU, E NÃO FOI POR EU TER AFROUXADO NADA.
 
-    A asserção media "avançada E pelas pretas não devolve nada". Com 35 cursos,
-    as SEIS combinações de lado e nível têm curso: a mais rala é "iniciante e
-    pelas pretas", com a Escandinava. Não existe mais nenhum par de filtros que
-    esvazie a lista.
+    Ele saiu daqui quando o catálogo chegou a 35 cursos: as seis combinações de
+    lado e nível tinham curso, e afirmar que alguma esvaziava passou a ser
+    afirmar algo falso. Ficou registrado como dívida D-07.
 
-    Afirmar que ela esvazia seria afirmar algo falso, e trocar por um terceiro
-    filtro inventado só para produzir o vazio seria medir o teste, e não o
-    produto. O que sobra é o que este teste sempre quis medir: que os dois
-    filtros COMPÕEM — e isso a asserção abaixo cobra de forma mais forte do que
-    o estado vazio cobrava.
+    A dívida D-06 — separar complexidade teórica de pré-requisito — criou o
+    quarto degrau, "Especializada", e ele hoje só tem cursos pelas PRETAS:
+    Najdorf, Dragão, Sveshnikov, Benko e Semi-Eslava. Então "brancas E
+    especializada" volta a ser uma combinação legítima e vazia.
 
-    O painel de vazio continua no `OpeningCatalog` e volta a ser alcançável no
-    dia em que um nível novo entrar sem curso de algum lado.
+    A asserção de composição dos filtros fica junto: ela é mais forte que o
+    estado vazio e continua valendo no dia em que uma abertura especializada de
+    brancas entrar.
   */
   await page.getByRole('button', { name: 'Pretas', exact: true }).click()
   // Avançada E pelas pretas: some a Espanhola (avançada, mas pelas brancas)...
@@ -323,6 +322,12 @@ test('o catálogo filtra por lado e por nível, na mesma fileira', async ({ page
   await expect(page.getByRole('link', { name: /Defesa Escandinava/ })).toBeHidden()
   // ...e fica quem satisfaz os DOIS filtros ao mesmo tempo.
   await expect(page.getByRole('link', { name: /Defesa Siciliana/ }).first()).toBeVisible()
+
+  // E o estado vazio, na combinação que hoje de fato não tem nenhum curso.
+  await page.getByRole('button', { name: 'Brancas', exact: true }).click()
+  await page.getByRole('button', { name: /Filtrar por nível/ }).click()
+  await page.getByRole('button', { name: 'Especializada' }).click()
+  await expect(page.getByText(/Nenhuma abertura corresponde aos filtros/)).toBeVisible()
 })
 
 test('TESTE GRADE RALA — um card sozinho não estica para a tela inteira', async ({ page }) => {
