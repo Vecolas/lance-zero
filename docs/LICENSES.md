@@ -27,6 +27,22 @@ Toda tabela deste documento precisa da coluna `ID` — inclusive uma tabela nova
 Tabela sem `ID` seria uma tabela que o portão não confere, e o portão reprova
 para que essa decisão nunca seja tomada por descuido.
 
+## A licença do próprio LanceZero
+
+O arquivo `LICENSE`, na raiz, diz **todos os direitos reservados**. O código é
+público para ser lido, e isso não o torna software livre.
+
+É um estado deliberado e provisório: a licença do projeto ainda não foi
+escolhida (issue #15), e conceder permissão é irreversível — o que sai sob
+termos abertos permanece disponível sob eles para sempre. Um repositório público
+SEM arquivo de licença vale juridicamente o mesmo, com a diferença de que o
+leitor não sabe disso; declarar o estado real remove a ambiguidade sem tomar a
+decisão no lugar de quem a tem de tomar.
+
+Isso NÃO afeta as licenças de terceiros inventariadas abaixo. Em especial, o
+Stockfish continua GPL-3.0, isolado em `public/engine/stockfish/` com
+`COPYING.txt` e `SOURCE.txt`, carregado como programa separado num Web Worker.
+
 ## O segundo portão: o que está instalado tem de aparecer aqui
 
 O portão do `ID` cruza duas listas escritas à mão uma contra a outra. Ele nunca
