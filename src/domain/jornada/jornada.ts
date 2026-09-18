@@ -129,6 +129,23 @@ export function etapaCumprida(jornada: StudyJourney, stage: StudyStage): boolean
     case 'leitura':
       return jornada.completedStageIds.includes(stage.id)
     case 'itens':
+      /*
+        QUEM JÁ CONCLUIU CONTINUA CONCLUÍDO, mesmo que a etapa passe a cobrar
+        mais itens depois.
+
+        O DEFEITO QUE ISTO EVITA É SILENCIOSO E RETROATIVO. `completedStageIds`
+        só recebe uma etapa de itens depois de ela ter sido cumprida — o botão
+        que grava fica desabilitado até lá. Quando o conteúdo cresce (a prática
+        guiada passou a treinar também os ramos), o total sobe e a comparação
+        `respondidos >= total` volta a ser falsa para quem já tinha terminado:
+        `jornadaConcluida` deixa de valer, o Sparring some da tela, a marca de
+        concluída desaparece — e nada explica por quê, porque nada aconteceu do
+        lado do aluno.
+
+        O que ele completou, ele completou, sob a regra que existia. O conteúdo
+        novo continua ali para quem quiser jogar.
+      */
+      if (jornada.completedStageIds.includes(stage.id)) return true
       return (jornada.itensRespondidos[stage.id]?.length ?? 0) >= stage.regra.total
     case 'cobertura': {
       const cobertos = new Set(jornada.alvosCobertos[stage.id] ?? [])

@@ -59,7 +59,11 @@ import {
   respostaDoComputador,
   type OpeningTrainingRound,
 } from '@/domain/openings/jornada'
-import { itensDaPraticaGuiadaDeAbertura } from '@/domain/openings/itens-da-etapa'
+import {
+  itensDaPraticaGuiadaDeAbertura,
+  roteiroDaPraticaGuiada,
+  type TrechoDaPraticaGuiada,
+} from '@/domain/openings/itens-da-etapa'
 import {
   activateOpeningRepertoire,
   emptyOpeningProgress,
@@ -1544,73 +1548,169 @@ function PraticaGuiada({
   aoResponder: (proxima: StudyJourney) => void
 }) {
   /*
-    OS ITENS VÊM DO DOMÍNIO, e são a MESMA lista que contou o total desta etapa
-    (`regraDeItens(itensDaPraticaGuiadaDeAbertura(opening))`). A tela não pode ter
-    a sua própria contagem: duas contagens da mesma coisa divergem no dia em que
-    só uma for corrigida, e o que aparece é uma etapa que nunca fecha.
-
-    É daqui que sai o ID do item gravado. Um contador paralelo à lista — que era
-    o que esta tela tinha — aponta para o item errado assim que o conteúdo muda
-    de tamanho entre duas sessões.
+    O ROTEIRO VEM DO DOMÍNIO, e é a MESMA lista que contou o total desta etapa
+    (`regraDeItens(itensDaPraticaGuiadaDeAbertura(opening))`). A tela não pode
+    ter a sua própria contagem: duas contagens da mesma coisa divergem no dia em
+    que só uma for corrigida, e o que aparece é uma etapa que nunca fecha.
   */
-  const itens = useMemo(() => itensDaPraticaGuiadaDeAbertura(opening), [opening])
-  const total = itens.length
+  const roteiro = useMemo(() => roteiroDaPraticaGuiada(opening), [opening])
+  const total = useMemo(() => itensDaPraticaGuiadaDeAbertura(opening).length, [opening])
   const respondidos = jornada.itensRespondidos[stage.id] ?? []
-  const feitos = respondidos.length
 
-  /*
-    A LINHA É A PRINCIPAL INTEIRA, e o lado do aluno é o da abertura. Quem
-    decide de quem é cada lance é o motor, lendo o FEN — então um repertório de
-    pretas abre com o computador jogando de brancas, sem nenhum caso especial
-    aqui.
-  */
-  const linha = useMemo<LinhaTreinavel>(
-    () => ({
-      fenInicial: opening.rootFen,
-      ladoDoAluno: opening.side === 'white' ? 'w' : 'b',
-      lances: opening.mainline.map((lance) => lance.uci),
-    }),
-    [opening],
+  /**
+   * O TRECHO ABERTO. É estado de tela, e o índice é o do roteiro.
+   *
+   * Ele NASCE no primeiro trecho com item pendente, e não em zero: quem já
+   * jogou a linha principal e volta à etapa não deveria rejogá-la inteira para
+   * chegar ao ramo que falta.
+   */
+  const [indiceDoTrecho, setIndiceDoTrecho] = useState(() => {
+    const pendente = roteiro.findIndex((trecho) =>
+      trecho.itens.some((item) => !respondidos.includes(item.id)),
+    )
+    return pendente >= 0 ? pendente : 0
+  })
+
+  const trecho = roteiro[Math.min(indiceDoTrecho, Math.max(roteiro.length - 1, 0))]
+
+  if (!trecho || respondidos.length >= total) {
+    return (
+      <ComTabuleiro opening={opening}>
+        <p className={styles.texto} role="status">
+          Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
+        </p>
+      </ComTabuleiro>
+    )
+  }
+
+  return (
+    <TrechoGuiado
+      /*
+        A REMONTAGEM AO TROCAR DE TRECHO zera a sequência sem efeito que escreve
+        estado — o mesmo recurso que a biblioteca de ramos usa ao trocar de ramo.
+      */
+      key={trecho.ramoId ?? 'mainline'}
+      opening={opening}
+      trecho={trecho}
+      stage={stage}
+      jornada={jornada}
+      feitos={respondidos.length}
+      total={total}
+      ultimo={indiceDoTrecho >= roteiro.length - 1}
+      aoResponder={aoResponder}
+      aoAvancarTrecho={() => setIndiceDoTrecho((n) => n + 1)}
+    />
   )
+}
+
+/**
+ * UM TRECHO da prática guiada: uma linha jogada do começo ao fim.
+ *
+ * O APOIO DECRESCE AO LONGO DA ETAPA (plano VNext §29.1), e não dentro de cada
+ * trecho: a escada é do aluno, não da linha. Recomeçá-la a cada ramo daria a
+ * ajuda máxima de novo na quarta linha — que é o contrário de fading.
+ */
+function TrechoGuiado({
+  opening,
+  trecho,
+  stage,
+  jornada,
+  feitos,
+  total,
+  ultimo,
+  aoResponder,
+  aoAvancarTrecho,
+}: {
+  opening: OpeningDefinition
+  trecho: TrechoDaPraticaGuiada
+  stage: StudyStage
+  jornada: StudyJourney
+  feitos: number
+  total: number
+  ultimo: boolean
+  aoResponder: (proxima: StudyJourney) => void
+  aoAvancarTrecho: () => void
+}) {
+  /*
+    A LINHA COMEÇA NO DESVIO, e não na posição inicial.
+
+    O DEFEITO QUE ISTO CORRIGE: a primeira versão montava a sequência com a linha
+    INTEIRA do ramo, então o aluno tinha de rejogar e4, Cf3, Bc4 — os lances da
+    principal que o trecho anterior acabou de cobrar. Pior que a repetição: esses
+    plies não têm item no ramo (os itens começam depois da bifurcação), então
+    respondê-los não mexia na contagem. A etapa pedia lances que não contavam
+    para nada, e um portão de travessia parou nela acusando beco sem saída.
+
+    Agora o computador monta a posição e a jogada começa onde o ramo ensina.
+
+    O lado do aluno é o da abertura; quem decide de quem é cada lance é o motor,
+    lendo o FEN — um repertório de pretas abre com o computador jogando de
+    brancas, sem nenhum caso especial aqui.
+  */
+  const linha = useMemo<LinhaTreinavel>(() => {
+    let fen = opening.rootFen
+    for (const lance of trecho.linha.slice(0, trecho.inicio)) {
+      const aplicado = applyMove(fen, lance.san)
+      // Para no primeiro ilegal: quem reprova linha ilegal é o portão, na build.
+      if (!aplicado) break
+      fen = aplicado.fenAfter
+    }
+    return {
+      fenInicial: fen,
+      ladoDoAluno: opening.side === 'white' ? 'w' : 'b',
+      lances: trecho.linha.slice(trecho.inicio).map((lance) => lance.uci),
+    }
+  }, [opening, trecho])
 
   const [estado, setEstado] = useState(() => iniciarSequencia(linha))
-  /** O lance errado mais recente. Some no acerto seguinte. */
+  /** O lance errado mais recente, em SAN. Some no acerto seguinte. */
   const [errou, setErrou] = useState<string | null>(null)
 
   const esperado = lanceEsperadoNaLinha(linha, estado)
-  const licaoEsperada = opening.mainline[estado.indice]
-  const licaoAnterior = estado.indice > 0 ? opening.mainline[estado.indice - 1] : undefined
+  /*
+    O ÍNDICE DA SEQUÊNCIA É RELATIVO AO CORTE; o do conteúdo é absoluto. Somar
+    `inicio` é o que mantém os dois alinhados — foi exatamente esse deslocamento
+    que, na versão antiga da prática, fez a tela pedir os lances do adversário.
+  */
+  const indiceNaLinha = trecho.inicio + estado.indice
+  const licaoEsperada = trecho.linha[indiceNaLinha]
+  const licaoAnterior = indiceNaLinha > 0 ? trecho.linha[indiceNaLinha - 1] : undefined
 
   const tentar = useCallback(
     (origem: SquareName, destino: SquareName, promocao?: PromotionPiece) => {
       const resultado = jogarNaSequencia(linha, estado, `${origem}${destino}${promocao ?? ''}`)
 
-      // Não virou lance: o tabuleiro devolve a peça e nada é registrado.
+      /*
+        ILEGAL NÃO É ERRO PEDAGÓGICO (plano VNext §30.1). O tabuleiro devolve a
+        peça e nada é registrado nem dito: um arraste torto não é uma decisão
+        errada, e tratá-lo como tal ensinaria o aluno a desconfiar da própria
+        leitura da posição.
+      */
       if (resultado.tipo === 'ilegal') return false
 
       if (resultado.tipo === 'fora-da-linha') {
-        setErrou(resultado.uci)
+        const aplicado = applyMove(estado.fen, {
+          from: origem,
+          to: destino,
+          promotion: promocao,
+        })
+        setErrou(aplicado?.move.san ?? null)
         return false
       }
 
       setErrou(null)
       setEstado(resultado.estado)
       /*
-        UM ITEM POR DECISÃO, com id derivado do índice do lance. `registrarItem`
-        deduplica, então repetir a linha depois de sair e voltar não infla a
-        contagem — e o total da etapa é exatamente o número de decisões do aluno
-        na principal.
+        O ID É O DO ITEM, e não um índice cru: ele carrega a linha e o índice,
+        então acrescentar um lance antes não remexe o que já está gravado em
+        `itensRespondidos`. `registrarItem` deduplica, então repetir a linha
+        depois de sair e voltar não infla a contagem.
       */
-      /*
-        O ID É O DO ITEM, e não um índice cru: `itensDaPraticaGuiadaDeAbertura`
-        carrega o índice na linha dentro do próprio id, então acrescentar um
-        lance antes não remexe o que já está gravado em `itensRespondidos`.
-      */
-      const doItem = itens.find((candidato) => candidato.indiceNaLinha === estado.indice)
+      const doItem = trecho.itens.find((candidato) => candidato.indiceNaLinha === indiceNaLinha)
       if (doItem) aoResponder(registrarItem(jornada, stage.id, doItem.id))
       return true
     },
-    [estado, itens, jornada, linha, stage.id, aoResponder],
+    [estado, jornada, linha, stage.id, trecho, aoResponder],
   )
 
   /*
@@ -1625,15 +1725,42 @@ function PraticaGuiada({
     aoTentar: (origem, destino) => tentar(origem, destino),
   })
 
-  if (feitos >= total || esperado === null) {
+  /*
+    O FIM DE UM TRECHO NÃO É O FIM DA ETAPA. Quando a linha acaba e ainda há
+    ramos, a tela oferece o próximo — com um botão, e não automaticamente: o
+    tabuleiro voltaria ao começo sem aviso, e o aluno leria isso como um erro.
+  */
+  if (esperado === null) {
     return (
       <ComTabuleiro opening={opening}>
         <p className={styles.texto} role="status">
-          Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
+          ✓ {trecho.nome} completa.
         </p>
+        {ultimo ? (
+          <p className={styles.nota}>
+            Prática guiada concluída. O treino final vem a seguir, e lá o apoio some.
+          </p>
+        ) : (
+          <>
+            <p className={styles.nota}>
+              Agora a mesma abertura quando o adversário não segue esta linha.
+            </p>
+            <button type="button" className={styles.primario} onClick={aoAvancarTrecho}>
+              Próxima linha →
+            </button>
+          </>
+        )}
       </ComTabuleiro>
     )
   }
+
+  /*
+    A ESCADA DE AJUDA, medida pelo que o aluno JÁ RESPONDEU na etapa inteira.
+    Primeiras decisões com objetivo; depois só a posição. É o §29.1, e derivar
+    da contagem — e não da dificuldade do lance — é o que garante que a ajuda só
+    caia.
+  */
+  const mostraObjetivo = feitos < AJUDA_NA_GUIADA
 
   return (
     <MesaDeEstudo
@@ -1649,17 +1776,26 @@ function PraticaGuiada({
         />
       }
     >
+      <p className={styles.kicker}>{trecho.nome}</p>
       <p className={styles.texto}>
-        Jogue a linha principal no tabuleiro. O computador responde pelo outro lado, e este é o
-        degrau com apoio: errar abre a explicação em vez de encerrar a etapa.
+        Jogue a linha no tabuleiro. O computador responde pelo outro lado, e este é o degrau com
+        apoio: errar abre a explicação em vez de encerrar a etapa.
       </p>
+
+      {mostraObjetivo && licaoEsperada?.strategicIdea ? (
+        <p className={styles.nota}>{licaoEsperada.strategicIdea}</p>
+      ) : null}
 
       <p className={styles.nota} role="status">
         {errou !== null
-          ? 'Esse não é o lance do repertório. A posição não mudou — tente de novo.'
-          : licaoAnterior
-            ? `Decisão ${feitos} de ${total} — sua vez.`
-            : 'Jogue o lance no tabuleiro.'}
+          ? /*
+              FORA DO REPERTÓRIO NÃO É "LANCE RUIM" (plano VNext §30.4). O lance
+              pode ser perfeitamente jogável; ele só não é o que este curso está
+              consolidando. Chamá-lo de erro ensinaria que existe um lance certo
+              por posição, que é falso e é o oposto do que a etapa quer.
+            */
+            `${errou} pode ser jogável, mas não é a resposta que este curso está consolidando. A posição não mudou.`
+          : `Decisão ${feitos + 1} de ${total} — sua vez.`}
       </p>
 
       {/*
@@ -1673,7 +1809,7 @@ function PraticaGuiada({
         </div>
       ) : null}
 
-      {errou === null && licaoAnterior ? (
+      {errou === null && licaoAnterior && estado.jogados.length > 0 ? (
         <div className={styles.veredito}>
           <p className={styles.acertou}>✓ É o lance do repertório.</p>
           <p className={styles.texto}>{licaoAnterior.comment}</p>
@@ -1682,6 +1818,14 @@ function PraticaGuiada({
     </MesaDeEstudo>
   )
 }
+
+/**
+ * Quantas decisões da prática guiada vêm com o objetivo escrito.
+ *
+ * DUAS, e é a mesma escada do ADR-0023 na linha principal. Heurística de
+ * produto, num lugar só para mudar quando houver telemetria.
+ */
+const AJUDA_NA_GUIADA = 2
 
 /* ------------------------------------------------------------------ treino */
 

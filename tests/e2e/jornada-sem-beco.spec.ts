@@ -159,6 +159,24 @@ async function responderUmItem(page: Page): Promise<void> {
 async function responderAEtapa(page: Page): Promise<void> {
   for (let i = 0; i < ITENS_MAXIMOS_POR_ETAPA; i += 1) {
     if (await botaoContinuar(page).isEnabled()) return
+
+    /*
+      UMA ETAPA PODE TER MAIS DE UMA LINHA, e entre elas não há tabuleiro.
+
+      A prática guiada da abertura passou a treinar a principal E os ramos core
+      (plano VNext §28). Ao fim de cada linha a tela fica passiva e oferece
+      "Próxima linha" — o rodapé continua travado, porque ainda faltam itens.
+
+      Sem este ramo o ajudante chamava `responderUmItem`, que fica esperando um
+      tabuleiro interativo que não existe, e o teste morria por RELÓGIO em vez de
+      acusar um beco. O erro parecia lentidão e era falta de um passo.
+    */
+    const proximaLinha = page.getByRole('button', { name: /Próxima linha →/ })
+    if ((await proximaLinha.count()) > 0) {
+      await proximaLinha.first().click()
+      continue
+    }
+
     await responderUmItem(page)
   }
 }

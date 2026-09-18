@@ -53,6 +53,10 @@ import {
   vezDe,
   type OpeningTrainingRound,
 } from '@/domain/openings/jornada'
+import {
+  itensDaPraticaGuiadaDeAbertura,
+  roteiroDaPraticaGuiada,
+} from '@/domain/openings/itens-da-etapa'
 
 const AGORA = new Date('2026-01-01T12:00:00.000Z')
 
@@ -279,10 +283,66 @@ describe('currículo da jornada de abertura', () => {
     expect(treino.regra).toEqual({ tipo: 'cobertura', alvosExigidos: ALVOS })
   })
 
-  it('deriva os itens da prática guiada das decisões do aluno na linha', () => {
+  it('deriva os itens da prática guiada das decisões do aluno, na principal E nos ramos', () => {
+    /*
+      A REGRA CONTINUA SENDO A CONTAGEM DA LISTA — é o contrato do ADR-0020, e é
+      o que impede a etapa de cobrar o que a tela não oferece.
+
+      O QUE MUDOU (plano VNext §28): a lista deixou de ser só a linha principal.
+      A prática guiada treinava a principal e o treino final cobrava os ramos —
+      o degrau com apoio ensaiava uma coisa e a prova cobrava outra.
+    */
     const guiada = ETAPAS.find((stage) => stage.id === 'pratica-guiada')
     expect(guiada?.regra).toEqual({ tipo: 'itens', total: itensDePraticaGuiada(ABERTURA) })
-    expect(itensDePraticaGuiada(ABERTURA)).toBe(3)
+
+    const itens = itensDaPraticaGuiadaDeAbertura(ABERTURA)
+    // A principal das brancas tem três decisões: e4, Nf3, Bc4.
+    expect(itens.filter((item) => item.ramoId === null).map((item) => item.san)).toEqual([
+      'e4',
+      'Nf3',
+      'Bc4',
+    ])
+    // E os ramos acrescentam as decisões que vêm DEPOIS do desvio.
+    expect(itens.some((item) => item.ramoId !== null)).toBe(true)
+  })
+
+  it('o ramo só cobra o que vem depois da bifurcação', () => {
+    /*
+      Um ramo compartilha o começo com a principal. Cobrar de novo os lances
+      comuns faria o aluno repetir o que acabou de responder — contagem maior,
+      nada aprendido.
+    */
+    const itens = itensDaPraticaGuiadaDeAbertura(ABERTURA)
+    const doisCavalos = itens.filter((item) => item.ramoId === 'variacao-a')
+    // A variação é e4 e5 Cf3 Cc6 Bc4 Cf6 d3: o desvio é Cf6 (índice 5), e a
+    // única decisão das brancas depois dele é d3.
+    expect(doisCavalos.map((item) => item.san)).toEqual(['d3'])
+  })
+
+  it('os ids da linha principal NÃO mudaram de formato', () => {
+    /*
+      `itensRespondidos` é PERSISTIDO. Trocar `guiada:<indice>` por outro formato
+      descartaria em silêncio tudo o que já foi respondido, e o aluno reabriria a
+      etapa do zero sem nada ter acontecido.
+    */
+    const itens = itensDaPraticaGuiadaDeAbertura(ABERTURA)
+    expect(itens.filter((item) => item.ramoId === null).map((item) => item.id)).toEqual([
+      'guiada:0',
+      'guiada:2',
+      'guiada:4',
+    ])
+  })
+
+  it('o roteiro põe a principal primeiro, e cada trecho começa no próprio desvio', () => {
+    const roteiro = roteiroDaPraticaGuiada(ABERTURA)
+    expect(roteiro[0]?.ramoId).toBeNull()
+    expect(roteiro[0]?.inicio).toBe(0)
+    for (const trecho of roteiro.slice(1)) {
+      // Treinar o desvio antes da linha que ele recusa é ensinar a exceção antes
+      // da regra — e começar do zero repetiria lances já cobrados.
+      expect(trecho.inicio, `${trecho.nome}`).toBeGreaterThan(0)
+      expect(trecho.itens.length, `${trecho.nome}`).toBeGreaterThan(0)
+    }
   })
 
   it('não usa um limite global: cada alvo herda a profundidade da própria linha', () => {

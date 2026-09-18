@@ -47,11 +47,21 @@ import { percursoDoRamo } from '@/domain/openings/linha-principal'
 function lanceDaPrincipal(fen: string): { from: string; to: string } | undefined {
   const italiana = OPENING_COURSE_BY_SLUG.get('italiana')
   if (!italiana) return undefined
-  const posicoes = posicoesDaLinha(italiana.rootFen, italiana.mainline)
-  const indice = posicoes.indexOf(fen)
-  const lance = indice >= 0 ? italiana.mainline[indice] : undefined
-  if (!lance) return undefined
-  return { from: lance.uci.slice(0, 2), to: lance.uci.slice(2, 4) }
+
+  /*
+    A PRINCIPAL E OS RAMOS. A prática guiada passou a treinar também os ramos
+    core, então a posição da vez pode não estar na linha principal — e aí o
+    ajudante caía no primeiro lance LEGAL, que faz snapback, e girava até
+    estourar o laço.
+  */
+  const linhas = [italiana.mainline, ...italiana.variations.map((variacao) => variacao.line)]
+  for (const linha of linhas) {
+    const posicoes = posicoesDaLinha(italiana.rootFen, linha)
+    const indice = posicoes.indexOf(fen)
+    const lance = indice >= 0 ? linha[indice] : undefined
+    if (lance) return { from: lance.uci.slice(0, 2), to: lance.uci.slice(2, 4) }
+  }
+  return undefined
 }
 
 async function irAteEtapa(page: import('@playwright/test').Page, titulo: RegExp) {
@@ -102,6 +112,18 @@ async function irAteEtapa(page: import('@playwright/test').Page, titulo: RegExp)
         if ((await confirmar.count()) > 0) await confirmar.first().click()
         continue
       }
+    }
+
+    /*
+      A PRÁTICA GUIADA TEM MAIS DE UMA LINHA desde que ela passou a treinar
+      também os ramos core. Entre uma e outra o tabuleiro fica passivo e a tela
+      oferece "Próxima linha" — sem isto o ajudante parava aqui, porque o
+      `Continuar →` do rodapé ainda está desabilitado: faltam itens.
+    */
+    const proximaLinha = page.getByRole('button', { name: /Próxima linha →/ })
+    if ((await proximaLinha.count()) > 0) {
+      await proximaLinha.first().click()
+      continue
     }
 
     const continuar = page.getByRole('button', { name: /Continuar →/ })
@@ -690,4 +712,68 @@ test('os dois lados mostram a matriz, e o complementar deixa de ser obrigatório
 
   // Estado nunca depende só de cor: cada célula traz símbolo E palavra.
   await expect(page.getByText('obrigatório').first()).toBeVisible()
+})
+
+/**
+ * A PRÁTICA GUIADA TREINA MAIS DE UMA LINHA.
+ *
+ * O DEFEITO QUE ISTO FECHA: ela ensaiava só a linha principal, e o treino final
+ * cobrava também os ramos. O degrau COM APOIO preparava para uma coisa e a prova
+ * media outra — o aluno chegava ao treino tendo praticado metade do que seria
+ * exigido, e descobria isso errando.
+ */
+test('a prática guiada passa pela principal e pelos ramos core', async ({ page }) => {
+  const italiana = OPENING_COURSE_BY_SLUG.get('italiana')
+  if (!italiana) throw new Error('conteúdo da Italiana ausente')
+
+  await page.goto('/aberturas/italiana')
+  await irAteEtapa(page, /Prática guiada/)
+
+  // Ela ABRE na linha principal: treinar o desvio antes da linha que ele recusa
+  // é ensinar a exceção antes da regra.
+  await expect(page.getByText('Linha principal', { exact: true })).toBeVisible()
+
+  // Joga a principal inteira pelo tabuleiro, sem nenhum botão entre lances.
+  const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
+  for (let i = 0; i < 12; i += 1) {
+    if (!(await tabuleiro.isVisible().catch(() => false))) break
+    const fen = await tabuleiro.getAttribute('data-fen')
+    const lance = fen ? lanceDaPrincipal(fen) : undefined
+    if (!lance) break
+    await page.locator('#lancezero-board-square-' + lance.from).click()
+    await page.locator('#lancezero-board-square-' + lance.to).click()
+  }
+
+  /*
+    E ENTÃO VEM O RAMO. A transição é por botão, e não automática: o tabuleiro
+    voltaria ao começo sem aviso, e o aluno leria isso como um erro dele.
+  */
+  await expect(page.getByText(/Linha principal completa/)).toBeVisible()
+  const proxima = page.getByRole('button', { name: /Próxima linha →/ })
+  await expect(proxima).toBeVisible()
+  await proxima.click()
+
+  // O nome do ramo aparece — é ele que está sendo treinado agora.
+  const core = italiana.variations.find((v) => (v.importancia ?? 'core') === 'core')
+  if (!core) throw new Error('a Italiana precisa de um ramo core')
+  await expect(page.getByText(core.name, { exact: true })).toBeVisible()
+
+  /*
+    E O RAMO COMEÇA NO DESVIO, não do zero.
+
+    O DEFEITO QUE ISTO PEGA JÁ ACONTECEU: a primeira versão montava a sequência
+    com a linha INTEIRA do ramo, e o aluno tinha de rejogar e4, Cf3, Bc4 — os
+    lances da principal que ele acabou de responder. Pior que a repetição: esses
+    plies não têm item no ramo, então respondê-los não mexia na contagem. A
+    etapa pedia lances que não contavam para nada.
+
+    A posição de abertura do trecho tem de ser a do desvio, e não a inicial.
+  */
+  const posicoesDoRamo = posicoesDaLinha(italiana.rootFen, core.line)
+  const fenDoTrecho = await tabuleiro.getAttribute('data-fen')
+  expect(fenDoTrecho).not.toBe(italiana.rootFen)
+  expect(posicoesDoRamo.indexOf(fenDoTrecho ?? '')).toBeGreaterThan(1)
+
+  // A contagem da etapa cresceu junto: ela cobra o que a tela oferece.
+  await expect(page.getByText(/Decisão \d+ de \d+ — sua vez/)).toBeVisible()
 })
