@@ -643,6 +643,81 @@ const retiMain = [
   }),
 ]
 
+/* ------------------------------------------------------------ Viena */
+
+/** 1.e4 e5 2.Cc3 Cf6 3.f4 d5 — o Gambito de Viena. */
+const vienaMain = [
+  lesson(1, 'e4', 'As brancas ocupam o centro com o peão do rei.', {
+    strategicIdea: 'A Viena guarda o lance f4 para quando ele valer mais.',
+  }),
+  lesson(2, 'e5', 'As pretas respondem simetricamente e disputam o centro.', {
+    highlights: ['e5'],
+  }),
+  lesson(
+    3,
+    'Nc3',
+    'O cavalo defende e4 sem atacar nada — e é justamente isso que guarda o lance f4.',
+    {
+      highlights: ['e4'],
+      strategicIdea: 'Cf3 atacaria e5 e convidaria a defesa; Cc3 deixa f4 disponível.',
+      resultingPlan: 'f4 no lance seguinte, com o Gambito de Viena.',
+    },
+  ),
+  lesson(4, 'Nf6', 'As pretas desenvolvem e disputam e4 de volta.', { highlights: ['e4'] }),
+  lesson(5, 'f4', 'O gambito: as brancas atacam e5 com o peão que ainda não tinha se mexido.', {
+    arrows: [{ from: 'f2', to: 'f4' }],
+    strategicIdea: 'Com o cavalo em c3 e não em f3, o peão de f tem a casa livre.',
+    resultingPlan: 'fxe5 e d4, com centro e coluna f abertos.',
+  }),
+  lesson(
+    6,
+    'd5',
+    'A melhor resposta: as pretas contra-atacam no centro em vez de capturar em f4.',
+    {
+      highlights: ['e4'],
+      strategicIdea: 'Contra um gambito de flanco, a resposta é uma ruptura central.',
+      resultingPlan: 'Depois de fxe5 Cxe4, a posição abre para os dois lados.',
+    },
+  ),
+]
+
+/* --------------------------------------------------- Gambito do Rei */
+
+/** 1.e4 e5 2.f4 exf4 3.Cf3 g5 — o Gambito do Rei aceito. */
+const gambitoDoReiMain = [
+  lesson(1, 'e4', 'As brancas ocupam o centro com o peão do rei.', {
+    strategicIdea: 'O Gambito do Rei entrega um peão já no segundo lance por centro e linhas.',
+  }),
+  lesson(2, 'e5', 'As pretas respondem simetricamente.', { highlights: ['e5'] }),
+  lesson(
+    3,
+    'f4',
+    'O gambito: um peão pelo centro, pela coluna f e pelo tempo de desenvolvimento.',
+    {
+      arrows: [{ from: 'f2', to: 'f4' }],
+      strategicIdea: 'Trocar o peão de flanco pelo peão central muda quem manda no meio.',
+      resultingPlan: 'Cf3, Bc4 e O-O, com a torre em f1 e o centro pronto para d4.',
+    },
+  ),
+  lesson(4, 'exf4', 'Aceitar é o mais testado: recusar deixaria as brancas com tudo.', {
+    highlights: ['f4'],
+  }),
+  lesson(
+    5,
+    'Nf3',
+    'O cavalo desenvolve e impede o xeque em h4 — sem ele, a abertura desaba num lance.',
+    {
+      highlights: ['h4'],
+      strategicIdea: 'A primeira obrigação de quem abriu a diagonal do próprio rei é fechá-la.',
+      resultingPlan: 'Bc4, d4 e O-O, recuperando o peão de f4 quando for conveniente.',
+    },
+  ),
+  lesson(6, 'g5', 'As pretas sustentam o peão extra — e enfraquecem o próprio rei ao fazê-lo.', {
+    strategicIdea: 'Segurar material com peões na frente do rei é a aposta que define a linha.',
+    resultingPlan: 'h4 em seguida, quebrando a corrente antes que ela vire fortaleza.',
+  }),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -2564,7 +2639,7 @@ const french = course({
       estrutura: 'structure.iqp',
       motivos: ['motif.pin-on-d-file'],
       erroComum: {
-        lance: 'Bb4',
+        lance: 'Bb4+',
         porque:
           'A cravada não existe aqui: com o cavalo em d2 e não em c3, o bispo em b4 não crava nada e ainda pode ser expulso com c3 ganhando tempo. A resposta certa é atacar o centro com ...c5.',
       },
@@ -3476,7 +3551,7 @@ const nimzoIndian = course({
       conceitos: ['concept.bishop-pair', 'concept.break-c5', 'concept.space-vs-counterplay'],
       estrutura: 'structure.slav-triangle',
       erroComum: {
-        lance: 'Bxc3',
+        lance: 'Bxc3+',
         porque:
           'Trocar em c3 quando a dama recaptura não cria peões dobrados nenhum — as pretas entregam o par de bispos de graça. Contra 4.Dc2, o bispo fica e o jogo é no centro com ...d5 ou ...c5.',
       },
@@ -3653,9 +3728,9 @@ const nimzoIndian = course({
     {
       id: 'nimzo-erro-troca-cedo',
       nodeId: 'root',
-      /* Ply 7: depois de e3 e a vez das PRETAS, e ...Bxc3 e lance preto. */
+      /* Ply 7: depois de e3 e a vez das PRETAS, e ...Bxc3+ e lance preto. */
       positionPly: 7,
-      moveSan: 'Bxc3',
+      moveSan: 'Bxc3+',
       explanation:
         'Trocar em c3 sem ser perguntado entrega o par de bispos e deixa as brancas escolherem com que peça recapturar — o tempo da troca é parte do valor dela.',
       principle:
@@ -3702,9 +3777,9 @@ const catalan = course({
       conceitos: ['concept.material-vs-initiative', 'concept.open-file', 'concept.break-c5'],
       estrutura: 'structure.open-center',
       erroComum: {
-        lance: 'Qa4+',
+        lance: 'Qa4',
         porque:
-          'Correr atrás do peão com xeque da dama devolve o tempo: as pretas defendem com ...Cbd7 ou ...Bd7 desenvolvendo, e a dama volta para casa. Na Catalã o peão se recupera com Ce5 e Cc3, sem pressa.',
+          'Correr atrás do peão com a dama devolve o tempo: nesta posição Da4 nem xeque é, as pretas respondem ...Cbd7 ou ...Bd7 desenvolvendo, e a dama volta para casa. Na Catalã o peão se recupera com Ce5 e Cc3, sem pressa.',
       },
       fronteira: { type: 'handoff', planId: 'catala-diagonal' },
       transposicoes: ['qgd-tres-cavalos'],
@@ -5034,7 +5109,7 @@ const indiaDaDama = course({
           {
             arrows: [{ from: 'c8', to: 'a6' }],
             resultingPlan:
-              '...Bb4 ou ...d5, cobrando a fraqueza antes de completar o desenvolvimento.',
+              '...Bb4+ ou ...d5, cobrando a fraqueza antes de completar o desenvolvimento.',
           },
         ),
       ],
@@ -5149,7 +5224,7 @@ const indiaDaDama = course({
       id: 'india-da-dama-erro-bb4-sem-cavalo',
       nodeId: 'root',
       positionPly: 5,
-      moveSan: 'Bb4',
+      moveSan: 'Bb4+',
       explanation:
         'A cravada da Nimzo-Índia sem cavalo em c3 não crava nada: as brancas respondem Bd2 e o bispo preto precisa trocar ou recuar, tendo gasto dois lances para nada.',
       principle:
@@ -5373,9 +5448,9 @@ const reti = course({
       ],
       estrutura: 'structure.open-center',
       erroComum: {
-        lance: 'Qa4',
+        lance: 'Qa4+',
         porque:
-          'Correr atrás do peão com a dama recupera material e perde a razão da abertura: a dama fica exposta, as pretas desenvolvem com tempo e o bispo de g2 nunca chega. Com o peão de d7 ainda em casa nem xeque isso é. A recuperação correta passa por e3 e Bxc4, com desenvolvimento em cada lance.',
+          'Correr atrás do peão com a dama recupera material e perde a razão da abertura: a dama fica exposta, as pretas desenvolvem com tempo e o bispo de g2 nunca chega. A recuperação correta passa por e3 e Bxc4, com desenvolvimento em cada lance.',
       },
       fronteira: { type: 'handoff', planId: 'reti-recuperar' },
       politicaDoLadoInverso:
@@ -5460,7 +5535,7 @@ const reti = course({
       risk: 'Gastar dois ou três lances de dama atrás de um peão que valia um.',
       porQueFunciona:
         'O peão em c4 está longe de qualquer defensor preto, e sustentá-lo custa ...b5 e ...a6 — dois lances de peão que não desenvolvem nada. As brancas jogam e3 e Bxc4 e recuperam com a peça já no lugar em que ela ia ficar de qualquer forma.',
-      preparacao: 'Nenhuma. É por isso que o lance é e3 e não Da4: a recuperação já está pronta.',
+      preparacao: 'Nenhuma. É por isso que o lance é e3 e não Da4+: a recuperação já está pronta.',
       oQueOAdversarioTenta:
         'Sustentar o peão com ...b5 e ...Bb7, transformando o material extra em espaço permanente.',
       arrows: [{ from: 'f1', to: 'c4' }],
@@ -5522,6 +5597,392 @@ const reti = course({
   version: 1,
 })
 
+const viena = course({
+  id: 'viena',
+  slug: 'viena',
+  name: 'Abertura Vienense',
+  side: 'white',
+  ecoCodes: ['C25', 'C26', 'C29'],
+  description:
+    'Desenvolver o cavalo por c3 para guardar o lance f4: o mesmo gambito do Rei, mas com uma peça a mais em jogo.',
+  philosophy: 'A ordem dos lances é uma arma: Cc3 antes de Cf3 muda o que a abertura permite.',
+  difficulty: 2,
+  prerequisites: ['italiana'],
+  tags: ['open', 'sharp', 'gambit'],
+  transitionToMiddlegame:
+    'A abertura termina quando a coluna f abre e o rei branco roca. A partir daí a pergunta é se a torre em f1 chega ao rei preto antes de o centro se resolver.',
+  mainline: vienaMain,
+  /* Os dois ramos bifurcam no segundo lance preto — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        2...Cc6 É A RESPOSTA CLÁSSICA e a mais comum em clube. Core porque o
+        gambito segue valendo e a posição fica mais aberta que a principal.
+      */
+      id: 'viena-cavalo-c6',
+      importancia: 'core',
+      eco: 'C25',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.open-file',
+        'concept.king-safety-timing',
+      ],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.f7-pressure'],
+      erroComum: {
+        lance: 'Nf3',
+        porque:
+          'Desenvolver o cavalo para f3 desiste do gambito: com a casa ocupada, o peão de f nunca sai e a Viena vira um Quatro Cavalos qualquer. Se o plano era f4, o cavalo do rei espera.',
+      },
+      fronteira: { type: 'handoff', planId: 'viena-coluna-f' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se devolver o peão a tempo e desenvolver contra um rei ainda no meio.',
+      intencaoDoAdversario:
+        'Defender e5 com peça e manter o centro sólido, sem dar às brancas a ruptura que elas querem.',
+      objetivoDoAluno:
+        'Jogar f4 mesmo assim: o peão de e5 está defendido uma vez e atacado uma vez, e a coluna vale o peão.',
+      name: 'Defesa 2...Cc6',
+      description: 'As pretas defendem e5 com o cavalo antes de desenvolver o resto.',
+      rootNodeId: '',
+      line: [
+        ...vienaMain.slice(0, 3),
+        lesson(4, 'Nc6', 'O cavalo defende e5 — a resposta mais natural e a mais jogada.', {
+          highlights: ['e5'],
+          strategicIdea: 'Defender o centro com peça, para que o gambito custe um peão de verdade.',
+          resultingPlan: '...Bc5 ou ...exf4, conforme as brancas insistirem no gambito.',
+        }),
+        lesson(5, 'f4', 'O gambito entra do mesmo jeito: a coluna f vale mais que o peão.', {
+          arrows: [{ from: 'f2', to: 'f4' }],
+          strategicIdea: 'Um peão por uma coluna aberta apontada para f7 é troca a favor.',
+          resultingPlan: 'Cf3, Bc4 e O-O, com a torre chegando em f1 antes do rei preto sair.',
+        }),
+      ],
+    },
+    {
+      /*
+        2...Bc5 PARECE ATIVO E NÃO DEFENDE NADA. Core porque o castigo é um
+        lance de desenvolvimento simples, e reconhecer isso vale mais que
+        decorar dez lances de gambito.
+      */
+      id: 'viena-bispo-c5',
+      importancia: 'core',
+      eco: 'C26',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.open-file',
+        'concept.space-vs-counterplay',
+      ],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'f4',
+        porque:
+          'O gambito automático é pior aqui: depois de f4 exf4 o bispo preto em c5 já vigia a diagonal do rei branco, e o roque fica difícil. Com e5 indefeso, existe um lance melhor — atacá-lo.',
+      },
+      fronteira: { type: 'handoff', planId: 'viena-centro' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se que sair com o bispo antes de defender o centro custa a casa e5.',
+      intencaoDoAdversario:
+        'Desenvolver com atividade e mirar f2, sem gastar lance nenhum defendendo o peão de e5.',
+      objetivoDoAluno:
+        'Atacar o peão indefeso com Cf3: quando o adversário não defende o centro, o lance certo é cobrá-lo.',
+      name: 'Defesa 2...Bc5',
+      description: 'As pretas desenvolvem o bispo e deixam o peão de e5 sem defensor.',
+      rootNodeId: '',
+      line: [
+        ...vienaMain.slice(0, 3),
+        lesson(4, 'Bc5', 'O bispo sai com atividade — e deixa o peão de e5 sem nenhum defensor.', {
+          highlights: ['e5'],
+          strategicIdea: 'Mirar f2 e apostar que as brancas gastem o lance seguinte com o gambito.',
+          resultingPlan: '...d6 ou ...Cc6 depois, tapando o buraco que o bispo deixou em e5.',
+        }),
+        lesson(
+          5,
+          'Nf3',
+          'O cavalo desenvolve atacando um peão que ninguém defende: as pretas perdem o tempo que acabaram de ganhar.',
+          {
+            arrows: [{ from: 'f3', to: 'e5' }],
+            strategicIdea: 'Desenvolver com ameaça vale dois lances; desenvolver sem ela, um.',
+            resultingPlan: 'Depois de ...d6 ou ...Cc6, as brancas jogam d4 com o centro inteiro.',
+          },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'viena-coluna-f',
+      name: 'A coluna f é o gambito',
+      positionNodeId: 'root',
+      positionPly: 5,
+      objective: 'Abrir a coluna f e pôr a torre atrás dela antes de o rei preto se resolver.',
+      when: 'Sempre que f4 for jogado e as pretas capturarem ou trocarem em f4.',
+      risk: 'Abrir a coluna com o próprio rei ainda em e1: ela serve aos dois lados.',
+      porQueFunciona:
+        'A casa f7 é defendida só pelo rei preto no começo da partida. Uma torre em f1 com a coluna aberta ataca essa casa de longe, e cada peça branca que se soma a ela custa às pretas um lance de defesa pura. É por isso que vale um peão.',
+      preparacao:
+        'Roque curto primeiro. A coluna aberta é uma vantagem enquanto só a torre branca estiver nela.',
+      oQueOAdversarioTenta:
+        'Devolver o peão para trocar peças, ou contra-atacar no centro com ...d5 antes de a torre chegar.',
+      arrows: [{ from: 'f1', to: 'f7' }],
+    },
+    {
+      id: 'viena-centro',
+      name: 'Cobrar o centro indefeso',
+      positionNodeId: 'root',
+      positionPly: 3,
+      objective: 'Atacar e5 com peça sempre que as pretas não o defenderem.',
+      when: 'Contra ...Bc5, ...g6 e qualquer segundo lance preto que não seja ...Cc6 ou ...d6.',
+      risk: 'Atacar o peão com uma peça que precise recuar: o tempo ganho volta para o adversário.',
+      porQueFunciona:
+        'A Viena adia Cf3 de propósito, e essa espera vira arma quando as pretas esquecem do centro. Cf3 ataca e5 uma vez a mais do que ele está defendido, e as pretas precisam gastar um lance sem desenvolver nada — ou perder o peão.',
+      preparacao:
+        'O peão em e4 e o cavalo em c3 já defendendo-o. O cavalo do rei entra por último, e é essa ordem que dá o lance de graça.',
+      oQueOAdversarioTenta:
+        'Defender com ...d6, fechando a própria diagonal do bispo, ou com ...Cc6, entrando na linha principal.',
+      arrows: [{ from: 'g1', to: 'f3' }],
+    },
+    {
+      id: 'viena-d4',
+      name: 'A ruptura d4',
+      positionNodeId: 'root',
+      positionPly: 5,
+      objective: 'Somar o segundo peão central depois que a coluna f já abriu.',
+      when: 'Depois do roque, e sempre que o peão de e5 preto tiver saído ou caído.',
+      risk: 'Romper com o rei no meio: um centro aberto castiga quem ainda não rocou.',
+      porQueFunciona:
+        'O gambito troca um peão de flanco por linhas. O lance d4 transforma essas linhas em vantagem permanente: com peões em d4 e e4 e a coluna f aberta, as brancas têm espaço e ataque ao mesmo tempo, e as pretas defendem os dois com as mesmas peças.',
+      preparacao:
+        'Roque feito, cavalo em f3 e bispo em c4. A ruptura vem quando as peças já estão prontas para o que ela abre.',
+      oQueOAdversarioTenta:
+        'Ocupar a casa e4 com o cavalo, ou travar o centro com ...d5 antes de d4 sair.',
+      arrows: [{ from: 'd2', to: 'd4' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Coluna f aberta do Gambito de Viena',
+      description:
+        'Peão branco em e4, coluna f aberta e torre em f1 apontada para f7. O peão a menos só importa se o ataque não chegar — e o ataque chega pela mesma coluna que o gambito abriu.',
+      pawnBreaks: ['d4', 'e5', 'f5'],
+      weakSquares: ['f7', 'e4'],
+      openFiles: ['f'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'viena-erro-exd5',
+      nodeId: 'root',
+      positionPly: 6,
+      moveSan: 'exd5',
+      explanation:
+        'Capturar com o peão de e devolve o centro: as pretas jogam ...e4 e o cavalo de c3 fica sem casas boas enquanto o peão preto avançado sufoca a posição. A captura certa é fxe5, que abre a coluna f e mantém a tensão.',
+      principle:
+        'Num gambito, a captura certa é a que abre a linha pela qual se vai atacar — e não a que recupera material mais rápido.',
+    },
+  ],
+  version: 1,
+})
+
+const gambitoDoRei = course({
+  id: 'gambito-do-rei',
+  slug: 'gambito-do-rei',
+  name: 'Gambito do Rei',
+  side: 'white',
+  ecoCodes: ['C30', 'C31', 'C33'],
+  description:
+    'Entregar um peão no segundo lance por centro, coluna aberta e desenvolvimento — e saber o preço disso.',
+  philosophy: 'Iniciativa vale um peão enquanto o adversário não conseguir devolvê-lo e respirar.',
+  difficulty: 3,
+  prerequisites: ['italiana'],
+  tags: ['open', 'sharp', 'gambit'],
+  transitionToMiddlegame:
+    'A abertura termina quando as brancas rocam e a coluna f fica aberta. A partir daí a pergunta é se o peão volta antes de o ataque acabar.',
+  mainline: gambitoDoReiMain,
+  /* Os dois ramos bifurcam no segundo lance preto — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        O GAMBITO RECUSADO COM 2...Bc5 É O QUE MAIS APARECE em clube, e carrega
+        a armadilha mais cara da abertura: fxe5?? Dh4+. Core porque errar aqui é
+        perder no quarto lance.
+      */
+      id: 'gambito-do-rei-recusado',
+      importancia: 'core',
+      eco: 'C30',
+      conceitos: [
+        'concept.king-safety-timing',
+        'concept.material-vs-initiative',
+        'concept.open-file',
+      ],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.f7-pressure'],
+      erroComum: {
+        lance: 'fxe5',
+        porque:
+          'Capturar em e5 com a diagonal e1-h4 aberta perde a partida: ...Dh4+ dá xeque, o rei branco precisa ir a e2 e as pretas ganham material com xeques. Com f4 jogado, o primeiro dever das brancas é tapar h4 — e só o cavalo em f3 faz isso.',
+      },
+      fronteira: { type: 'handoff', planId: 'gambito-do-rei-h4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se recusar o peão e mirar a diagonal que f4 acabou de abrir.',
+      intencaoDoAdversario:
+        'Recusar o peão e apontar o bispo para f2 e para a diagonal que o avanço f4 enfraqueceu.',
+      objetivoDoAluno:
+        'Fechar a diagonal com Cf3 antes de qualquer outra coisa: material só importa depois que o rei está seguro.',
+      name: 'Gambito recusado (2...Bc5)',
+      description: 'As pretas recusam o peão e apontam o bispo para a diagonal do rei branco.',
+      rootNodeId: '',
+      line: [
+        ...gambitoDoReiMain.slice(0, 3),
+        lesson(
+          4,
+          'Bc5',
+          'As pretas recusam e desenvolvem mirando f2 — e a casa g1 fica presa à diagonal.',
+          {
+            highlights: ['f2'],
+            strategicIdea: 'Recusar o peão e cobrar a diagonal que f4 acabou de abrir.',
+            resultingPlan: '...d6 e ...Cf6, com a ameaça ...Dh4+ sempre no horizonte.',
+          },
+        ),
+        lesson(
+          5,
+          'Nf3',
+          'O cavalo tapa h4 antes de tudo. Aqui fxe5 perderia por ...Dh4+, e é por isso que este lance vem primeiro.',
+          {
+            highlights: ['h4'],
+            strategicIdea:
+              'Numa abertura que abre a própria diagonal, o primeiro lance é fechá-la.',
+            resultingPlan: 'Cc3, Bc4 e d3, com desenvolvimento sólido e f4 ainda disponível.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        O CONTRAGAMBITO FALKBEER devolve gambito com gambito: em vez de pegar o
+        peão, as pretas abrem o centro. Core porque a captura instintiva em e5
+        deixa as brancas piores.
+      */
+      id: 'gambito-do-rei-falkbeer',
+      importancia: 'core',
+      eco: 'C31',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.open-file',
+        'concept.king-safety-timing',
+      ],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'fxe5',
+        porque:
+          'Aceitar o segundo peão dá às pretas ...e4, que sufoca o cavalo de g1 e deixa o centro branco travado com o rei ainda em e1. A captura correta é exd5, que devolve a pergunta e mantém a coluna f como assunto.',
+      },
+      fronteira: { type: 'handoff', planId: 'gambito-do-rei-recuperar' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se responder a um gambito de flanco com uma ruptura central.',
+      intencaoDoAdversario:
+        'Abrir o centro imediatamente, antes de as brancas desenvolverem, e provar que f4 enfraqueceu o rei.',
+      objetivoDoAluno:
+        'Capturar em d5 e não em e5: contra um contragambito, a captura certa é a que não trava a própria posição.',
+      name: 'Contragambito Falkbeer',
+      description: 'As pretas respondem com ...d5, abrindo o centro em vez de pegar o peão.',
+      rootNodeId: '',
+      line: [
+        ...gambitoDoReiMain.slice(0, 3),
+        lesson(
+          4,
+          'd5',
+          'Gambito contra gambito: as pretas abrem o centro em vez de aceitar material.',
+          {
+            arrows: [{ from: 'd7', to: 'd5' }],
+            strategicIdea: 'Quem abriu a própria posição não quer que o centro abra também.',
+          },
+        ),
+        lesson(
+          5,
+          'exd5',
+          'A captura certa: ela abre a coluna e para as pretas, mas não tranca nenhuma peça branca.',
+          {
+            strategicIdea:
+              'Entre duas capturas, escolhe-se a que deixa as próprias peças respirando.',
+            resultingPlan: 'Cf3 e d4 em seguida, devolvendo o peão em troca de desenvolvimento.',
+          },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'gambito-do-rei-h4',
+      name: 'Quebrar a corrente com h4',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Desfazer os peões pretos em g5 e f4 antes que eles virem uma muralha.',
+      when: 'Logo depois de ...g5, e nunca antes de Cf3 estar jogado.',
+      risk: 'Abrir a coluna h com o próprio rei sem roque: ela aponta para os dois lados.',
+      porQueFunciona:
+        'Os peões pretos em f4 e g5 seguram o material extra e, ao mesmo tempo, são os peões que deveriam estar defendendo o rei preto. O lance h4 obriga a corrente a decidir, e qualquer decisão deixa uma coluna aberta apontada para um rei que ainda não rocou.',
+      preparacao: 'O cavalo em f3, que é o que impede ...Dh4+ e sustenta o avanço de peão.',
+      oQueOAdversarioTenta:
+        'Sustentar com ...h6 e ...Bg7, ou devolver o peão e rocar antes de a coluna abrir.',
+      arrows: [{ from: 'h2', to: 'h4' }],
+    },
+    {
+      id: 'gambito-do-rei-recuperar',
+      name: 'Recuperar o peão com d4',
+      positionNodeId: 'root',
+      positionPly: 5,
+      objective: 'Trazer o peão de volta sem perder a iniciativa que ele comprou.',
+      when: 'Quando o ataque direto não estiver disponível e o desenvolvimento já estiver feito.',
+      risk: 'Recuperar cedo demais e devolver, junto com o peão, todas as linhas abertas.',
+      porQueFunciona:
+        'O Gambito do Rei não é uma aposta de tudo ou nada. Com d4 e Bxf4, as brancas recuperam o material tendo ficado com o centro maior e a coluna f aberta — que é exatamente o que elas queriam comprar. O peão volta e a vantagem fica.',
+      preparacao:
+        'Cavalo em f3, bispo em c4 e roque feito. Recuperar antes disso é trocar iniciativa por um peão.',
+      oQueOAdversarioTenta:
+        'Segurar f4 com ...g5 e ...h6, ou devolver o peão em termos próprios trocando peças.',
+      arrows: [{ from: 'd2', to: 'd4' }],
+    },
+    {
+      id: 'gambito-do-rei-diagonal',
+      name: 'A diagonal e1-h4 é o custo fixo',
+      positionNodeId: 'root',
+      positionPly: 3,
+      objective: 'Fechar a diagonal com Cf3 antes de qualquer captura ou desenvolvimento.',
+      when: 'Sempre — desde o instante em que f4 é jogado.',
+      risk: 'Tratar a regra como decorada e esquecê-la na primeira posição diferente.',
+      porQueFunciona:
+        'O avanço f4 tira o peão que tapava a diagonal que leva ao rei branco. Enquanto ela estiver aberta, ...Dh4+ é uma ameaça real em quase toda posição da abertura, e o rei precisa ir para e2 ou perder material. O cavalo em f3 resolve isso de uma vez — e é por isso que ele é o terceiro lance.',
+      preparacao: 'Nenhuma. É o lance que vem antes de tudo.',
+      oQueOAdversarioTenta:
+        'Provocar uma captura em e5 ou um lance de peão qualquer que deixe a diagonal aberta mais um lance.',
+      arrows: [{ from: 'g1', to: 'f3' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Centro do Gambito do Rei',
+      description:
+        'Peões brancos em d4 e e4, coluna f aberta e um peão preto em f4 ou já recuperado. As brancas têm mais espaço e mais linhas; as pretas têm um peão e um rei que precisa achar abrigo antes de o ataque chegar.',
+      pawnBreaks: ['d4', 'h4', 'e5'],
+      weakSquares: ['f7', 'e1'],
+      openFiles: ['f'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'gambito-do-rei-erro-dama-cedo',
+      nodeId: 'root',
+      positionPly: 4,
+      moveSan: 'Qh5',
+      explanation:
+        'Sair com a dama para h5 no lugar de Cf3 ataca f7 e nada mais: as pretas jogam ...g6 ou ...Ce7 e ganham tempo atrás de tempo enquanto a dama branca corre pelo tabuleiro.',
+      principle:
+        'Ameaça de uma peça só não é ataque — e uma dama exposta financia o desenvolvimento do adversário.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -5545,6 +6006,8 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   indiaDaDama,
   moderna,
   reti,
+  viena,
+  gambitoDoRei,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),
