@@ -85,7 +85,7 @@ const ABERTURA: OpeningDefinition = buildOpeningDefinition({
   ecoCodes: ['C50'],
   description: 'Abertura sintética para provar a mecânica da jornada.',
   philosophy: 'Desenvolver e ocupar o centro.',
-  difficulty: 1,
+  theoryComplexity: 1,
   prerequisites: [],
   tags: ['open'],
   transitionToMiddlegame: 'A partir daqui vale o plano, não a memória.',

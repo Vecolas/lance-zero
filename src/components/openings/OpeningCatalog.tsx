@@ -30,7 +30,22 @@ type Filter = 'all' | OpeningSide
  * está no mini-tabuleiro de cada card, e o status aparece escrito dentro dele.
  * Três seletores para um catálogo de seis aberturas é mais peneira que conteúdo.
  */
-type DifficultyFilter = 'all' | 'beginner' | 'intermediate' | 'advanced'
+type DifficultyFilter = 'all' | 'beginner' | 'intermediate' | 'advanced' | 'specialist'
+
+/**
+ * A FAIXA DE TEORIA, e não de força.
+ *
+ * Eram três faixas sobre um campo que ia até 3, e a última absorveu 43% do
+ * catálogo — a Siciliana Fundamentos ficou no mesmo degrau da Najdorf, sendo o
+ * pré-requisito dela. Com o quarto degrau, "avançada" volta a separar, e quem
+ * responde "o que preciso saber antes" é o pré-requisito, que o card mostra.
+ */
+function faixaDeTeoria(nivel: number): Exclude<DifficultyFilter, 'all'> {
+  if (nivel <= 1) return 'beginner'
+  if (nivel === 2) return 'intermediate'
+  if (nivel === 3) return 'advanced'
+  return 'specialist'
+}
 
 export function OpeningCatalog() {
   const t = useTraduzir()
@@ -107,11 +122,9 @@ export function OpeningCatalog() {
     )
   }
   const courses = OPENING_COURSES.filter((opening) => {
-    const difficulty =
-      opening.difficulty <= 1 ? 'beginner' : opening.difficulty === 2 ? 'intermediate' : 'advanced'
     return (
       (filter === 'all' || opening.side === filter) &&
-      (difficultyFilter === 'all' || difficulty === difficultyFilter)
+      (difficultyFilter === 'all' || faixaDeTeoria(opening.theoryComplexity) === difficultyFilter)
     )
   })
   return (
@@ -154,6 +167,7 @@ export function OpeningCatalog() {
             { valor: 'beginner', rotulo: t('openings.beginner') },
             { valor: 'intermediate', rotulo: t('openings.intermediate') },
             { valor: 'advanced', rotulo: t('openings.advanced') },
+            { valor: 'specialist', rotulo: t('openings.specialist') },
           ]}
         />
       </FilterBar>
@@ -255,6 +269,21 @@ function OpeningCard({
         </div>
         <h3>{nome}</h3>
         <p>{opening.description}</p>
+        {/*
+          O PRÉ-REQUISITO É A SEGUNDA DIMENSÃO, e ela estava escondida no dado.
+          A faixa de teoria diz QUANTO estudo a abertura exige; o pré-requisito
+          diz O QUE se deveria saber antes. Um número só tentava dizer as duas
+          coisas, e foi por isso que a Siciliana Fundamentos e a Najdorf caíram
+          no mesmo degrau, sendo uma o pré-requisito da outra.
+        */}
+        {opening.prerequisites.length > 0 ? (
+          <p className={styles.prerequisito}>
+            {t('openings.prerequisite')}{' '}
+            {opening.prerequisites
+              .map((id) => nomeDaAbertura(id, locale))
+              .join(t('openings.prerequisiteSeparator'))}
+          </p>
+        ) : null}
         {/*
           O ✓ E O TEXTO VÊM DA MESMA FONTE, e antes não vinham.
 

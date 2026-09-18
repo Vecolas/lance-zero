@@ -19,7 +19,12 @@
 import { describe, expect, it } from 'vitest'
 import { OPENING_COURSES } from '@/content/openings/course'
 import { ramosCore } from '@/domain/openings/ramos'
-import { CONCEITO_POR_ID, ESTRUTURA_POR_ID, MOTIVO_POR_ID } from '@/content/openings/compartilhado'
+import {
+  CONCEITO_POR_ID,
+  ESTRUTURA_POR_ID,
+  MOTIVO_POR_ID,
+  RAZAO_SEM_MOTIVO_POR_ID,
+} from '@/content/openings/compartilhado'
 import { nomeDaAbertura } from '@/lib/i18n/nomes-de-conteudo'
 import { applyMove } from '@/lib/chess'
 
@@ -101,6 +106,42 @@ describe('todo ramo core cumpre o checklist do §61', () => {
     for (const { opening, ramo } of CORE) {
       for (const id of ramo.motivos ?? []) {
         expect(MOTIVO_POR_ID.has(id), `${opening.slug} / ${ramo.nome}: motivo ${id}`).toBe(true)
+      }
+    }
+  })
+
+  it('declara motivo tático OU declara por que não há um', () => {
+    /*
+      O CONTRATO QUE FECHA O SILÊNCIO (dívida D-05).
+
+      `motivos` era opcional e o portão só conferia que os ids citados existem —
+      nunca que existissem. Em 54 dos 83 ramos core não havia nenhum, e não dava
+      para saber se aquilo era uma afirmação sobre o xadrez ou esquecimento do
+      autor.
+
+      Obrigar motivo em todo ramo seria pior: a maioria destes se decide por
+      estrutura ou por formação, e apontar uma tática ali é inventar conteúdo.
+      Então o contrato é o do meio, e ele exige uma ESCOLHA: ou o motivo, ou a
+      razão de não haver — nunca os dois, nunca nenhum.
+    */
+    for (const { opening, ramo } of CORE) {
+      const onde = `${opening.slug} / ${ramo.nome}`
+      const temMotivo = (ramo.motivos?.length ?? 0) > 0
+      const temRazao = Boolean(ramo.semMotivo)
+
+      expect(
+        temMotivo || temRazao,
+        `${onde}: sem motivo tático e sem razão declarada para não ter`,
+      ).toBe(true)
+      expect(
+        temMotivo && temRazao,
+        `${onde}: declara motivo E razão de ausência — escolha um`,
+      ).toBe(false)
+      if (temRazao) {
+        expect(
+          RAZAO_SEM_MOTIVO_POR_ID.has(ramo.semMotivo ?? ''),
+          `${onde}: razão "${ramo.semMotivo}" não existe em RAZOES_SEM_MOTIVO`,
+        ).toBe(true)
       }
     }
   })

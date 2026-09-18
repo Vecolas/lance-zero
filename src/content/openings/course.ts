@@ -1061,7 +1061,7 @@ const italian = course({
   description:
     'Uma abertura aberta para aprender desenvolvimento, roque, pressão em f7 e ruptura no centro.',
   philosophy: 'Desenvolver com propósito, proteger o rei e só então abrir o centro.',
-  difficulty: 1,
+  theoryComplexity: 1,
   prerequisites: [],
   tags: ['open', 'simple', 'positional'],
   transitionToMiddlegame:
@@ -1370,7 +1370,7 @@ const caroKann = course({
   ecoCodes: ['B10', 'B12'],
   description: 'Uma defesa sólida que disputa o centro e procura libertar o bispo de c8.',
   philosophy: 'Atacar o centro com d5, manter uma estrutura saudável e desenvolver sem pressa.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['solid', 'positional'],
   transitionToMiddlegame:
@@ -1379,6 +1379,7 @@ const caroKann = course({
   variations: [
     {
       id: 'caro-troca',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'B13',
       conceitos: ['concept.open-file', 'concept.bad-bishop', 'concept.minority-attack'],
@@ -1475,6 +1476,7 @@ const caroKann = course({
         não de um lance memorizado.
       */
       id: 'caro-fantasy',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'B12',
       conceitos: ['concept.break-e5', 'concept.king-safety-timing', 'concept.bad-bishop'],
@@ -1657,7 +1659,7 @@ const qgd = course({
   ecoCodes: ['D30'],
   description: 'Uma resposta sólida a 1.d4: centro firme, desenvolvimento e pressão sobre c4.',
   philosophy: 'Sustentar d5, desenvolver e preparar a ruptura c5 sem ficar passivo.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['solid', 'positional'],
   transitionToMiddlegame:
@@ -1666,6 +1668,7 @@ const qgd = course({
   variations: [
     {
       id: 'qgd-tres-cavalos',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D37',
       conceitos: ['concept.bad-bishop', 'concept.break-c5', 'concept.space-vs-counterplay'],
@@ -1711,6 +1714,7 @@ const qgd = course({
         por isso é core: ele é a resposta à pergunta que o curso inteiro faz.
       */
       id: 'qgd-tartakower',
+      motivos: ['motif.pin-on-f6'],
       importancia: 'core',
       eco: 'D58',
       conceitos: ['concept.bad-bishop', 'concept.break-c5', 'concept.open-file'],
@@ -1778,6 +1782,7 @@ const qgd = course({
     },
     {
       id: 'qgd-troca',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'D35',
       conceitos: ['concept.minority-attack', 'concept.open-file', 'concept.break-e5'],
@@ -1946,7 +1951,7 @@ const scotch = course({
   description:
     'Uma abertura direta que abre o centro cedo para ensinar desenvolvimento e iniciativa.',
   philosophy: 'Trocar no centro e usar a vantagem de desenvolvimento para jogar com atividade.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['open', 'tactical'],
   transitionToMiddlegame:
@@ -2200,7 +2205,7 @@ const london = course({
   ecoCodes: ['D02'],
   description: 'Um sistema sólido para desenvolver sem decorar muitas respostas.',
   philosophy: 'Construir uma estrutura estável, desenvolver as peças e escolher a ruptura certa.',
-  difficulty: 1,
+  theoryComplexity: 1,
   prerequisites: [],
   tags: ['solid', 'simple'],
   transitionToMiddlegame:
@@ -2209,6 +2214,7 @@ const london = course({
   variations: [
     {
       id: 'londres-c5',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D02',
       conceitos: ['concept.break-c5', 'concept.space-vs-counterplay'],
@@ -2257,6 +2263,7 @@ const london = course({
         atacar um roque que ainda não existe.
       */
       id: 'londres-indiano',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'A45',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-e5', 'concept.bad-bishop'],
@@ -2296,6 +2303,7 @@ const london = course({
         lances descobre aqui que não tem resposta pronta.
       */
       id: 'londres-qb6',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D02',
       conceitos: ['concept.break-c5', 'concept.material-vs-initiative'],
@@ -2480,7 +2488,7 @@ const slav = course({
   ecoCodes: ['D10'],
   description: 'Uma defesa firme que sustenta d5 com c6 e mantém o bispo de c8 livre.',
   philosophy: 'Estrutura sólida sem prender o bispo, seguida de desenvolvimento e ruptura.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['solid', 'positional'],
   transitionToMiddlegame:
@@ -2489,6 +2497,7 @@ const slav = course({
   variations: [
     {
       id: 'eslava-cc3',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D15',
       conceitos: ['concept.bad-bishop', 'concept.space-vs-counterplay', 'concept.break-c5'],
@@ -2620,6 +2629,7 @@ const slav = course({
     },
     {
       id: 'eslava-troca',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'D10',
       conceitos: ['concept.open-file', 'concept.space-vs-counterplay'],
@@ -2754,7 +2764,7 @@ const ruyLopez = course({
     'A abertura clássica do jogo aberto: pressão permanente sobre e5, roque rápido e a manobra que prepara d4.',
   philosophy:
     'Atacar quem defende, não o que está defendido. A pressão sobre c6 dura a partida inteira.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['italiana'],
   tags: ['open', 'positional', 'classical'],
   transitionToMiddlegame:
@@ -2788,6 +2798,7 @@ const ruyLopez = course({
         a Morphy chega ao quarto lance sem plano nenhum.
       */
       id: 'ruy-berlim',
+      motivos: ['motif.pin-on-d-file'],
       importancia: 'core',
       eco: 'C65',
       conceitos: ['concept.bishop-pair', 'concept.space-vs-counterplay', 'concept.open-file'],
@@ -2834,6 +2845,7 @@ const ruyLopez = course({
         final é bom ou ruim.
       */
       id: 'ruy-troca',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'C68',
       conceitos: ['concept.bishop-pair', 'concept.backward-pawn', 'concept.space-vs-counterplay'],
@@ -2936,6 +2948,7 @@ const ruyLopez = course({
         lance preto — que é como os ramos core deste repositório são autorados.
       */
       id: 'ruy-steinitz',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'C79',
       conceitos: ['concept.space-vs-counterplay', 'concept.backward-pawn', 'concept.open-file'],
@@ -3086,7 +3099,7 @@ const french = course({
     'Uma defesa sólida contra 1.e4: centro disputado de frente, cadeia de peões e um plano claro de ruptura.',
   philosophy:
     'Aceitar menos espaço em troca de um centro sem fraquezas, e atacar a base da cadeia em vez do topo.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['semi-open', 'positional', 'closed'],
   transitionToMiddlegame:
@@ -3150,6 +3163,7 @@ const french = course({
         conta que aparece em toda a Francesa — estrutura contra bispos.
       */
       id: 'francesa-winawer',
+      semMotivo: 'sem-motivo.estrutura',
       importancia: 'core',
       eco: 'C15',
       conceitos: ['concept.bishop-pair', 'concept.backward-pawn', 'concept.break-c5'],
@@ -3200,6 +3214,7 @@ const french = course({
         Francesa também produz posições simétricas, e como jogá-las.
       */
       id: 'francesa-troca',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'C01',
       conceitos: ['concept.open-file', 'concept.space-vs-counterplay'],
@@ -3362,7 +3377,7 @@ const sicilianFoundation = course({
     'O mapa da Siciliana: a Aberta, e o que muda quando as brancas recusam entrar nela com Alapin, Fechada ou Smith-Morra.',
   philosophy:
     'Trocar um peão de flanco por um peão central e jogar por desequilíbrio, não por igualdade.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: [],
   tags: ['semi-open', 'sharp', 'asymmetric'],
   transitionToMiddlegame:
@@ -3428,6 +3443,7 @@ const sicilianFoundation = course({
         comum e porque exige um plano completamente diferente.
       */
       id: 'siciliana-fechada',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'B23',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.king-safety-timing'],
@@ -3602,7 +3618,7 @@ const qga = course({
   description:
     'Aceitar o peão de c4 sem tentar segurá-lo: ceder o centro por um tempo e atacá-lo com ...c5 depois.',
   philosophy: 'O peão volta. O que fica é o tempo livre e a diagonal aberta para o bispo de c8.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['closed', 'positional'],
   transitionToMiddlegame:
@@ -3616,6 +3632,7 @@ const qga = course({
         mais direto da defesa.
       */
       id: 'qga-central',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'D20',
       conceitos: [
@@ -3670,6 +3687,7 @@ const qga = course({
         de o bispo sair.
       */
       id: 'qga-classica',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D27',
       conceitos: ['concept.break-c5', 'concept.hanging-pawns', 'concept.open-file'],
@@ -3801,7 +3819,7 @@ const kingsIndian = course({
     'Ceder o centro para atacá-lo depois: fianchetto, roque rápido e a ruptura ...e5 que decide a partida.',
   philosophy:
     'Espaço contra contrajogo. As brancas mandam no centro; as pretas mandam na hora de rompê-lo.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: [],
   tags: ['closed', 'sharp', 'asymmetric'],
   transitionToMiddlegame:
@@ -3825,6 +3843,7 @@ const kingsIndian = course({
         ...e5 costuma ser tarde demais.
       */
       id: 'kid-samisch',
+      semMotivo: 'sem-motivo.espaco',
       importancia: 'core',
       eco: 'E80',
       conceitos: ['concept.space-vs-counterplay', 'concept.king-safety-timing', 'concept.break-c5'],
@@ -3882,6 +3901,7 @@ const kingsIndian = course({
         de clube. Core porque ela desarma o ataque preto sem precisar de teoria.
       */
       id: 'kid-fianchetto',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'E60',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.bishop-pair'],
@@ -3926,6 +3946,7 @@ const kingsIndian = course({
         ele enumera as combinações em vez de sortear. Ver ADR-0032.
       */
       id: 'kid-quatro-peoes',
+      semMotivo: 'sem-motivo.espaco',
       importancia: 'core',
       eco: 'E76',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.king-safety-timing'],
@@ -4069,7 +4090,7 @@ const nimzoIndian = course({
     'Controlar e4 cravando quem o defende: a cravada em b4, o par de bispos como moeda e os peões dobrados como alvo.',
   philosophy:
     'Estrutura contra bispos. As pretas entregam uma peça boa para deixar uma fraqueza que não anda.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: [],
   tags: ['closed', 'positional'],
   transitionToMiddlegame:
@@ -4089,6 +4110,7 @@ const nimzoIndian = course({
         central da defesa, e o aluno precisa de outro plano.
       */
       id: 'nimzo-classica',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'E32',
       conceitos: ['concept.bishop-pair', 'concept.break-c5', 'concept.space-vs-counterplay'],
@@ -4299,7 +4321,7 @@ const catalan = course({
   description:
     'O centro de 1.d4 com o fianchetto da Inglesa: pressão de longo prazo pela diagonal a8-h1.',
   philosophy: 'Um gambito posicional. O peão de c4 pode esperar; a diagonal não.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['gambito-da-dama-recusado'],
   tags: ['closed', 'positional'],
   transitionToMiddlegame:
@@ -4322,6 +4344,7 @@ const catalan = course({
         que define a abertura.
       */
       id: 'catala-aberta',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'E04',
       conceitos: ['concept.material-vs-initiative', 'concept.open-file', 'concept.break-c5'],
@@ -4368,6 +4391,7 @@ const catalan = course({
         plano — sem isso o aluno joga a Catalã no automático.
       */
       id: 'catala-fechada',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'E06',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-e5', 'concept.bad-bishop'],
@@ -4497,7 +4521,7 @@ const english = course({
     'Abrir no flanco e decidir o centro depois: a abertura mais flexível do repertório de 1.d4 e 1.c4.',
   philosophy:
     'Controlar d5 de longe e escolher a estrutura depois que o adversário já escolheu a dele.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['flank', 'positional', 'flexible'],
   transitionToMiddlegame:
@@ -4520,6 +4544,7 @@ const english = course({
         fazer quando o espelho aparece.
       */
       id: 'inglesa-simetrica',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'A30',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-d4', 'concept.open-file'],
@@ -4564,6 +4589,7 @@ const english = course({
         da Inglesa.
       */
       id: 'inglesa-anglo-india',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'A34',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-d4', 'concept.bishop-pair'],
@@ -4690,7 +4716,7 @@ const scandinavian = course({
   description:
     'Atacar o centro no primeiro lance e aceitar perder um tempo em troca de uma estrutura sem fraquezas.',
   philosophy: 'Poucas variações para decorar, um plano claro e o bispo de c8 resolvido cedo.',
-  difficulty: 1,
+  theoryComplexity: 1,
   prerequisites: [],
   tags: ['semi-open', 'simple', 'positional'],
   transitionToMiddlegame:
@@ -4708,6 +4734,7 @@ const scandinavian = course({
         outra metade da defesa, e a escolha entre as duas é o conteúdo do curso.
       */
       id: 'escandinava-moderna',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'B01',
       conceitos: [
@@ -4754,6 +4781,7 @@ const scandinavian = course({
         em d6 defende o centro em vez de pressionar a diagonal.
       */
       id: 'escandinava-qd6',
+      semMotivo: 'sem-motivo.estrutura',
       importancia: 'core',
       eco: 'B01',
       conceitos: [
@@ -4884,7 +4912,7 @@ const pirc = course({
   description:
     'Ceder o centro para atacá-lo com peças: fianchetto, roque rápido e a ruptura no momento certo.',
   philosophy: 'A Índia do Rei contra 1.e4 — menos espaço, mais flexibilidade, uma ruptura marcada.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['semi-open', 'closed', 'flexible'],
   transitionToMiddlegame:
@@ -5092,7 +5120,7 @@ const grunfeld = course({
     'Deixar as brancas montarem o centro para transformá-lo em alvo: o bispo de g7 e a ruptura ...c5.',
   philosophy:
     'Um centro grande não é vantagem enquanto não estiver defendido — e defendê-lo custa tempo.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['india-do-rei'],
   tags: ['closed', 'sharp', 'dynamic'],
   transitionToMiddlegame:
@@ -5106,6 +5134,7 @@ const grunfeld = course({
         Core porque ele evita a Troca e obriga outro plano.
       */
       id: 'grunfeld-russo',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D90',
       conceitos: ['concept.break-c5', 'concept.space-vs-counterplay', 'concept.open-file'],
@@ -5151,6 +5180,7 @@ const grunfeld = course({
         está errada.
       */
       id: 'grunfeld-bf4',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D83',
       conceitos: ['concept.break-c5', 'concept.bishop-pair', 'concept.space-vs-counterplay'],
@@ -5279,7 +5309,7 @@ const dutch = course({
     'Disputar e4 com o peão de f e jogar na ala do rei: espaço e iniciativa em troca de uma casa frágil.',
   philosophy:
     'Escolher desequilíbrio desde o primeiro lance, e aceitar o preço em segurança do rei.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: [],
   tags: ['closed', 'sharp', 'asymmetric'],
   transitionToMiddlegame:
@@ -5345,6 +5375,7 @@ const dutch = course({
         escolher entre elas é o conteúdo do curso.
       */
       id: 'holandesa-stonewall',
+      semMotivo: 'sem-motivo.estrutura',
       importancia: 'core',
       eco: 'A85',
       conceitos: ['concept.bad-bishop', 'concept.space-vs-counterplay', 'concept.backward-pawn'],
@@ -5472,7 +5503,7 @@ const semiEslava = course({
   description:
     'Defender d5 com dois peões e cobrar o preço depois: ...dxc4 e ...b5 libertam o bispo trancado.',
   philosophy: 'Aceitar uma peça ruim por alguns lances em troca de um centro que ninguém derruba.',
-  difficulty: 3,
+  theoryComplexity: 4,
   prerequisites: ['defesa-eslava'],
   tags: ['closed', 'solid', 'sharp'],
   transitionToMiddlegame:
@@ -5486,6 +5517,7 @@ const semiEslava = course({
         cobram com ...dxc4 e ...b5. Core porque é o plano que dá sentido a ...e6.
       */
       id: 'semi-eslava-meran',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D47',
       conceitos: ['concept.bad-bishop', 'concept.space-vs-counterplay', 'concept.break-c5'],
@@ -5534,7 +5566,7 @@ const semiEslava = course({
         'concept.open-file',
       ],
       estrutura: 'structure.open-center',
-      motivos: ['motif.pin-on-d-file'],
+      motivos: ['motif.pin-on-f6'],
       erroComum: {
         lance: 'Be7',
         porque:
@@ -5662,7 +5694,7 @@ const indiaDaDama = course({
   description:
     'Negar a casa e4 com peças: cavalo em f6, bispo em b7 e um centro que as brancas nunca completam.',
   philosophy: 'Uma casa bem disputada vale mais que um peão avançado sem futuro.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['nimzo-india'],
   tags: ['closed', 'solid', 'positional'],
   transitionToMiddlegame:
@@ -5677,6 +5709,7 @@ const indiaDaDama = course({
         assunto inteiro da defesa.
       */
       id: 'india-da-dama-fianchetto',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'E15',
       conceitos: ['concept.bishop-pair', 'concept.space-vs-counterplay', 'concept.open-file'],
@@ -5721,6 +5754,7 @@ const indiaDaDama = course({
         inteiro por ela.
       */
       id: 'india-da-dama-petrosian',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'E12',
       conceitos: ['concept.space-vs-counterplay', 'concept.open-file', 'concept.bad-bishop'],
@@ -5851,7 +5885,7 @@ const moderna = course({
     'Ceder o centro sem dar alvo: fianchetto primeiro, cavalos depois, ruptura no momento que as pretas escolherem.',
   philosophy:
     'Não estar em lugar nenhum é uma vantagem enquanto o adversário precisa decidir tudo.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['pirc'],
   tags: ['semi-open', 'flexible', 'hypermodern'],
   transitionToMiddlegame:
@@ -5866,6 +5900,7 @@ const moderna = course({
         partida sem uma única imprecisão tática.
       */
       id: 'moderna-quatro-peoes',
+      semMotivo: 'sem-motivo.espaco',
       importancia: 'core',
       eco: 'B06',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.king-safety-timing'],
@@ -6038,7 +6073,7 @@ const reti = course({
   description:
     'Atacar o centro sem ocupá-lo: cavalo em f3, peão em c4 e um bispo em g2 apontado para d5.',
   philosophy: 'Deixar o adversário montar o centro e então provar que ele é difícil de sustentar.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['inglesa'],
   tags: ['flank', 'flexible', 'hypermodern'],
   transitionToMiddlegame:
@@ -6053,6 +6088,7 @@ const reti = course({
         lance.
       */
       id: 'reti-gambito',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'A09',
       conceitos: [
@@ -6101,6 +6137,7 @@ const reti = course({
         centro para expansão na ala da dama.
       */
       id: 'reti-eslava',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'A13',
       conceitos: ['concept.minority-attack', 'concept.open-file', 'concept.space-vs-counterplay'],
@@ -6227,7 +6264,7 @@ const viena = course({
   description:
     'Desenvolver o cavalo por c3 para guardar o lance f4: o mesmo gambito do Rei, mas com uma peça a mais em jogo.',
   philosophy: 'A ordem dos lances é uma arma: Cc3 antes de Cf3 muda o que a abertura permite.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: ['italiana'],
   tags: ['open', 'sharp', 'gambit'],
   transitionToMiddlegame:
@@ -6286,6 +6323,7 @@ const viena = course({
         decorar dez lances de gambito.
       */
       id: 'viena-bispo-c5',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'C26',
       conceitos: [
@@ -6420,7 +6458,7 @@ const gambitoDoRei = course({
   description:
     'Entregar um peão no segundo lance por centro, coluna aberta e desenvolvimento — e saber o preço disso.',
   philosophy: 'Iniciativa vale um peão enquanto o adversário não conseguir devolvê-lo e respirar.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['italiana'],
   tags: ['open', 'sharp', 'gambit'],
   transitionToMiddlegame:
@@ -6491,6 +6529,7 @@ const gambitoDoRei = course({
         deixa as brancas piores.
       */
       id: 'gambito-do-rei-falkbeer',
+      motivos: ['motif.pin-on-d-file'],
       importancia: 'core',
       eco: 'C31',
       conceitos: [
@@ -6627,7 +6666,7 @@ const alekhine = course({
   description:
     'Oferecer o cavalo como alvo para que o centro branco avance longe demais — e então atacá-lo.',
   philosophy: 'Cada peão que me persegue é um peão que já não pode voltar.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: [],
   tags: ['semi-open', 'hypermodern', 'sharp'],
   transitionToMiddlegame:
@@ -6642,6 +6681,7 @@ const alekhine = course({
         própria abertura.
       */
       id: 'alekhine-quatro-peoes',
+      semMotivo: 'sem-motivo.espaco',
       importancia: 'core',
       eco: 'B03',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.open-file'],
@@ -6685,6 +6725,7 @@ const alekhine = course({
         ao centro para disputa de casas.
       */
       id: 'alekhine-moderno',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'B04',
       conceitos: ['concept.space-vs-counterplay', 'concept.bad-bishop', 'concept.open-file'],
@@ -6818,7 +6859,7 @@ const benoni = course({
     'Trocar espaço por uma maioria de peões que anda: coluna e semiaberta, bispo em g7 e a ruptura ...b5.',
   philosophy:
     'Menos espaço não é pior posição quando a estrutura dá um plano claro e a do adversário não.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['india-do-rei'],
   tags: ['closed', 'sharp', 'asymmetric'],
   transitionToMiddlegame:
@@ -6833,6 +6874,7 @@ const benoni = course({
         sem perder tempo exige saber a ordem.
       */
       id: 'benoni-captura-c5',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'A60',
       conceitos: [
@@ -6883,6 +6925,7 @@ const benoni = course({
         saber o que estão escolhendo.
       */
       id: 'benoni-cavalo-f3',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'A61',
       conceitos: ['concept.space-vs-counterplay', 'concept.open-file', 'concept.break-c5'],
@@ -7010,7 +7053,7 @@ const benko = course({
     'Entregar um peão por duas colunas abertas na ala da dama — e uma pressão que não expira.',
   philosophy:
     'Um peão se recupera; uma coluna aberta contra peças que não podem sair, não se fecha.',
-  difficulty: 3,
+  theoryComplexity: 4,
   prerequisites: ['benoni'],
   tags: ['closed', 'gambit', 'positional'],
   transitionToMiddlegame:
@@ -7024,6 +7067,7 @@ const benko = course({
         inteira, e porque a tentação de recuperar o peão de volta destrói o plano.
       */
       id: 'benko-aceito',
+      semMotivo: 'sem-motivo.troca',
       importancia: 'core',
       eco: 'A58',
       conceitos: [
@@ -7071,6 +7115,7 @@ const benko = course({
         acabam com material E estrutura.
       */
       id: 'benko-recusado',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'A57',
       conceitos: ['concept.space-vs-counterplay', 'concept.open-file', 'concept.break-c5'],
@@ -7200,7 +7245,7 @@ const trompowsky = course({
   description:
     'Sair da teoria no segundo lance: o bispo ataca o cavalo de f6 e todas as defesas indianas somem.',
   philosophy: 'Um sistema que evita dez aberturas vale mais horas de estudo que uma que vence uma.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: ['sistema-londres'],
   tags: ['closed', 'system', 'flexible'],
   transitionToMiddlegame:
@@ -7264,6 +7309,7 @@ const trompowsky = course({
         partida inteira.
       */
       id: 'trompowsky-d5',
+      motivos: ['motif.pin-on-f6'],
       importancia: 'core',
       eco: 'A45',
       conceitos: ['concept.bishop-pair', 'concept.bad-bishop', 'concept.open-file'],
@@ -7395,7 +7441,7 @@ const kia = course({
     'Um sistema de seis lances que serve contra quase tudo — e um ataque na ala do rei que vem sempre pela mesma porta.',
   philosophy:
     'Aprender uma formação e mil planos vale mais, para quem tem pouco tempo de estudo, que mil lances e nenhum plano.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['flank', 'system', 'attacking'],
   transitionToMiddlegame:
@@ -7410,6 +7456,7 @@ const kia = course({
         preto que ficou grande demais.
       */
       id: 'kia-centro-preto',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'A07',
       conceitos: ['concept.space-vs-counterplay', 'concept.open-file', 'concept.break-c5'],
@@ -7595,7 +7642,7 @@ const bogo = course({
     'Um xeque no terceiro lance que força a resposta e leva a posições simples, sólidas e com pouca teoria.',
   philosophy:
     'Uma defesa que se aprende numa tarde e se joga a vida inteira vale mais que uma que nunca se termina de estudar.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: [],
   tags: ['closed', 'solid', 'positional'],
   transitionToMiddlegame:
@@ -7609,6 +7656,7 @@ const bogo = course({
         ou recuar — define a partida, e a maioria troca no automático.
       */
       id: 'bogo-bispo-d2',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'E11',
       conceitos: ['concept.bishop-pair', 'concept.bad-bishop', 'concept.space-vs-counterplay'],
@@ -7658,6 +7706,7 @@ const bogo = course({
         ...b6 e ...Bb7.
       */
       id: 'bogo-cavalo-d2',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'E11',
       conceitos: ['concept.space-vs-counterplay', 'concept.open-file', 'concept.bishop-pair'],
@@ -7789,7 +7838,7 @@ const tarrasch = course({
     'Aceitar um peão isolado de propósito: espaço, casas ativas e todas as peças jogando desde o começo.',
   philosophy:
     'Uma fraqueza que se conhece e se planeja custa menos que uma posição sem plano nenhum.',
-  difficulty: 3,
+  theoryComplexity: 3,
   prerequisites: ['gambito-da-dama-recusado'],
   tags: ['closed', 'sharp', 'positional'],
   transitionToMiddlegame:
@@ -7847,6 +7896,7 @@ const tarrasch = course({
         plano mais claro.
       */
       id: 'tarrasch-cavalo-f3',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D33',
       conceitos: ['concept.hanging-pawns', 'concept.space-vs-counterplay', 'concept.open-file'],
@@ -7979,7 +8029,7 @@ const jobava = course({
   description:
     'A Londres com o cavalo em c3 no lugar do peão: mesma formação, muito mais ameaça e quase nenhuma teoria.',
   philosophy: 'Uma peça vale mais que um peão na mesma casa quando ela ameaça algo e ele não.',
-  difficulty: 2,
+  theoryComplexity: 2,
   prerequisites: ['sistema-londres'],
   tags: ['closed', 'system', 'attacking'],
   transitionToMiddlegame:
@@ -7994,6 +8044,7 @@ const jobava = course({
         mantém a vantagem de espaço que o sistema promete.
       */
       id: 'jobava-c5',
+      semMotivo: 'sem-motivo.espaco',
       importancia: 'core',
       eco: 'D00',
       conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.open-file'],
@@ -8043,6 +8094,7 @@ const jobava = course({
         Cb5-c7 só existe aqui, e ele é a razão de o cavalo estar em c3.
       */
       id: 'jobava-centro',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'D00',
       conceitos: ['concept.open-file', 'concept.bad-bishop', 'concept.space-vs-counterplay'],
@@ -8184,7 +8236,7 @@ const najdorf = course({
     'O lance ...a6 e tudo o que ele compra: a casa b5 negada, ...e5 liberado e a Siciliana mais jogada do mundo.',
   philosophy:
     'Um peão na borda pode ser o lance mais importante da posição quando ele tira uma casa.',
-  difficulty: 3,
+  theoryComplexity: 4,
   prerequisites: ['siciliana-foundation'],
   tags: ['semi-open', 'sharp', 'asymmetric'],
   transitionToMiddlegame:
@@ -8253,6 +8305,7 @@ const najdorf = course({
         — a diferença exata em relação ao ramo anterior.
       */
       id: 'najdorf-ingles',
+      semMotivo: 'sem-motivo.espaco',
       importancia: 'core',
       eco: 'B90',
       conceitos: ['concept.space-vs-counterplay', 'concept.backward-pawn', 'concept.open-file'],
@@ -8386,7 +8439,7 @@ const dragao = course({
     'O bispo de g7 atravessando o tabuleiro, a coluna c aberta e uma corrida de peões contra o rei.',
   philosophy:
     'Em roques opostos não existe lance tranquilo: cada lance ou acelera o ataque ou atrasa o do outro.',
-  difficulty: 3,
+  theoryComplexity: 4,
   prerequisites: ['siciliana-foundation'],
   tags: ['semi-open', 'sharp', 'attacking'],
   transitionToMiddlegame:
@@ -8593,7 +8646,7 @@ const sveshnikov = course({
     'Aceitar um buraco em d5 no quinto lance e provar, pelos vinte seguintes, que as peças valem mais que a casa.',
   philosophy:
     'Uma fraqueza escolhida e planejada é um investimento; uma fraqueza sofrida é só uma fraqueza.',
-  difficulty: 3,
+  theoryComplexity: 4,
   prerequisites: ['siciliana-foundation'],
   tags: ['semi-open', 'sharp', 'positional'],
   transitionToMiddlegame:
@@ -8658,6 +8711,7 @@ const sveshnikov = course({
         é a cravada imediata.
       */
       id: 'sveshnikov-recuo',
+      semMotivo: 'sem-motivo.sistema',
       importancia: 'core',
       eco: 'B33',
       conceitos: ['concept.bishop-pair', 'concept.space-vs-counterplay', 'concept.open-file'],

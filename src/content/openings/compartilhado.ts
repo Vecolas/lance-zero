@@ -252,6 +252,70 @@ export const MOTIVOS_TATICOS: readonly MotivoTatico[] = [
     explicacao:
       'O cavalo na casa que nenhum peão pode expulsar — d5 ou e5, tipicamente. A casa vem da estrutura; o garfo vem de graça depois.',
   },
+  {
+    /*
+      ENTROU NA AUDITORIA DO §16, e cumpre o piso do ADR-0030: aparece em três
+      cursos diferentes — Gambito da Dama Recusado, Semi-Eslava e Trompowsky.
+      Antes dele, a cravada de Bg5 era registrada como `pin-on-d-file`, que é
+      outra coisa: aquela é na coluna, esta é na diagonal, e quem confunde as
+      duas aprende a procurar a ameaça no lugar errado.
+    */
+    id: 'motif.pin-on-f6',
+    nome: 'Cravada do cavalo de f6',
+    explicacao:
+      'O bispo em g5 prende o cavalo de f6 contra a dama. O cavalo para de defender d5 e e4 sem sair do tabuleiro, e é por isso que tantas aberturas fechadas começam por aí.',
+  },
+] as const
+
+/* -------------------------------------------------------------------------- */
+/* Por que um ramo pode não ter motivo tático                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * AUSÊNCIA DECLARADA, E NÃO SILÊNCIO.
+ *
+ * A maioria dos ramos deste catálogo não tem motivo tático central, e isso é
+ * verdade sobre o xadrez, não descuido: uma Variante da Troca se decide por
+ * estrutura, e um sistema se decide por formação. Obrigar cada ramo a apontar
+ * uma tática produziria conteúdo inventado — que é pior que conteúdo ausente,
+ * porque parece informação.
+ *
+ * O contrato é o do meio: todo ramo core declara um motivo OU declara por que
+ * não há um. As razões são um conjunto fechado, pelo mesmo motivo que os
+ * conceitos são: escrever 54 justificativas à mão produziria 54 variações da
+ * mesma frase, e nenhuma delas seria pesquisável.
+ */
+export interface RazaoSemMotivo {
+  id: string
+  nome: string
+  explicacao: string
+}
+
+export const RAZOES_SEM_MOTIVO: readonly RazaoSemMotivo[] = [
+  {
+    id: 'sem-motivo.troca',
+    nome: 'A troca define tudo',
+    explicacao:
+      'O ramo nasce de uma troca que fixa a estrutura, e o que se aprende nele é o plano que a estrutura pede. A tática, quando aparece, vem da estrutura e não da linha.',
+  },
+  {
+    id: 'sem-motivo.sistema',
+    nome: 'É um sistema de desenvolvimento',
+    explicacao:
+      'O ramo é uma formação que se repete quase independente da resposta. O conteúdo dele é a ordem dos lances e o plano, e não um padrão tático concreto.',
+  },
+  {
+    id: 'sem-motivo.estrutura',
+    nome: 'A decisão é de estrutura de peões',
+    explicacao:
+      'O que separa este ramo dos outros é a cadeia de peões que ele produz — casas fracas, colunas abertas, maiorias. Quem procura tática aqui está procurando na camada errada.',
+  },
+  {
+    id: 'sem-motivo.espaco',
+    nome: 'Decide-se por espaço e ruptura',
+    explicacao:
+      'O ramo é uma disputa de espaço: um lado avança peões, o outro escolhe onde romper. O desfecho é uma corrida, e nenhuma tática específica a resume.',
+  },
 ] as const
 
 /* -------------------------------------------------------------------------- */
@@ -261,3 +325,4 @@ export const MOTIVOS_TATICOS: readonly MotivoTatico[] = [
 export const CONCEITO_POR_ID = new Map(CONCEITOS_DE_ABERTURA.map((item) => [item.id, item]))
 export const ESTRUTURA_POR_ID = new Map(ESTRUTURAS_DE_PEOES.map((item) => [item.id, item]))
 export const MOTIVO_POR_ID = new Map(MOTIVOS_TATICOS.map((item) => [item.id, item]))
+export const RAZAO_SEM_MOTIVO_POR_ID = new Map(RAZOES_SEM_MOTIVO.map((item) => [item.id, item]))
