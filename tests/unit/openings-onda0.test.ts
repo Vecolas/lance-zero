@@ -242,11 +242,16 @@ describe('o curso inteiro', () => {
     }
   })
 
-  it('tem pelo menos três planos', () => {
-    // §52 pede de 3 a 6. Um curso com um plano só não tem PlanLibrary — tem uma
-    // frase, e o aluno sai sabendo o que fazer numa posição e em nenhuma outra.
+  it('tem de três a seis planos', () => {
+    /*
+      §52 pede de 3 a 6, e só o piso estava sendo cobrado. O teto não é
+      preciosismo: um curso com doze planos não tem PlanLibrary, tem uma lista,
+      e o aluno não termina nenhum deles. Achado na auditoria de escopo do
+      ADR-0032 — o portão cobria metade da norma que citava.
+    */
     for (const opening of OPENING_COURSES) {
-      expect(opening.plans.length, `${opening.slug}`).toBeGreaterThanOrEqual(3)
+      expect(opening.plans.length, `${opening.slug}: menos de 3`).toBeGreaterThanOrEqual(3)
+      expect(opening.plans.length, `${opening.slug}: mais de 6`).toBeLessThanOrEqual(6)
     }
   })
 })

@@ -160,9 +160,17 @@ describe('a fronteira: onde o repertório acaba e o plano começa', () => {
     }
   })
 
-  it('as seis aberturas do curso têm plano na fronteira', () => {
-    // Não é exigência do tipo — é medida do conteúdo atual. Se um curso novo
-    // entrar sem plano, este teste avisa antes de a tela ficar muda.
+  it('toda abertura do catálogo tem plano na fronteira', () => {
+    /*
+      O NOME DIZIA "AS SEIS ABERTURAS" e o corpo já percorria o catálogo
+      inteiro. Com 35 cursos, o nome passou a subestimar o que o portão cobre em
+      quase seis vezes — e um portão cuja etiqueta mente sobre o alcance é um
+      portão que ninguém sabe se pode remover. Achado na auditoria de escopo do
+      ADR-0032.
+
+      Não é exigência do tipo — é medida do conteúdo atual. Se um curso novo
+      entrar sem plano, este teste avisa antes de a tela ficar muda.
+    */
     for (const opening of OPENING_COURSES) {
       expect(fronteiraDaAbertura(opening).planoNome, `${opening.slug}`).not.toBeNull()
     }
