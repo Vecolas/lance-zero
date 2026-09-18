@@ -59,12 +59,33 @@ export interface ReviewSessionV2 {
   status: 'active' | 'completed'
 }
 
+/**
+ * Refina o agrupamento de um card, quando quem chama sabe mais que o planner.
+ *
+ * POR QUE NÃO RESOLVER AQUI: separar cards de abertura por RAMO exige ler o
+ * conteúdo do curso, e o planner é domínio puro — ele não conhece a Italiana.
+ * Quem chama conhece, e injeta.
+ *
+ * Devolver `null` mantém o agrupamento padrão. É isso que faz esta adição ser
+ * inofensiva: sem resolvedor, nada muda.
+ */
+export type ResolvedorDeSubgrupo = (card: ReviewCard) => string | null
+
 export interface ReviewPlannerInput {
   now: Date
   targetItemCount?: number
   seed?: string
   /** Gate V3: ausência de evidência não pode virar recuperação. */
   reviewEligible?: (card: ReviewCard) => boolean
+  /**
+   * Divide um grupo em subgrupos — hoje, abertura por ramo (plano VNext §45).
+   *
+   * SEM ELE, TODA A ITALIANA VIRA UM ITEM SÓ, e como `MAX_STEPS_PER_ITEM` é 7,
+   * os cards além do sétimo simplesmente não entram na sessão. Eles continuam
+   * vencidos e voltam depois — mas o aluno vê "1 item" onde há vinte posições, e
+   * a fila não encolhe por mais que ele revise.
+   */
+  subgrupo?: ResolvedorDeSubgrupo
 }
 
 interface Group {
@@ -86,10 +107,17 @@ function kindOf(card: ReviewCard): ReviewItemKind {
   return 'concept'
 }
 
-function groupKey(card: ReviewCard, kind: ReviewItemKind): string {
+function groupKey(card: ReviewCard, kind: ReviewItemKind, subgrupo?: ResolvedorDeSubgrupo): string {
   if (kind === 'opening' || card.id.startsWith('opening:')) {
     const parts = card.id.split(':')
-    return `opening:${parts[1] ?? card.id}`
+    const base = `opening:${parts[1] ?? card.id}`
+    /*
+      O SUBGRUPO REFINA, NUNCA SUBSTITUI. Ele é acrescentado ao id da abertura,
+      então um resolvedor ausente ou que devolva `null` produz exatamente a
+      chave de antes — e nenhuma sessão já gravada muda de forma.
+    */
+    const refinamento = subgrupo?.(card)
+    return refinamento ? `${base}:${refinamento}` : base
   }
   if (kind === 'endgame') {
     return `endgame:${card.skillIds[0] ?? card.id}`
@@ -149,11 +177,12 @@ function chooseDiverse(groups: Group[], target: number, now: Date): Group[] {
 export function groupIntoPedagogicalReviewItems(
   cards: readonly ReviewCard[],
   now: Date,
+  subgrupo?: ResolvedorDeSubgrupo,
 ): ReviewItem[] {
   const groups = new Map<string, Group>()
   for (const card of cards) {
     const kind = kindOf(card)
-    const key = groupKey(card, kind)
+    const key = groupKey(card, kind, subgrupo)
     const current = groups.get(key) ?? { key, kind, learningObjectId: key, cards: [] }
     current.cards.push(card)
     groups.set(key, current)
@@ -185,13 +214,14 @@ export function createReviewSessionV2(
     targetItemCount = 20,
     seed = now.toISOString(),
     reviewEligible = () => true,
+    subgrupo,
   }: ReviewPlannerInput,
 ): ReviewSessionV2 {
   const eligibleCards = cards.filter(reviewEligible)
   const groups = new Map<string, Group>()
   for (const card of eligibleCards) {
     const kind = kindOf(card)
-    const key = groupKey(card, kind)
+    const key = groupKey(card, kind, subgrupo)
     const current = groups.get(key) ?? { key, kind, learningObjectId: key, cards: [] }
     current.cards.push(card)
     groups.set(key, current)

@@ -95,6 +95,11 @@ import {
   type ReviewSessionState,
 } from '@/domain/review/session'
 import { createReviewSessionV2, reviewItemLabel, type ReviewItem } from '@/domain/review/planner-v2'
+import { OPENING_COURSES } from '@/content/openings/course'
+import {
+  subgrupoDeAberturaPorRamo,
+  tituloDoItemDeAbertura,
+} from '@/domain/openings/revisao-agrupada'
 import { getSkill } from '@/domain/skills/catalog'
 import { createMastery, updateMastery } from '@/domain/skills/mastery'
 import { isSkillStateReviewEligible } from '@/domain/roadmap'
@@ -419,6 +424,19 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
                 // que fez a regra divergir de si mesma.
                 now: new Date(),
                 reviewEligible: cardEhElegivel,
+                /*
+                  ABERTURA SE AGRUPA POR RAMO (plano VNext §45).
+
+                  Sem isto, TODA a Italiana vira um item só — e como o planner
+                  corta em sete passos por item, os cards além do sétimo não
+                  entram na sessão. Eles continuam vencidos e voltam depois, mas
+                  o aluno vê "1 item" onde há vinte posições, e a fila não
+                  encolhe por mais que ele revise.
+
+                  O resolvedor mora no domínio das aberturas porque precisa do
+                  CONTEÚDO do curso; o planner é puro e não conhece a Italiana.
+                */
+                subgrupo: subgrupoDeAberturaPorRamo(OPENING_COURSES),
               }).items
         const markerKey = `lancezero-relearning:${profile?.id ?? 'local'}`
         const relearning = (() => {
@@ -877,7 +895,21 @@ export function ReviewSession({ probe }: ReviewSessionProps = {}) {
         <p className={styles.counter}>
           Revisão {indice + 1} de {fila.length}
         </p>
-        <p className={styles.eyebrow}>{itemAtual ? reviewItemLabel(itemAtual.kind) : 'Revisão'}</p>
+        {/*
+          O QUE ESTÁ SENDO REVISADO, e não só a categoria.
+
+          "Abertura" não diz nada quando o aluno tem seis cursos; "Abertura
+          Italiana — Defesa dos Dois Cavalos" diz. Saber o que se revisa ANTES de
+          a posição aparecer é a diferença entre uma fila e uma pilha de cartões.
+
+          O título cai no rótulo genérico quando o item não é de abertura — nunca
+          inventa um nome.
+        */}
+        <p className={styles.eyebrow}>
+          {(itemAtual
+            ? tituloDoItemDeAbertura(itemAtual.learningObjectId, OPENING_COURSES)
+            : null) ?? (itemAtual ? reviewItemLabel(itemAtual.kind) : 'Revisão')}
+        </p>
         <p className={styles.prompt}>{sessao.card.prompt}</p>
         {itemAtual ? (
           <p className={styles.hint} data-testid="progresso-interno">
