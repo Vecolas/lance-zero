@@ -237,6 +237,61 @@ const qgaMain = [
   }),
 ]
 
+/* ------------------------------------------------------- Índia do Rei */
+
+/** 1.d4 Cf6 2.c4 g6 3.Cc3 Bg7 4.e4 d6 5.Cf3 O-O — a Clássica. */
+const kidMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro com o peão da dama.', {
+    strategicIdea: 'Contra 1.d4, a Índia do Rei recusa disputar o centro de imediato.',
+  }),
+  lesson(2, 'Nf6', 'O cavalo vigia e4 e mantém todas as defesas indianas em aberto.', {
+    highlights: ['e4'],
+    strategicIdea: 'Controlar o centro à distância é a ideia que dá nome às defesas indianas.',
+  }),
+  lesson(3, 'c4', 'O segundo peão central entra e as brancas ficam com espaço.', {
+    arrows: [{ from: 'c2', to: 'c4' }],
+  }),
+  lesson(
+    4,
+    'g6',
+    'As pretas preparam o fianchetto: o bispo vai atacar o centro pela diagonal longa.',
+    {
+      strategicIdea: 'Ceder o centro agora para atacá-lo depois, com peças e não com peões.',
+      resultingPlan: '...Bg7, ...O-O e a ruptura ...e5 quando as peças estiverem prontas.',
+    },
+  ),
+  lesson(5, 'Nc3', 'O cavalo defende e4 e completa o domínio central das brancas.', {
+    resultingPlan: 'e4 no próximo lance, com o centro inteiro ocupado.',
+  }),
+  lesson(6, 'Bg7', 'O bispo ocupa a diagonal longa e mira d4 por trás dos próprios peões.', {
+    arrows: [{ from: 'f8', to: 'g7' }],
+    strategicIdea: 'Esta peça é a alma da defesa: ela pressiona o centro sem tocá-lo.',
+  }),
+  lesson(7, 'e4', 'As brancas montam o centro completo — é este o momento que define a abertura.', {
+    highlights: ['d4', 'e4'],
+    resultingPlan: 'Cf3 e Be2, com espaço para manobrar.',
+  }),
+  lesson(8, 'd6', 'O peão sustenta a futura ruptura ...e5 e abre a diagonal do bispo de c8.', {
+    resultingPlan: '...O-O e depois ...e5, atacando o centro que as brancas construíram.',
+  }),
+  lesson(
+    9,
+    'Nf3',
+    'O cavalo completa o desenvolvimento sem se comprometer com um plano de ataque.',
+    {
+      resultingPlan: 'Be2 e O-O, com espaço e sem riscos.',
+    },
+  ),
+  lesson(
+    10,
+    'O-O',
+    'As pretas rocam e ficam prontas para a ruptura que a defesa inteira prepara.',
+    {
+      resultingPlan: '...e5 no próximo lance, com a torre já apontando para a coluna e.',
+    },
+  ),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -2822,6 +2877,210 @@ const qga = course({
   version: 1,
 })
 
+const kingsIndian = course({
+  id: 'india-do-rei',
+  slug: 'india-do-rei',
+  name: 'Defesa Índia do Rei',
+  side: 'black',
+  ecoCodes: ['E60', 'E70', 'E80', 'E90', 'E97'],
+  description:
+    'Ceder o centro para atacá-lo depois: fianchetto, roque rápido e a ruptura ...e5 que decide a partida.',
+  philosophy:
+    'Espaço contra contrajogo. As brancas mandam no centro; as pretas mandam na hora de rompê-lo.',
+  difficulty: 3,
+  prerequisites: [],
+  tags: ['closed', 'sharp', 'asymmetric'],
+  transitionToMiddlegame:
+    'A abertura termina quando o centro trava e as duas partes escolhem as alas. A partir daí a pergunta é quem chega primeiro, e não qual lance vem agora.',
+  mainline: kidMain,
+  /*
+    O ATAQUE DOS QUATRO PEÕES FOI ESCRITO E REMOVIDO desta entrega, pela mesma
+    razão que tirou dois ramos da Espanhola: ele desvia no MESMO ponto que a
+    Sämisch (o quinto lance branco), e o bot de sparring percorre um ponto de
+    bifurcação por rodada. Com dois ramos ali, um deles nunca seria jogado — e
+    "variação que o bot nunca joga é decoração".
+
+    Ele volta quando a seleção do bot souber percorrer os desvios
+    sistematicamente.
+  */
+  variations: [
+    {
+      /*
+        A SÄMISCH É A RESPOSTA MAIS DURA: f3 sustenta e4 e prepara ataque com
+        g4 e h4. Core porque muda o jogo inteiro — contra ela, o plano padrão de
+        ...e5 costuma ser tarde demais.
+      */
+      id: 'kid-samisch',
+      importancia: 'core',
+      eco: 'E80',
+      conceitos: ['concept.space-vs-counterplay', 'concept.king-safety-timing', 'concept.break-c5'],
+      estrutura: 'structure.kid-locked-center',
+      erroComum: {
+        lance: 'e5',
+        porque:
+          'A ruptura padrão chega tarde contra a Sämisch: com f3 jogado, as brancas sustentam d4 sem esforço e ganham a corrida na ala do rei. Contra esta linha, o contrajogo vem da ala da dama com ...c5.',
+      },
+      fronteira: { type: 'handoff', planId: 'kid-alas' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se sustentar o centro com peão e correr na ala do rei com g4 e h4.',
+      intencaoDoAdversario:
+        'Sustentar e4 sem usar peça nenhuma, liberando os peões da ala do rei para avançar contra o seu roque.',
+      objetivoDoAluno:
+        'Trocar a ala: com f3 jogado, a corrida da ala do rei é das brancas, e o contrajogo preto vem de ...c5.',
+      name: 'Variante Sämisch',
+      description: 'As brancas sustentam e4 com f3 e preparam um ataque de peões na ala do rei.',
+      rootNodeId: '',
+      line: [
+        /*
+          A ORDEM DE LANCES É 3.f3, E NÃO 5.f3 — e a escolha é forçada por um
+          portão, não por estética.
+
+          As duas ordens chegam à mesma posição, e 3.f3 é ordem corrente da
+          Sämisch. A diferença é que ela bifurca no MESMO ponto de decisão que o
+          Fianchetto. O bot de sparring percorre as alternativas de um ponto
+          conforme a rodada, mas desviar num ponto RASO afasta a partida de
+          qualquer ponto mais fundo: com 5.f3, a Sämisch nunca era jogada.
+
+          TENTEI CONSERTAR O BOT DUAS VEZES E PIOREI NAS DUAS. Ficou registrado
+          no histórico; aqui fica o resultado: o conteúdo se adapta.
+        */
+        ...kidMain.slice(0, 4),
+        lesson(
+          5,
+          'f3',
+          'O peão sustenta o futuro e4 sem gastar peça, e libera os peões da ala do rei para avançar.',
+          {
+            strategicIdea: 'Sustentar com peão custa um tempo e compra uma ala inteira.',
+            resultingPlan: 'e4, Be3 e a corrida com g4 e h4 contra o roque preto.',
+          },
+        ),
+        lesson(
+          6,
+          'Bg7',
+          'As pretas seguem o plano: o bispo ocupa a diagonal antes de o centro branco fechar.',
+          { resultingPlan: '...d6 e ...O-O, com o contrajogo indo para a ala da dama.' },
+        ),
+      ],
+    },
+    {
+      /*
+        O FIANCHETTO É A LINHA MAIS POSICIONAL e a mais comum contra jogadores
+        de clube. Core porque ela desarma o ataque preto sem precisar de teoria.
+      */
+      id: 'kid-fianchetto',
+      importancia: 'core',
+      eco: 'E60',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.bishop-pair'],
+      estrutura: 'structure.kid-locked-center',
+      erroComum: {
+        lance: 'e5',
+        porque:
+          'Romper cedo contra o fianchetto branco abre a diagonal longa para o bispo de g2 justamente quando ele mira a torre de a8. A ordem correta passa por ...Cc6 e ...Te8 antes da ruptura.',
+      },
+      fronteira: { type: 'handoff', planId: 'kid-e5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se neutralizar o bispo de g7 com o próprio fianchetto, e jogar por espaço sem riscos.',
+      intencaoDoAdversario:
+        'Espelhar o fianchetto e neutralizar o bispo de g7, jogando por pequena vantagem de espaço sem abrir o jogo.',
+      objetivoDoAluno:
+        'Preparar a ruptura com peças antes de tocar nos peões: contra o fianchetto, ...e5 sem preparo abre a diagonal do adversário.',
+      name: 'Variante Fianchetto',
+      description: 'As brancas também fianchetam e neutralizam o bispo de g7 pela mesma diagonal.',
+      rootNodeId: '',
+      line: [
+        ...kidMain.slice(0, 4),
+        lesson(
+          5,
+          'g3',
+          'As brancas preparam o próprio fianchetto e vão disputar a diagonal longa de igual para igual.',
+          {
+            strategicIdea: 'Neutralizar o bispo de g7 vale mais que ocupar mais uma casa central.',
+            resultingPlan: 'Bg2, Cf3 e O-O, com um jogo de espaço sem riscos.',
+          },
+        ),
+        lesson(
+          6,
+          'Bg7',
+          'O bispo ocupa a diagonal mesmo assim: a partida vai se decidir na preparação da ruptura.',
+          { resultingPlan: '...O-O, ...d6 e ...Cc6 antes de qualquer avanço de peão.' },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'kid-e5',
+      name: 'A ruptura ...e5',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Atacar o centro branco com o peão de e depois de o rei estar seguro.',
+      when: 'Com o roque feito e o cavalo já em c6 ou d7.',
+      risk: 'Romper antes de preparar: a troca em e5 abre a diagonal do bispo de g7 para o adversário.',
+      porQueFunciona:
+        'A Índia do Rei cede o centro por quatro lances para atacá-lo de uma vez. Com ...e5 o peão de d4 precisa decidir: avançar e travar, trocar e abrir, ou ficar e ser pressionado. As três respostas dão um plano às pretas.',
+      preparacao:
+        'Rei rocado, torre em e8 e um cavalo apontando para e5. A ruptura é o fim de uma preparação, e não um lance isolado.',
+      oQueOAdversarioTenta:
+        'Avançar d5 travando o centro e correndo na ala da dama, ou trocar em e5 para simplificar antes de o ataque preto nascer.',
+      arrows: [{ from: 'e7', to: 'e5' }],
+    },
+    {
+      id: 'kid-alas',
+      name: 'A corrida em alas opostas',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Avançar ...f5 e ...g5 contra o rei branco enquanto ele avança do outro lado.',
+      when: 'Depois de o centro travar com d5 — é a estrutura que autoriza a corrida.',
+      risk: 'Começar a corrida com o centro ainda aberto: uma ruptura central desfaz qualquer ataque de flanco.',
+      porQueFunciona:
+        'Centro travado tira a mobilidade das peças e entrega a partida aos peões. Cada lado ataca onde tem mais espaço, e a Índia do Rei dá às pretas a maioria na ala do rei — exatamente onde o rei branco costuma estar.',
+      preparacao:
+        'O centro trancado por d5 e as peças pretas reagrupadas: o cavalo de f6 costuma sair para e8 ou d7 para liberar o peão de f.',
+      oQueOAdversarioTenta:
+        'Chegar primeiro na ala da dama com c5 e b4, ou abrir o centro no meio da corrida para invalidar o ataque preto.',
+      arrows: [{ from: 'f7', to: 'f5' }],
+    },
+    {
+      id: 'kid-bispo',
+      name: 'Manter o bispo de g7 vivo',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Preservar a diagonal longa e não trocar a peça que dá nome à defesa.',
+      when: 'Sempre — é o fio que liga toda a Índia do Rei.',
+      risk: 'Trocar o bispo por conveniência tática: sem ele, o ataque preto na ala do rei perde o dono.',
+      porQueFunciona:
+        'O bispo de g7 pressiona d4 sem se expor e vira a peça mais forte do tabuleiro quando o centro abre. Toda a estrutura preta — ...d6, ...e5, ...f5 — existe para que essa diagonal um dia se abra.',
+      preparacao:
+        'Evitar ...e5 seguido de trocas que fechem a diagonal com peões pretos, e não permitir Bh6 trocando o bispo de graça.',
+      oQueOAdversarioTenta:
+        'Trocar o bispo com Bh6, ou travar a diagonal com peões em d4 e e5 sustentados por peças.',
+    },
+  ],
+  structures: [
+    {
+      name: 'Centro travado da Índia do Rei',
+      description:
+        'Peões brancos em c4, d5 e e4 contra peões pretos em d6, e5 e f7. O centro não anda, e as duas partidas correm em alas opostas.',
+      pawnBreaks: ['f5', 'c5', 'b4'],
+      weakSquares: ['f5', 'c6'],
+      openFiles: ['f', 'c'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'kid-erro-centro-cedo',
+      nodeId: 'root',
+      positionPly: 4,
+      moveSan: 'd5',
+      explanation:
+        'Disputar o centro de frente com ...d5 contradiz a ideia da defesa: a Índia do Rei cede o centro de propósito para atacá-lo depois com peças.',
+      principle:
+        'Escolher uma defesa é escolher um plano — jogar contra o próprio plano custa mais que jogar contra o adversário.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -2833,6 +3092,7 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   french,
   sicilianFoundation,
   qga,
+  kingsIndian,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),
