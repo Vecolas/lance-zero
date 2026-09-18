@@ -38,8 +38,14 @@ function positionAt(opening: OpeningDefinition, ply: number): string {
 }
 
 describe('curso de aberturas como grafo pedagógico', () => {
-  it('publica seis cursos completos, cada um com conteúdo mínimo', () => {
-    expect(OPENING_COURSES).toHaveLength(6)
+  it('publica os cursos do catálogo, cada um com conteúdo mínimo', () => {
+    /*
+      O NÚMERO É CRAVADO DE PROPÓSITO e sobe a cada curso da expansão. Ele não
+      mede qualidade — mede AUSÊNCIA: um curso que desaparecesse do registro por
+      acidente não quebraria nenhum outro teste, porque todos iteram sobre a
+      lista e uma lista menor passa igual.
+    */
+    expect(OPENING_COURSES).toHaveLength(35)
     for (const opening of OPENING_COURSES) {
       expect(opening.graph.size).toBeGreaterThan(opening.mainline.length)
       expect(opening.plans.length).toBeGreaterThan(0)

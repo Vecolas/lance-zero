@@ -508,7 +508,20 @@ function recuar(
   decisoes: number,
 ): RaizDoAlvo {
   const passos = Math.max(decisoes, 0) * 2
-  const destino = Math.max(plyDoDesvio - passos, 0)
+  /*
+    O PISO PRESERVA A PARIDADE, e não é zero.
+
+    O DEFEITO QUE ISTO CORRIGE só aparece quando o desvio está no PRIMEIRO
+    lance — o caso da Inglesa, cujos ramos bifurcam já na resposta preta.
+    Recuar duas casas a partir do ply 1 batia no zero, e o zero é a vez das
+    BRANCAS: a rodada trocava de lado e passava a pedir um lance a quem não era
+    de jogar.
+
+    Recuando até `plyDoDesvio % 2`, um desvio ímpar nunca desce abaixo de 1 e um
+    par nunca desce abaixo de 0 — a fase se mantém, e um desvio raso
+    simplesmente não recua.
+  */
+  const destino = Math.max(plyDoDesvio - passos, plyDoDesvio % 2)
   if (destino === 0) {
     return { nodeId: opening.rootNodeId, fen: opening.rootFen, ply: 0 }
   }

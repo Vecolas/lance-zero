@@ -172,26 +172,51 @@ test('NENHUMA tela de jornada escreve "Atividade concluída" — o bug de origem
     .click()
 
   /*
-    Percorre a jornada inteira até o treino, conferindo a cada etapa.
+    Percorre as etapas de LEITURA da jornada, conferindo a cada uma.
 
-    O `if (await continuar.isDisabled()) break` QUE MORAVA AQUI FOI REMOVIDO, e
-    a remoção é a correção de um portão desligado: ele fazia este teste desistir
-    em silêncio na primeira etapa travada e continuar verde. Foi assim que três
-    becos sem saída nas jornadas de Finais atravessaram a suíte inteira.
+    O `if (await continuar.isDisabled()) break` que morava aqui foi removido uma
+    vez, e a remoção é a correção de um portão desligado: ele fazia este teste
+    desistir em silêncio na primeira etapa travada e continuar verde. Foi assim
+    que três becos sem saída nas jornadas de Finais atravessaram a suíte inteira.
 
-    Etapa travada agora REPROVA aqui, com o nome da etapa. Quem prova que ela
-    tem saída — e destrava de verdade — é `jornada-sem-beco.spec.ts`; este
-    arquivo só se recusa a passar por cima do problema.
+    E ENTÃO O MESMO DEFEITO VOLTOU POR OUTRA PORTA. O `if (count() === 0) break`
+    que sobrou faz exatamente o que o outro fazia: quando a página ainda não
+    pintou o botão, a contagem dá zero, o laço termina e o teste passa sem ter
+    percorrido nada. Foi por isso que ele ficou verde em duas de três execuções
+    e reprovou na terceira — a única em que a página carregou rápido o bastante
+    para o laço chegar à "Prática guiada".
+
+    O que ele achou lá não era um beco: era o produto CERTO. A prática guiada
+    tem `regra: itens` e o `Continuar` fica desabilitado até o aluno jogar os
+    lances. Exigir `toBeEnabled()` ali era exigir que o portão da etapa não
+    existisse.
+
+    Então a divisa passou a ser explícita: o laço anda pelas etapas de leitura e
+    PARA na primeira que cobra prática. Se alguma etapa de leitura travar, ele
+    para antes — e a asserção final, que exige ter chegado à prática guiada,
+    reprova dizendo em qual etapa parou. O portão continua mordendo; ele só
+    deixou de morder o lugar errado.
   */
+  let ultimoTitulo = '(nenhuma etapa)'
   for (let i = 0; i < 8; i += 1) {
     await expect(page.locator('main')).not.toContainText(FRASES_DE_CONCLUSAO)
     const continuar = page.getByRole('button', { name: /Continuar/ })
-    if ((await continuar.count()) === 0) break
-    const titulo = await page.getByRole('heading', { level: 2 }).first().textContent()
-    await expect(continuar, `etapa "${titulo}" travou o Continuar`).toBeEnabled()
+    // `toBeAttached` e não `count()`: esperar o botão aparecer, em vez de tratar
+    // "ainda não pintou" como "a jornada acabou".
+    await expect(continuar).toBeAttached()
+    ultimoTitulo = (await page.getByRole('heading', { level: 2 }).first().textContent()) ?? ''
+    if (await continuar.isDisabled()) break
     await continuar.click()
   }
 
+  /*
+    A PROVA DE QUE O LAÇO ANDOU. Sem ela, qualquer travamento numa etapa de
+    leitura sairia daqui em silêncio — que é o defeito original deste teste,
+    pela terceira porta.
+  */
+  expect(ultimoTitulo, `o laço parou em "${ultimoTitulo}" antes da prática guiada`).toMatch(
+    /Prática guiada/i,
+  )
   await expect(page.locator('main')).not.toContainText(FRASES_DE_CONCLUSAO)
 })
 

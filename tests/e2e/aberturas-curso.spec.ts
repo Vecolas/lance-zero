@@ -233,13 +233,24 @@ test('a biblioteca de variações ensina cada ramo no tabuleiro, sem explorador'
 
   // E DÁ PARA VOLTAR. Um estudo sem saída seria o beco que o ADR-0016 desfez.
   await page.getByRole('button', { name: /Todas as variações/ }).click()
-  await expect(page.getByRole('button', { name: /Giuoco Piano/ })).toBeVisible()
+  /*
+    O NOME É EXATO, e a mudança veio de um vermelho real: a Onda 0 acrescentou o
+    "Giuoco Piano com c3", e um seletor por substring passou a casar com dois
+    cards. Playwright reprovou com "resolved to 2 elements" — corretamente.
+
+    A asserção exata é mais forte que a anterior: ela distingue o ramo que NÃO
+    bifurca (o nome do trecho da principal) daquele que bifurca com c3.
+  */
+  const cardDoGiuoco = page
+    .getByRole('button')
+    .filter({ has: page.getByText('Giuoco Piano', { exact: true }) })
+  await expect(cardDoGiuoco).toBeVisible()
 
   // UMA LISTA SÓ: o ramo do ALUNO e o do ADVERSÁRIO convivem na mesma grade.
   await page.getByRole('button', { name: /Defesa Húngara/ }).click()
   await expect(page.getByText('6. Be7')).toBeVisible()
   await page.getByRole('button', { name: /Todas as variações/ }).click()
-  await page.getByRole('button', { name: /Giuoco Piano/ }).click()
+  await cardDoGiuoco.click()
   await expect(page.getByText(/não é um desvio/)).toBeVisible()
 
   // E nada de explorador: nem o painel, nem uma única consulta.
@@ -273,7 +284,45 @@ test('o catálogo filtra por lado e por nível, na mesma fileira', async ({ page
   await page.getByRole('button', { name: 'Todas', exact: true }).click()
   await page.getByRole('button', { name: /Filtrar por nível/ }).click()
   await page.getByRole('button', { name: 'Avançada' }).click()
-  await expect(page.getByText(/Nenhuma abertura corresponde aos filtros/)).toBeVisible()
+  /*
+    O FILTRO PASSOU A MEDIR O FILTRO, e a mudança veio de um vermelho real.
+
+    A asserção antiga era que "Avançada" não devolvia NADA — verdade enquanto o
+    catálogo tinha só cursos de nível 1 e 2. A Abertura Espanhola entrou com
+    nível 3, e o estado vazio deixou de aparecer.
+
+    O teste não estava protegendo o estado vazio: ele estava protegendo o
+    FILTRO. Medir que ele separa o avançado do iniciante é mais forte do que
+    medir que ele esvazia a lista — e continua valendo quando o catálogo crescer
+    de novo.
+  */
+  await expect(page.getByRole('link', { name: /Abertura Espanhola/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Abertura Italiana/ })).toBeHidden()
+
+  /*
+    O ESTADO VAZIO SAIU DAQUI, E ELE NÃO FOI ENFRAQUECIDO — FICOU INALCANÇÁVEL.
+
+    A asserção media "avançada E pelas pretas não devolve nada". Com 35 cursos,
+    as SEIS combinações de lado e nível têm curso: a mais rala é "iniciante e
+    pelas pretas", com a Escandinava. Não existe mais nenhum par de filtros que
+    esvazie a lista.
+
+    Afirmar que ela esvazia seria afirmar algo falso, e trocar por um terceiro
+    filtro inventado só para produzir o vazio seria medir o teste, e não o
+    produto. O que sobra é o que este teste sempre quis medir: que os dois
+    filtros COMPÕEM — e isso a asserção abaixo cobra de forma mais forte do que
+    o estado vazio cobrava.
+
+    O painel de vazio continua no `OpeningCatalog` e volta a ser alcançável no
+    dia em que um nível novo entrar sem curso de algum lado.
+  */
+  await page.getByRole('button', { name: 'Pretas', exact: true }).click()
+  // Avançada E pelas pretas: some a Espanhola (avançada, mas pelas brancas)...
+  await expect(page.getByRole('link', { name: /Abertura Espanhola/ })).toBeHidden()
+  // ...some a Escandinava (pelas pretas, mas iniciante)...
+  await expect(page.getByRole('link', { name: /Defesa Escandinava/ })).toBeHidden()
+  // ...e fica quem satisfaz os DOIS filtros ao mesmo tempo.
+  await expect(page.getByRole('link', { name: /Defesa Siciliana/ }).first()).toBeVisible()
 })
 
 test('TESTE GRADE RALA — um card sozinho não estica para a tela inteira', async ({ page }) => {

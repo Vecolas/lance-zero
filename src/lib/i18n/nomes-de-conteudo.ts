@@ -56,6 +56,47 @@ const HABILIDADE_EM_INGLES: Record<string, string> = {
 /** Abertura → nome oficial em inglês. */
 const ABERTURA_EM_INGLES: Record<string, string> = {
   italiana: 'Italian Game',
+  'siciliana-sveshnikov': 'Sicilian Sveshnikov',
+  'siciliana-dragao': 'Sicilian Dragon',
+  'siciliana-najdorf': 'Sicilian Najdorf',
+  'jobava-london': 'Jobava London',
+  tarrasch: 'Tarrasch Defence',
+  'bogo-india': 'Bogo-Indian Defence',
+  'ataque-india-do-rei': "King's Indian Attack",
+  trompowsky: 'Trompowsky Attack',
+  benko: 'Benko Gambit',
+  benoni: 'Modern Benoni',
+  alekhine: 'Alekhine Defence',
+  'gambito-do-rei': "King's Gambit",
+  viena: 'Vienna Game',
+  reti: 'Reti Opening',
+  moderna: 'Modern Defence',
+  'india-da-dama': "Queen's Indian Defence",
+  'semi-eslava': 'Semi-Slav Defence',
+  holandesa: 'Dutch Defence',
+  grunfeld: 'Grünfeld Defence',
+  pirc: 'Pirc Defence',
+  escandinava: 'Scandinavian Defence',
+  inglesa: 'English Opening',
+  catala: 'Catalan Opening',
+  'nimzo-india': 'Nimzo-Indian Defence',
+  'india-do-rei': "King's Indian Defence",
+  'gambito-da-dama-aceito': "Queen's Gambit Accepted",
+  /*
+    A CHAVE É O ID DO CURSO, E NÃO O SLUG. Eles coincidem em quase todos e
+    divergem neste: o endereço é `/aberturas/siciliana`, mas o curso se chama
+    `siciliana-foundation` porque haverá cursos filhos. Um portão pegou a
+    diferença — o nome em inglês caía no português.
+  */
+  'siciliana-foundation': 'Sicilian Defence — Foundations',
+  francesa: 'French Defence',
+  /*
+    "Ruy Lopez" é o nome oficial em inglês — não "Spanish Opening". Em
+    português a abertura é a Espanhola, e em inglês ela leva o nome do padre
+    que a descreveu. Traduzir literalmente produziria um nome que nenhuma
+    fonte usa. Ver `docs/i18n-glossary.md`.
+  */
+  'ruy-lopez': 'Ruy Lopez',
   escocesa: 'Scotch Game',
   'sistema-londres': 'London System',
   'caro-kann': 'Caro-Kann Defence',
