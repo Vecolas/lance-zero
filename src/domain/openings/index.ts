@@ -115,7 +115,80 @@ export interface OpeningVariation {
   intencaoDoAdversario?: string
   /** O que VOCÊ busca nesta posição. O par da pergunta acima. */
   objetivoDoAluno?: string
+
+  /* --- o que o plano de expansão §6 exige de todo ramo `core` --- */
+
+  /**
+   * O código ECO desta linha.
+   *
+   * Vem do dataset CC0 `lichess-org/chess-openings`, que é a referência
+   * canônica de nome, ECO, PGN, UCI e EPD do projeto. Ele serve para NOMEAR e
+   * VALIDAR — nunca para gerar currículo: um nome ECO não vira lição sozinho,
+   * senão o catálogo vira uma enciclopédia de microvariações sem valor de
+   * ensino (§73).
+   */
+  eco?: string
+
+  /** Conceitos compartilhados que esta linha ensina. Ver `compartilhado.ts`. */
+  conceitos?: readonly string[]
+
+  /** A estrutura de peões característica. Um id de `ESTRUTURAS_DE_PEOES`. */
+  estrutura?: string
+
+  /** Motivos táticos que a posição produz. Sempre ligados a um conceito. */
+  motivos?: readonly string[]
+
+  /**
+   * O erro comum DESTE ramo, e por que ele é erro.
+   *
+   * Por ramo, e não por curso: "as pretas jogam ...Nf6 cedo demais" só faz
+   * sentido dentro da linha em que isso acontece. Um erro genérico no nível do
+   * curso vira conselho que ninguém consegue aplicar.
+   */
+  erroComum?: { lance: string; porque: string }
+
+  /**
+   * Onde a teoria para e o plano começa (§54).
+   *
+   * Ausente significa `graph-leaf`: a linha acaba onde o conteúdo acaba.
+   */
+  fronteira?: OpeningBoundary
+
+  /**
+   * Outras linhas que chegam a esta MESMA posição (§47 e §48).
+   *
+   * Declarar a transposição é o que impede a mesma explicação de ser escrita
+   * três vezes em três cursos — e o que permite o app dizer "você chegou aqui
+   * por outra ordem de lances", que é conteúdo pedagógico e não detalhe técnico.
+   */
+  transposicoes?: readonly string[]
+
+  /**
+   * O que o aluno demonstra ao jogar este ramo pelo lado de lá.
+   *
+   * `null` explícito quando o ramo não se pratica invertido — e a ausência de
+   * política é diferente de "pratica igual": ver ADR-0025.
+   */
+  politicaDoLadoInverso?: string
 }
+
+/**
+ * Onde a aprendizagem de uma linha deixa de ser "qual é o lance do repertório?"
+ * e vira "qual é o plano desta posição?" (plano VNext §22.1).
+ *
+ * ELE É POR RAMO, e não um número global. Um teto fixo de plies cortaria a
+ * Italiana antes do roque — que é a decisão que ela ensina — e deixaria a
+ * Eslava correndo além do que o conteúdo cobre.
+ */
+export type OpeningBoundary =
+  /** Acaba onde o conteúdo autorado acaba. É o padrão. */
+  | { type: 'graph-leaf' }
+  /** Acaba num ply fixo, quando a linha é mais longa que o útil. */
+  | { type: 'ply'; maxPly: number }
+  /** Acaba em posições nomeadas. */
+  | { type: 'position'; positionIds: readonly string[] }
+  /** Acaba entregando um plano: o handoff do §23. */
+  | { type: 'handoff'; planId: string }
 
 /**
  * A MICRODECISÃO DE UM PLANO: o lance que o começa, jogado no tabuleiro.

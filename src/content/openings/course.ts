@@ -93,6 +93,18 @@ const italian = course({
     {
       id: 'italiana-dois-cavalos',
       importancia: 'core',
+      eco: 'C55',
+      conceitos: ['concept.break-d4', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.f7-pressure'],
+      erroComum: {
+        lance: 'Ng5',
+        porque:
+          'Atacar f7 de imediato parece ganhar material e entrega a iniciativa: depois de ...d5 as pretas devolvem o peão e ficam com o centro e o desenvolvimento. O cavalo em g5 sai duas vezes para não conseguir nada.',
+      },
+      fronteira: { type: 'handoff', planId: 'italiana-d4' },
+      politicaDoLadoInverso:
+        'Pelo lado das pretas, o que se demonstra é o tempo ganho no ataque a e4 — e a disciplina de não transformá-lo em ataque prematuro.',
       intencaoDoAdversario:
         'Atacar e4 antes de desenvolver o bispo, para que você tenha de defender em vez de continuar o plano.',
       objetivoDoAluno:
@@ -149,8 +161,108 @@ const italian = course({
       ],
     },
     {
+      /*
+        O GIUOCO PIANO DE VERDADE DIVERGE COM c3, e este comentário existe
+        porque eu autorei errado da primeira vez.
+
+        A linha principal deste curso é `...Bc5 4.d3` — e `4.d3` É o Giuoco
+        PIANISSIMO. O ramo que escrevi como "Pianissimo" era idêntico à
+        principal: um nome novo para a mesma linha, que é a definição de ramo
+        que não ensina nada. O portão de legalidade pegou, porque um ramo sem
+        divergência não tem posição de desvio onde medir.
+
+        O Piano clássico é `4.c3`, preparando `d4` de imediato. Isso sim é uma
+        decisão: centro rápido contra manobra lenta.
+      */
+      id: 'italiana-giuoco-piano-c3',
+      importancia: 'core',
+      eco: 'C53',
+      conceitos: ['concept.break-d4', 'concept.material-vs-initiative', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'd4',
+        porque:
+          'Romper antes de c3 entrega o centro: depois de ...exd4 o peão não pode ser recapturado com peão, e as brancas ficam com um lance de desenvolvimento a menos e nada em troca. O c3 existe justamente para que d4 venha com apoio.',
+      },
+      fronteira: { type: 'handoff', planId: 'italiana-d4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se pressionar o centro antes que ele se complete: ...Nf6 e ...d5 no momento certo desfazem a preparação.',
+      intencaoDoAdversario:
+        'Deixar você montar o centro para depois atacá-lo com ...Nf6 e ...d5, quando o peão de d4 já não puder recuar.',
+      objetivoDoAluno:
+        'Preparar d4 com c3 e só então romper: o centro que vem com apoio é o que dá as linhas abertas para as peças já desenvolvidas.',
+      name: 'Giuoco Piano com c3',
+      description: 'As brancas preparam d4 de imediato em vez de manobrar atrás de d3.',
+      rootNodeId: '',
+      line: [
+        ...italianaMain.slice(0, 6),
+        lesson(7, 'c3', 'O peão prepara d4 — o centro vem com apoio, e não de improviso.', {
+          arrows: [{ from: 'c2', to: 'c3' }],
+          strategicIdea: 'Romper o centro sem preparo é entregá-lo.',
+        }),
+        lesson(8, 'Nf6', 'As pretas atacam e4 antes que o centro branco se complete.', {
+          highlights: ['e4'],
+        }),
+        lesson(9, 'd4', 'Agora sim: a ruptura vem com c3 sustentando a recaptura.', {
+          resultingPlan: 'Abrir linhas enquanto o rei preto ainda decide onde ficar.',
+        }),
+      ],
+    },
+    {
+      /*
+        O EVANS É A LIÇÃO DE INICIATIVA DO CURSO. Ele é core porque ensina a
+        conta que todo gambito faz — tempo contra material — num formato em que
+        as duas metades são visíveis no mesmo lance.
+      */
+      id: 'italiana-evans',
+      importancia: 'core',
+      eco: 'C51',
+      conceitos: ['concept.material-vs-initiative', 'concept.break-d4', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.f7-pressure'],
+      erroComum: {
+        lance: 'Nc3',
+        porque:
+          'Desenvolver naturalmente aqui desperdiça o gambito: o peão de b4 foi entregue para ganhar c3 e d4 com tempo, e o cavalo nessa casa tira justamente o apoio que a ruptura precisa.',
+      },
+      fronteira: { type: 'handoff', planId: 'italiana-d4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se aceitar material sem pânico: devolver o peão no momento certo vale mais que segurá-lo.',
+      intencaoDoAdversario:
+        'Ficar com o peão a mais e provar que a sua iniciativa acaba antes de virar algo concreto.',
+      objetivoDoAluno:
+        'Usar os tempos que o peão comprou: c3 e d4 vêm com ataque, e o centro abre a favor de quem se desenvolveu.',
+      name: 'Gambito Evans',
+      description: 'As brancas entregam um peão em b4 para ganhar tempo e abrir o centro.',
+      rootNodeId: '',
+      line: [
+        ...italianaMain.slice(0, 6),
+        lesson(7, 'b4', 'O peão é oferecido para desviar o bispo e ganhar o tempo de c3.', {
+          arrows: [{ from: 'b2', to: 'b4' }],
+          strategicIdea: 'Material por iniciativa: a conta só fecha se os tempos virarem centro.',
+        }),
+        lesson(8, 'Bxb4', 'As pretas aceitam — recusar também é jogável e leva a outro jogo.'),
+        lesson(9, 'c3', 'O bispo é expulso e o centro ganha o apoio que d4 precisa.', {
+          resultingPlan: 'd4 abrindo linhas enquanto o rei preto ainda está no meio.',
+        }),
+      ],
+    },
+    {
       id: 'italiana-giuoco-piano',
       importancia: 'core',
+      eco: 'C50',
+      conceitos: ['concept.break-d4', 'concept.king-safety-timing'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.f7-pressure'],
+      erroComum: {
+        lance: 'Nxe5',
+        porque:
+          'Capturar em e5 parece ganhar um peão e perde uma peça: depois de ...Nxe5 o bispo de c4 fica sozinho contra o centro preto. É o erro de contar material sem contar defensores.',
+      },
+      fronteira: { type: 'handoff', planId: 'italiana-d4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se que a simetria não é passividade: quem espelha precisa romper primeiro ou ceder a iniciativa.',
       intencaoDoAdversario: 'Espelhar o seu desenvolvimento e manter a posição simétrica.',
       objetivoDoAluno:
         'Reconhecer que esta é a própria linha principal, e continuar com d3 e roque.',
@@ -183,6 +295,25 @@ const italian = course({
         pergunta na posição anterior ensinaria a romper o centro com o rei no
         meio, que é exatamente o `risk` escrito acima.
       */
+    },
+    {
+      id: 'italiana-manobra',
+      name: 'Manobra Cbd2-f1-g3',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Levar o pior cavalo para a melhor casa antes de tocar no centro.',
+      when: 'Em posições fechadas, quando nenhuma ruptura ainda está preparada.',
+      risk: 'Manobrar para sempre e nunca romper: a paciência vira passividade.',
+      porQueFunciona:
+        'O cavalo de b1 é a peça mais lenta da posição, e em g3 ele vigia e4, f5 e h5 ao mesmo tempo. Melhorar a pior peça é o plano padrão quando não há alvo imediato.',
+      preparacao:
+        'Rei rocado e centro sustentado por d3: a manobra leva três lances, e três lances com o rei no meio é convite à ruptura adversária.',
+      oQueOAdversarioTenta:
+        'Romper com ...d5 enquanto o cavalo está no caminho, ou avançar na ala da dama enquanto as brancas manobram do outro lado.',
+      arrows: [
+        { from: 'b1', to: 'd2' },
+        { from: 'd2', to: 'f1' },
+      ],
     },
     {
       id: 'italiana-f7',
@@ -264,6 +395,17 @@ const caroKann = course({
     {
       id: 'caro-troca',
       importancia: 'core',
+      eco: 'B13',
+      conceitos: ['concept.open-file', 'concept.bad-bishop', 'concept.minority-attack'],
+      estrutura: 'structure.carlsbad',
+      erroComum: {
+        lance: 'Qxd5',
+        porque:
+          'Recapturar com a dama entrega o tempo: Nc3 a ataca e as brancas se desenvolvem de graça. O peão de c6 recaptura, abre a coluna c e mantém d5 sustentado — que é a razão de a defesa existir.',
+      },
+      fronteira: { type: 'handoff', planId: 'caro-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se o ataque de minoria: b4-b5 é o plano que a estrutura de Carlsbad autoriza.',
       intencaoDoAdversario:
         'Simplificar em d5 para tirar a tensão e jogar uma posição sem alvo fixo.',
       objetivoDoAluno:
@@ -292,8 +434,107 @@ const caroKann = course({
       ],
     },
     {
+      /*
+        O PANOV NASCE DENTRO DA TROCA e muda o jogo inteiro: com c4 as brancas
+        aceitam um peão isolado em troca de peças ativas. É o ramo que ensina o
+        IQP deste curso — e ele é o mesmo IQP da Escocesa e da Tarrasch.
+      */
+      id: 'caro-panov',
+      importancia: 'core',
+      eco: 'B14',
+      conceitos: ['concept.iqp', 'concept.material-vs-initiative', 'concept.open-file'],
+      estrutura: 'structure.iqp',
+      motivos: ['motif.fork-on-d5', 'motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'dxc4',
+        porque:
+          'Capturar em c4 devolve o centro e dá às brancas exatamente o que elas queriam: desenvolvimento com tempo sobre o peão recuperado. Contra o Panov, as pretas sustentam d5 e jogam para trocar peças, não peões.',
+      },
+      fronteira: { type: 'handoff', planId: 'caro-contra-iqp' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se jogar COM o peão isolado: atacar antes das trocas, porque no final ele vira alvo fixo.',
+      intencaoDoAdversario:
+        'Aceitar um peão isolado em troca de casas ativas e iniciativa, apostando que você vai trocar peças tarde demais.',
+      objetivoDoAluno:
+        'Sustentar d5 e trocar peças: cada troca aproxima o final em que o peão isolado é fraqueza, e não força.',
+      name: 'Ataque Panov-Botvinnik',
+      description: 'Depois da troca, as brancas jogam c4 e aceitam um peão isolado por atividade.',
+      rootNodeId: '',
+      line: [
+        ...caroMain.slice(0, 4),
+        lesson(
+          5,
+          'exd5',
+          'As brancas resolvem a tensão central, mas desta vez com a intenção de atacar d5 logo em seguida.',
+          { strategicIdea: 'A troca aqui não é para simplificar: é para criar um alvo.' },
+        ),
+        lesson(
+          6,
+          'cxd5',
+          'A recaptura correta continua sendo com o peão de c, que abre a coluna e sustenta o centro.',
+          { resultingPlan: 'A coluna c aberta é a compensação permanente das pretas.' },
+        ),
+        lesson(7, 'c4', 'Agora o centro é atacado: as brancas oferecem o peão isolado.', {
+          arrows: [{ from: 'c2', to: 'c4' }],
+          strategicIdea: 'Peão isolado é atividade agora e fraqueza depois.',
+        }),
+        lesson(8, 'Nf6', 'Desenvolver atacando o centro vale mais que capturar em c4.', {
+          resultingPlan: '...e6, ...Be7 e trocas: cada peça fora do tabuleiro favorece as pretas.',
+        }),
+      ],
+    },
+    {
+      /*
+        O FANTASY É A LINHA QUE PEGA QUEM DECOROU. Ela não desenvolve nada, e é
+        justamente por isso que confunde: o repertório preto precisa de um plano,
+        não de um lance memorizado.
+      */
+      id: 'caro-fantasy',
+      importancia: 'core',
+      eco: 'B12',
+      conceitos: ['concept.break-e5', 'concept.king-safety-timing', 'concept.bad-bishop'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'dxe4',
+        porque:
+          'Capturar em e4 abre a coluna f para as brancas e devolve o centro com tempo — depois de fxe4 elas ficam com dois peões centrais e a iniciativa. Contra f3, as pretas atacam o centro com ...e5 ou ...Qb6, e não o simplificam.',
+      },
+      fronteira: { type: 'handoff', planId: 'caro-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se construir um centro grande aceitando ficar atrasado no desenvolvimento.',
+      intencaoDoAdversario:
+        'Sustentar e4 com um peão e montar um centro grande, aceitando não desenvolver nenhuma peça por enquanto.',
+      objetivoDoAluno:
+        'Atacar o centro antes que ele se complete: quem gasta lances com peões não pode ganhar uma corrida de desenvolvimento.',
+      name: 'Variante Fantasy',
+      description: 'As brancas sustentam e4 com f3 em vez de avançar ou trocar.',
+      rootNodeId: '',
+      line: [
+        ...caroMain.slice(0, 4),
+        lesson(5, 'f3', 'O peão sustenta e4 sem desenvolver nada — e abre a diagonal do rei.', {
+          highlights: ['e4'],
+          strategicIdea: 'Centro grande custa tempo. Tempo é o que ataca centro grande.',
+        }),
+        lesson(6, 'e6', 'As pretas preparam ...c5 e abrem a diagonal do bispo de f8.', {
+          resultingPlan: '...c5 atacando a base, com o rei branco ainda no meio.',
+        }),
+      ],
+    },
+    {
       id: 'caro-classica',
       importancia: 'core',
+      eco: 'B18',
+      conceitos: ['concept.bad-bishop', 'concept.space-vs-counterplay', 'concept.break-c5'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.greek-gift'],
+      erroComum: {
+        lance: 'e6',
+        porque:
+          'Jogar ...e6 antes de tirar o bispo de c8 tranca justamente a peça que a Caro-Kann existe para libertar — a defesa vira uma Francesa sem as compensações dela. A ordem é o conteúdo inteiro desta abertura.',
+      },
+      fronteira: { type: 'handoff', planId: 'caro-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se ganhar espaço e perseguir o bispo preto que saiu cedo, com Bd3 ou h4-h5.',
       intencaoDoAdversario:
         'Desenvolver sem definir o centro, deixando a decisão sobre d5 com você.',
       objetivoDoAluno: 'Trocar em e4 enquanto a troca é sua, e só então tirar o bispo por f5.',
@@ -333,6 +574,36 @@ const caroKann = course({
     },
   ],
   plans: [
+    {
+      id: 'caro-contra-iqp',
+      name: 'Trocar peças contra o peão isolado',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Aproximar o final trocando peças, para que o peão isolado vire alvo fixo.',
+      when: 'Sempre que as brancas aceitarem o isolado — no Panov, tipicamente.',
+      risk: 'Trocar sem completar o desenvolvimento: o isolado é forte justamente no meio-jogo.',
+      porQueFunciona:
+        'Um peão isolado dá casas ativas enquanto há peças para ocupá-las e vira fraqueza quando elas somem. Cada troca tira um atacante e mantém o alvo — é a única fraqueza do xadrez que não pode fugir.',
+      preparacao:
+        'Bloquear a casa à frente do peão, tipicamente com um cavalo em d5 ou d4. Sem bloqueio, o peão avança e deixa de ser isolado.',
+      oQueOAdversarioTenta:
+        'Evitar trocas e usar as colunas abertas para atacar antes que o final chegue — d5 no momento certo desfaz tudo.',
+    },
+    {
+      id: 'caro-coluna-c',
+      name: 'Usar a coluna c',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Pôr a torre em c8 e pressionar a coluna que a recaptura abriu.',
+      when: 'Depois de ...cxd5, em qualquer linha de troca.',
+      risk: 'Abrir a coluna e não ocupá-la: a coluna aberta serve a quem chega primeiro.',
+      porQueFunciona:
+        'A recaptura com o peão de c é o que diferencia a Caro-Kann: ela abre uma coluna para a torre preta sem enfraquecer o centro. A mesma troca que tira a tensão entrega a estrada.',
+      preparacao:
+        'O bispo de c8 já resolvido — em f5 ou trocado. Com ele em casa, a torre em c8 empurra uma peça que ainda não saiu.',
+      oQueOAdversarioTenta:
+        'Disputar a coluna com a própria torre, ou fechar o assunto trocando tudo nela e indo para um final igual.',
+    },
     {
       id: 'caro-bispo',
       name: 'Libertar o bispo',
@@ -411,6 +682,17 @@ const qgd = course({
     {
       id: 'qgd-tres-cavalos',
       importancia: 'core',
+      eco: 'D37',
+      conceitos: ['concept.bad-bishop', 'concept.break-c5', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.slav-triangle',
+      erroComum: {
+        lance: 'dxc4',
+        porque:
+          'Capturar em c4 sem ter preparado ...b5 ou ...c5 devolve o centro com tempo: as brancas recuperam o peão com e3 e Bxc4 já desenvolvidas. Na Ortodoxa, a tensão é sustentada até a ruptura estar pronta.',
+      },
+      fronteira: { type: 'handoff', planId: 'qgd-c5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se manter a tensão central e completar o desenvolvimento antes de decidir a estrutura.',
       intencaoDoAdversario:
         'Desenvolver o cavalo do rei antes de comprometer o centro, mudando só a ordem dos lances.',
       objetivoDoAluno:
@@ -439,8 +721,90 @@ const qgd = course({
       ],
     },
     {
+      /*
+        O TARTAKOWER RESOLVE O PROBLEMA CENTRAL DA ORTODOXA — o bispo de c8 — e
+        por isso é core: ele é a resposta à pergunta que o curso inteiro faz.
+      */
+      id: 'qgd-tartakower',
+      importancia: 'core',
+      eco: 'D58',
+      conceitos: ['concept.bad-bishop', 'concept.break-c5', 'concept.open-file'],
+      estrutura: 'structure.slav-triangle',
+      erroComum: {
+        lance: 'c5',
+        porque:
+          'Romper antes de resolver o bispo deixa a peça presa atrás da própria cadeia justamente quando a posição abre. O ...b6 vem primeiro porque é ele que dá ao bispo a diagonal onde ele vale alguma coisa.',
+      },
+      fronteira: { type: 'handoff', planId: 'qgd-c5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se pressionar antes de o bispo sair: cada tempo que as pretas gastam com ...h6 e ...b6 é um tempo de desenvolvimento a mais.',
+      intencaoDoAdversario:
+        'Pressionar o centro e o cavalo de f6 enquanto o bispo de c8 ainda não tem diagonal.',
+      objetivoDoAluno:
+        'Resolver o bispo ruim antes de romper: ...b6 e ...Bb7 transformam a peça pior da posição na melhor.',
+      name: 'Variante Tartakower',
+      description: 'As pretas resolvem o bispo de c8 com ...b6 antes de qualquer ruptura.',
+      rootNodeId: '',
+      line: [
+        ...qgdMain,
+        lesson(
+          7,
+          'Bg5',
+          'O bispo crava o cavalo de f6 e aumenta a pressão sobre d5, que é o ponto que a defesa sustenta.',
+          {
+            highlights: ['f6'],
+            resultingPlan: 'e3, Bd3 e a pressão somada sobre o centro preto.',
+          },
+        ),
+        lesson(
+          8,
+          'Be7',
+          'As pretas desfazem a cravada desenvolvendo, sem gastar um lance só para resolver o problema.',
+          { strategicIdea: 'Resolver uma ameaça com desenvolvimento é sempre o melhor negócio.' },
+        ),
+        lesson(
+          9,
+          'e3',
+          'As brancas fecham a cadeia e abrem a diagonal do bispo de f1 antes de completar o desenvolvimento.',
+          { resultingPlan: 'Bd3 e O-O, com o centro sustentado.' },
+        ),
+        lesson(
+          10,
+          'h6',
+          'Antes de qualquer ruptura, a pergunta ao bispo: ele troca em f6 ou recua e perde um tempo?',
+          {
+            strategicIdea: 'Ganhar o tempo do bispo é o que torna ...b6 possível sem concessão.',
+            resultingPlan: '...b6 e ...Bb7 com o cavalo de f6 já livre da cravada.',
+          },
+        ),
+        lesson(
+          11,
+          'Bh4',
+          'O bispo mantém a cravada em vez de trocar — mas gastou um tempo, e é esse tempo que as pretas usam.',
+          {
+            strategicIdea: 'Perguntar ao bispo sempre ganha alguma coisa: ou a troca, ou o tempo.',
+          },
+        ),
+        lesson(12, 'b6', 'Agora sim: a diagonal longa abre para o bispo que estava preso.', {
+          arrows: [{ from: 'c8', to: 'b7' }],
+          resultingPlan: '...Bb7, ...Nbd7 e a ruptura ...c5 com todas as peças no jogo.',
+        }),
+      ],
+    },
+    {
       id: 'qgd-troca',
       importancia: 'core',
+      eco: 'D35',
+      conceitos: ['concept.minority-attack', 'concept.open-file', 'concept.break-e5'],
+      estrutura: 'structure.carlsbad',
+      erroComum: {
+        lance: 'Qxd5',
+        porque:
+          'Recapturar com a dama entrega o tempo a Nc3 e desfaz a estrutura de Carlsbad antes de ela existir. É o peão de e6 que recaptura — e é essa recaptura que define o plano dos dois lados pelo resto da partida.',
+      },
+      fronteira: { type: 'handoff', planId: 'qgd-minoria' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se o ataque de minoria: b4-b5 cria a fraqueza permanente que a estrutura autoriza.',
       intencaoDoAdversario: 'Fixar a estrutura cedo e jogar contra a sua minoria de peões.',
       objetivoDoAluno:
         'Recapturar com o peão de e6 para manter d5 sustentado e o bispo de c8 com saída.',
@@ -493,6 +857,37 @@ const qgd = course({
     },
   ],
   plans: [
+    {
+      id: 'qgd-minoria',
+      name: 'Enfrentar o ataque de minoria',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Jogar no centro e na ala do rei enquanto as brancas avançam na ala da dama.',
+      when: 'Na estrutura de Carlsbad, depois de cxd5 exd5.',
+      risk: 'Tentar parar b4-b5 com peões: as casas que isso enfraquece custam mais que o avanço.',
+      porQueFunciona:
+        'O ataque de minoria é lento por natureza — dois peões contra três levam vários lances. Cada um deles é um lance que as brancas não usam no centro, e é aí que as pretas jogam ...Ne4 e ...f5.',
+      preparacao:
+        'Peças no centro antes do avanço chegar: com o cavalo em e4 e a torre em e8, a ruptura ...f5 vem com apoio.',
+      oQueOAdversarioTenta:
+        'Completar b4-b5 e fixar um peão atrasado em c6, para atacá-lo pela coluna c no final.',
+      arrows: [{ from: 'f7', to: 'f5' }],
+    },
+    {
+      id: 'qgd-bispo-ruim',
+      name: 'Resolver o bispo de c8',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Dar ao bispo de casas claras uma diagonal antes de a posição abrir.',
+      when: 'Em toda estrutura fechada do QGD — é a pergunta permanente da defesa.',
+      risk: 'Gastar tempo demais com uma peça só e ficar atrasado no resto do desenvolvimento.',
+      porQueFunciona:
+        'O peão em e6 tranca o bispo atrás da própria cadeia, e uma peça que não participa é material a menos. ...b6 e ...Bb7 ou ...dxc4 com ...b5 são as duas formas de a peça voltar ao jogo.',
+      preparacao:
+        'O cavalo de f6 já defendido ou a cravada já resolvida com ...h6: sem isso, ...b6 afrouxa o centro no pior momento.',
+      oQueOAdversarioTenta:
+        'Abrir a posição enquanto o bispo ainda está em casa, tipicamente com cxd5 e e4 no momento certo.',
+    },
     {
       id: 'qgd-c5',
       name: 'Ruptura c5',
@@ -569,6 +964,18 @@ const scotch = course({
     {
       id: 'escocesa-classica',
       importancia: 'core',
+      eco: 'C45',
+      conceitos: ['concept.open-file', 'concept.break-d4', 'concept.king-safety-timing'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'Nb3',
+        porque:
+          'Recuar o cavalo devolve de graça o tempo que d4 ganhou e deixa o bispo de c5 mandando na diagonal. Defender desenvolvendo com Be3 mantém a peça e acrescenta outra ao jogo.',
+      },
+      fronteira: { type: 'handoff', planId: 'escocesa-atividade' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se a pergunta direta: atacar a peça que avançou, em vez de aceitar o espaço em silêncio.',
       intencaoDoAdversario:
         'Atacar o cavalo de d4 e a casa f2 com um só lance, forçando você a decidir cedo.',
       objetivoDoAluno:
@@ -598,8 +1005,65 @@ const scotch = course({
       ],
     },
     {
+      /*
+        O GAMBITO ESCOCÊS É A DECISÃO DE NÃO TROCAR, e por isso ele é core: as
+        duas outras linhas do curso nascem de `4.Nxd4`, e este ramo ensina que
+        existe uma escolha antes dela.
+
+        Ele também é a ponte para a Italiana (§47): depois de `4.Bc4 Bc5 5.c3`, a
+        posição pode transpor para o Giuoco Piano com c3. A transposição está
+        declarada em vez de a explicação ser copiada nos dois cursos.
+      */
+      id: 'escocesa-gambito',
+      importancia: 'core',
+      eco: 'C44',
+      conceitos: ['concept.material-vs-initiative', 'concept.break-d4', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.f7-pressure'],
+      erroComum: {
+        lance: 'Qxd4',
+        porque:
+          'Recapturar com a dama parece natural e entrega o tempo: ...Nc6 ataca a dama e as pretas se desenvolvem de graça. Num centro aberto, quem sai com a dama cedo paga em tempo.',
+      },
+      fronteira: { type: 'handoff', planId: 'escocesa-atividade' },
+      transposicoes: ['italiana-giuoco-piano-c3'],
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se devolver o peão na hora certa: segurá-lo custa desenvolvimento, e é o desenvolvimento que decide um centro aberto.',
+      intencaoDoAdversario:
+        'Ficar com o peão de d4 e sobreviver aos primeiros lances, apostando que a sua iniciativa acaba antes de virar ataque.',
+      objetivoDoAluno:
+        'Desenvolver com ameaça em vez de recapturar: o bispo em c4 mira f7 e o peão de d4 volta depois, ou não volta e paga em linhas abertas.',
+      name: 'Gambito Escocês',
+      description: 'Em vez de recapturar em d4, as brancas desenvolvem o bispo e miram f7.',
+      rootNodeId: '',
+      line: [
+        ...escocesaMain.slice(0, 6),
+        lesson(7, 'Bc4', 'O peão de d4 espera: primeiro o bispo entra mirando f7.', {
+          highlights: ['f7'],
+          arrows: [{ from: 'f1', to: 'c4' }],
+          strategicIdea: 'Num centro aberto, um tempo de desenvolvimento vale mais que um peão.',
+        }),
+        lesson(8, 'Bc5', 'As pretas também desenvolvem e defendem a diagonal.'),
+        lesson(9, 'c3', 'O peão prepara a recuperação do centro com apoio.', {
+          resultingPlan: 'cxd4 com centro sustentado, ou O-O antes de abrir tudo.',
+        }),
+      ],
+    },
+    {
       id: 'escocesa-schmidt',
       importancia: 'core',
+      eco: 'C45',
+      conceitos: ['concept.break-e5', 'concept.backward-pawn', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.fork-on-d5'],
+      erroComum: {
+        lance: 'Nc3',
+        porque:
+          'Defender e4 com peça deixa as pretas confortáveis e desperdiça a única troca que muda a pergunta. Nxc6 primeiro cria o alvo em c6 e só então e5 avança com tempo sobre o cavalo que atacava.',
+      },
+      fronteira: { type: 'handoff', planId: 'escocesa-espaco' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se aceitar os peões dobrados em troca da coluna b aberta e do par de bispos.',
       intencaoDoAdversario:
         'Atacar e4 e ignorar o seu cavalo, apostando que você vai defender passivamente.',
       objetivoDoAluno:
@@ -645,6 +1109,37 @@ const scotch = course({
     },
   ],
   plans: [
+    {
+      id: 'escocesa-espaco',
+      name: 'Espaço com e5',
+      positionNodeId: 'root',
+      positionPly: 7,
+      objective: 'Avançar e5 com tempo e fixar o alvo que a troca em c6 criou.',
+      when: 'Depois de Nxc6 bxc6, quando um cavalo preto ainda ocupa f6.',
+      risk: 'Avançar sem tempo: e5 sem ganhar nada vira um peão fraco à frente das próprias peças.',
+      porQueFunciona:
+        'A troca em c6 deixou as pretas com peões dobrados e sem o cavalo que defendia e5. O avanço ganha espaço, expulsa a peça que atacava e4 e transforma c6 num alvo que não anda.',
+      preparacao:
+        'A troca em c6 precisa vir ANTES: e5 com o cavalo preto ainda em c6 seria só um peão avançado sem apoio.',
+      oQueOAdversarioTenta:
+        'Desfazer os peões dobrados com ...d5, ou usar a coluna b aberta e o par de bispos para compensar a estrutura.',
+      arrows: [{ from: 'e4', to: 'e5' }],
+    },
+    {
+      id: 'escocesa-rei',
+      name: 'Rei seguro antes de abrir',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Rocar antes de o centro terminar de abrir.',
+      when: 'Sempre que a troca central estiver próxima e o rei ainda estiver no meio.',
+      risk: 'Rocar no automático quando existe um lance com ameaça que ganha tempo.',
+      porQueFunciona:
+        'A Escocesa abre o centro no terceiro lance, e num centro aberto a coluna e e a diagonal a2-g8 apontam para o rei que ficou. Quem roca primeiro decide onde a partida acontece.',
+      preparacao:
+        'Um lance de desenvolvimento que não pendure nada — em geral Bc4 ou Be3, que servem ao roque e à defesa do centro ao mesmo tempo.',
+      oQueOAdversarioTenta:
+        'Manter a tensão para que o seu rei fique no meio mais um lance, ou abrir a coluna e antes de você rocar.',
+    },
     {
       id: 'escocesa-atividade',
       name: 'Atividade no centro',
@@ -723,6 +1218,17 @@ const london = course({
     {
       id: 'londres-c5',
       importancia: 'core',
+      eco: 'D02',
+      conceitos: ['concept.break-c5', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.slav-triangle',
+      erroComum: {
+        lance: 'dxc5',
+        porque:
+          'Trocar em c5 devolve o centro de graça e dá às pretas o tempo de ...e6 e ...Bxc5 com desenvolvimento. O sistema existe para não precisar reagir: e3 sustenta e o plano segue igual.',
+      },
+      fronteira: { type: 'handoff', planId: 'london-e4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se atacar a base da cadeia em vez de espelhar — e não trocar em d4 antes de ter com que ocupar a casa.',
       intencaoDoAdversario:
         'Atacar a base do seu centro em vez de sustentar o dele — o teste mais direto do sistema.',
       objetivoDoAluno:
@@ -750,6 +1256,98 @@ const london = course({
             resultingPlan: 'c3, Cbd2, Bd3 e O-O, com d4 amparado duas vezes.',
           },
         ),
+      ],
+    },
+    {
+      /*
+        O SETUP INDIANO É A RESPOSTA QUE MUDA O JOGO, não a que o testa: as
+        pretas não disputam d5 e vão fianchetar. O erro que ele produz é querer
+        atacar um roque que ainda não existe.
+      */
+      id: 'londres-indiano',
+      importancia: 'core',
+      eco: 'A45',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-e5', 'concept.bad-bishop'],
+      estrutura: 'structure.kid-locked-center',
+      erroComum: {
+        lance: 'h4',
+        porque:
+          'Avançar na ala do rei contra um fianchetto ainda não rocado ataca o vazio: as pretas simplesmente não rocam ali, e o peão de h vira fraqueza numa posição em que as brancas já estavam bem.',
+      },
+      fronteira: { type: 'handoff', planId: 'london-e4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se ceder o centro por enquanto e preparar ...c5 ou ...e5 contra uma estrutura que não pode avançar depressa.',
+      intencaoDoAdversario:
+        'Não disputar d5 agora: fianchetar, rocar e só então atacar o centro branco, quando ele já não puder crescer.',
+      objetivoDoAluno:
+        'Completar a estrutura e escolher a ruptura certa — contra o fianchetto, o centro vale mais que qualquer ataque no flanco.',
+      name: 'Estrutura indiana',
+      description: 'As pretas não disputam o centro: fianchetam o bispo e atacam depois.',
+      rootNodeId: '',
+      line: [
+        ...londresMain.slice(0, 4),
+        lesson(5, 'Bf4', 'O bispo sai da cadeia antes de e3 — é a marca do sistema.', {
+          arrows: [{ from: 'c1', to: 'f4' }],
+        }),
+        lesson(6, 'g6', 'As pretas escolhem o fianchetto em vez de disputar d5 de frente.', {
+          strategicIdea: 'Quem cede o centro planeja atacá-lo depois, e não esquecê-lo.',
+        }),
+        lesson(7, 'e3', 'A cadeia se fecha e o bispo de f1 ganha a diagonal.', {
+          resultingPlan: 'c3, Cbd2, Bd3 e O-O; a ruptura e4 vem quando o centro estiver pronto.',
+        }),
+      ],
+    },
+    {
+      /*
+        ...Qb6 É A PERGUNTA MAIS DESCONFORTÁVEL DO SISTEMA, e é por isso que ela
+        é core: ela ataca b2 e d4 ao mesmo tempo, e quem decorou a ordem de
+        lances descobre aqui que não tem resposta pronta.
+      */
+      id: 'londres-qb6',
+      importancia: 'core',
+      eco: 'D02',
+      conceitos: ['concept.break-c5', 'concept.material-vs-initiative'],
+      estrutura: 'structure.slav-triangle',
+      erroComum: {
+        lance: 'b3',
+        porque:
+          'Defender b2 com o peão enfraquece a casa c3 e tira a própria dama do jogo depois. A resposta do sistema é desenvolver: Nc3 ou Qb3 defendem e acrescentam uma peça, em vez de só remendar.',
+      },
+      fronteira: { type: 'handoff', planId: 'london-e4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se a pergunta dupla — atacar dois pontos com um lance é o que obriga o adversário a escolher.',
+      intencaoDoAdversario:
+        'Atacar b2 e d4 no mesmo lance, para que você precise escolher entre defender material e manter o centro.',
+      objetivoDoAluno:
+        'Responder desenvolvendo: o peão de b2 vale menos que o tempo, e quem defende com peça continua construindo a posição.',
+      name: 'Pressão com Dama em b6',
+      description:
+        'As pretas atacam b2 e d4 com um lance só, antes de completar o desenvolvimento.',
+      rootNodeId: '',
+      line: [
+        ...londresMain.slice(0, 5),
+        lesson(
+          6,
+          'c5',
+          'As pretas atacam a base da cadeia em vez do topo, preparando a pressão da dama sobre b2 e d4 ao mesmo tempo.',
+          {
+            highlights: ['d4'],
+            strategicIdea: 'Atacar a base é o golpe padrão contra um centro apoiado em d4.',
+          },
+        ),
+        lesson(
+          7,
+          'e3',
+          'O centro é sustentado com peão, como o sistema prevê, e a diagonal do bispo de f1 abre.',
+          { resultingPlan: 'c3 e Cbd2, com d4 amparado duas vezes.' },
+        ),
+        lesson(8, 'Qb6', 'Agora a dama ataca b2 e reforça a pressão sobre d4.', {
+          highlights: ['b2', 'd4'],
+          strategicIdea: 'Dois alvos num lance só: a resposta precisa servir aos dois.',
+        }),
+        lesson(9, 'Nc3', 'Defender desenvolvendo — a peça entra e b2 deixa de ser de graça.', {
+          resultingPlan: 'Bd3, O-O e a decisão de quando romper com e4.',
+        }),
       ],
     },
     {
@@ -785,6 +1383,37 @@ const london = course({
     },
   ],
   plans: [
+    {
+      id: 'londres-troca-do-bispo',
+      name: 'Trocar o bispo ativo delas',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Pôr o bispo em d3 para trocar o bispo preto que saiu da cadeia.',
+      when: 'Sempre que as pretas jogarem ...Bf5 antes de ...e6.',
+      risk: 'Trocar por trocar: sem o bispo preto ativo na diagonal, d3 é só um lance a mais.',
+      porQueFunciona:
+        'O bispo de casas claras é a peça que as duas defesas tentam resolver. Quem troca o bispo bom do adversário fica com a posição igual e um problema a menos — e num sistema, um problema a menos é a vantagem inteira.',
+      preparacao:
+        'O peão em e3 já jogado, para que d3 não bloqueie o próprio bispo de c1 antes de ele ter saído.',
+      oQueOAdversarioTenta:
+        'Recuar o bispo para g6 ou g4 em vez de trocar, mantendo a peça ativa e obrigando você a decidir de novo.',
+      arrows: [{ from: 'f1', to: 'd3' }],
+    },
+    {
+      id: 'londres-cadeia',
+      name: 'Sustentar a cadeia c3-d4-e3',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Manter d4 amparado duas vezes para que nenhuma pressão obrigue a trocar.',
+      when: 'Contra ...c5 e ...Qb6, que atacam a base em vez do topo.',
+      risk: 'Sustentar para sempre: a cadeia existe para permitir a ruptura, não para substituí-la.',
+      porQueFunciona:
+        'O Sistema Londres monta a mesma estrutura contra quase tudo, e ela só vale enquanto d4 não cai. Com c3 e e3, nenhuma troca em d4 é forçada — e quem não é forçado a trocar escolhe a hora.',
+      preparacao:
+        'Nada além da própria ordem do sistema. É esse o ponto: a estrutura vem antes da pergunta, e por isso a resposta já está pronta.',
+      oQueOAdversarioTenta:
+        'Somar atacantes sobre d4 — ...c5, ...Qb6, ...Nc6 — até que uma troca se torne obrigatória e o centro se desfaça.',
+    },
     {
       id: 'london-e4',
       name: 'Ruptura e4',
@@ -861,6 +1490,17 @@ const slav = course({
     {
       id: 'eslava-cc3',
       importancia: 'core',
+      eco: 'D15',
+      conceitos: ['concept.bad-bishop', 'concept.space-vs-counterplay', 'concept.break-c5'],
+      estrutura: 'structure.slav-triangle',
+      erroComum: {
+        lance: 'e6',
+        porque:
+          'Jogar ...e6 cedo tranca o bispo de c8 atrás da cadeia — e a Eslava existe justamente para não fazer isso. Quem quer a estrutura com ...e6 está jogando a Ortodoxa, e ali o peão de c fica em c7.',
+      },
+      fronteira: { type: 'handoff', planId: 'slava-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se pressionar antes de o bispo sair: cada lance preto gasto com peões é um tempo de desenvolvimento a mais.',
       intencaoDoAdversario: 'Desenvolver pelo lado da dama mantendo o centro sem definição.',
       objetivoDoAluno: 'Responder com o lance da linha principal: a posição não pede teoria nova.',
       name: 'Desenvolvimento com Cc3',
@@ -888,8 +1528,110 @@ const slav = course({
       ],
     },
     {
+      /*
+        A LINHA PRINCIPAL DA ESLAVA É ESTA: capturar em c4 DEPOIS de ter tirado o
+        bispo. A ordem é a defesa inteira — trocada, ela vira uma Ortodoxa com um
+        tempo a menos.
+      */
+      id: 'eslava-principal',
+      importancia: 'core',
+      eco: 'D17',
+      conceitos: ['concept.bad-bishop', 'concept.material-vs-initiative', 'concept.break-c5'],
+      estrutura: 'structure.slav-triangle',
+      motivos: ['motif.fork-on-d5'],
+      erroComum: {
+        lance: 'b5',
+        porque:
+          'Tentar segurar o peão de c4 com ...b5 enfraquece a5 e c6 e convida a4 com ataque. O peão é devolvido: o que a captura comprou foi o tempo de tirar o bispo, e não material.',
+      },
+      fronteira: { type: 'handoff', planId: 'slava-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se recuperar c4 sem pressa e usar o tempo em desenvolvimento, não em perseguir o peão.',
+      intencaoDoAdversario:
+        'Recuperar o peão de c4 com tempo e provar que o bispo em f5 ficou exposto a Bd3 ou a Qb3.',
+      objetivoDoAluno:
+        'Capturar em c4 só depois de o bispo estar fora: a captura compra o tempo de ...Bf5, e é esse tempo que a defesa existe para ganhar.',
+      name: 'Eslava Principal',
+      description: 'As pretas capturam em c4 e tiram o bispo de c8 antes de fechar a cadeia.',
+      rootNodeId: '',
+      line: [
+        ...eslavaMain,
+        lesson(
+          7,
+          'Nc3',
+          'As brancas completam o desenvolvimento natural e somam mais um defensor ao peão de c4.',
+          { resultingPlan: 'e3 e Bxc4, recuperando o peão com desenvolvimento.' },
+        ),
+        lesson(
+          8,
+          'dxc4',
+          'A captura compra o tempo de tirar o bispo de c8 — ela não é ganho de material, é troca de moeda.',
+          {
+            strategicIdea: 'O peão volta. O tempo, não.',
+            resultingPlan: '...Bf5 antes de ...e6: é essa ordem que define a Eslava.',
+          },
+        ),
+        lesson(
+          9,
+          'a4',
+          'As brancas impedem ...b5 e preparam a recuperação do peão sem perseguição inútil.',
+          { strategicIdea: 'Recuperar material sem pressa vale mais que recuperá-lo com a dama.' },
+        ),
+        lesson(10, 'Bf5', 'O bispo sai da cadeia. É este lance que a defesa inteira preparou.', {
+          arrows: [{ from: 'c8', to: 'f5' }],
+          resultingPlan: '...e6 agora é seguro, e a ruptura ...c5 vem com todas as peças no jogo.',
+        }),
+      ],
+    },
+    {
+      /*
+        A ESTRUTURA COM ...a6 é a Eslava moderna: ela prepara ...b5 antes de
+        qualquer captura, e muda a pergunta de "quando capturar" para "quando
+        avançar". Entra como `secondary` porque o curso já tem quatro core.
+      */
+      id: 'eslava-a6',
+      importancia: 'secondary',
+      eco: 'D15',
+      intencaoDoAdversario:
+        'Ocupar o centro enquanto as pretas gastam um lance de peão na ala da dama.',
+      objetivoDoAluno:
+        'Preparar ...b5 com apoio: o peão de c4 passa a ser difícil de recuperar sem concessão.',
+      name: 'Estrutura com a6',
+      description: 'As pretas preparam ...b5 antes de decidir sobre a captura em c4.',
+      rootNodeId: '',
+      line: [
+        ...eslavaMain,
+        lesson(
+          7,
+          'Nc3',
+          'Desenvolvimento natural das brancas, somando um defensor ao peão de c4.',
+          { resultingPlan: 'e3 e Bxc4 quando as pretas se decidirem.' },
+        ),
+        lesson(
+          8,
+          'a6',
+          'O peão prepara ...b5 antes de qualquer captura, e muda a pergunta que as brancas enfrentam.',
+          {
+            strategicIdea: 'Em vez de quando capturar, a pergunta passa a ser quando avançar.',
+            resultingPlan: '...dxc4 seguido de ...b5, agora com apoio.',
+          },
+        ),
+      ],
+    },
+    {
       id: 'eslava-troca',
       importancia: 'core',
+      eco: 'D10',
+      conceitos: ['concept.open-file', 'concept.space-vs-counterplay'],
+      estrutura: 'structure.carlsbad',
+      erroComum: {
+        lance: 'Qxd5',
+        porque:
+          'Recapturar com a dama entrega o tempo a Nc3 e abandona a coluna c que a recaptura de peão abriria. Na Eslava, é sempre o peão de c6 que recaptura — é essa a diferença para a Ortodoxa.',
+      },
+      fronteira: { type: 'handoff', planId: 'slava-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se que simetria não é empate: quem desenvolve com propósito e ocupa a coluna primeiro joga melhor.',
       intencaoDoAdversario:
         'Resolver a tensão cedo e buscar uma posição simétrica e pobre em alvos.',
       objetivoDoAluno:
@@ -920,6 +1662,37 @@ const slav = course({
     },
   ],
   plans: [
+    {
+      id: 'eslava-coluna-c',
+      name: 'Ocupar a coluna c',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Levar a torre a c8 e pressionar a coluna que a recaptura abriu.',
+      when: 'Depois de qualquer troca em d5 recapturada com o peão de c6.',
+      risk: 'Abrir a coluna e deixar o adversário chegar primeiro: a estrada serve a quem a ocupa.',
+      porQueFunciona:
+        'A recaptura com o peão de c é o que distingue a Eslava. Ela abre uma coluna para a torre preta sem criar fraqueza nenhuma, e a torre em c8 pressiona c4 e c3 ao mesmo tempo.',
+      preparacao:
+        'O bispo de c8 já resolvido e o cavalo fora de c6, para que a torre veja a coluna inteira.',
+      oQueOAdversarioTenta:
+        'Disputar a coluna com a própria torre, ou trocar tudo nela e ir para um final igual.',
+    },
+    {
+      id: 'eslava-ruptura-c5',
+      name: 'A ruptura ...c5',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Atacar a base do centro branco depois de completar o desenvolvimento.',
+      when: 'Com o bispo de c8 resolvido e o rei rocado.',
+      risk: 'Romper com o bispo ainda preso: a posição abre a favor de quem tem mais peças no jogo.',
+      porQueFunciona:
+        'O peão de c6 ocupa a casa que a ruptura precisa, então ...c5 sempre custa um tempo a mais na Eslava do que em outras defesas. Em troca, ele chega quando as pretas já resolveram o problema que as outras defesas ainda têm.',
+      preparacao:
+        'Bispo fora da cadeia, rei rocado e a torre já apontando para c: sem isso, a ruptura só abre linhas para o adversário.',
+      oQueOAdversarioTenta:
+        'Fixar o centro com e3 e Bd3 para que ...c5 nunca venha sem concessão, ou avançar d5 antes.',
+      arrows: [{ from: 'c6', to: 'c5' }],
+    },
     {
       id: 'slava-bispo',
       name: 'Bispo fora da cadeia',

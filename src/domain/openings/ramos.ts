@@ -20,7 +20,13 @@
  * PURO, como todo `src/domain`: sem React, sem relógio, sem armazenamento.
  */
 
-import type { ImportanciaDoRamo, OpeningDefinition, OpeningSide, OpeningVariation } from './index'
+import type {
+  ImportanciaDoRamo,
+  OpeningBoundary,
+  OpeningDefinition,
+  OpeningSide,
+  OpeningVariation,
+} from './index'
 import { ramificacaoDaVariacao, type RamificacaoDaVariacao } from './variacoes'
 
 /**
@@ -50,6 +56,22 @@ export interface RamoDeAbertura {
   lanceQueRamifica: string | null
   /** O lance da linha principal recusado aqui, em SAN. */
   lanceRecusado: string | null
+
+  /*
+    O QUE O PLANO DE EXPANSÃO §6 EXIGE DE TODO RAMO `core`.
+
+    Opcionais no tipo e obrigatórios no PORTÃO, que é a mesma divisão do
+    ADR-0024: o opcional existe para o tipo não quebrar conteúdo de terceiros;
+    quem manda é o teste. Ver `openings-onda0.test.ts`.
+  */
+  eco?: string
+  conceitos?: readonly string[]
+  estrutura?: string
+  motivos?: readonly string[]
+  erroComum?: { lance: string; porque: string }
+  fronteira?: OpeningBoundary
+  transposicoes?: readonly string[]
+  politicaDoLadoInverso?: string
 }
 
 /** A ordem em que os ramos aparecem: primeiro o que o curso exige. */
@@ -76,6 +98,19 @@ function ramoDaVariacao(opening: OpeningDefinition, variacao: OpeningVariation):
     importancia: variacao.importancia ?? 'core',
     intencaoDoAdversario: variacao.intencaoDoAdversario,
     objetivoDoAluno: variacao.objetivoDoAluno,
+    /*
+      OS CAMPOS DA EXPANSÃO PASSAM DIRETO, sem transformação. O ramo é a VISTA
+      da variação: derivar aqui algo que o conteúdo já declara criaria uma
+      segunda verdade sobre o mesmo campo.
+    */
+    eco: variacao.eco,
+    conceitos: variacao.conceitos,
+    estrutura: variacao.estrutura,
+    motivos: variacao.motivos,
+    erroComum: variacao.erroComum,
+    fronteira: variacao.fronteira,
+    transposicoes: variacao.transposicoes,
+    politicaDoLadoInverso: variacao.politicaDoLadoInverso,
     lanceQueRamifica: indice === null ? null : (variacao.line[indice]?.san ?? null),
     lanceRecusado: ramificacao.lanceRecusado?.san ?? null,
   }

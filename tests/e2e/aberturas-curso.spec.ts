@@ -233,13 +233,24 @@ test('a biblioteca de variações ensina cada ramo no tabuleiro, sem explorador'
 
   // E DÁ PARA VOLTAR. Um estudo sem saída seria o beco que o ADR-0016 desfez.
   await page.getByRole('button', { name: /Todas as variações/ }).click()
-  await expect(page.getByRole('button', { name: /Giuoco Piano/ })).toBeVisible()
+  /*
+    O NOME É EXATO, e a mudança veio de um vermelho real: a Onda 0 acrescentou o
+    "Giuoco Piano com c3", e um seletor por substring passou a casar com dois
+    cards. Playwright reprovou com "resolved to 2 elements" — corretamente.
+
+    A asserção exata é mais forte que a anterior: ela distingue o ramo que NÃO
+    bifurca (o nome do trecho da principal) daquele que bifurca com c3.
+  */
+  const cardDoGiuoco = page
+    .getByRole('button')
+    .filter({ has: page.getByText('Giuoco Piano', { exact: true }) })
+  await expect(cardDoGiuoco).toBeVisible()
 
   // UMA LISTA SÓ: o ramo do ALUNO e o do ADVERSÁRIO convivem na mesma grade.
   await page.getByRole('button', { name: /Defesa Húngara/ }).click()
   await expect(page.getByText('6. Be7')).toBeVisible()
   await page.getByRole('button', { name: /Todas as variações/ }).click()
-  await page.getByRole('button', { name: /Giuoco Piano/ }).click()
+  await cardDoGiuoco.click()
   await expect(page.getByText(/não é um desvio/)).toBeVisible()
 
   // E nada de explorador: nem o painel, nem uma única consulta.
