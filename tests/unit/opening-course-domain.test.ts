@@ -45,7 +45,7 @@ describe('curso de aberturas como grafo pedagógico', () => {
       acidente não quebraria nenhum outro teste, porque todos iteram sobre a
       lista e uma lista menor passa igual.
     */
-    expect(OPENING_COURSES).toHaveLength(24)
+    expect(OPENING_COURSES).toHaveLength(28)
     for (const opening of OPENING_COURSES) {
       expect(opening.graph.size).toBeGreaterThan(opening.mainline.length)
       expect(opening.plans.length).toBeGreaterThan(0)

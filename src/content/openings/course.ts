@@ -718,6 +718,132 @@ const gambitoDoReiMain = [
   }),
 ]
 
+/* --------------------------------------------------------- Alekhine */
+
+/** 1.e4 Cf6 2.e5 Cd5 3.d4 d6 — a Defesa Alekhine. */
+const alekhineMain = [
+  lesson(1, 'e4', 'As brancas ocupam o centro com o peão do rei.', {
+    strategicIdea: 'A Alekhine provoca o centro branco a avançar para depois atacá-lo.',
+  }),
+  lesson(2, 'Nf6', 'O cavalo ataca e4 no primeiro lance — e convida o peão a persegui-lo.', {
+    arrows: [{ from: 'f6', to: 'e4' }],
+    strategicIdea: 'Cada lance de peão que me expulsa é um peão a mais longe de casa.',
+    resultingPlan: '...Cd5, ...d6 e ...dxe5, deixando o centro branco sem base.',
+  }),
+  lesson(3, 'e5', 'O peão avança e expulsa o cavalo — exatamente o que as pretas queriam.', {
+    highlights: ['e5'],
+  }),
+  lesson(4, 'Nd5', 'O cavalo recua para a melhor casa e continua no centro.', {
+    highlights: ['d5'],
+  }),
+  lesson(5, 'd4', 'As brancas montam o centro grande que a defesa estava pedindo.', {
+    arrows: [{ from: 'd2', to: 'd4' }],
+    resultingPlan: 'c4 expulsando o cavalo de novo, com espaço em toda a posição.',
+  }),
+  lesson(6, 'd6', 'A cobrança começa: o peão ataca e5, que é a cabeça da cadeia branca.', {
+    arrows: [{ from: 'd6', to: 'e5' }],
+    strategicIdea: 'Um centro grande precisa de peças que ainda não chegaram para se sustentar.',
+    resultingPlan: '...dxe5 e ...Cc6, com a coluna d aberta contra a dama branca.',
+  }),
+]
+
+/* ---------------------------------------------------- Benoni Moderna */
+
+/** 1.d4 Cf6 2.c4 c5 3.d5 e6 4.Cc3 exd5 — a Benoni Moderna. */
+const benoniMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro com o peão da dama.', {
+    strategicIdea: 'A Benoni troca simetria por desequilíbrio já no segundo lance.',
+  }),
+  lesson(2, 'Nf6', 'O cavalo vigia e4 e mantém as indianas em aberto.', { highlights: ['e4'] }),
+  lesson(3, 'c4', 'O segundo peão central entra.', { arrows: [{ from: 'c2', to: 'c4' }] }),
+  lesson(
+    4,
+    'c5',
+    'O lance que define tudo: as pretas atacam d4 e obrigam as brancas a escolher a estrutura.',
+    {
+      arrows: [{ from: 'c5', to: 'd4' }],
+      strategicIdea: 'Forçar a decisão enquanto ela ainda é minha de provocar.',
+      resultingPlan: 'Depois de d5, ...e6 e ...exd5, com a coluna e semiaberta.',
+    },
+  ),
+  lesson(5, 'd5', 'As brancas avançam e ganham espaço — e travam o próprio peão de d.', {
+    highlights: ['d5'],
+  }),
+  lesson(6, 'e6', 'As pretas atacam a base do peão avançado antes de desenvolver qualquer peça.', {
+    arrows: [{ from: 'e6', to: 'd5' }],
+    strategicIdea: 'Um peão avançado sem base é espaço emprestado.',
+  }),
+  lesson(7, 'Nc3', 'O cavalo defende d5 e prepara e4.', { highlights: ['d5'] }),
+  lesson(
+    8,
+    'exd5',
+    'A troca que cria a estrutura da Benoni: maioria preta na ala da dama, coluna e semiaberta.',
+    {
+      strategicIdea: 'Aceitar menos espaço em troca de uma maioria de peões que anda.',
+      resultingPlan: '...d6, ...g6 e ...Bg7, com ...b5 marcado para mais tarde.',
+    },
+  ),
+]
+
+/* ------------------------------------------------------------ Benko */
+
+/** 1.d4 Cf6 2.c4 c5 3.d5 b5 — o Gambito Benko. */
+const benkoMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro com o peão da dama.', {
+    strategicIdea: 'O Benko entrega um peão por duas colunas abertas que não fecham mais.',
+  }),
+  lesson(2, 'Nf6', 'O cavalo vigia e4 e mantém as indianas em aberto.', { highlights: ['e4'] }),
+  lesson(3, 'c4', 'O segundo peão central entra.', { arrows: [{ from: 'c2', to: 'c4' }] }),
+  lesson(4, 'c5', 'As pretas atacam d4 e forçam a decisão sobre a estrutura.', {
+    arrows: [{ from: 'c5', to: 'd4' }],
+  }),
+  lesson(5, 'd5', 'As brancas avançam e ganham espaço.', { highlights: ['d5'] }),
+  lesson(
+    6,
+    'b5',
+    'O gambito: um peão pelas colunas a e b, que ficam abertas contra a ala da dama branca.',
+    {
+      arrows: [{ from: 'b5', to: 'c4' }],
+      strategicIdea: 'Uma vantagem que não expira vale mais que um peão que sempre expira.',
+      resultingPlan: '...a6, ...Bxa6 e torres em a8 e b8, com pressão permanente.',
+    },
+  ),
+]
+
+/* ------------------------------------------------------ Trompowsky */
+
+/** 1.d4 Cf6 2.Bg5 Ce4 3.Bf4 d5 — o Ataque Trompowsky. */
+const trompowskyMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro com o peão da dama.', {
+    strategicIdea: 'O Trompowsky sai da teoria no segundo lance, sem pagar nada por isso.',
+  }),
+  lesson(2, 'Nf6', 'O cavalo vigia e4 e abre as defesas indianas.', { highlights: ['e4'] }),
+  lesson(
+    3,
+    'Bg5',
+    'O bispo sai antes do cavalo e ataca a peça que vigia e4 — todas as indianas somem de uma vez.',
+    {
+      arrows: [{ from: 'c1', to: 'g5' }],
+      strategicIdea: 'Trocar o cavalo de f6 devolve às brancas a casa e4 e os dois bispos.',
+      resultingPlan: 'Bxf6 conforme a resposta, e e4 em seguida.',
+    },
+  ),
+  lesson(
+    4,
+    'Ne4',
+    'A resposta mais ativa: o cavalo ataca o bispo e ocupa a casa que a abertura disputa.',
+    { highlights: ['e4'] },
+  ),
+  lesson(5, 'Bf4', 'O bispo recua para a casa em que segue útil, vigiando c7 e e5.', {
+    strategicIdea: 'Recuar para a casa ativa, e não para a casa segura.',
+    resultingPlan: 'f3 expulsando o cavalo, e depois e4 com o centro inteiro.',
+  }),
+  lesson(6, 'd5', 'As pretas sustentam o cavalo em e4 com um peão e disputam o centro.', {
+    highlights: ['e4'],
+    resultingPlan: '...c5 e ...Cc6, com a estrutura definida e o jogo aberto.',
+  }),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -5983,6 +6109,745 @@ const gambitoDoRei = course({
   version: 1,
 })
 
+const alekhine = course({
+  id: 'alekhine',
+  slug: 'alekhine',
+  name: 'Defesa Alekhine',
+  side: 'black',
+  ecoCodes: ['B02', 'B03', 'B04'],
+  description:
+    'Oferecer o cavalo como alvo para que o centro branco avance longe demais — e então atacá-lo.',
+  philosophy: 'Cada peão que me persegue é um peão que já não pode voltar.',
+  difficulty: 3,
+  prerequisites: [],
+  tags: ['semi-open', 'hypermodern', 'sharp'],
+  transitionToMiddlegame:
+    'A abertura termina quando as pretas jogam ...dxe5 e a coluna d abre. A partir daí a pergunta é se o centro branco é espaço ou fraqueza.',
+  mainline: alekhineMain,
+  /* Os dois ramos bifurcam no terceiro lance branco — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        OS QUATRO PEÕES (4.c4 e 5.f4) SÃO A TENTAÇÃO MÁXIMA: as brancas aceitam
+        todo o convite. Core porque é a linha que testa se o aluno acredita na
+        própria abertura.
+      */
+      id: 'alekhine-quatro-peoes',
+      importancia: 'core',
+      eco: 'B03',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.open-file'],
+      estrutura: 'structure.benoni-center',
+      erroComum: {
+        lance: 'Nb4',
+        porque:
+          'Levar o cavalo para a borda quando ele é atacado desperdiça a peça que sustenta a defesa inteira: em b6 ele vigia c4 e d5, em b4 ele só espera ser expulso por a3. O recuo certo é sempre para b6.',
+      },
+      fronteira: { type: 'handoff', planId: 'alekhine-c5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se aceitar o convite inteiro e provar que o espaço vale mais que os alvos.',
+      intencaoDoAdversario:
+        'Ocupar o máximo de espaço com c4, d4, e5 e f4, sufocando as pretas antes de elas atacarem.',
+      objetivoDoAluno:
+        'Atacar a base da cadeia com ...c5 e ...dxe5: quanto mais peões o adversário avança, menos defensores ele tem atrás deles.',
+      name: 'Ataque dos Quatro Peões',
+      description: 'As brancas ocupam c4, d4, e5 e f4 e apostam tudo no espaço.',
+      rootNodeId: '',
+      line: [
+        ...alekhineMain.slice(0, 4),
+        lesson(
+          5,
+          'c4',
+          'O peão expulsa o cavalo outra vez — e é o terceiro lance de peão das brancas em cinco.',
+          {
+            arrows: [{ from: 'c2', to: 'c4' }],
+            strategicIdea: 'Cada lance de expulsão ganha espaço e atrasa o desenvolvimento.',
+            resultingPlan: 'd4 e f4, com os quatro peões no lugar.',
+          },
+        ),
+        lesson(6, 'Nb6', 'O cavalo vai para a casa em que vigia c4 e d5 — e não para a borda.', {
+          resultingPlan: '...d6 e ...c5, atacando a cadeia pelos dois lados.',
+        }),
+      ],
+    },
+    {
+      /*
+        O SISTEMA MODERNO (4.Cf3) É O QUE MAIS SE JOGA HOJE: desenvolver em vez
+        de perseguir. Core porque contra ele o plano das pretas muda de ataque
+        ao centro para disputa de casas.
+      */
+      id: 'alekhine-moderno',
+      importancia: 'core',
+      eco: 'B04',
+      conceitos: ['concept.space-vs-counterplay', 'concept.bad-bishop', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Nb6',
+        porque:
+          'Recuar o cavalo sem ser atacado entrega um tempo de graça: aqui ninguém está atacando d5, e o lance útil é ...d6, cobrando a cabeça da cadeia. Recuo é resposta a ameaça, e não hábito.',
+      },
+      fronteira: { type: 'handoff', planId: 'alekhine-dxe5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se desenvolver em vez de perseguir, sem dar alvo nenhum.',
+      intencaoDoAdversario:
+        'Desenvolver naturalmente e manter o peão de e5, sem gastar mais lances de peão em perseguição.',
+      objetivoDoAluno:
+        'Atacar e5 imediatamente com ...d6 e trocar, abrindo a coluna d antes de as brancas rocarem.',
+      name: 'Variante Moderna',
+      description: 'As brancas desenvolvem com Cf3 em vez de continuar avançando peões.',
+      rootNodeId: '',
+      line: [
+        ...alekhineMain.slice(0, 4),
+        lesson(
+          5,
+          'Nf3',
+          'Desenvolver em vez de perseguir: as brancas param de dar alvos e ficam com o espaço que já têm.',
+          {
+            strategicIdea: 'Contra quem provoca, o melhor lance costuma ser o que não responde.',
+            resultingPlan: 'd4, Be2 e O-O, com uma vantagem de espaço pequena e sem fraquezas.',
+          },
+        ),
+        lesson(
+          6,
+          'd6',
+          'As pretas atacam e5 na mesma hora: a cabeça da cadeia é o único alvo que existe.',
+          {
+            arrows: [{ from: 'd6', to: 'e5' }],
+            resultingPlan: '...dxe5 e ...Cc6, com a coluna d aberta e o centro branco reduzido.',
+          },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'alekhine-dxe5',
+      name: 'Trocar em e5 e abrir a coluna d',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Derrubar a cabeça da cadeia branca e abrir a coluna contra a dama em d1.',
+      when: 'Assim que ...d6 estiver jogado e as brancas ainda não tiverem rocado.',
+      risk: 'Trocar cedo demais e ajudar o desenvolvimento branco: Cxe5 costuma ser um bom lance para elas.',
+      porQueFunciona:
+        'O peão em e5 é o que tira do cavalo preto as casas f6 e d6 e o que dá às brancas todo o espaço. Sem ele, o centro branco vira um peão em d4 sozinho, e a coluna d aberta aponta para a dama que ainda não saiu de casa.',
+      preparacao:
+        'O cavalo já recuado para b6 ou ainda em d5, e o bispo de c8 com a diagonal livre para g4.',
+      oQueOAdversarioTenta:
+        'Recapturar com o cavalo e ocupar a casa e5, ou sustentar o peão com f4 antes de a troca acontecer.',
+      arrows: [{ from: 'd6', to: 'e5' }],
+    },
+    {
+      id: 'alekhine-c5',
+      name: 'A ruptura ...c5',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Atacar a base d4 quando a cabeça e5 estiver bem defendida.',
+      when: 'Contra centros de três ou quatro peões, principalmente com f4 jogado.',
+      risk: 'Abrir a posição enquanto as brancas ainda têm mais espaço e mais peças prontas.',
+      porQueFunciona:
+        'Uma cadeia de peões tem duas pontas, e ataca-se a que estiver menos defendida. Com f4 jogado, a cabeça e5 fica sustentada duas vezes — então o alvo é d4, e ...c5 chega lá com um lance só, enquanto o cavalo em b6 já vigia as casas que a troca abre.',
+      preparacao:
+        'O cavalo em b6, o peão em d6 já jogado e o bispo de c8 pronto para sair por f5 ou g4.',
+      oQueOAdversarioTenta:
+        'Avançar d5 travando o centro, ou trocar em c5 devolvendo o peão para manter as linhas fechadas.',
+      arrows: [{ from: 'c7', to: 'c5' }],
+    },
+    {
+      id: 'alekhine-cavalo',
+      name: 'O cavalo tem uma casa só',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Recuar sempre para b6, e nunca para a borda nem para trás.',
+      when: 'Toda vez que o cavalo em d5 for atacado por c4.',
+      risk: 'Recuar por hábito, sem ameaça nenhuma, e devolver de graça o tempo que a defesa comprou.',
+      porQueFunciona:
+        'O cavalo é a peça que provoca todo o avanço branco, e ele precisa terminar num lugar útil ou a provocação foi só perda de tempo. Em b6 ele vigia c4 e d5 — as duas casas que o centro branco precisa — e apoia a ruptura ...c5. Em b4 ou f6 ele é só uma peça esperando ser expulsa de novo.',
+      preparacao: 'Nenhuma. É uma decisão de um lance, e ela se repete a partida inteira.',
+      oQueOAdversarioTenta:
+        'Ganhar mais um tempo com a4-a5, expulsando o cavalo de b6 e ganhando ainda mais espaço.',
+      arrows: [{ from: 'd5', to: 'b6' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Centro branco avançado da Alekhine',
+      description:
+        'Peões brancos em d4 e e5, às vezes com c4 e f4, contra peões pretos em d6 e c7. Espaço enorme e nenhuma peça atrás dele — a defesa aposta que o segundo fato pesa mais que o primeiro.',
+      pawnBreaks: ['c5', 'f6', 'd5'],
+      weakSquares: ['d4', 'e5'],
+      openFiles: ['d', 'c'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'alekhine-erro-voltar-g8',
+      nodeId: 'root',
+      positionPly: 3,
+      moveSan: 'Ng8',
+      explanation:
+        'Voltar o cavalo para casa devolve dois lances e deixa as brancas com um peão em e5 de graça: a Alekhine só funciona se o cavalo continuar no centro sendo um alvo caro de expulsar.',
+      principle:
+        'Provocar só compensa se a peça provocadora terminar num lugar melhor do que estava.',
+    },
+  ],
+  version: 1,
+})
+
+const benoni = course({
+  id: 'benoni',
+  slug: 'benoni',
+  name: 'Benoni Moderna',
+  side: 'black',
+  ecoCodes: ['A60', 'A61', 'A70'],
+  description:
+    'Trocar espaço por uma maioria de peões que anda: coluna e semiaberta, bispo em g7 e a ruptura ...b5.',
+  philosophy:
+    'Menos espaço não é pior posição quando a estrutura dá um plano claro e a do adversário não.',
+  difficulty: 3,
+  prerequisites: ['india-do-rei'],
+  tags: ['closed', 'sharp', 'asymmetric'],
+  transitionToMiddlegame:
+    'A abertura termina quando as pretas rocam e preparam ...b5. A partir daí a pergunta é se a maioria da ala da dama anda antes de o centro branco romper com e5.',
+  mainline: benoniMain,
+  /* Os dois ramos bifurcam no terceiro lance branco — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        3.dxc5 ACEITA O PEÃO E DESISTE DO CENTRO. Core porque é o que o
+        adversário de clube joga quando não conhece a Benoni, e recuperar o peão
+        sem perder tempo exige saber a ordem.
+      */
+      id: 'benoni-captura-c5',
+      importancia: 'core',
+      eco: 'A60',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.open-file',
+        'concept.space-vs-counterplay',
+      ],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Qa5+',
+        porque:
+          'Sair com a dama para recuperar o peão devolve todos os tempos ganhos: as brancas respondem Bd2 ou Cc3 desenvolvendo, e a dama volta. O peão se recupera com ...e6 e ...Bxc5, que desenvolve enquanto cobra.',
+      },
+      fronteira: { type: 'handoff', planId: 'benoni-b5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se aceitar o peão e devolvê-lo em troca de desenvolvimento tranquilo.',
+      intencaoDoAdversario:
+        'Pegar o peão e sair da teoria, apostando que as pretas gastem tempo demais para recuperá-lo.',
+      objetivoDoAluno:
+        'Recuperar o peão com um lance que também desenvolve: ...e6 e ...Bxc5, e nunca com a dama.',
+      name: 'Captura em c5',
+      description: 'As brancas pegam o peão em vez de avançar d5.',
+      rootNodeId: '',
+      line: [
+        ...benoniMain.slice(0, 4),
+        lesson(
+          5,
+          'dxc5',
+          'As brancas pegam o peão e abrem mão do centro — a decisão mais fácil e a menos ambiciosa.',
+          {
+            strategicIdea:
+              'Quem troca o peão central por um peão de flanco perde o centro que tinha.',
+            resultingPlan: 'Cc3 e e4, tentando manter o material e desenvolver.',
+          },
+        ),
+        lesson(
+          6,
+          'e6',
+          'As pretas preparam ...Bxc5 — recuperam o peão com um lance que também desenvolve.',
+          { resultingPlan: '...Bxc5 e ...O-O, com desenvolvimento rápido e a coluna d aberta.' },
+        ),
+      ],
+    },
+    {
+      /*
+        3.Cf3 ADIA A DECISÃO. Core porque a resposta natural (...e6, esperando
+        d5) transpõe para posições que não são a Benoni, e as pretas precisam
+        saber o que estão escolhendo.
+      */
+      id: 'benoni-cavalo-f3',
+      importancia: 'core',
+      eco: 'A61',
+      conceitos: ['concept.space-vs-counterplay', 'concept.open-file', 'concept.break-c5'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'e6',
+        porque:
+          'Jogar ...e6 esperando d5 deixa as brancas escolherem: elas jogam e3 ou Cc3 e a posição vira um Gambito da Dama comum, com o peão preto em c5 já comprometido. Quando o adversário adia a decisão, a resposta é ...cxd4, que força a estrutura.',
+      },
+      fronteira: { type: 'handoff', planId: 'benoni-estrutura' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se adiar d5 para escolher a estrutura depois das pretas.',
+      intencaoDoAdversario:
+        'Desenvolver sem se comprometer e decidir entre d5 e dxc5 só depois de ver o plano preto.',
+      objetivoDoAluno:
+        'Forçar a definição com ...cxd4: quem adia a decisão perde o direito de escolher quando o adversário decide por ele.',
+      name: 'Adiamento com 3.Cf3',
+      description: 'As brancas desenvolvem e adiam a decisão sobre o centro.',
+      rootNodeId: '',
+      line: [
+        ...benoniMain.slice(0, 4),
+        lesson(
+          5,
+          'Nf3',
+          'As brancas desenvolvem e guardam as duas opções — d5 e dxc5 — para o lance seguinte.',
+          {
+            strategicIdea: 'Adiar a decisão é uma arma enquanto o adversário não puder forçá-la.',
+            resultingPlan: 'd5 ou dxc5, conforme as pretas se definirem primeiro.',
+          },
+        ),
+        lesson(
+          6,
+          'cxd4',
+          'As pretas forçam: a estrutura fica definida agora, e não quando as brancas quiserem.',
+          { resultingPlan: '...g6 e ...Bg7, com a coluna c aberta e o centro simétrico.' },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'benoni-b5',
+      name: 'A ruptura ...b5',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Pôr a maioria da ala da dama em movimento antes de o centro branco romper.',
+      when: 'Depois do roque, com ...a6 jogado e a torre em b8 ou e8.',
+      risk: 'Avançar na ala da dama com o centro instável: e4-e5 chega antes e a posição abre no lugar errado.',
+      porQueFunciona:
+        'A troca ...exd5 dá às pretas dois peões contra um na ala da dama, e a única forma de essa maioria valer algo é ela andar. O bispo de g7 já aponta para a diagonal que ...b5 abre, e cada peão preto que avança lá é um peão a menos defendendo o centro branco.',
+      preparacao:
+        'Rei rocado, ...a6 jogado e a torre de a8 pronta. A ruptura é o fim de um plano de três lances, e não o começo.',
+      oQueOAdversarioTenta:
+        'Parar a maioria com a4, ou romper primeiro com e4-e5 no centro, onde as pretas têm menos espaço.',
+      arrows: [{ from: 'b7', to: 'b5' }],
+    },
+    {
+      id: 'benoni-estrutura',
+      name: 'A estrutura é o plano',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Reconhecer que a maioria na ala da dama e a coluna e semiaberta definem tudo.',
+      when: 'Assim que ...exd5 for jogado — e ela dura o resto da partida.',
+      risk: 'Jogar a Benoni com planos de outra abertura: sem ...b5, a posição é só menos espaço.',
+      porQueFunciona:
+        'A Benoni é a abertura mais estrutural do repertório: a troca em d5 cria de uma vez a maioria preta, a coluna e semiaberta e a diagonal do bispo de g7. Os três apontam para o mesmo lugar, e quem entende isso nunca fica sem plano — mesmo sem lembrar de um único lance de teoria.',
+      preparacao: 'A troca ...exd5 feita, e o fianchetto no lugar. O resto é consequência.',
+      oQueOAdversarioTenta:
+        'Travar a ala da dama com a4, ou abrir o centro com e5 antes de a estrutura preta virar plano.',
+    },
+    {
+      id: 'benoni-e5',
+      name: 'Parar a ruptura branca e4-e5',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Vigiar a casa e5 com peças até a maioria da ala da dama estar pronta.',
+      when: 'Contra qualquer sistema branco com e4 e f4.',
+      risk: 'Defender tanto o centro que ...b5 nunca sai — e a Benoni vira só menos espaço.',
+      porQueFunciona:
+        'A posição é uma corrida: as brancas rompem em e5, as pretas rompem em b5. Cada lance que atrasa e5 é um lance que ...b5 ganha. O bispo de g7, a torre em e8 e o cavalo em d7 vigiam a mesma casa, e é dessa soma que sai o tempo da corrida.',
+      preparacao: 'Torre em e8 pela coluna que a troca abriu, e o cavalo de b8 em d7 e não em c6.',
+      oQueOAdversarioTenta: 'Juntar peças sobre e5 com f4, Bf4 e Te1 até o avanço passar à força.',
+      arrows: [{ from: 'e8', to: 'e5' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Estrutura Benoni',
+      description:
+        'Peão branco em d5 e peões pretos em d6 e c5, com a coluna e semiaberta e maioria preta na ala da dama. As brancas têm espaço e uma ruptura em e5; as pretas têm uma maioria e uma ruptura em b5. Ganha quem chegar primeiro.',
+      pawnBreaks: ['b5', 'e5', 'f5'],
+      weakSquares: ['d6', 'e5'],
+      openFiles: ['e', 'b'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'benoni-erro-e5-czech',
+      nodeId: 'root',
+      positionPly: 5,
+      moveSan: 'e5',
+      explanation:
+        'Fechar o centro com ...e5 tranca a posição inteira: some a coluna e semiaberta, some a maioria na ala da dama e some o bispo de g7. Sobram menos espaço e nenhum plano — é outra abertura, e pior.',
+      principle:
+        'A troca que parece só uma troca costuma ser a que cria a estrutura — e a estrutura é o plano.',
+    },
+  ],
+  version: 1,
+})
+
+const benko = course({
+  id: 'benko',
+  slug: 'benko',
+  name: 'Gambito Benko',
+  side: 'black',
+  ecoCodes: ['A57', 'A58', 'A59'],
+  description:
+    'Entregar um peão por duas colunas abertas na ala da dama — e uma pressão que não expira.',
+  philosophy:
+    'Um peão se recupera; uma coluna aberta contra peças que não podem sair, não se fecha.',
+  difficulty: 3,
+  prerequisites: ['benoni'],
+  tags: ['closed', 'gambit', 'positional'],
+  transitionToMiddlegame:
+    'A abertura termina quando as torres pretas chegam a a8 e b8 e o bispo ocupa a diagonal longa. A partir daí a pergunta é se as brancas conseguem desenvolver a ala da dama.',
+  mainline: benkoMain,
+  /* Os dois ramos bifurcam no quarto lance branco — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        4.cxb5 ACEITA O GAMBITO. Core porque é a linha que dá sentido à abertura
+        inteira, e porque a tentação de recuperar o peão de volta destrói o plano.
+      */
+      id: 'benko-aceito',
+      importancia: 'core',
+      eco: 'A58',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.open-file',
+        'concept.space-vs-counterplay',
+      ],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Nxd5',
+        porque:
+          'Recuperar o peão em d5 é trocar a abertura inteira por um peão: o cavalo é expulso com e4 ganhando tempo e as colunas a e b nunca chegam a abrir. No Benko o peão não volta — é isso que está sendo comprado.',
+      },
+      fronteira: { type: 'handoff', planId: 'benko-colunas' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se aceitar o peão e gastar lances para desenvolver a ala da dama assim mesmo.',
+      intencaoDoAdversario:
+        'Ficar com o peão extra e provar que ele decide o final, se a partida chegar lá.',
+      objetivoDoAluno:
+        'Jogar ...a6 na mesma hora: abrir as duas colunas é o produto que o peão comprou, e ele não vale nada fechado.',
+      name: 'Gambito aceito',
+      description: 'As brancas capturam em b5 e as pretas seguem com ...a6.',
+      rootNodeId: '',
+      line: [
+        ...benkoMain.slice(0, 6),
+        lesson(7, 'cxb5', 'As brancas aceitam: um peão a mais e a ala da dama por desenvolver.', {
+          strategicIdea: 'Aceitar um gambito é assumir a obrigação de sobreviver ao que ele abre.',
+          resultingPlan: 'Cc3, e4 e Cf3, tentando completar o desenvolvimento antes da pressão.',
+        }),
+        lesson(
+          8,
+          'a6',
+          'O segundo peão é oferecido: o objetivo nunca foi material, e sim as colunas a e b.',
+          {
+            arrows: [{ from: 'a6', to: 'b5' }],
+            resultingPlan: '...Bxa6, ...d6, ...g6 e as duas torres nas colunas abertas.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        4.Cf3 RECUSA E IGNORA. Core porque é o que mais aparece em clube, e
+        porque a resposta certa é simplesmente pegar o peão de c4 — as pretas
+        acabam com material E estrutura.
+      */
+      id: 'benko-recusado',
+      importancia: 'core',
+      eco: 'A57',
+      conceitos: ['concept.space-vs-counterplay', 'concept.open-file', 'concept.break-c5'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'a6',
+        porque:
+          'Insistir no gambito quando ele não foi aceito oferece um peão que ninguém pediu: as brancas jogam cxb5 em condições melhores, com o cavalo já desenvolvido. Se o adversário ignora o peão de b5, o lance certo é pegar o de c4.',
+      },
+      fronteira: { type: 'handoff', planId: 'benko-colunas' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se ignorar o gambito e desenvolver, sem abrir a própria ala da dama.',
+      intencaoDoAdversario:
+        'Desenvolver sem abrir a ala da dama, deixando o peão de b5 no lugar e a posição fechada.',
+      objetivoDoAluno:
+        'Capturar em c4: quando o gambito é ignorado, as pretas ficam com o peão E com a estrutura que queriam.',
+      name: 'Gambito recusado',
+      description: 'As brancas ignoram o peão de b5 e desenvolvem.',
+      rootNodeId: '',
+      line: [
+        ...benkoMain.slice(0, 6),
+        lesson(
+          7,
+          'Nf3',
+          'As brancas ignoram o gambito e desenvolvem: sem captura, a ala da dama não abre.',
+          {
+            strategicIdea:
+              'Contra um gambito posicional, recusar costuma custar menos que aceitar.',
+            resultingPlan: 'Cbd2 e e4, mantendo a posição fechada e o peão de c4 defendido.',
+          },
+        ),
+        lesson(
+          8,
+          'bxc4',
+          'As pretas pegam o peão de c4 — o gambito foi recusado, então o material fica.',
+          { resultingPlan: '...d6, ...g6 e ...Bg7, com um peão a mais e nada devolvido.' },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'benko-colunas',
+      name: 'As colunas a e b',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Pôr as duas torres nas colunas abertas e não trocar nenhuma delas cedo.',
+      when: 'Assim que ...a6 e ...Bxa6 estiverem jogados.',
+      risk: 'Trocar torres para "simplificar": cada troca devolve parte do que o peão comprou.',
+      porQueFunciona:
+        'A ala da dama branca fica com a torre em a1, o cavalo em b1 e o bispo em c1 — três peças que precisam de tempo e de casas que as colunas abertas negam. O peão a menos não volta, mas também não piora: a pressão dura até o final, e no final as pretas ainda têm as colunas.',
+      preparacao:
+        'Bispo em a6 ou já trocado, torres em a8 e b8 e o rei rocado. É um plano de quatro lances, e todos eles são naturais.',
+      oQueOAdversarioTenta:
+        'Devolver o peão para trocar torres, ou jogar e4-e5 no centro antes de a pressão se organizar.',
+      arrows: [{ from: 'a8', to: 'a1' }],
+    },
+    {
+      id: 'benko-bispo-g7',
+      name: 'O bispo de g7 fecha o cerco',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Somar a diagonal longa à pressão das duas colunas.',
+      when: 'Sempre — o fianchetto é obrigatório neste gambito.',
+      risk: 'Trocar o bispo por um cavalo qualquer: sem ele, a pressão é de torres sozinhas.',
+      porQueFunciona:
+        'As duas torres atacam a ala da dama pelas colunas, e o bispo ataca a mesma região pela diagonal a1-h8. São três peças apontando para o mesmo canto do tabuleiro, e as brancas precisam de peças lá para se defender — as mesmas peças que o gambito impediu de sair.',
+      preparacao:
+        '...g6 e ...Bg7 antes do roque. A diagonal precisa estar aberta quando as torres chegarem.',
+      oQueOAdversarioTenta:
+        'Trocar o bispo com Bg5 e Bxf6, ou pôr um peão em e5 travando a diagonal.',
+      arrows: [{ from: 'g7', to: 'a1' }],
+    },
+    {
+      id: 'benko-final',
+      name: 'O Benko é bom no final',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Não temer as trocas de damas: a pressão sobrevive a elas.',
+      when: 'Sempre que as brancas oferecerem simplificação achando que o peão extra decide.',
+      risk: 'Entrar num final em que as brancas já resolveram o desenvolvimento e as colunas fecharam.',
+      porQueFunciona:
+        'Quase todo gambito piora com as trocas, porque a iniciativa some. O Benko é a exceção: o que ele comprou são colunas abertas e peças mal colocadas do adversário, e nenhuma das duas coisas melhora quando as damas saem. Um peão a menos num final com duas colunas abertas é jogável — e frequentemente melhor.',
+      preparacao: 'Torres dobradas ou pelo menos ativas, e o rei preto já rocado e seguro.',
+      oQueOAdversarioTenta:
+        'Devolver o peão para trocar as torres ativas, que é a única simplificação que realmente ajuda.',
+    },
+  ],
+  structures: [
+    {
+      name: 'Estrutura do Benko',
+      description:
+        'Peão branco em d5 e peões pretos em d6 e c5, com as colunas a e b abertas e um peão a menos para as pretas. A ala da dama branca está por desenvolver e as colunas não fecham — é essa troca que o gambito faz.',
+      pawnBreaks: ['e6', 'c4', 'f5'],
+      weakSquares: ['b2', 'a2'],
+      openFiles: ['a', 'b'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'benko-erro-b5-cedo',
+      nodeId: 'root',
+      positionPly: 3,
+      moveSan: 'b5',
+      explanation:
+        'Oferecer o peão antes de ...c5 e d5 entrega material sem comprar nada: sem o peão branco em d5, o lance ...a6 não abre coluna nenhuma e as brancas ficam com um peão a mais e a posição inteira.',
+      principle:
+        'A ordem dos lances de um gambito é o gambito: fora dela, sobra só o peão entregue.',
+    },
+  ],
+  version: 1,
+})
+
+const trompowsky = course({
+  id: 'trompowsky',
+  slug: 'trompowsky',
+  name: 'Ataque Trompowsky',
+  side: 'white',
+  ecoCodes: ['A45'],
+  description:
+    'Sair da teoria no segundo lance: o bispo ataca o cavalo de f6 e todas as defesas indianas somem.',
+  philosophy: 'Um sistema que evita dez aberturas vale mais horas de estudo que uma que vence uma.',
+  difficulty: 2,
+  prerequisites: ['sistema-londres'],
+  tags: ['closed', 'system', 'flexible'],
+  transitionToMiddlegame:
+    'A abertura termina quando as brancas resolvem o cavalo de f6 e jogam e4 ou c4. A partir daí a pergunta é o que fazer com os dois bispos.',
+  mainline: trompowskyMain,
+  /* Os dois ramos bifurcam no segundo lance preto — o mesmo ponto de decisão. */
+  variations: [
+    {
+      /*
+        2...e6 É A RESPOSTA SÓLIDA e a mais comum. Core porque ela permite e4
+        imediato — as brancas ficam com o centro inteiro no terceiro lance.
+      */
+      id: 'trompowsky-e6',
+      importancia: 'core',
+      eco: 'A45',
+      conceitos: ['concept.bishop-pair', 'concept.space-vs-counterplay', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'Nf3',
+        porque:
+          'Desenvolver o cavalo desiste do que a cravada comprou: com o cavalo preto preso e o peão de e2 livre, existe um lance que ocupa o centro inteiro de uma vez. Cf3 pode esperar; e4 não.',
+      },
+      fronteira: { type: 'handoff', planId: 'trompowsky-e4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se aceitar a cravada e devolvê-la com ...h6 e ...Be7.',
+      intencaoDoAdversario:
+        'Desenvolver com solidez e desfazer a cravada com ...h6 e ...Be7, sem ceder nada de estrutura.',
+      objetivoDoAluno:
+        'Jogar e4 na mesma hora: com o cavalo de f6 cravado, ele não pode disputar a casa, e o centro fica inteiro.',
+      name: 'Defesa 2...e6',
+      description: 'As pretas respondem com solidez e as brancas ocupam o centro com e4.',
+      rootNodeId: '',
+      line: [
+        ...trompowskyMain.slice(0, 3),
+        lesson(
+          4,
+          'e6',
+          'A resposta sólida: as pretas abrem o bispo de f8 e aceitam ficar cravadas por um lance.',
+          {
+            strategicIdea: 'Ceder a casa e4 por um lance em troca de uma posição sem fraquezas.',
+            resultingPlan: '...h6 e ...Be7, desfazendo a cravada assim que der.',
+          },
+        ),
+        lesson(
+          5,
+          'e4',
+          'O centro inteiro num lance: o cavalo de f6 está cravado e não pode disputar a casa.',
+          {
+            arrows: [{ from: 'e2', to: 'e4' }],
+            strategicIdea: 'Cravar uma peça é tirar dela o trabalho que ela fazia.',
+            resultingPlan: 'Cc3, Bd3 e O-O, com espaço e os dois bispos.',
+          },
+        ),
+      ],
+    },
+    {
+      /*
+        2...d5 É A RESPOSTA DIRETA: ocupar o centro na mesma hora. Core porque
+        a decisão de trocar em f6 precisa ser tomada agora, e ela define a
+        partida inteira.
+      */
+      id: 'trompowsky-d5',
+      importancia: 'core',
+      eco: 'A45',
+      conceitos: ['concept.bishop-pair', 'concept.bad-bishop', 'concept.open-file'],
+      estrutura: 'structure.carlsbad',
+      erroComum: {
+        lance: 'e3',
+        porque:
+          'Fechar a própria diagonal antes de decidir sobre o cavalo de f6 entrega a iniciativa: as pretas jogam ...h6 e o bispo precisa recuar ou trocar em condições piores. A decisão de trocar em f6 é tomada agora, e não depois.',
+      },
+      fronteira: { type: 'handoff', planId: 'trompowsky-bispos' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se ocupar o centro na mesma hora e obrigar a decisão sobre o bispo.',
+      intencaoDoAdversario:
+        'Ocupar o centro imediatamente e forçar as brancas a decidir se trocam o bispo pelo cavalo.',
+      objetivoDoAluno:
+        'Trocar em f6 agora: os peões dobrados pretos e os dois bispos brancos são o produto da abertura.',
+      name: 'Defesa 2...d5',
+      description: 'As pretas ocupam o centro e as brancas decidem sobre a troca em f6.',
+      rootNodeId: '',
+      line: [
+        ...trompowskyMain.slice(0, 3),
+        lesson(4, 'd5', 'As pretas ocupam o centro e obrigam as brancas a decidir sobre o bispo.', {
+          highlights: ['d5'],
+          strategicIdea: 'Forçar a decisão antes de o adversário estar pronto para tomá-la.',
+          resultingPlan: '...h6 em seguida, cobrando o bispo de g5.',
+        }),
+        lesson(
+          5,
+          'Bxf6',
+          'A troca: as pretas ficam com peões dobrados e as brancas com os dois bispos.',
+          {
+            strategicIdea: 'Bispo por cavalo vale quando o preço é a estrutura do adversário.',
+            resultingPlan: 'e3, c4 e Cc3, pressionando d5 com a estrutura preta já comprometida.',
+          },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'trompowsky-e4',
+      name: 'Ocupar o centro com e4',
+      positionNodeId: 'root',
+      positionPly: 3,
+      objective: 'Jogar e4 enquanto o cavalo de f6 estiver cravado ou trocado.',
+      when: 'Contra ...e6 e sempre que o cavalo de f6 não puder disputar a casa.',
+      risk: 'Avançar com o centro sem desenvolvimento: um centro grande sem peças atrás é alvo.',
+      porQueFunciona:
+        'O cavalo em f6 é o único defensor natural de e4 nas aberturas de 1.d4. O Trompowsky ataca esse cavalo no segundo lance, e quando ele fica cravado ou some do tabuleiro, as brancas ocupam a casa com um peão e ficam com d4 e e4 — a estrutura que todas as indianas existem para impedir.',
+      preparacao:
+        'O bispo em g5 cravando, e as pretas com ...e6 jogado. A cravada é a preparação inteira.',
+      oQueOAdversarioTenta:
+        'Desfazer a cravada com ...h6 e ...Be7 antes de e4 sair, ou disputar com ...d5.',
+      arrows: [{ from: 'e2', to: 'e4' }],
+    },
+    {
+      id: 'trompowsky-bispos',
+      name: 'Os dois bispos contra os peões dobrados',
+      positionNodeId: 'root',
+      positionPly: 3,
+      objective: 'Trocar em f6 no momento em que a recaptura tiver de ser com um peão.',
+      when: 'Contra ...d5, e sempre que ...gxf6 ou ...exf6 for forçado.',
+      risk: 'Trocar quando a dama puder recapturar: os peões ficam inteiros e as brancas perderam o bispo.',
+      porQueFunciona:
+        'Bispo por cavalo é uma troca ruim na média e ótima quando ela quebra a estrutura. Depois de Bxf6 e uma recaptura de peão, as pretas têm peões dobrados permanentes e as brancas têm os dois bispos — uma vantagem que cresce à medida que a posição abre.',
+      preparacao:
+        'Escolher o momento: o bispo troca quando a dama preta não alcançar f6, e não por hábito.',
+      oQueOAdversarioTenta:
+        'Recapturar com a dama, ou jogar ...h6 forçando a decisão antes de ela ser boa.',
+      arrows: [{ from: 'g5', to: 'f6' }],
+    },
+    {
+      id: 'trompowsky-cavalo-e4',
+      name: 'Expulsar o cavalo de e4',
+      positionNodeId: 'root',
+      positionPly: 5,
+      objective:
+        'Jogar f3 e tirar o cavalo preto da casa central antes de completar o desenvolvimento.',
+      when: 'Sempre que as pretas responderem 2...Ce4.',
+      risk: 'Enfraquecer a diagonal do próprio rei com f3 e depois demorar a rocar.',
+      porQueFunciona:
+        'O cavalo em e4 é a única peça preta que atrapalha o plano branco, e ele não tem peão que o sustente por muito tempo. O lance f3 o expulsa e prepara e4 no mesmo movimento — o peão que expulsa é o que abre caminho para o que ocupa.',
+      preparacao:
+        'O bispo já em f4, longe do cavalo e ainda útil. Sem esse recuo ativo, f3 perderia tempo.',
+      oQueOAdversarioTenta:
+        'Sustentar o cavalo com ...d5 e ...f5, transformando a casa numa posição avançada permanente.',
+      arrows: [{ from: 'f2', to: 'f3' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Peões dobrados em f7 e f6',
+      description:
+        'Depois de Bxf6 gxf6 ou exf6, as pretas têm peões dobrados na coluna f e um rei mais exposto. As brancas têm os dois bispos e um alvo permanente — e essa vantagem melhora conforme a posição abre.',
+      pawnBreaks: ['e4', 'c4', 'f5'],
+      weakSquares: ['f6', 'h6'],
+      openFiles: ['g', 'e'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'trompowsky-erro-bh4',
+      nodeId: 'root',
+      positionPly: 4,
+      moveSan: 'Bh4',
+      explanation:
+        'Recuar o bispo para h4 quando o cavalo já está em e4 perde a peça: as pretas jogam ...g5 atacando de novo, e depois de Bg3 vem ...Cxg3 destruindo a estrutura branca. O recuo certo é f4, que sai da diagonal do peão de g.',
+      principle:
+        'Antes de recuar uma peça, conferir se o adversário tem um peão que possa atacá-la de novo na casa nova.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -6008,6 +6873,10 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   reti,
   viena,
   gambitoDoRei,
+  alekhine,
+  benoni,
+  benko,
+  trompowsky,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),

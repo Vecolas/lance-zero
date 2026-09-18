@@ -102,4 +102,27 @@ describe('notação autorada das aberturas', () => {
       }
     }
   })
+  it('o erro autorado cai na posição que ele diz, e não no início da partida', () => {
+    /*
+      `positionPly` é resolvido contra a LINHA PRINCIPAL. Quando o autor escreve
+      um ply que a principal não alcança — porque contou os lances de um ramo —
+      a resolução cai silenciosamente no `root`, e o erro passa a ilustrar a
+      posição inicial.
+
+      Isso aconteceu no Benko: um erro autorado para o ply 7 numa principal de 6
+      lances. Só foi pego porque o lance era ilegal na posição inicial; se fosse
+      legal lá, o curso teria publicado a explicação errada colada na posição
+      errada, e nenhum teste diria nada.
+    */
+    for (const opening of OPENING_COURSES) {
+      for (const mistake of opening.mistakes) {
+        if (mistake.positionPly === undefined) continue
+        const node = opening.graph.get(mistake.nodeId)
+        expect(
+          node?.ply,
+          `${opening.slug}/${mistake.id}: ply ${mistake.positionPly} nao existe na linha principal (ela tem ${opening.mainline.length})`,
+        ).toBe(mistake.positionPly)
+      }
+    }
+  })
 })
