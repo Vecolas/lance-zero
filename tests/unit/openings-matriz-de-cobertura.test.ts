@@ -161,8 +161,18 @@ describe('o alvo carrega o papel sem perder o ramo', () => {
     */
     for (const ramo of ramosDaAbertura(ITALIANA)) {
       const reverso = alvoReverso(ramo.id)
-      const doLado = iniciarRodadaDeAbertura(ITALIANA, ramo.id, ladoDoAlvo(ITALIANA, ramo.id))
-      const doOutro = iniciarRodadaDeAbertura(ITALIANA, reverso, ladoDoAlvo(ITALIANA, reverso))
+      const doLado = iniciarRodadaDeAbertura(
+        ITALIANA,
+        ramo.id,
+        ladoDoAlvo(ITALIANA, ramo.id),
+        'ramo',
+      )
+      const doOutro = iniciarRodadaDeAbertura(
+        ITALIANA,
+        reverso,
+        ladoDoAlvo(ITALIANA, reverso),
+        'ramo',
+      )
 
       expect(doOutro.startNodeId, `${ramo.nome}`).toBe(doLado.startNodeId)
       expect(doOutro.startFen, `${ramo.nome}`).toBe(doLado.startFen)

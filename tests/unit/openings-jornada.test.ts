@@ -152,6 +152,16 @@ const ABERTURA: OpeningDefinition = buildOpeningDefinition({
 })
 
 const ETAPAS = construirJornadaDeAbertura(ABERTURA)
+
+/**
+ * Config que abre a rodada EXATAMENTE na raiz do ramo, sem recuo de contexto.
+ *
+ * Os testes deste arquivo medem COBERTURA, TRANSPOSIÇÃO e DETERMINISMO — não de
+ * onde a rodada parte. Eles roteiram os lances do aluno a partir do desvio, e o
+ * recuo do ADR-0027 acrescentaria lances antes disso. Declarar zero aqui mantém
+ * cada teste medindo o que ele diz medir.
+ */
+const NA_RAIZ_DO_RAMO = { ...ABERTURA_TREINO_CONFIG, decisoesDeContextoNoRamo: 0 }
 const ALVOS = alvosDeTreinoFinal(ABERTURA)
 
 function etapaDeTreino(): StudyStage {
@@ -231,7 +241,7 @@ const LANCES_DO_ALUNO: Record<string, string[]> = {
 function cobrirAlvo(jornada: StudyJourney, alvo: string, rng: () => number): StudyJourney {
   const lado: OpeningSide = ladoDoAlvo(ABERTURA, alvo)
   const round = jogarRodada(
-    iniciarRodadaDeAbertura(ABERTURA, alvo, lado),
+    iniciarRodadaDeAbertura(ABERTURA, alvo, lado, 'ramo', NA_RAIZ_DO_RAMO),
     LANCES_DO_ALUNO[alvo] ?? [],
     rng,
   )
@@ -363,7 +373,7 @@ describe('currículo da jornada de abertura', () => {
 
 describe('a trava: rodada encerrada não é atividade concluída', () => {
   it('lance legal fora do repertório falha a rodada e não conclui a etapa de treino', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white')
+    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO)
     // d2d4 é perfeitamente legal e não pertence ao repertório treinado.
     const { round: depois, resultado, aceito } = jogarNaRodada(ABERTURA, round, 'd2d4')
 
@@ -397,7 +407,7 @@ describe('a trava: rodada encerrada não é atividade concluída', () => {
   })
 
   it('lance ilegal encerra a rodada com motivo próprio, e não avança cobertura', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white')
+    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO)
     const { round: depois, aceito } = jogarNaRodada(ABERTURA, round, 'e2e5')
     expect(aceito).toBe(false)
     expect(depois.desfecho).toBe('falhou')
@@ -413,7 +423,7 @@ describe('a trava: rodada encerrada não é atividade concluída', () => {
   })
 
   it('não julga lance nenhum depois que a rodada terminou', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white')
+    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO)
     const falha = jogarNaRodada(ABERTURA, round, 'd2d4').round
     const depois = jogarNaRodada(ABERTURA, falha, 'e2e4')
     expect(depois.resultado).toBeNull()
@@ -430,7 +440,7 @@ describe('a trava: rodada encerrada não é atividade concluída', () => {
     expect(antes.cobertos).toEqual([ALVO_MAINLINE, 'variacao-a'])
 
     // A rodada da variação B sai do repertório logo no primeiro lance do aluno.
-    const roundB = iniciarRodadaDeAbertura(ABERTURA, 'variacao-b', 'white')
+    const roundB = iniciarRodadaDeAbertura(ABERTURA, 'variacao-b', 'white', 'ramo', NA_RAIZ_DO_RAMO)
     const falhaB = jogarNaRodada(ABERTURA, roundB, 'b1c3').round
     expect(falhaB.desfecho).toBe('falhou')
     expect(falhaB.failureReason).toBe('out_of_repertoire')
@@ -451,7 +461,7 @@ describe('a trava: rodada encerrada não é atividade concluída', () => {
 describe('rodada bem-sucedida', () => {
   it('atingir o alvo devolve sucesso e o alvo entra na cobertura', () => {
     const round = jogarRodada(
-      iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white'),
+      iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO),
       LANCES_DO_ALUNO[ALVO_MAINLINE] ?? [],
       semente(1),
     )
@@ -496,7 +506,13 @@ describe('rodada bem-sucedida', () => {
   })
 
   it('a perspectiva reversa é jogada pelo outro lado', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_PERSPECTIVA_REVERSA, 'black')
+    const round = iniciarRodadaDeAbertura(
+      ABERTURA,
+      ALVO_PERSPECTIVA_REVERSA,
+      'black',
+      'ramo',
+      NA_RAIZ_DO_RAMO,
+    )
     expect(round.userSide).toBe('black')
     // É a vez das brancas na posição inicial: quem abre é o computador.
     expect(vezDe(round.currentFen)).toBe('white')
@@ -513,7 +529,13 @@ describe('rodada bem-sucedida', () => {
 describe('transposição', () => {
   it('chegar por outra ordem de lances cai no mesmo nó do repertório', () => {
     const noDaPrincipal = noApos(['e4', 'e5', 'Nf3', 'Nc6', 'Bc4'])
-    const round = iniciarRodadaDeAbertura(ABERTURA, 'variacao-transposta', 'white')
+    const round = iniciarRodadaDeAbertura(
+      ABERTURA,
+      'variacao-transposta',
+      'white',
+      'ramo',
+      NA_RAIZ_DO_RAMO,
+    )
 
     // 1.e4 e5 já está na raiz do ramo; o aluno joga 2.Bc4 e depois 3.Cf3.
     const aposBispo = jogarNaRodada(ABERTURA, round, 'f1c4')
@@ -611,7 +633,7 @@ describe('determinismo', () => {
     // diante o oponente volta a ser sorteado, e é o sorteio que se prova estável.
     const partida = jogarNaRodada(
       ABERTURA,
-      iniciarRodadaDeAbertura(ABERTURA, 'variacao-transposta', 'white'),
+      iniciarRodadaDeAbertura(ABERTURA, 'variacao-transposta', 'white', 'ramo', NA_RAIZ_DO_RAMO),
       'g1f3',
     ).round
     const progresso = emptyOpeningProgress(ABERTURA.id)
@@ -628,7 +650,7 @@ describe('determinismo', () => {
   it('a mesma semente joga a mesma rodada inteira', () => {
     const jogar = (valor: number) =>
       jogarRodada(
-        iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white'),
+        iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO),
         LANCES_DO_ALUNO[ALVO_MAINLINE] ?? [],
         semente(valor),
       )
@@ -638,7 +660,7 @@ describe('determinismo', () => {
 
 describe('pureza', () => {
   it('jogar não muta a rodada recebida', () => {
-    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white')
+    const round = iniciarRodadaDeAbertura(ABERTURA, ALVO_MAINLINE, 'white', 'ramo', NA_RAIZ_DO_RAMO)
     const copia = structuredClone(round)
     jogarNaRodada(ABERTURA, round, 'e2e4')
     jogarNaRodada(ABERTURA, round, 'd2d4')

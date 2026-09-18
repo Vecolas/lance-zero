@@ -777,3 +777,56 @@ test('a prática guiada passa pela principal e pelos ramos core', async ({ page 
   // A contagem da etapa cresceu junto: ela cobra o que a tela oferece.
   await expect(page.getByText(/Decisão \d+ de \d+ — sua vez/)).toBeVisible()
 })
+
+/**
+ * A FRONTEIRA: o treino entrega o plano quando a linha acaba.
+ *
+ * O PLANO §23 nomeia o defeito que isto fecha: "sei 8 lances e depois não sei o
+ * que fazer". Uma rodada que termina dizendo apenas "linha concluída" ensina que
+ * a abertura é uma lista que acabou. O que ela precisa dizer é que o aluno
+ * ALCANÇOU a posição que o repertório estava procurando — e qual é o plano dela.
+ */
+test('o fim da linha entrega o plano, e não só um aviso de conclusão', async ({ page }) => {
+  const italiana = OPENING_COURSE_BY_SLUG.get('italiana')
+  if (!italiana) throw new Error('conteúdo da Italiana ausente')
+
+  await page.goto('/aberturas/italiana')
+  await irAteEtapa(page, /Treino final/)
+
+  /*
+    JOGA A LINHA PRINCIPAL INTEIRA até a rodada terminar.
+
+    O TABULEIRO SÓ É INTERATIVO NA VEZ DO ALUNO — enquanto o computador
+    responde, o seletor `data-interactive="true"` deixa de casar. A primeira
+    versão deste laço lia isso como "acabou" e saía no primeiro lance. Então ele
+    ESPERA o tabuleiro voltar, em vez de checar uma vez e desistir.
+  */
+  const tabuleiro = page.locator('[data-testid="chessboard"][data-interactive="true"]').first()
+  const fimDaRodada = page.getByText(/tipo de posição que esta abertura procura/)
+  for (let i = 0; i < 16; i += 1) {
+    if ((await fimDaRodada.count()) > 0) break
+    try {
+      await tabuleiro.waitFor({ state: 'visible', timeout: 4000 })
+    } catch {
+      break
+    }
+    const fen = await tabuleiro.getAttribute('data-fen')
+    const lance = fen ? lanceDaPrincipal(fen) : undefined
+    if (!lance) break
+    await page.locator('#lancezero-board-square-' + lance.from).click()
+    await page.locator('#lancezero-board-square-' + lance.to).click()
+  }
+
+  /*
+    O TEXTO É O DA FRONTEIRA, e não "linha concluída". A diferença não é de
+    estilo: uma diz que a lista acabou, a outra diz o que foi alcançado.
+  */
+  await expect(page.getByText(/tipo de posição que esta abertura procura/)).toBeVisible()
+  await expect(page.getByText(/A abertura acaba aqui\./)).toBeVisible()
+
+  // E o texto vem do CONTEÚDO, não de heurística.
+  await expect(page.getByText(italiana.transitionToMiddlegame)).toBeVisible()
+  const plano = italiana.plans[0]
+  if (!plano) throw new Error('a Italiana precisa de um plano')
+  await expect(page.getByText(new RegExp(plano.name))).toBeVisible()
+})

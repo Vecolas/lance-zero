@@ -55,8 +55,10 @@ import {
   jogarNaRodada,
   ladoDoAlvo,
   proximoAlvoDeCobertura,
+  fronteiraDaAbertura,
   registrarAlvoRecente,
   respostaDoComputador,
+  tipoDaRodada,
   type OpeningTrainingRound,
 } from '@/domain/openings/jornada'
 import {
@@ -1706,7 +1708,15 @@ function TrechoGuiado({
         `itensRespondidos`. `registrarItem` deduplica, então repetir a linha
         depois de sair e voltar não infla a contagem.
       */
-      const doItem = trecho.itens.find((candidato) => candidato.indiceNaLinha === indiceNaLinha)
+      /*
+        O ÍNDICE É RECALCULADO AQUI, e não lido da renderização: `estado` dentro
+        do callback é o do fechamento, e usar um valor derivado de fora faria o
+        lint pedir uma dependência que na verdade já está coberta por `estado` e
+        `trecho`. Recalcular é mais curto que explicar.
+      */
+      const doItem = trecho.itens.find(
+        (candidato) => candidato.indiceNaLinha === trecho.inicio + estado.indice,
+      )
       if (doItem) aoResponder(registrarItem(jornada, stage.id, doItem.id))
       return true
     },
@@ -1881,7 +1891,14 @@ function TreinoDaAbertura({
     const alvo = proximoAlvoDeCobertura(alvos, cobertura.cobertos, recentes, Math.random)
     setDesvio(null)
     setSelecionada(null)
-    setRound(iniciarRodadaDeAbertura(opening, alvo, ladoDoAlvo(opening, alvo)))
+    setRound(
+      iniciarRodadaDeAbertura(
+        opening,
+        alvo,
+        ladoDoAlvo(opening, alvo),
+        tipoDaRodada(alvo, cobertura.cobertos),
+      ),
+    )
     setRecentes((atuais) => registrarAlvoRecente(atuais, alvo))
   }, [alvos, cobertura.cobertos, opening, recentes])
 
@@ -1975,12 +1992,21 @@ function TreinoDaAbertura({
           desfecho={round.desfecho as 'sucesso' | 'falhou'}
           resumo={
             round.desfecho === 'sucesso'
-              ? 'Você recuperou a linha inteira até o fim da abertura.'
+              ? 'Você chegou ao tipo de posição que esta abertura procura.'
               : 'A rodada terminou aqui. O tabuleiro volta ao início na próxima.'
           }
           cobertura={{ cobertos: cobertura.cobertos.length, exigidos: alvos.length }}
           aoProximaRodada={novaRodada}
         >
+          {/*
+            A FRONTEIRA (plano VNext §22–§23). Dizer só "linha concluída" produz
+            exatamente o efeito que o plano nomeia: "sei 8 lances e depois não
+            sei o que fazer". O fim do repertório é o começo do plano, e a tela
+            precisa fazer essa entrega — com o texto que o conteúdo autorou,
+            nunca com um plano inventado por heurística.
+          */}
+          {round.desfecho === 'sucesso' ? <Fronteira opening={opening} /> : null}
+
           {desvio ? (
             <RepertoireDeviationFeedback
               sanJogado={desvio.jogado}
@@ -2001,9 +2027,49 @@ function TreinoDaAbertura({
             Rodada {cobertura.cobertos.length + 1} de {alvos.length} — treinando{' '}
             {nomeDoAlvo(opening, round.branchScopeId)}.
           </p>
+          {/*
+            DE ONDE ESTA RODADA PARTIU. Sem isto, a rodada de ramo parece um bug:
+            o aluno abre o treino e o tabuleiro já tem lances jogados, sem nada
+            explicar por quê.
+          */}
+          <p className={styles.nota}>
+            {round.tipo === 'contexto'
+              ? 'Do começo da abertura: reconstrua o caminho até a variação.'
+              : 'A partir de perto do desvio: você já demonstrou o caminho até aqui.'}
+          </p>
         </>
       )}
     </MesaDeEstudo>
+  )
+}
+
+/**
+ * A FRONTEIRA: o que fazer quando o repertório acaba.
+ *
+ * O PLANO §23 É EXPLÍCITO sobre o que isto evita — "sei 8 lances e depois não
+ * sei o que fazer". Uma rodada que termina dizendo apenas "linha concluída"
+ * ensina que a abertura é uma lista que acabou; o que ela precisa dizer é que o
+ * aluno ALCANÇOU a posição que o repertório estava procurando.
+ *
+ * TUDO AQUI É CONTEÚDO AUTORADO. `transitionToMiddlegame` e o plano vêm da
+ * definição da abertura. Se o conteúdo não declarar um plano, esta tela mostra
+ * menos — nunca um plano gerado por heurística, que seria o app ensinando uma
+ * ideia que ninguém escreveu nem revisou.
+ */
+function Fronteira({ opening }: { opening: OpeningDefinition }) {
+  const fronteira = fronteiraDaAbertura(opening)
+  return (
+    <div className={styles.bloco}>
+      <p className={styles.nota}>
+        <strong>A abertura acaba aqui.</strong> {fronteira.transicao}
+      </p>
+      {fronteira.planoNome ? (
+        <p className={styles.nota}>
+          <strong>O que vem agora.</strong> {fronteira.planoNome}
+          {fronteira.planoObjetivo ? <> — {fronteira.planoObjetivo}</> : null}
+        </p>
+      ) : null}
+    </div>
   )
 }
 
@@ -2024,7 +2090,16 @@ function abrirRodada(
 ): OpeningTrainingRound | null {
   const alvo = proximoAlvoDeCobertura(alvos, cobertos, recentes, Math.random)
   if (!alvo) return null
-  return iniciarRodadaDeAbertura(opening, alvo, ladoDoAlvo(opening, alvo))
+  /*
+    O TIPO VEM DO DOMÍNIO, e não de um sorteio aqui: a primeira vez de um ramo é
+    rodada de CONTEXTO, e revisitá-lo é rodada de RAMO. Ver `tipoDaRodada`.
+  */
+  return iniciarRodadaDeAbertura(
+    opening,
+    alvo,
+    ladoDoAlvo(opening, alvo),
+    tipoDaRodada(alvo, cobertos),
+  )
 }
 
 function vezDoAluno(round: OpeningTrainingRound): boolean {

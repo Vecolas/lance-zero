@@ -71,6 +71,15 @@ export interface ConfigDeTreinoDeAbertura {
   plyMinimoAlemDaRaiz: number
   /** Quantos alvos recentes o anti-repetição lembra entre rodadas. */
   recentesLembrados: number
+  /**
+   * Quantas decisões do aluno uma rodada de ramo mostra ANTES da bifurcação.
+   *
+   * O plano §33.2 pede "1–2 decisões antes". Zero faria a rodada abrir na
+   * posição exata do desvio, que é treinar uma FEN isolada — o aluno reconhece
+   * o quadro e não o caminho. O número alto desfaz a economia e vira rodada de
+   * contexto com outro nome.
+   */
+  decisoesDeContextoNoRamo: number
 }
 
 /**
@@ -97,6 +106,7 @@ export const ABERTURA_TREINO_CONFIG: ConfigDeTreinoDeAbertura = {
   plyMaximoDaRodada: 24,
   plyMinimoAlemDaRaiz: 2,
   recentesLembrados: 2,
+  decisoesDeContextoNoRamo: 1,
 }
 
 /* -------------------------------------------------------------------------- */
@@ -384,12 +394,30 @@ export const ETAPA_DE_TREINO_DE_ABERTURA = 'treino-final'
 /** Por que a rodada acabou mal. Só existem duas razões, e elas dizem coisas diferentes. */
 export type MotivoDeFalhaNaAbertura = 'out_of_repertoire' | 'illegal'
 
+/**
+ * De onde a rodada parte (plano VNext §33).
+ *
+ * `contexto` começa no início da abertura: é a rodada que RECONSTRÓI o caminho,
+ * e é a certa na primeira vez que um ramo é treinado — saber a resposta sem
+ * saber como se chegou até ela é decorar uma FEN.
+ *
+ * `ramo` começa poucas decisões antes da bifurcação: é prática eficiente, e é a
+ * certa para revisitar um ramo já demonstrado. Repetir o prefixo inteiro toda
+ * vez é o que faz o aluno parar de treinar variação.
+ *
+ * O PLANO §33.3 PROÍBE OS DOIS EXTREMOS: nem sempre da posição inicial, nem
+ * sempre de uma FEN isolada.
+ */
+export type TipoDeRodadaDeAbertura = 'contexto' | 'ramo'
+
 export interface OpeningTrainingRound {
   /** Nomeia O QUE a rodada treina, não quando: derivado, para continuar puro. */
   id: string
   openingId: string
   /** O alvo de cobertura que esta rodada tenta cobrir. */
   branchScopeId: string
+  /** De onde ela parte. Ver `TipoDeRodadaDeAbertura`. */
+  tipo: TipoDeRodadaDeAbertura
   startFen: string
   startNodeId: string
   userSide: OpeningSide
@@ -421,7 +449,12 @@ interface RaizDoAlvo {
  * é autorado e nada o valida, e uma profundidade errada aqui produziria um alvo
  * inalcançável — falha silenciosa, não erro.
  */
-function raizDoAlvo(opening: OpeningDefinition, alvo: string): RaizDoAlvo {
+function raizDoAlvo(
+  opening: OpeningDefinition,
+  alvo: string,
+  tipo: TipoDeRodadaDeAbertura = 'ramo',
+  config: ConfigDeTreinoDeAbertura = ABERTURA_TREINO_CONFIG,
+): RaizDoAlvo {
   const raiz: RaizDoAlvo = {
     nodeId: opening.rootNodeId,
     fen: opening.rootFen,
@@ -429,6 +462,14 @@ function raizDoAlvo(opening: OpeningDefinition, alvo: string): RaizDoAlvo {
   }
   const variacao = opening.variations.find((candidata) => candidata.id === ramoDoAlvo(alvo))
   if (!variacao) return raiz
+
+  /*
+    A RODADA DE CONTEXTO PARTE DO INÍCIO, mesmo para um ramo. É a rodada que
+    reconstrói o caminho até a bifurcação — saber a resposta sem saber como se
+    chegou até ela é decorar uma FEN, e o repertório deixa de servir na partida
+    em que a ordem dos lances muda.
+  */
+  if (tipo === 'contexto') return raiz
 
   let fen = START_FEN
   for (let indice = 0; indice < variacao.line.length; indice += 1) {
@@ -438,10 +479,49 @@ function raizDoAlvo(opening: OpeningDefinition, alvo: string): RaizDoAlvo {
     if (!aplicado) break
     fen = aplicado.fenAfter
     if (identidadeDePosicao(fen) === variacao.rootNodeId) {
-      return { nodeId: variacao.rootNodeId, fen, ply: indice + 1 }
+      /*
+        RECUA ALGUMAS DECISÕES ANTES DO DESVIO (plano §33.2). Abrir na posição
+        exata da bifurcação é treinar uma FEN isolada: o aluno reconhece o
+        quadro e não o caminho, e numa partida a posição nunca chega sozinha.
+      */
+      return recuar(opening, variacao.line, indice + 1, config.decisoesDeContextoNoRamo)
     }
   }
   return raiz
+}
+
+/**
+ * Recua N decisões do aluno a partir de um ply da linha.
+ *
+ * DECISÕES, E NÃO PLIES: recuar dois plies numa linha alternada devolve a mesma
+ * vez ao aluno mas pula o lance do adversário que a motivou. O que dá contexto é
+ * ver o outro lado escolher.
+ *
+ * Nunca devolve algo antes da raiz, e nunca uma posição em que não seja a vez do
+ * aluno — uma rodada que abre na vez do computador faria a tela pedir um lance a
+ * quem não é de jogar.
+ */
+function recuar(
+  opening: OpeningDefinition,
+  linha: readonly OpeningMoveLesson[],
+  plyDoDesvio: number,
+  decisoes: number,
+): RaizDoAlvo {
+  const passos = Math.max(decisoes, 0) * 2
+  const destino = Math.max(plyDoDesvio - passos, 0)
+  if (destino === 0) {
+    return { nodeId: opening.rootNodeId, fen: opening.rootFen, ply: 0 }
+  }
+
+  let fen = START_FEN
+  for (let indice = 0; indice < destino; indice += 1) {
+    const lance = linha[indice]
+    if (!lance) break
+    const aplicado = applyMove(fen, lance.san)
+    if (!aplicado) break
+    fen = aplicado.fenAfter
+  }
+  return { nodeId: identidadeDePosicao(fen), fen, ply: destino }
 }
 
 /** Quantos plies a linha do alvo ensina. É daqui que sai o limite da rodada. */
@@ -474,13 +554,27 @@ export function iniciarRodadaDeAbertura(
   opening: OpeningDefinition,
   alvo: string,
   userSide: OpeningSide,
+  /*
+    `tipo` É OBRIGATÓRIO, e a ausência de valor padrão é a decisão.
+
+    Ele nasceu com padrão `'ramo'`, e isso mudou em silêncio o comportamento de
+    todo chamador que não o passava: a rodada passou a recuar antes do desvio.
+    Quatro testes reprovaram na hora, e estavam certos — o comportamento mudou
+    sem ninguém pedir.
+
+    Sem padrão, cada chamador declara de onde a rodada parte. É uma decisão
+    pedagógica, não um detalhe: ver o adversário escolher é o que dá sentido à
+    resposta, e pular isso é o que transforma repertório em memória de imagem.
+  */
+  tipo: TipoDeRodadaDeAbertura,
   config: ConfigDeTreinoDeAbertura = ABERTURA_TREINO_CONFIG,
 ): OpeningTrainingRound {
-  const raiz = raizDoAlvo(opening, alvo)
+  const raiz = raizDoAlvo(opening, alvo, tipo, config)
   return {
-    id: `${opening.id}:${alvo}:${userSide}`,
+    id: `${opening.id}:${alvo}:${userSide}:${tipo}`,
     openingId: opening.id,
     branchScopeId: alvo,
+    tipo,
     startFen: raiz.fen,
     startNodeId: raiz.nodeId,
     userSide,
@@ -817,5 +911,62 @@ export function coberturaDaAbertura(
     cobertos,
     faltando,
     completa: exigidos.length > 0 && faltando.length === 0,
+  }
+}
+
+/**
+ * De onde a próxima rodada deste alvo deve partir (plano VNext §33.3).
+ *
+ * A REGRA É PEDAGÓGICA, e a ordem importa: na PRIMEIRA vez que um ramo é
+ * treinado, a rodada é de CONTEXTO — ela reconstrói o caminho até a bifurcação.
+ * Saber a resposta sem saber como se chegou até ela é decorar uma FEN, e um
+ * repertório assim para de servir na partida em que a ordem dos lances muda.
+ *
+ * Depois de o ramo ter sido demonstrado uma vez, revisitá-lo vira rodada de
+ * RAMO: poucas decisões antes do desvio, que é prática eficiente. Repetir o
+ * prefixo inteiro toda vez é o que faz o aluno parar de treinar variação.
+ *
+ * A LINHA PRINCIPAL É SEMPRE CONTEXTO, nos dois papéis: ela não tem bifurcação
+ * de onde recuar — ela É a linha.
+ *
+ * O §33.3 proíbe os dois extremos: nem sempre da posição inicial, nem sempre de
+ * uma FEN isolada. Esta função é onde essa mistura acontece.
+ */
+export function tipoDaRodada(
+  alvo: string,
+  alvosCobertos: readonly string[],
+): TipoDeRodadaDeAbertura {
+  if (ramoDoAlvo(alvo) === ALVO_MAINLINE) return 'contexto'
+  return alvosCobertos.includes(alvo) ? 'ramo' : 'contexto'
+}
+
+/**
+ * A fronteira da rodada: onde o repertório acaba e o plano começa.
+ *
+ * O PLANO §22 e §23. Chegar ao fim da linha não é "acabou a lista": é ter
+ * alcançado o TIPO DE POSIÇÃO que a abertura procura. Dizer só "linha
+ * concluída" produz exatamente o efeito que o plano nomeia — "sei 8 lances e
+ * depois não sei o que fazer".
+ *
+ * O texto vem do conteúdo autorado (`transitionToMiddlegame`), e o plano
+ * sugerido é o primeiro da abertura. Nada aqui é inventado: se o conteúdo não
+ * declarar, a tela mostra menos, e não algo falso.
+ */
+export interface FronteiraDaAbertura {
+  /** O que a abertura buscava, nas palavras de quem autorou. */
+  transicao: string
+  /** O plano que essa posição autoriza, quando o conteúdo declara um. */
+  planoId: string | null
+  planoNome: string | null
+  planoObjetivo: string | null
+}
+
+export function fronteiraDaAbertura(opening: OpeningDefinition): FronteiraDaAbertura {
+  const plano = opening.plans[0]
+  return {
+    transicao: opening.transitionToMiddlegame,
+    planoId: plano?.id ?? null,
+    planoNome: plano?.name ?? null,
+    planoObjetivo: plano?.objective ?? null,
   }
 }
