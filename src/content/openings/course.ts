@@ -390,6 +390,67 @@ const inglesaMain = [
   }),
 ]
 
+/* ------------------------------------------------------- Escandinava */
+
+/** 1.e4 d5 2.exd5 Dxd5 3.Cc3 Da5 — a linha clássica. */
+const escandinavaMain = [
+  lesson(1, 'e4', 'As brancas ocupam o centro.', {
+    strategicIdea:
+      'A Escandinava responde no primeiro lance: ela não espera para disputar o centro.',
+  }),
+  lesson(2, 'd5', 'As pretas atacam e4 imediatamente, antes de qualquer desenvolvimento.', {
+    highlights: ['e4'],
+    strategicIdea: 'Simplificar cedo: uma defesa sem variações longas para decorar.',
+    resultingPlan: 'Recuperar o peão com a dama e desenvolver com tempo.',
+  }),
+  lesson(3, 'exd5', 'As brancas capturam — recusar deixaria as pretas com centro de graça.', {
+    resultingPlan: 'Cc3 depois, ganhando tempo sobre a dama preta.',
+  }),
+  lesson(4, 'Qxd5', 'A dama recupera o peão, sabendo que vai ser atacada.', {
+    strategicIdea: 'O tempo que se perde aqui é o preço de uma estrutura sem fraquezas.',
+  }),
+  lesson(5, 'Nc3', 'O cavalo desenvolve atacando a dama — as brancas ganham o tempo previsto.', {
+    arrows: [{ from: 'b1', to: 'c3' }],
+  }),
+  lesson(6, 'Qa5', 'A dama recua para uma casa segura, ainda ativa na diagonal.', {
+    strategicIdea: 'Recuar para uma casa que faz alguma coisa é diferente de recuar por recuar.',
+    resultingPlan: '...Cf6, ...c6 e ...Bf5, com uma estrutura parecida com a Caro-Kann.',
+  }),
+]
+
+/* -------------------------------------------------------------- Pirc */
+
+/** 1.e4 d6 2.d4 Cf6 3.Cc3 g6 4.Cf3 Bg7 — a Clássica. */
+const pircMain = [
+  lesson(1, 'e4', 'As brancas ocupam o centro.', {
+    strategicIdea: 'A Pirc cede o centro de propósito, como as defesas indianas fazem contra 1.d4.',
+  }),
+  lesson(2, 'd6', 'O peão prepara ...Cf6 sem entregar e5, e abre a diagonal do bispo de c8.', {
+    strategicIdea: 'Lance modesto que mantém Pirc, Moderna e até Siciliana em aberto.',
+    resultingPlan: '...Cf6 atacando e4, e depois o fianchetto.',
+  }),
+  lesson(3, 'd4', 'As brancas montam o centro completo, que é justamente o convite.', {
+    highlights: ['d4', 'e4'],
+  }),
+  lesson(4, 'Nf6', 'O cavalo ataca e4 e obriga as brancas a defender.', {
+    highlights: ['e4'],
+  }),
+  lesson(5, 'Nc3', 'O cavalo defende e4 e completa o domínio central.', {
+    resultingPlan: 'Cf3 ou f4, conforme o grau de ambição.',
+  }),
+  lesson(6, 'g6', 'As pretas preparam o fianchetto: o bispo vai pressionar d4 de longe.', {
+    strategicIdea: 'A peça que ataca o centro não precisa estar no centro.',
+    resultingPlan: '...Bg7, ...O-O e a ruptura ...c5 ou ...e5.',
+  }),
+  lesson(7, 'Nf3', 'As brancas desenvolvem sem se comprometer com um ataque de peões.', {
+    resultingPlan: 'Be2 e O-O, com espaço e uma partida tranquila.',
+  }),
+  lesson(8, 'Bg7', 'O bispo ocupa a diagonal longa e a defesa está montada.', {
+    arrows: [{ from: 'f8', to: 'g7' }],
+    resultingPlan: '...O-O e depois ...c5 ou ...e5, atacando o centro que as brancas construíram.',
+  }),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -3789,6 +3850,393 @@ const english = course({
   version: 1,
 })
 
+const scandinavian = course({
+  id: 'escandinava',
+  slug: 'escandinava',
+  name: 'Defesa Escandinava',
+  side: 'black',
+  ecoCodes: ['B01'],
+  description:
+    'Atacar o centro no primeiro lance e aceitar perder um tempo em troca de uma estrutura sem fraquezas.',
+  philosophy: 'Poucas variações para decorar, um plano claro e o bispo de c8 resolvido cedo.',
+  difficulty: 1,
+  prerequisites: [],
+  tags: ['semi-open', 'simple', 'positional'],
+  transitionToMiddlegame:
+    'A abertura termina quando a dama chega a uma casa estável e o bispo de c8 sai. A partir daí a posição parece uma Caro-Kann com um tempo a menos e uma preocupação a menos.',
+  mainline: escandinavaMain,
+  /*
+    OS DOIS RAMOS BIFURCAM NO SEGUNDO LANCE PRETO — o mesmo ponto de decisão,
+    pela regra que a Índia do Rei estabeleceu.
+  */
+  variations: [
+    {
+      /*
+        A MODERNA (2...Cf6) É A LINHA QUE EVITA PERDER O TEMPO: em vez de
+        recuperar com a dama, o cavalo vai buscar o peão. Core porque ela é a
+        outra metade da defesa, e a escolha entre as duas é o conteúdo do curso.
+      */
+      id: 'escandinava-moderna',
+      importancia: 'core',
+      eco: 'B01',
+      conceitos: [
+        'concept.material-vs-initiative',
+        'concept.space-vs-counterplay',
+        'concept.bad-bishop',
+      ],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Nxd5',
+        porque:
+          'Capturar em d5 no segundo lance permite c4 com tempo sobre o cavalo, e as pretas ficam sem o peão E sem desenvolvimento. A ordem correta é ...Cf6 primeiro e a recaptura só depois.',
+      },
+      fronteira: { type: 'handoff', planId: 'escandinava-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se segurar o peão com c4 e d4, aceitando ficar com um centro que precisa ser defendido.',
+      intencaoDoAdversario:
+        'Segurar o peão de d5 com c4 e provar que o cavalo preto perdeu mais tempo do que a dama teria perdido.',
+      objetivoDoAluno:
+        'Recuperar o peão sem perder tempo com a dama, aceitando uma posição mais dinâmica e menos simples.',
+      name: 'Variante Moderna',
+      description: 'As pretas recuperam o peão com o cavalo em vez da dama.',
+      rootNodeId: '',
+      line: [
+        ...escandinavaMain.slice(0, 3),
+        lesson(
+          4,
+          'Nf6',
+          'O cavalo vai buscar o peão em vez da dama, evitando o tempo que Cc3 ganharia.',
+          {
+            strategicIdea: 'Trocar simplicidade por dinamismo: menos tempo perdido, mais teoria.',
+            resultingPlan: '...Cxd5 depois, quando c4 não vier com tempo.',
+          },
+        ),
+        lesson(5, 'd4', 'As brancas sustentam o peão de d5 e ocupam o centro enquanto podem.', {
+          resultingPlan: 'c4 no próximo lance, se as pretas deixarem.',
+        }),
+      ],
+    },
+    {
+      /*
+        A QUALIDADE DA ESCANDINAVA ESTÁ NA CASA DA DAMA, e ...Dd6 é a
+        alternativa moderna a ...Da5. Core porque muda o plano inteiro: a dama
+        em d6 defende o centro em vez de pressionar a diagonal.
+      */
+      id: 'escandinava-qd6',
+      importancia: 'core',
+      eco: 'B01',
+      conceitos: [
+        'concept.king-safety-timing',
+        'concept.space-vs-counterplay',
+        'concept.open-file',
+      ],
+      estrutura: 'structure.caro-advance-chain',
+      erroComum: {
+        lance: 'Qd8',
+        porque:
+          'Recuar a dama para casa desfaz tudo o que a defesa comprou: as pretas ficam com um tempo a menos e a mesma posição inicial, sem nenhuma compensação pela abertura do centro.',
+      },
+      fronteira: { type: 'handoff', planId: 'escandinava-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se ganhar espaço com d4 e Cf3 enquanto a dama preta procura casa.',
+      intencaoDoAdversario:
+        'Ganhar tempo sobre a dama e ocupar o centro antes que as pretas completem o desenvolvimento.',
+      objetivoDoAluno:
+        'Pôr a dama numa casa que defende o centro e não atrapalha as peças, e só então desenvolver.',
+      name: 'Variante com Dama em d6',
+      description: 'A dama recua para d6 em vez de a5, defendendo o centro de perto.',
+      rootNodeId: '',
+      line: [
+        ...escandinavaMain.slice(0, 5),
+        lesson(
+          6,
+          'Qd6',
+          'A dama recua para uma casa central: ela defende e não fica exposta a b4 ou Bd2.',
+          {
+            strategicIdea: 'A casa da dama é a decisão que define a Escandinava inteira.',
+            resultingPlan: '...Cf6, ...c6 e ...Bf5, com estrutura sólida e a dama útil.',
+          },
+        ),
+        lesson(
+          7,
+          'd4',
+          'As brancas montam o centro completo, aproveitando os tempos que ganharam.',
+          { resultingPlan: 'Cf3 e Bd3, com espaço e desenvolvimento rápido.' },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'escandinava-bispo',
+      name: 'O bispo de c8 sai antes de ...e6',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Pôr o bispo em f5 ou g4 antes de fechar a diagonal com o peão de e.',
+      when: 'Em toda linha da Escandinava — é a razão de ela ser mais fácil que a Francesa.',
+      risk: 'Jogar ...e6 primeiro por hábito: o bispo fica preso e a defesa perde a vantagem.',
+      porQueFunciona:
+        'A troca em d5 abriu a diagonal c8-h3 de graça. Diferente da Francesa e da Ortodoxa, aqui a peça problemática das defesas fechadas sai de casa antes de qualquer peão trancar o caminho.',
+      preparacao: 'A dama já numa casa estável. Com ela exposta, o bispo sai e a dama apanha.',
+      oQueOAdversarioTenta:
+        'Expulsar o bispo com Cf3 e Ce5, ou trocá-lo com Bd3 antes de ele encontrar diagonal estável.',
+      arrows: [{ from: 'c8', to: 'f5' }],
+    },
+    {
+      id: 'escandinava-estrutura',
+      name: 'A estrutura de Caro-Kann sem a Caro-Kann',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Montar ...c6, ...Bf5 e ...e6 na ordem certa.',
+      when: 'Depois de a dama achar casa.',
+      risk: 'Montar a estrutura sem completar o desenvolvimento: solidez sem peças é só lentidão.',
+      porQueFunciona:
+        'A Escandinava chega à mesma estrutura da Caro-Kann por um caminho mais curto e sem teoria. O peão em c6 sustenta d5 no futuro, o bispo já saiu, e ...e6 fecha a caixa sem prender nada.',
+      preparacao: 'O bispo de c8 já fora. É a ORDEM que faz esta estrutura valer a pena.',
+      oQueOAdversarioTenta:
+        'Ganhar espaço com d4 e c4 antes de a estrutura preta se completar, ou atacar a dama de novo com Cd5.',
+    },
+    {
+      id: 'escandinava-tempo',
+      name: 'Aceitar perder o tempo',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Não gastar mais lances defendendo a dama do que o necessário.',
+      when: 'Logo depois de ...Dxd5, quando Cc3 vem com ataque.',
+      risk: 'Mover a dama duas ou três vezes: o preço combinado era UM tempo, não três.',
+      porQueFunciona:
+        'A defesa aceita perder um tempo em troca de uma estrutura sem fraquezas e de um bispo resolvido. A conta fecha enquanto o preço for um tempo; cada lance extra da dama transforma um negócio justo num prejuízo.',
+      preparacao:
+        'Escolher a casa da dama ANTES de capturar, olhando para b4, Bd2 e Cd5 — as três ameaças que a expulsariam de novo.',
+      oQueOAdversarioTenta:
+        'Perseguir a dama com Cd5, Bd2 e b4, cobrando um tempo a cada lance de desenvolvimento.',
+    },
+  ],
+  structures: [
+    {
+      name: 'Estrutura escandinava',
+      description:
+        'Peões pretos em c6 e e6 com o bispo JÁ FORA em f5. É a estrutura da Caro-Kann sem o problema do bispo — e é isso que a defesa compra com o tempo que perde.',
+      pawnBreaks: ['c5', 'e5'],
+      weakSquares: ['d5', 'b7'],
+      openFiles: ['d'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'escandinava-erro-dama-passeia',
+      nodeId: 'root',
+      positionPly: 5,
+      moveSan: 'Qe5+',
+      explanation:
+        'Sair com a dama para o meio do tabuleiro convida Be2, Cf3 e Cd5 com ataque: cada xeque custa um tempo de desenvolvimento e não ganha nada.',
+      principle:
+        'Xeque não é ameaça: se ele não muda a posição a seu favor, é só um lance a menos para você.',
+    },
+  ],
+  version: 1,
+})
+
+const pirc = course({
+  id: 'pirc',
+  slug: 'pirc',
+  name: 'Defesa Pirc',
+  side: 'black',
+  ecoCodes: ['B07', 'B08', 'B09'],
+  description:
+    'Ceder o centro para atacá-lo com peças: fianchetto, roque rápido e a ruptura no momento certo.',
+  philosophy: 'A Índia do Rei contra 1.e4 — menos espaço, mais flexibilidade, uma ruptura marcada.',
+  difficulty: 2,
+  prerequisites: [],
+  tags: ['semi-open', 'closed', 'flexible'],
+  transitionToMiddlegame:
+    'A abertura termina quando as pretas escolhem entre ...c5 e ...e5. A partir daí a pergunta é se o centro branco vira força ou alvo.',
+  mainline: pircMain,
+  /*
+    OS DOIS RAMOS BIFURCAM NO QUARTO LANCE BRANCO — o mesmo ponto de decisão.
+    Ver a Índia do Rei para a razão.
+  */
+  variations: [
+    {
+      /*
+        O ATAQUE AUSTRÍACO É A LINHA MAIS AGRESSIVA CONTRA A PIRC: quatro peões
+        no centro e f4 mirando o roque. Core porque é a punição de quem cede o
+        centro sem plano de ruptura.
+      */
+      id: 'pirc-austriaco',
+      importancia: 'core',
+      eco: 'B09',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-c5', 'concept.king-safety-timing'],
+      estrutura: 'structure.benoni-center',
+      motivos: ['motif.pin-on-d-file'],
+      erroComum: {
+        lance: 'e5',
+        porque:
+          'Romper com o peão de e contra quatro peões centrais abre a coluna f para a torre branca justamente onde o rei preto acabou de rocar. Contra o Austríaco, a ruptura correta é ...c5, na ala em que as brancas não têm peças.',
+      },
+      fronteira: { type: 'handoff', planId: 'pirc-c5' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se converter espaço em ataque: f4-f5 e e5 com peças prontas.',
+      intencaoDoAdversario:
+        'Ocupar o máximo de espaço com f4 e atacar o roque preto antes que a ruptura chegue.',
+      objetivoDoAluno:
+        'Atacar na ala da dama com ...c5, onde as brancas gastaram nenhum lance — cada peão que avança na ala do rei é um defensor a menos lá.',
+      name: 'Ataque Austríaco',
+      description: 'As brancas jogam f4 e montam quatro peões centrais mirando o roque preto.',
+      rootNodeId: '',
+      line: [
+        ...pircMain.slice(0, 6),
+        lesson(
+          7,
+          'f4',
+          'O quarto peão central entra e as brancas apostam no ataque direto ao roque preto.',
+          {
+            arrows: [{ from: 'f2', to: 'f4' }],
+            strategicIdea:
+              'Centro grande é força e alvo: ele precisa de peças que ainda não chegaram.',
+            resultingPlan: 'Cf3, Bd3 e a corrida com e5 e f5.',
+          },
+        ),
+        lesson(
+          8,
+          'Bg7',
+          'As pretas completam o fianchetto: contra um ataque de peões, a defesa começa pelo contrajogo.',
+          { resultingPlan: '...O-O e ...c5 imediatamente, sem esperar o ataque chegar.' },
+        ),
+      ],
+    },
+    {
+      /*
+        O ATAQUE 150 É O SISTEMA MAIS PRÁTICO contra a Pirc em nível de clube:
+        Be3, Dd2 e Bh6 trocando o bispo que dá nome à defesa. Core porque a
+        resposta certa não é natural.
+      */
+      id: 'pirc-150',
+      importancia: 'core',
+      eco: 'B07',
+      conceitos: ['concept.bad-bishop', 'concept.king-safety-timing', 'concept.break-c5'],
+      estrutura: 'structure.kid-locked-center',
+      motivos: ['motif.greek-gift'],
+      erroComum: {
+        lance: 'O-O',
+        porque:
+          'Rocar no automático entrega o rei ao ataque que Dd2 e Bh6 preparam, com h4-h5 vindo em seguida. Contra o 150, as pretas atrasam o roque e resolvem primeiro a troca do bispo de g7.',
+      },
+      fronteira: { type: 'handoff', planId: 'pirc-bispo' },
+      politicaDoLadoInverso:
+        'Pelas brancas, demonstra-se trocar o bispo de g7 e atacar as casas escuras que sobraram.',
+      intencaoDoAdversario:
+        'Trocar o bispo de g7 com Bh6 e atacar as casas escuras ao redor do rei preto com h4 e h5.',
+      objetivoDoAluno:
+        'Evitar a troca do bispo ou cobrá-la caro: sem ele, o roque preto fica sem o defensor das casas escuras.',
+      name: 'Ataque 150',
+      description: 'As brancas jogam Be3 e Dd2 mirando a troca do bispo de g7 com Bh6.',
+      rootNodeId: '',
+      line: [
+        ...pircMain.slice(0, 6),
+        lesson(
+          7,
+          'Be3',
+          'O bispo prepara Dd2 e Bh6, mirando a troca da peça que defende as casas escuras pretas.',
+          {
+            strategicIdea:
+              'Trocar o bispo bom do adversário vale mais que desenvolver mais uma peça.',
+            resultingPlan: 'Dd2, Bh6 e h4-h5 contra o roque.',
+          },
+        ),
+        lesson(
+          8,
+          'Bg7',
+          'O bispo ocupa a diagonal — e agora o roque fica POSSÍVEL, que é exatamente a armadilha.',
+          { resultingPlan: 'Decidir o rei só depois de resolver a ameaça de troca em h6.' },
+        ),
+        lesson(
+          9,
+          'Qd2',
+          'A dama arma Bh6: a troca do bispo de g7 é a ideia inteira deste sistema.',
+          { resultingPlan: 'Bh6 e depois h4-h5 contra o roque preto.' },
+        ),
+        lesson(
+          10,
+          'c6',
+          'As pretas preparam ...b5 e atrasam o roque: sem rei na ala do rei, o ataque perde o alvo.',
+          { resultingPlan: '...b5 e ...Da5, jogando na ala da dama antes de decidir o rei.' },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'pirc-c5',
+      name: 'A ruptura ...c5',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Atacar a base do centro branco na ala em que ele tem menos peças.',
+      when: 'Contra centros grandes, e sempre que as brancas comprometerem peões na ala do rei.',
+      risk: 'Romper sem ter completado o desenvolvimento: um centro que abre favorece quem tem mais peças.',
+      porQueFunciona:
+        'A Pirc cede o centro para que ele fique grande demais para ser sustentado. Com ...c5 as pretas atacam d4 enquanto o bispo de g7 pressiona a mesma casa pela diagonal — dois atacantes com um lance de peão.',
+      preparacao:
+        'O bispo em g7 já na diagonal e o rei decidido. A ruptura é o fim da preparação, e não o começo dela.',
+      oQueOAdversarioTenta:
+        'Avançar d5 travando o centro, ou trocar em c5 para abrir a posição enquanto tem mais espaço.',
+      arrows: [{ from: 'c7', to: 'c5' }],
+    },
+    {
+      id: 'pirc-bispo',
+      name: 'O bispo de g7 é a defesa',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Não deixar o bispo de g7 ser trocado de graça.',
+      when: 'Sempre que as brancas jogarem Be3 e Dd2 mirando Bh6.',
+      risk: 'Gastar lances demais evitando a troca e ficar sem desenvolvimento nenhum.',
+      porQueFunciona:
+        'O bispo em g7 faz duas coisas ao mesmo tempo: pressiona d4 e defende as casas escuras ao redor do rei. Trocá-lo tira as duas de uma vez, e é por isso que o Ataque 150 existe.',
+      preparacao:
+        'Decidir o rei ANTES: com o roque adiado, Bh6 perde o sentido, porque não há rei atrás do bispo.',
+      oQueOAdversarioTenta:
+        'Forçar a troca com Bh6 logo depois do roque preto, e então avançar h4-h5 contra o rei desprotegido.',
+    },
+    {
+      id: 'pirc-e5',
+      name: 'A ruptura ...e5',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Disputar o centro de frente quando as brancas não avançaram na ala do rei.',
+      when: 'Contra sistemas tranquilos com Cf3 e Be2, e nunca contra o Austríaco.',
+      risk: 'Romper com a coluna f já aberta ou prestes a abrir: o rei preto paga a conta.',
+      porQueFunciona:
+        'Quando as brancas jogam sem f4, o centro delas é sustentado por peças e não por peões. ...e5 obriga d4 a decidir, e qualquer decisão dá às pretas a casa d4 ou a coluna aberta.',
+      preparacao: 'Roque feito, torre em e8 e um cavalo em d7 ou c6 apontando para e5.',
+      oQueOAdversarioTenta:
+        'Trocar em e5 para simplificar, ou avançar d5 travando o centro e correndo na ala da dama.',
+      arrows: [{ from: 'e7', to: 'e5' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Centro cedido da Pirc',
+      description:
+        'Peões brancos em d4 e e4 contra peões pretos em d6 e g6, com o bispo em g7. As brancas têm espaço e as pretas têm duas rupturas marcadas — a escolha entre elas é o conteúdo da defesa.',
+      pawnBreaks: ['c5', 'e5', 'f5'],
+      weakSquares: ['d4', 'f4'],
+      openFiles: ['c', 'e'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'pirc-erro-sem-ruptura',
+      nodeId: 'root',
+      positionPly: 7,
+      moveSan: 'Nbd7',
+      explanation:
+        'Desenvolver sem preparar ruptura nenhuma deixa as pretas com menos espaço e nenhum plano: a Pirc só funciona se o centro branco um dia for atacado.',
+      principle: 'Ceder o centro é um empréstimo — quem nunca cobra fica apenas com menos espaço.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -3804,6 +4252,8 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   nimzoIndian,
   catalan,
   english,
+  scandinavian,
+  pirc,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),

@@ -56,6 +56,8 @@ const HABILIDADE_EM_INGLES: Record<string, string> = {
 /** Abertura → nome oficial em inglês. */
 const ABERTURA_EM_INGLES: Record<string, string> = {
   italiana: 'Italian Game',
+  pirc: 'Pirc Defence',
+  escandinava: 'Scandinavian Defence',
   inglesa: 'English Opening',
   catala: 'Catalan Opening',
   'nimzo-india': 'Nimzo-Indian Defence',
