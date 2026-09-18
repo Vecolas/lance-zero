@@ -330,6 +330,66 @@ const nimzoMain = [
   }),
 ]
 
+/* ------------------------------------------------------------- Catalã */
+
+/** 1.d4 Cf6 2.c4 e6 3.g3 d5 4.Bg2 Be7 — a Catalã Fechada. */
+const catalaMain = [
+  lesson(1, 'd4', 'As brancas ocupam o centro com o peão da dama.', {
+    strategicIdea: 'A Catalã junta o centro de 1.d4 com o fianchetto da Inglesa.',
+  }),
+  lesson(2, 'Nf6', 'As pretas vigiam e4 e mantêm as defesas indianas em aberto.', {
+    highlights: ['e4'],
+  }),
+  lesson(3, 'c4', 'O segundo peão central entra e a pressão sobre d5 começa.', {
+    arrows: [{ from: 'c2', to: 'c4' }],
+  }),
+  lesson(4, 'e6', 'As pretas abrem a diagonal do bispo de f8 e preparam ...d5.', {
+    resultingPlan: '...d5 disputando o centro de frente.',
+  }),
+  lesson(5, 'g3', 'O lance que define a abertura: o bispo vai para a diagonal longa.', {
+    arrows: [{ from: 'g2', to: 'g3' }],
+    strategicIdea: 'A diagonal a8-h1 é o ativo permanente da Catalã.',
+    resultingPlan: 'Bg2 pressionando d5 e a torre de a8 de muito longe.',
+  }),
+  lesson(6, 'd5', 'As pretas ocupam o centro e bloqueiam a diagonal — por enquanto.', {
+    highlights: ['d5'],
+  }),
+  lesson(7, 'Bg2', 'O bispo ocupa a diagonal e passa a mirar d5 e a8 ao mesmo tempo.', {
+    resultingPlan: 'Cf3 e O-O, com pressão de longo prazo sobre a ala da dama preta.',
+  }),
+  lesson(8, 'Be7', 'As pretas desenvolvem e preparam o roque, sustentando d5.', {
+    resultingPlan: '...O-O e depois ...c6 ou ...dxc4, conforme a pressão apertar.',
+  }),
+]
+
+/* ------------------------------------------------------------ Inglesa */
+
+/** 1.c4 e5 2.Cc3 Cf6 3.Cf3 Cc6 — a Siciliana invertida. */
+const inglesaMain = [
+  lesson(1, 'c4', 'As brancas abrem no flanco e recusam ocupar o centro de imediato.', {
+    arrows: [{ from: 'c2', to: 'c4' }],
+    strategicIdea: 'Controlar d5 de longe, e decidir a estrutura depois do adversário.',
+    resultingPlan: 'Cc3, g3 e Bg2, com o centro ainda em aberto.',
+  }),
+  lesson(2, 'e5', 'As pretas ocupam o centro — é a Siciliana com as cores trocadas.', {
+    highlights: ['e5'],
+    strategicIdea: 'Quem ocupa o centro primeiro assume o compromisso primeiro.',
+  }),
+  lesson(3, 'Nc3', 'O cavalo disputa d5, a casa que a abertura inteira quer.', {
+    highlights: ['d5'],
+  }),
+  lesson(4, 'Nf6', 'As pretas desenvolvem e também disputam d5.', {
+    resultingPlan: '...Bb4 ou ...d5 conforme as brancas se comprometam.',
+  }),
+  lesson(5, 'Nf3', 'O segundo cavalo ataca e5 e mantém o centro branco flexível.', {
+    highlights: ['e5'],
+    resultingPlan: 'g3 e Bg2, completando o sistema sem tocar nos peões centrais.',
+  }),
+  lesson(6, 'Nc6', 'As pretas defendem e5 desenvolvendo, e a posição fica quase simétrica.', {
+    resultingPlan: '...d5 no momento certo, aproveitando o tempo de vantagem.',
+  }),
+]
+
 function course(
   definition: Omit<
     OpeningDefinition,
@@ -3352,6 +3412,383 @@ const nimzoIndian = course({
   version: 1,
 })
 
+const catalan = course({
+  id: 'catala',
+  slug: 'catala',
+  name: 'Abertura Catalã',
+  side: 'white',
+  ecoCodes: ['E01', 'E04', 'E06'],
+  description:
+    'O centro de 1.d4 com o fianchetto da Inglesa: pressão de longo prazo pela diagonal a8-h1.',
+  philosophy: 'Um gambito posicional. O peão de c4 pode esperar; a diagonal não.',
+  difficulty: 3,
+  prerequisites: ['gambito-da-dama-recusado'],
+  tags: ['closed', 'positional'],
+  transitionToMiddlegame:
+    'A abertura termina quando as pretas decidem entre segurar o peão de c4 e devolvê-lo. A partir daí a pergunta é se a diagonal vale mais que o material.',
+  mainline: catalaMain,
+  /*
+    OS DOIS RAMOS BIFURCAM NO MESMO PONTO — o quarto lance preto — pela regra
+    que a Índia do Rei estabeleceu: o bot percorre as alternativas de um ponto
+    de decisão por rodada, e ramos espalhados deixam o mais fundo inalcançável.
+
+    A CATALÃ É TAMBÉM O TESTE DE TRANSPOSIÇÃO DO CATÁLOGO (§24): ela nasce do
+    Gambito da Dama Recusado por outra ordem de lances, e a ligação está
+    declarada em vez de a explicação ser copiada nos dois cursos.
+  */
+  variations: [
+    {
+      /*
+        A CATALÃ ABERTA É A LINHA PRINCIPAL DA FAMÍLIA: as pretas capturam em c4
+        e as brancas jogam o gambito posicional de verdade. Core porque é ela
+        que define a abertura.
+      */
+      id: 'catala-aberta',
+      importancia: 'core',
+      eco: 'E04',
+      conceitos: ['concept.material-vs-initiative', 'concept.open-file', 'concept.break-c5'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'Qa4+',
+        porque:
+          'Correr atrás do peão com xeque da dama devolve o tempo: as pretas defendem com ...Cbd7 ou ...Bd7 desenvolvendo, e a dama volta para casa. Na Catalã o peão se recupera com Ce5 e Cc3, sem pressa.',
+      },
+      fronteira: { type: 'handoff', planId: 'catala-diagonal' },
+      transposicoes: ['qgd-tres-cavalos'],
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se aceitar o peão e devolvê-lo na hora certa, usando o tempo para ...c5.',
+      intencaoDoAdversario:
+        'Ficar com o peão de c4 e usar os tempos para completar o desenvolvimento antes que a diagonal pese.',
+      objetivoDoAluno:
+        'Recuperar o peão sem pressa, com peças: cada lance gasto atrás do material é um lance a menos de pressão.',
+      name: 'Catalã Aberta',
+      description: 'As pretas capturam em c4 e as brancas apostam na diagonal em vez do material.',
+      rootNodeId: '',
+      line: [
+        ...catalaMain.slice(0, 7),
+        lesson(
+          8,
+          'dxc4',
+          'As pretas aceitam o peão e desobstruem a diagonal longa — é este o negócio da Catalã.',
+          {
+            strategicIdea: 'Elas ganham material; as brancas ganham a diagonal e o tempo.',
+            resultingPlan: '...a6 e ...b5 tentando segurar, ou ...c5 devolvendo com jogo.',
+          },
+        ),
+        lesson(
+          9,
+          'Nf3',
+          'Desenvolvimento antes de material: o cavalo vai a e5 recuperar o peão sem pressa.',
+          { resultingPlan: 'Ce5 e Cxc4, com todas as peças no jogo.' },
+        ),
+      ],
+    },
+    {
+      /*
+        A CATALÃ FECHADA COM ...c6 é a resposta mais sólida e a mais comum em
+        clube. Core porque ela fecha a diagonal e obriga as brancas a mudar de
+        plano — sem isso o aluno joga a Catalã no automático.
+      */
+      id: 'catala-fechada',
+      importancia: 'core',
+      eco: 'E06',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-e5', 'concept.bad-bishop'],
+      estrutura: 'structure.slav-triangle',
+      erroComum: {
+        lance: 'cxd5',
+        porque:
+          'Trocar em d5 resolve a tensão a favor das PRETAS: a diagonal do bispo de g2 fica bloqueada por um peão que agora está defendido pelo peão de c6. A Catalã mantém a tensão o máximo possível.',
+      },
+      fronteira: { type: 'handoff', planId: 'catala-e4' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se fechar a diagonal com peões e preparar ...dxc4 só quando ...b5 estiver garantido.',
+      intencaoDoAdversario:
+        'Sustentar d5 com o peão de c6 e fechar a diagonal longa, aceitando menos espaço em troca de solidez.',
+      objetivoDoAluno:
+        'Preparar a ruptura e4: contra uma estrutura fechada, a diagonal só volta a valer quando o centro abrir.',
+      name: 'Catalã Fechada',
+      description: 'As pretas sustentam d5 com ...c6 e fecham a diagonal do bispo de g2.',
+      rootNodeId: '',
+      line: [
+        ...catalaMain.slice(0, 7),
+        lesson(
+          8,
+          'c6',
+          'O peão sustenta d5 e tranca a diagonal longa, que é o principal ativo das brancas.',
+          {
+            strategicIdea: 'Fechar a diagonal é a forma mais direta de desarmar a Catalã.',
+            resultingPlan: '...Cbd7, ...O-O e ...b6, com uma posição sólida e sem alvos.',
+          },
+        ),
+        lesson(
+          9,
+          'Nf3',
+          'As brancas completam o desenvolvimento e preparam a ruptura que reabre a diagonal.',
+          { resultingPlan: 'O-O, Cbd2 e e4 no momento certo.' },
+        ),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'catala-diagonal',
+      name: 'A diagonal a8-h1',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Manter o bispo de g2 mirando d5, c6 e a torre de a8.',
+      when: 'Sempre — é o ativo permanente da abertura.',
+      risk: 'Trocar o bispo por conveniência: sem ele, a Catalã vira um Gambito da Dama sem ideia.',
+      porQueFunciona:
+        'O bispo em g2 pressiona três alvos ao mesmo tempo sem se expor, e a pressão dura a partida inteira. É por isso que o peão de c4 pode ser oferecido: o que se compra é o tempo de manter essa diagonal aberta.',
+      preparacao:
+        'O fianchetto completo e o peão de e ainda em e2, para que a diagonal não se feche por dentro.',
+      oQueOAdversarioTenta:
+        'Fechar a diagonal com ...c6 e ...d5 sustentado, ou trocar o bispo com ...Ba6 e ...Bb7.',
+      arrows: [{ from: 'g2', to: 'a8' }],
+    },
+    {
+      id: 'catala-e4',
+      name: 'A ruptura e4',
+      positionNodeId: 'root',
+      positionPly: 6,
+      objective: 'Abrir o centro para que a diagonal volte a valer.',
+      when: 'Contra estruturas fechadas com ...c6, depois do roque e de Cbd2.',
+      risk: 'Romper antes de a peça de apoio chegar: e4 sem Cbd2 costuma só perder um peão.',
+      porQueFunciona:
+        'Quando as pretas fecham a diagonal com ...c6 e ...d5, o bispo de g2 fica olhando para um muro. A ruptura e4 desfaz o muro — e como as brancas têm mais espaço, a abertura do centro favorece quem manobra melhor.',
+      preparacao:
+        'Rei rocado, cavalo em d2 e torre em e1. São três lances de preparação para um lance de peão, e é essa a proporção correta.',
+      oQueOAdversarioTenta:
+        'Sustentar d5 com ...Cbd7 e ...b6, ou romper antes com ...c5 para abrir o centro nos próprios termos.',
+      arrows: [{ from: 'e2', to: 'e4' }],
+    },
+    {
+      id: 'catala-peao-c4',
+      name: 'Recuperar c4 sem pressa',
+      positionNodeId: 'root',
+      positionPly: 8,
+      objective: 'Trazer o peão de volta com peças, e não com a dama.',
+      when: 'Na Catalã Aberta, depois de ...dxc4.',
+      risk: 'Correr atrás do peão: cada lance gasto nele é um lance a menos de desenvolvimento.',
+      porQueFunciona:
+        'O peão de c4 é difícil de segurar para as pretas: sustentá-lo exige ...a6 e ...b5, que enfraquecem a ala da dama justamente onde a diagonal aponta. Quem espera recupera o material e a posição junto.',
+      preparacao:
+        'Cavalo em f3 pronto para e5, e o rei já rocado. Recuperar com a dama antes disso é entregar o tempo que o gambito comprou.',
+      oQueOAdversarioTenta:
+        'Segurar com ...a6 e ...b5, ou devolver o peão na hora certa com ...c5 para igualar o desenvolvimento.',
+    },
+  ],
+  structures: [
+    {
+      name: 'Centro catalão',
+      description:
+        'Peão branco em d4 com o bispo em g2 contra peões pretos em d5 e e6. A tensão em c4/d5 é o coração da abertura: quem a resolve primeiro costuma resolvê-la a favor do outro.',
+      pawnBreaks: ['e4', 'c5', 'b5'],
+      weakSquares: ['c6', 'b7'],
+      openFiles: ['c', 'd'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'catala-erro-trocar-cedo',
+      nodeId: 'root',
+      positionPly: 6,
+      moveSan: 'cxd5',
+      explanation:
+        'Resolver a tensão cedo entrega às pretas exatamente o que elas querem: um peão em d5 defendido e a diagonal do bispo de g2 bloqueada.',
+      principle: 'Quem tem pressão de longo prazo não troca cedo — a tensão é o próprio ativo.',
+    },
+  ],
+  version: 1,
+})
+
+const english = course({
+  id: 'inglesa',
+  slug: 'inglesa',
+  name: 'Abertura Inglesa',
+  side: 'white',
+  ecoCodes: ['A20', 'A30', 'A34'],
+  description:
+    'Abrir no flanco e decidir o centro depois: a abertura mais flexível do repertório de 1.d4 e 1.c4.',
+  philosophy:
+    'Controlar d5 de longe e escolher a estrutura depois que o adversário já escolheu a dele.',
+  difficulty: 2,
+  prerequisites: [],
+  tags: ['flank', 'positional', 'flexible'],
+  transitionToMiddlegame:
+    'A abertura termina quando a estrutura central se define — e ela pode se definir como Siciliana invertida, como Índia ou até como Gambito da Dama. A partir daí vale o plano da estrutura que apareceu.',
+  mainline: inglesaMain,
+  /*
+    OS RAMOS BIFURCAM NO PRIMEIRO LANCE PRETO, que é o ponto de decisão mais
+    raso que existe — e também o mais honesto para esta abertura. A Inglesa não
+    é uma sequência: ela é uma resposta ao que o adversário escolhe, e a
+    primeira escolha dele já muda tudo.
+
+    Ramos no mesmo ponto convivem; ramos espalhados por pontos diferentes fazem
+    o raso afastar do fundo. Ver a Índia do Rei.
+  */
+  variations: [
+    {
+      /*
+        A SIMÉTRICA É A RESPOSTA MAIS COMUM e a que produz as posições mais
+        equilibradas. Core porque quem só estudou a invertida não sabe o que
+        fazer quando o espelho aparece.
+      */
+      id: 'inglesa-simetrica',
+      importancia: 'core',
+      eco: 'A30',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-d4', 'concept.open-file'],
+      estrutura: 'structure.open-center',
+      erroComum: {
+        lance: 'd4',
+        porque:
+          'Romper cedo desfaz a flexibilidade que a abertura comprou: depois de cxd4 a posição fica simétrica e sem alvos, e o tempo de vantagem das brancas desaparece com a simplificação.',
+      },
+      fronteira: { type: 'handoff', planId: 'inglesa-d5' },
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se espelhar sem medo: a simetria só é passiva para quem não tem plano.',
+      intencaoDoAdversario:
+        'Espelhar a sua estrutura e apostar que uma posição sem desequilíbrio não dá vantagem a ninguém.',
+      objetivoDoAluno:
+        'Usar o tempo de vantagem para quebrar a simetria primeiro, com g3 e Bg2 antes de qualquer ruptura.',
+      name: 'Inglesa Simétrica',
+      description: 'As pretas respondem com ...c5 e espelham a estrutura branca.',
+      rootNodeId: '',
+      line: [
+        ...inglesaMain.slice(0, 1),
+        lesson(
+          2,
+          'c5',
+          'As pretas espelham: a posição fica simétrica e ninguém se compromete com o centro.',
+          {
+            strategicIdea:
+              'Simetria não é empate — quem quebrar o espelho primeiro escolhe o jogo.',
+            resultingPlan: '...Cc6, ...g6 e ...Bg7, com um fianchetto de cada lado.',
+          },
+        ),
+        lesson(3, 'Nf3', 'As brancas desenvolvem e mantêm as duas rupturas centrais disponíveis.', {
+          resultingPlan: 'g3, Bg2 e O-O antes de decidir entre d4 e e3.',
+        }),
+      ],
+    },
+    {
+      /*
+        A ANGLO-ÍNDIA É A PONTE PARA TODO O RESTO DO REPERTÓRIO DE 1.d4: depois
+        de ...Cf6 a partida pode virar Nimzo, Índia da Dama, Índia do Rei ou
+        Gambito da Dama. Core porque essa transposição é o principal argumento
+        da Inglesa.
+      */
+      id: 'inglesa-anglo-india',
+      importancia: 'core',
+      eco: 'A34',
+      conceitos: ['concept.space-vs-counterplay', 'concept.break-d4', 'concept.bishop-pair'],
+      estrutura: 'structure.slav-triangle',
+      erroComum: {
+        lance: 'e4',
+        porque:
+          'Ocupar o centro com o peão de e entrega a flexibilidade da Inglesa e convida ...Bb4 com pressão: a abertura existe justamente para não se comprometer antes do adversário.',
+      },
+      fronteira: { type: 'handoff', planId: 'inglesa-transposicao' },
+      transposicoes: ['nimzo-classica', 'catala-fechada'],
+      politicaDoLadoInverso:
+        'Pelas pretas, demonstra-se escolher a defesa indiana preferida sem enfrentar a ordem de lances de 1.d4.',
+      intencaoDoAdversario:
+        'Manter todas as defesas indianas abertas e escolher a estrutura depois que as brancas se comprometerem.',
+      objetivoDoAluno:
+        'Escolher a transposição que favorece o seu repertório: com d4 a partida vira Índia, com g3 vira Catalã.',
+      name: 'Anglo-Índia',
+      description: 'As pretas respondem com ...Cf6 e a partida pode transpor para várias defesas.',
+      rootNodeId: '',
+      line: [
+        ...inglesaMain.slice(0, 1),
+        lesson(
+          2,
+          'Nf6',
+          'As pretas desenvolvem sem se comprometer e mantêm todas as defesas indianas em aberto.',
+          {
+            strategicIdea:
+              'Flexibilidade contra flexibilidade: quem ceder primeiro escolhe a partida.',
+            resultingPlan: '...e6 ou ...g6, conforme as brancas montarem o centro.',
+          },
+        ),
+        lesson(3, 'Nc3', 'As brancas disputam d5 e mantêm as duas ordens de lances possíveis.', {
+          resultingPlan: 'd4 transpondo para as Índias, ou g3 indo para a Catalã.',
+        }),
+      ],
+    },
+  ],
+  plans: [
+    {
+      id: 'inglesa-d5',
+      name: 'Disputar a casa d5',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Somar controle sobre d5 com o peão de c4, o cavalo de c3 e o bispo de g2.',
+      when: 'Em toda a Inglesa — é o fio que liga a abertura inteira.',
+      risk: 'Ocupar d5 cedo com um peão: a casa vale mais controlada que ocupada.',
+      porQueFunciona:
+        'O peão em c4 nunca ocupa o centro; ele nega a casa d5 ao adversário. Quando o cavalo de c3 e o bispo de g2 somam, as pretas não conseguem jogar ...d5 sem concessão — e sem ...d5 a posição delas fica sem ar.',
+      preparacao:
+        'O fianchetto completo, que é o terceiro atacante da casa. Com dois só, ...d5 costuma ser possível.',
+      oQueOAdversarioTenta:
+        'Preparar ...d5 com ...e6 e ...Bb4, ou desistir da casa e jogar por ...f5 e espaço no outro lado.',
+    },
+    {
+      id: 'inglesa-transposicao',
+      name: 'Escolher a transposição',
+      positionNodeId: 'root',
+      positionPly: 2,
+      objective: 'Levar a partida para a estrutura que o seu repertório já conhece.',
+      when: 'Sempre que as pretas jogarem ...Cf6 ou ...e6 sem se comprometer.',
+      risk: 'Transpor no automático para uma posição que você não estudou, só porque é possível.',
+      porQueFunciona:
+        'A Inglesa adia o centro, e adiar significa escolher depois. Com d4 a partida vira uma Índia; com g3 e d4 vira a Catalã; sem d4 continua Inglesa. É o mesmo tabuleiro com três repertórios.',
+      preparacao:
+        'Saber qual das três você joga melhor. A flexibilidade só é vantagem para quem tem para onde ir.',
+      oQueOAdversarioTenta:
+        'Transpor primeiro, levando a partida para a defesa dele em vez da abertura sua.',
+    },
+    {
+      id: 'inglesa-fianchetto',
+      name: 'O fianchetto do rei',
+      positionNodeId: 'root',
+      positionPly: 4,
+      objective: 'Pôr o bispo em g2 antes de decidir qualquer coisa no centro.',
+      when: 'Em quase toda linha da Inglesa — é o lance que não se arrepende.',
+      risk: 'Adiar o roque para completar o fianchetto num momento em que o centro já abriu.',
+      porQueFunciona:
+        'O bispo em g2 pressiona d5 e a diagonal longa sem se expor, e serve a todas as estruturas que a Inglesa pode gerar. É o desenvolvimento que não precisa saber ainda como a partida vai ser.',
+      preparacao: 'Nada além de g3. É essa a vantagem: um lance útil em qualquer futuro.',
+      oQueOAdversarioTenta:
+        'Fechar a diagonal com ...d5 sustentado por ...c6, ou trocar o bispo com ...Bh3 depois do próprio fianchetto.',
+      arrows: [{ from: 'f1', to: 'g2' }],
+    },
+  ],
+  structures: [
+    {
+      name: 'Siciliana invertida',
+      description:
+        'Peão preto em e5 contra peão branco em c4, com um tempo a mais para as brancas. É a Siciliana com as cores trocadas — e o tempo extra vale mais do que parece numa estrutura assimétrica.',
+      pawnBreaks: ['d4', 'd5', 'f5'],
+      weakSquares: ['d5', 'd4'],
+      openFiles: ['c', 'd'],
+    },
+  ],
+  mistakes: [
+    {
+      id: 'inglesa-erro-centro-cedo',
+      nodeId: 'root',
+      positionPly: 2,
+      moveSan: 'e4',
+      explanation:
+        'Ocupar o centro com o peão de e no segundo lance desfaz a ideia da Inglesa: a abertura existe para decidir a estrutura DEPOIS do adversário.',
+      principle:
+        'Flexibilidade é um ativo que se gasta uma vez — gastá-la cedo é abrir mão dela sem cobrar nada.',
+    },
+  ],
+  version: 1,
+})
+
 export const OPENING_COURSES: readonly OpeningDefinition[] = [
   italian,
   scotch,
@@ -3365,6 +3802,8 @@ export const OPENING_COURSES: readonly OpeningDefinition[] = [
   qga,
   kingsIndian,
   nimzoIndian,
+  catalan,
+  english,
 ]
 export const OPENING_COURSE_BY_SLUG = new Map(
   OPENING_COURSES.map((opening) => [opening.slug, opening]),
