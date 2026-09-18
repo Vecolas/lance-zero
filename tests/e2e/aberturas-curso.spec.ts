@@ -830,3 +830,21 @@ test('o fim da linha entrega o plano, e não só um aviso de conclusão', async 
   if (!plano) throw new Error('a Italiana precisa de um plano')
   await expect(page.getByText(new RegExp(plano.name))).toBeVisible()
 })
+
+/**
+ * "DAS SUAS PARTIDAS" — e o silêncio de quem não importou nada.
+ *
+ * O QUE ESTE TESTE GUARDA é a AUSÊNCIA. Uma seção de diagnóstico que aparece
+ * zerada ensina o aluno a ignorá-la: ele vê "0 partidas saíram da linha" na
+ * primeira visita, conclui que ali não há nada, e não volta no dia em que
+ * houver.
+ *
+ * Sem partidas importadas, a seção não existe — e não existe vazia.
+ */
+test('sem partidas importadas, a seção "Das suas partidas" não aparece', async ({ page }) => {
+  await page.goto('/aberturas/italiana')
+
+  await expect(page.getByRole('heading', { name: 'Das suas partidas' })).toHaveCount(0)
+  // E nada de contadores zerados sobrando na tela.
+  await expect(page.getByText(/0 partidas saíram/)).toHaveCount(0)
+})

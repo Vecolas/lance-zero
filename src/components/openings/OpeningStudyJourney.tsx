@@ -87,6 +87,11 @@ import {
 } from '@/domain/openings/ramos'
 import { posicoesDaLinha } from '@/domain/openings/variacoes'
 import {
+  acaoDoDesvio,
+  desviosNasSuasPartidas,
+  type DesvioNasPartidas,
+} from '@/domain/openings/das-suas-partidas'
+import {
   iniciarSequencia,
   jogarNaSequencia,
   // Este arquivo já tem um `lanceEsperado` — o do GRAFO, que responde "qual é a
@@ -95,7 +100,7 @@ import {
   lanceEsperado as lanceEsperadoNaLinha,
   type LinhaTreinavel,
 } from '@/domain/exercicios'
-import { applyMove, legalMoves, type PromotionPiece, type SquareName } from '@/lib/chess'
+import { applyMove, legalMoves, parsePgn, type PromotionPiece, type SquareName } from '@/lib/chess'
 import styles from './OpeningStudyJourney.module.css'
 
 /** O id da jornada carrega o domínio: ver o contrato em `@/domain/types`. */
@@ -237,6 +242,12 @@ export function OpeningStudyJourney({ opening }: { opening: OpeningDefinition })
       ) : (
         <ConteudoDeEtapa opening={opening} stage={stage} jornada={jornada} aoResponder={gravar} />
       )}
+      {/*
+        "DAS SUAS PARTIDAS" fica ABAIXO do conteúdo da etapa, e aparece em todas
+        elas: o ponto em que o aluno erra na vida real não pertence a uma etapa
+        do currículo — ele é o motivo de voltar ao curso.
+      */}
+      <DasSuasPartidas opening={opening} progress={progress} />
       {concluiu ? <SparringDaAbertura opening={opening} /> : null}
     </StudyJourneyShell>
   )
@@ -626,6 +637,129 @@ function LinhaComentada({
       </div>
     </MesaDeEstudo>
   )
+}
+
+/**
+ * "DAS SUAS PARTIDAS" — onde a teoria e o seu tabuleiro se separaram.
+ *
+ * A ÚNICA SEÇÃO DO CURSO CUJO MATERIAL NÃO É AUTORADO POR NÓS. Tudo o mais no
+ * repertório — a linha principal, os ramos, a importância de cada um — é
+ * conteúdo que alguém escreveu. Aqui o conteúdo é o que o aluno de fato
+ * enfrentou, e por isso esta é a única contagem do módulo que pode dizer
+ * "aconteceu N vezes". O campo `frequency` do grafo não pode: ele conta linhas
+ * autoradas, e o plano §58 proíbe apresentá-lo como estatística.
+ *
+ * ELA É SECUNDÁRIA, e de propósito (plano §36): aparece abaixo do conteúdo da
+ * etapa, não no lugar dele. Um aluno sem partidas importadas não vê nada — e não
+ * uma seção vazia com zeros, que é pior que ausência.
+ *
+ * O QUE ELA RECUSA A FAZER: criar ramo no repertório porque o adversário jogou
+ * algo (§38.2). Quando não há resposta autorada, o botão diz "analisar" em vez
+ * de fingir que o curso cobre aquilo.
+ */
+function DasSuasPartidas({
+  opening,
+  progress,
+}: {
+  opening: OpeningDefinition
+  progress: OpeningProgress
+}) {
+  const { repo, status } = useRepository()
+  const [desvios, setDesvios] = useState<DesvioNasPartidas[] | null>(null)
+
+  useEffect(() => {
+    if (status !== 'pronto' || !repo) return
+    let cancelado = false
+    void (async () => {
+      try {
+        const partidas = await repo.listGames()
+        if (cancelado) return
+        /*
+          O PGN É LIDO AQUI e não guardado analisado: `Game` guarda o texto, que
+          é a fonte. Uma cópia analisada no armazenamento seria a metade que
+          envelhece quando o parser melhorar.
+
+          PGN inválido é PULADO em silêncio — uma partida que não abre não é
+          motivo para a seção inteira sumir, e o lugar de reclamar de importação
+          é a tela de importação.
+        */
+        const lidas = partidas.flatMap((partida) => {
+          try {
+            return [{ jogo: parsePgn(partida.pgn), corDoAluno: partida.userColor }]
+          } catch {
+            return []
+          }
+        })
+        setDesvios(desviosNasSuasPartidas(opening, lidas, progress))
+      } catch {
+        if (!cancelado) setDesvios([])
+      }
+    })()
+    return () => {
+      cancelado = true
+    }
+  }, [opening, progress, repo, status])
+
+  // SEM PARTIDAS, SEM SEÇÃO. Zeros numa tela de diagnóstico ensinam a ignorá-la.
+  if (!desvios || desvios.length === 0) return null
+
+  return (
+    <section className={styles.bloco} aria-labelledby="das-suas-partidas">
+      <h3 id="das-suas-partidas" className={styles.blocoTitulo}>
+        Das suas partidas
+      </h3>
+      <p className={styles.texto}>
+        Os pontos em que as suas partidas saíram desta linha. Esta é a única contagem do curso que
+        mede partidas de verdade.
+      </p>
+
+      <ul className={styles.ramos}>
+        {desvios.map((desvio) => (
+          <li key={`${desvio.nodeId}:${desvio.jogadoSan}`}>
+            <a className={styles.ramoCard} href={desvio.rota}>
+              {/* Prévia: ver o comentário do mini-tabuleiro da biblioteca de ramos. */}
+              <span className={styles.ramoTabuleiro} aria-hidden="true">
+                <ChessBoardView
+                  fen={desvio.fen}
+                  orientation={opening.side === 'white' ? 'w' : 'b'}
+                  interactive={false}
+                />
+              </span>
+
+              <span className={styles.ramoNome}>
+                {desvio.partidas === 1
+                  ? '1 partida saiu daqui'
+                  : `${desvio.partidas} partidas saíram daqui`}
+              </span>
+
+              {/*
+                O PAR É O CONTEÚDO DA TELA. "Você saiu do repertório" sozinho não
+                ensina nada: o aluno fica sabendo que errou e não o que era certo.
+              */}
+              <span className={styles.ramoLance}>
+                {desvio.autor === 'aluno' ? 'Você jogou' : 'O adversário jogou'} {desvio.jogadoSan}
+                {desvio.esperadoSan ? ` · o repertório diz ${desvio.esperadoSan}` : null}
+              </span>
+
+              <span className={styles.ramoMeta}>{ROTULO_DA_ACAO[acaoDoDesvio(desvio)]}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/**
+ * O que o botão oferece, e a diferença entre os três é o que o app SABE.
+ *
+ * "Analisar" existe para o caso em que o adversário jogou algo que o curso não
+ * cobre. Dizer "treinar a resposta" ali seria prometer conteúdo que não existe.
+ */
+const ROTULO_DA_ACAO: Record<'reaprender' | 'treinar' | 'analisar', string> = {
+  reaprender: 'Reaprender esta posição →',
+  treinar: 'Treinar a resposta →',
+  analisar: 'O curso não cobre este lance — analisar →',
 }
 
 /**
